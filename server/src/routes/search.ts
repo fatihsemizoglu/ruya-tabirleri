@@ -22,16 +22,16 @@ router.get('/', optionalAuthMiddleware, async (req: AuthRequest, res: Response):
     const searchTerm = `%${q.trim()}%`;
 
     // Get total count
-    const [countResult] = await pool.execute<{ count: number }[]>(
+    const [countResult] = await pool.execute(
       `SELECT COUNT(*) as count FROM dreams 
        WHERE is_published = TRUE 
        AND (title LIKE ? OR content LIKE ? OR keywords LIKE ?)`,
       [searchTerm, searchTerm, searchTerm]
-    );
+    ) as any;
     const total = countResult[0].count;
 
     // Get results
-    const [dreams] = await pool.execute<(Dream & { category_name: string })[]>(
+    const [dreams] = await pool.execute(
       `SELECT d.*, c.name as category_name 
        FROM dreams d 
        LEFT JOIN categories c ON d.category_id = c.id 
@@ -40,7 +40,7 @@ router.get('/', optionalAuthMiddleware, async (req: AuthRequest, res: Response):
        ORDER BY d.view_count DESC, d.created_at DESC 
        LIMIT ? OFFSET ?`,
       [searchTerm, searchTerm, searchTerm, limit, offset]
-    );
+    ) as any;
 
     // Log search
     const userId = req.user?.id || null;
@@ -80,13 +80,13 @@ router.get('/suggestions', async (req: AuthRequest, res: Response): Promise<void
     const searchTerm = `${q.trim()}%`;
 
     // Get title suggestions
-    const [dreams] = await pool.execute<{ title: string; slug: string }[]>(
+    const [dreams] = await pool.execute(
       `SELECT DISTINCT title, slug FROM dreams 
        WHERE is_published = TRUE AND title LIKE ? 
        ORDER BY view_count DESC 
        LIMIT ?`,
       [searchTerm, limit]
-    );
+    ) as any;
 
     res.json({ success: true, data: dreams });
   } catch (error) {
@@ -100,7 +100,7 @@ router.get('/popular', async (req: AuthRequest, res: Response): Promise<void> =>
   try {
     const limit = parseInt(req.query.limit as string) || 10;
 
-    const [searches] = await pool.execute<{ query: string; count: number }[]>(
+    const [searches] = await pool.execute(
       `SELECT query, COUNT(*) as count 
        FROM search_logs 
        WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) 
@@ -108,7 +108,7 @@ router.get('/popular', async (req: AuthRequest, res: Response): Promise<void> =>
        ORDER BY count DESC 
        LIMIT ?`,
       [limit]
-    );
+    ) as any;
 
     res.json({ success: true, data: searches });
   } catch (error) {
@@ -133,15 +133,15 @@ router.get('/alphabet/:letter', async (req: AuthRequest, res: Response): Promise
     const letterPattern = `${letter.toUpperCase()}%`;
 
     // Get total count
-    const [countResult] = await pool.execute<{ count: number }[]>(
+    const [countResult] = await pool.execute(
       `SELECT COUNT(*) as count FROM dreams 
        WHERE is_published = TRUE AND title LIKE ?`,
       [letterPattern]
-    );
+    ) as any;
     const total = countResult[0].count;
 
     // Get dreams
-    const [dreams] = await pool.execute<(Dream & { category_name: string })[]>(
+    const [dreams] = await pool.execute(
       `SELECT d.*, c.name as category_name 
        FROM dreams d 
        LEFT JOIN categories c ON d.category_id = c.id 
@@ -149,7 +149,7 @@ router.get('/alphabet/:letter', async (req: AuthRequest, res: Response): Promise
        ORDER BY d.title ASC 
        LIMIT ? OFFSET ?`,
       [letterPattern, limit, offset]
-    );
+    ) as any;
 
     res.json({
       success: true,

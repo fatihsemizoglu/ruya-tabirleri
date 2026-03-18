@@ -56,7 +56,7 @@ export const authMiddleware = async (
     }
 
     // Get user profile and role
-    const [profiles] = await pool.execute<(Profile & { role: string })[]>(
+    const [profiles] = await pool.execute(
       `SELECT p.*, ur.role 
        FROM profiles p 
        LEFT JOIN user_roles ur ON p.user_id = ur.user_id 
@@ -67,21 +67,21 @@ export const authMiddleware = async (
     // If no profile found, check if there's a profile with this email
     if (profiles.length === 0) {
       // Check if there's a user with this email in the users table
-      const [existingUsers] = await pool.execute<{ id: string; email: string }[]>(
+      const [existingUsers] = await pool.execute(
         'SELECT id, email FROM users WHERE email = ?',
         [decoded.email]
       );
 
       if (existingUsers.length > 0) {
         // There's a user with this email, create profile for the current userId
-        const [emailProfiles] = await pool.execute<Profile[]>(
+        const [emailProfiles] = await pool.execute(
           'SELECT * FROM profiles WHERE email = ?',
           [decoded.email]
         );
         
         if (emailProfiles.length > 0) {
           // Use existing profile and role
-          const [roles] = await pool.execute<{ role: string }[]>(
+          const [roles] = await pool.execute(
             'SELECT role FROM user_roles WHERE user_id = ?',
             [existingUsers[0].id]
           );
@@ -179,11 +179,11 @@ export const optionalAuthMiddleware = async (
     }
 
     // Get user profile and role
-    const [profiles] = await pool.execute<(Profile & { role: string })[]>(
+    const [profiles] = await pool.execute(
       `SELECT p.*, ur.role 
-       FROM profiles p 
-       LEFT JOIN user_roles ur ON p.user_id = ur.user_id 
-       WHERE p.user_id = ?`,
+      FROM profiles p 
+      LEFT JOIN user_roles ur ON p.user_id = ur.user_id 
+      WHERE p.user_id = ?`,
       [decoded.userId]
     );
 

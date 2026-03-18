@@ -30,11 +30,11 @@ router.use(requireModerator);
 router.get('/statistics', async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     // Get counts
-    const [dreamCount] = await pool.execute<CountResult[]>('SELECT COUNT(*) as count FROM dreams');
-    const [blogPostCount] = await pool.execute<CountResult[]>('SELECT COUNT(*) as count FROM blog_posts');
-    const [userCount] = await pool.execute<CountResult[]>('SELECT COUNT(*) as count FROM users');
-    const [categoryCount] = await pool.execute<CountResult[]>('SELECT COUNT(*) as count FROM categories');
-    const [subscriberCount] = await pool.execute<CountResult[]>('SELECT COUNT(*) as count FROM blog_subscribers WHERE is_verified = TRUE');
+    const [dreamCount] = await pool.execute('SELECT COUNT(*) as count FROM dreams');
+    const [blogPostCount] = await pool.execute('SELECT COUNT(*) as count FROM blog_posts');
+    const [userCount] = await pool.execute('SELECT COUNT(*) as count FROM users');
+    const [categoryCount] = await pool.execute('SELECT COUNT(*) as count FROM categories');
+    const [subscriberCount] = await pool.execute('SELECT COUNT(*) as count FROM blog_subscribers WHERE is_verified = TRUE');
 
     // Get recent activity
     const [recentDreams] = await pool.execute(
@@ -68,7 +68,7 @@ router.get('/statistics', async (req: AuthRequest, res: Response): Promise<void>
 // Get category statistics
 router.get('/category-stats', async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const [stats] = await pool.execute<CategoryStats[]>(
+    const [stats] = await pool.execute(
       `SELECT c.name, COUNT(d.id) as dreamCount 
        FROM categories c 
        LEFT JOIN dreams d ON c.id = d.category_id 
@@ -91,7 +91,7 @@ router.get('/top-dreams', async (req: AuthRequest, res: Response): Promise<void>
   try {
     const limit = parseInt(req.query.limit as string) || 10;
     
-    const [dreams] = await pool.execute<TopDream[]>(
+    const [dreams] = await pool.execute(
       `SELECT id, title, COALESCE(view_count, 0) as view_count, COALESCE(like_count, 0) as like_count 
        FROM dreams 
        ORDER BY view_count DESC 
@@ -137,7 +137,7 @@ router.get('/comments', requireModerator, async (req: AuthRequest, res: Response
       [...params, limit, offset]
     );
 
-    const [countResult] = await pool.execute<CountResult[]>(
+    const [countResult] = await pool.execute(
       `SELECT COUNT(*) as count FROM blog_comments bc ${whereClause}`,
       params
     );
@@ -227,7 +227,7 @@ router.get('/contact-messages', requireAdmin, async (req: AuthRequest, res: Resp
       [...params, limit, offset]
     );
 
-    const [countResult] = await pool.execute<CountResult[]>(
+    const [countResult] = await pool.execute(
       `SELECT COUNT(*) as count FROM contact_messages ${whereClause}`,
       params
     );

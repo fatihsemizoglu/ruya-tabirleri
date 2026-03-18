@@ -35,14 +35,14 @@ router.get('/posts', optionalAuthMiddleware, async (req: AuthRequest, res: Respo
     }
 
     // Get total count
-    const [countResult] = await pool.execute<{ count: number }[]>(
+    const [countResult] = await pool.execute(
       `SELECT COUNT(*) as count FROM blog_posts ${whereClause}`,
       params
     );
-    const total = countResult[0].count;
+    const total = countResult[0]?.count ?? 0;
 
     // Get posts
-    const [posts] = await pool.execute<(BlogPost & { author_name: string; category_name: string })[]>(
+    const [posts] = await pool.execute(
       `SELECT bp.*, p.full_name as author_name, bc.name as category_name 
        FROM blog_posts bp 
        JOIN profiles p ON bp.author_id = p.user_id 
@@ -74,7 +74,7 @@ router.get('/posts/:slug', optionalAuthMiddleware, async (req: AuthRequest, res:
   try {
     const { slug } = req.params;
 
-    const [posts] = await pool.execute<(BlogPost & { author_name: string; author_avatar: string | null; category_name: string })[]>(
+    const [posts] = await pool.execute(
       `SELECT bp.*, p.full_name as author_name, p.avatar_url as author_avatar, bc.name as category_name 
        FROM blog_posts bp 
        JOIN profiles p ON bp.author_id = p.user_id 
@@ -99,11 +99,11 @@ router.get('/posts/:slug', optionalAuthMiddleware, async (req: AuthRequest, res:
     // Check if user liked
     let isLiked = false;
     if (req.user) {
-      const [likes] = await pool.execute<BlogLike[]>(
+      const [likes] = await pool.execute(
         'SELECT * FROM blog_likes WHERE post_id = ? AND user_id = ?',
         [post.id, req.user.id]
-      );
-      isLiked = likes.length > 0;
+      ) as any;
+      isLiked = (likes?.length ?? 0) > 0;
     }
 
     res.json({
@@ -168,7 +168,7 @@ router.post('/posts', authMiddleware, requireModerator, async (req: AuthRequest,
       ]
     );
 
-    const [newPost] = await pool.execute<BlogPost[]>(
+    const [newPost] = await pool.execute(
       'SELECT * FROM blog_posts WHERE id = ?',
       [id]
     );
@@ -436,14 +436,14 @@ router.get('/posts/:id/comments', async (req: AuthRequest, res: Response): Promi
   try {
     const { id } = req.params;
 
-    const [comments] = await pool.execute<(BlogComment & { author_name: string; author_avatar: string | null })[]>(
+    const [comments] = await pool.execute(
       `SELECT bc.*, p.full_name as author_name, p.avatar_url as author_avatar 
        FROM blog_comments bc 
        JOIN profiles p ON bc.user_id = p.user_id 
        WHERE bc.post_id = ? AND bc.is_approved = TRUE 
        ORDER BY bc.created_at DESC`,
       [id]
-    );
+    ) as any;
 
     res.json({ success: true, data: comments });
   } catch (error) {
@@ -472,13 +472,13 @@ router.post('/posts/:id/comments', authMiddleware, async (req: AuthRequest, res:
       [commentId, content, id, userId, parent_id || null]
     );
 
-    const [newComment] = await pool.execute<(BlogComment & { author_name: string; author_avatar: string | null })[]>(
+    const [newComment] = await pool.execute(
       `SELECT bc.*, p.full_name as author_name, p.avatar_url as author_avatar 
        FROM blog_comments bc 
        JOIN profiles p ON bc.user_id = p.user_id 
        WHERE bc.id = ?`,
       [commentId]
-    );
+    ) as any;
 
     res.status(201).json({ success: true, data: newComment[0] });
   } catch (error) {
@@ -498,10 +498,10 @@ router.post('/subscribe', async (req: AuthRequest, res: Response): Promise<void>
     }
 
     // Check if already subscribed
-    const [existing] = await pool.execute<BlogSubscriber[]>(
+    const [existing] = await pool.execute(
       'SELECT * FROM blog_subscribers WHERE email = ?',
       [email]
-    );
+    ) as any;
 
     if (existing.length > 0) {
       if (existing[0].unsubscribed_at) {
@@ -547,10 +547,10 @@ router.post('/verify-subscription', async (req: AuthRequest, res: Response): Pro
       return;
     }
 
-    const [subscribers] = await pool.execute<BlogSubscriber[]>(
+    const [subscribers] = await pool.execute(
       'SELECT * FROM blog_subscribers WHERE verification_token = ?',
       [token]
-    );
+    ) as any;
 
     if (subscribers.length === 0) {
       res.status(404).json({ success: false, error: 'Invalid verification token' });
@@ -594,9 +594,9 @@ router.post('/unsubscribe', async (req: AuthRequest, res: Response): Promise<voi
 // Get popular tags
 router.get('/tags', async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const [posts] = await pool.execute<{ tags: string }[]>(
+    const [posts] = await pool.execute(
       'SELECT tags FROM blog_posts WHERE is_published = TRUE AND tags IS NOT NULL'
-    );
+    ) as any;
 
     const tagCount: Record<string, number> = {};
     posts.forEach(post => {

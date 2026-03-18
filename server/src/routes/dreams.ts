@@ -41,8 +41,8 @@ router.get('/', optionalAuthMiddleware, async (req: AuthRequest, res: Response, 
     const [countResult] = await pool.execute(
       `SELECT COUNT(*) as count FROM dreams ${whereClause}`,
       params
-    ) as [any[], any];
-    const total = countResult[0].count;
+    ) as any;
+    const total = countResult[0]?.count ?? 0;
 
     // Get dreams
     const validSortColumns = ['created_at', 'view_count', 'like_count', 'title'];
@@ -58,7 +58,7 @@ router.get('/', optionalAuthMiddleware, async (req: AuthRequest, res: Response, 
        ORDER BY d.${safeSortBy} ${safeSortOrder} 
        LIMIT ? OFFSET ?`,
       [...params, limit, offset]
-    ) as [any[], any];
+    ) as any;
 
     res.json({
       success: true,

@@ -42,10 +42,10 @@ router.post('/register', async (req: AuthRequest, res: Response, next: NextFunct
     await connection.beginTransaction();
 
     try {
-      const [existingUsers] = await connection.execute<Profile[]>(
+      const [existingUsers] = await connection.execute(
         'SELECT * FROM profiles WHERE email = ?',
         [email]
-      );
+      ) as any;
 
       if (existingUsers.length > 0) {
         await connection.rollback();
@@ -125,14 +125,14 @@ router.post('/login', async (req: AuthRequest, res: Response, next: NextFunction
     const { email, password } = validationResult.data as LoginRequest;
 
     // Get user with password
-    const [users] = await pool.execute<(Profile & { password: string; role: string })[]>(
+    const [users] = await pool.execute(
       `SELECT u.id, u.email, u.password, p.*, ur.role 
        FROM users u 
        JOIN profiles p ON u.id = p.user_id 
        LEFT JOIN user_roles ur ON u.id = ur.user_id 
        WHERE u.email = ?`,
       [email]
-    );
+    ) as any;
 
     if (users.length === 0) {
       throw new AppError('Invalid email or password', 401);

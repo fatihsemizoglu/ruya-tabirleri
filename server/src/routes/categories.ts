@@ -9,13 +9,13 @@ const router = Router();
 // Get all categories
 router.get('/', async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const [categories] = await pool.execute<(Category & { dream_count: number })[]>(
+    const [categories] = await pool.execute(
       `SELECT c.*, COUNT(d.id) as dream_count 
        FROM categories c 
        LEFT JOIN dreams d ON c.id = d.category_id AND d.is_published = TRUE 
        GROUP BY c.id 
        ORDER BY c.order_index ASC, c.name ASC`
-    );
+    ) as any;
 
     res.json({ success: true, data: categories });
   } catch (error) {
@@ -29,14 +29,14 @@ router.get('/:slug', optionalAuthMiddleware, async (req: AuthRequest, res: Respo
   try {
     const { slug } = req.params;
 
-    const [categories] = await pool.execute<(Category & { dream_count: number })[]>(
+    const [categories] = await pool.execute(
       `SELECT c.*, COUNT(d.id) as dream_count 
        FROM categories c 
        LEFT JOIN dreams d ON c.id = d.category_id AND d.is_published = TRUE 
        WHERE c.slug = ? 
        GROUP BY c.id`,
       [slug]
-    );
+    ) as any;
 
     if (categories.length === 0) {
       res.status(404).json({ success: false, error: 'Category not found' });
@@ -72,20 +72,20 @@ router.get('/:slug/dreams', optionalAuthMiddleware, async (req: AuthRequest, res
     const category = categories[0];
 
     // Get total count
-    const [countResult] = await pool.execute<{ count: number }[]>(
+    const [countResult] = await pool.execute(
       'SELECT COUNT(*) as count FROM dreams WHERE category_id = ? AND is_published = TRUE',
       [category.id]
-    );
+    ) as any;
     const total = countResult[0].count;
 
     // Get dreams
-    const [dreams] = await pool.execute<Dream[]>(
+    const [dreams] = await pool.execute(
       `SELECT * FROM dreams 
        WHERE category_id = ? AND is_published = TRUE 
        ORDER BY created_at DESC 
        LIMIT ? OFFSET ?`,
       [category.id, limit, offset]
-    );
+    ) as any;
 
     res.json({
       success: true,
@@ -122,10 +122,10 @@ router.post('/', authMiddleware, requireModerator, async (req: AuthRequest, res:
       [id, name, slug, description || null, icon || null, parent_id || null, order_index || 0]
     );
 
-    const [newCategory] = await pool.execute<Category[]>(
+    const [newCategory] = await pool.execute(
       'SELECT * FROM categories WHERE id = ?',
       [id]
-    );
+    ) as any;
 
     res.status(201).json({ success: true, data: newCategory[0] });
   } catch (error) {
@@ -140,10 +140,10 @@ router.put('/:id', authMiddleware, requireModerator, async (req: AuthRequest, re
     const { id } = req.params;
     const { name, slug, description, icon, parent_id, order_index } = req.body;
 
-    const [existing] = await pool.execute<Category[]>(
+    const [existing] = await pool.execute(
       'SELECT * FROM categories WHERE id = ?',
       [id]
-    );
+    ) as any;
 
     if (existing.length === 0) {
       res.status(404).json({ success: false, error: 'Category not found' });
@@ -173,10 +173,10 @@ router.put('/:id', authMiddleware, requireModerator, async (req: AuthRequest, re
       [updatedName, updatedSlug, updatedDescription, updatedIcon, updatedParentId, updatedOrderIndex, id]
     );
 
-    const [updated] = await pool.execute<Category[]>(
+    const [updated] = await pool.execute(
       'SELECT * FROM categories WHERE id = ?',
       [id]
-    );
+    ) as any;
 
     res.json({ success: true, data: updated[0] });
   } catch (error) {
@@ -190,10 +190,10 @@ router.delete('/:id', authMiddleware, requireModerator, async (req: AuthRequest,
   try {
     const { id } = req.params;
 
-    const [existing] = await pool.execute<Category[]>(
+    const [existing] = await pool.execute(
       'SELECT * FROM categories WHERE id = ?',
       [id]
-    );
+    ) as any;
 
     if (existing.length === 0) {
       res.status(404).json({ success: false, error: 'Category not found' });

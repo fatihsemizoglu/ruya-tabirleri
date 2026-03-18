@@ -48,17 +48,17 @@ router.get('/', requireModerator, async (req: AuthRequest, res: Response): Promi
     }
 
     // Get total count
-    const [countResult] = await pool.execute<{ count: number }[]>(
+    const [countResult] = await pool.execute(
       `SELECT COUNT(*) as count FROM contact_messages ${whereClause}`,
       params
-    );
+    ) as any;
     const total = countResult[0].count;
 
     // Get messages
-    const [messages] = await pool.execute<ContactMessage[]>(
+    const [messages] = await pool.execute(
       `SELECT * FROM contact_messages ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
       [...params, limit, offset]
-    );
+    ) as any;
 
     res.json({
       success: true,
