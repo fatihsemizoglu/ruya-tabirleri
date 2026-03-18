@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { pool } from '../config/database.js';
 import type { AuthUser, Profile, UserRole } from '../types/index.js';
 
@@ -20,8 +21,8 @@ export interface JwtPayload {
 export const generateToken = (userId: string, email: string): string => {
   return jwt.sign(
     { userId, email },
-    JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    JWT_SECRET as string,
+    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' } as any
   );
 };
 

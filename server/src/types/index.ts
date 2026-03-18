@@ -270,6 +270,12 @@ export interface RegisterRequest {
   username?: string;
 }
 
+// Auth middleware/common request shape used by login/register endpoints
+export interface AuthRequest {
+  email: string;
+  password: string;
+}
+
 export interface AuthResponse {
   user: AuthUser;
   token: string;
