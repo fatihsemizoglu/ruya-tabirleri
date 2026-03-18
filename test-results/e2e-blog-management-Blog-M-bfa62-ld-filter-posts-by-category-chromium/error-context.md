@@ -1,0 +1,155 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - region "Notifications (F8)":
+    - list
+  - region "Notifications alt+T"
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - link "Rüya Tabirleri" [ref=e6] [cursor=pointer]:
+          - /url: /
+          - img [ref=e8]
+          - generic [ref=e10]: Rüya Tabirleri
+        - navigation [ref=e11]:
+          - link "Rüya Tabirleri" [ref=e12] [cursor=pointer]:
+            - /url: /ruya-tabirleri
+          - link "Rüya Yorumlat" [ref=e13] [cursor=pointer]:
+            - /url: /ruya-yorumlat
+            - generic [ref=e14]:
+              - img [ref=e15]
+              - text: Rüya Yorumlat
+          - navigation "Main" [ref=e17]:
+            - list [ref=e19]:
+              - listitem [ref=e20]:
+                - button "Kategoriler" [ref=e21] [cursor=pointer]:
+                  - text: Kategoriler
+                  - img [ref=e22]
+          - link "Popüler" [ref=e24] [cursor=pointer]:
+            - /url: /populer
+          - link "Blog" [ref=e25] [cursor=pointer]:
+            - /url: /blog
+        - generic [ref=e26]:
+          - generic [ref=e29]:
+            - searchbox "Rüya ara..." [ref=e30]
+            - button [ref=e31] [cursor=pointer]:
+              - img
+          - button [ref=e32] [cursor=pointer]:
+            - img
+          - generic [ref=e33]:
+            - link "Giriş Yap" [ref=e34] [cursor=pointer]:
+              - /url: /giris
+            - link "Kayıt Ol" [ref=e35] [cursor=pointer]:
+              - /url: /kayit
+    - main [ref=e36]:
+      - generic [ref=e38]:
+        - generic [ref=e45]:
+          - generic [ref=e46]:
+            - img [ref=e47]
+            - text: Rüya Blogu
+          - heading "Rüya Dünyasını Keşfedin" [level=1] [ref=e49]:
+            - text: Rüya Dünyasını
+            - generic [ref=e50]:
+              - text: Keşfedin
+              - img [ref=e51]
+          - paragraph [ref=e53]: Rüyalar, bilinçaltı, psikoloji ve daha fazlası hakkında derinlemesine yazılar
+        - generic [ref=e55]:
+          - generic [ref=e56]:
+            - button "Tümü" [ref=e57] [cursor=pointer]
+            - button "test" [ref=e58] [cursor=pointer]
+          - generic [ref=e59]:
+            - generic [ref=e60]:
+              - img [ref=e61]
+              - textbox "Yazılarda ara..." [ref=e64]
+            - generic [ref=e65]:
+              - button [ref=e66] [cursor=pointer]:
+                - img
+              - button [ref=e67] [cursor=pointer]:
+                - img
+          - generic [ref=e68]:
+            - generic [ref=e70]:
+              - img [ref=e72]
+              - heading "Henüz yazı bulunamadı" [level=3] [ref=e74]
+              - paragraph [ref=e75]: Bu kategoride henüz yazı yayınlanmamış.
+            - complementary [ref=e76]
+    - contentinfo [ref=e77]:
+      - generic [ref=e78]:
+        - generic [ref=e79]:
+          - generic [ref=e80]:
+            - link "Rüya Tabirleri" [ref=e81] [cursor=pointer]:
+              - /url: /
+              - img [ref=e83]
+              - generic [ref=e85]: Rüya Tabirleri
+            - paragraph [ref=e86]: En kapsamlı rüya tabirleri sitesi. İslami ve psikolojik yorumlarla rüyalarınızın anlamını keşfedin.
+            - generic [ref=e87]:
+              - img [ref=e88]
+              - link "info@ruyatabirleri.com" [ref=e91] [cursor=pointer]:
+                - /url: mailto:info@ruyatabirleri.com
+          - generic [ref=e92]:
+            - heading "Hızlı Linkler" [level=4] [ref=e93]
+            - list [ref=e94]:
+              - listitem [ref=e95]:
+                - link "Rüya Tabirleri" [ref=e96] [cursor=pointer]:
+                  - /url: /ruya-tabirleri
+                  - text: Rüya Tabirleri
+              - listitem [ref=e97]:
+                - link "Kategoriler" [ref=e98] [cursor=pointer]:
+                  - /url: /kategoriler
+                  - text: Kategoriler
+              - listitem [ref=e99]:
+                - link "Popüler Rüyalar" [ref=e100] [cursor=pointer]:
+                  - /url: /populer
+                  - text: Popüler Rüyalar
+              - listitem [ref=e101]:
+                - link "A-Z Rüya Listesi" [ref=e102] [cursor=pointer]:
+                  - /url: /az
+                  - text: A-Z Rüya Listesi
+          - generic [ref=e103]:
+            - heading "Popüler Kategoriler" [level=4] [ref=e104]
+            - list [ref=e105]:
+              - listitem [ref=e106]:
+                - link "Hayvanlar" [ref=e107] [cursor=pointer]:
+                  - /url: /kategori/hayvanlar
+                  - text: Hayvanlar
+              - listitem [ref=e108]:
+                - link "Doğa & Hava" [ref=e109] [cursor=pointer]:
+                  - /url: /kategori/doga
+                  - text: Doğa & Hava
+              - listitem [ref=e110]:
+                - link "İnsanlar & İlişkiler" [ref=e111] [cursor=pointer]:
+                  - /url: /kategori/insanlar
+                  - text: İnsanlar & İlişkiler
+              - listitem [ref=e112]:
+                - link "Nesneler" [ref=e113] [cursor=pointer]:
+                  - /url: /kategori/nesneler
+                  - text: Nesneler
+          - generic [ref=e114]:
+            - heading "Bültene Abone Ol" [level=4] [ref=e115]
+            - paragraph [ref=e116]: Yeni içeriklerden haberdar olmak için bültenimize abone olun.
+            - generic [ref=e117]:
+              - textbox "E-posta adresiniz" [ref=e118]
+              - button "Abone Ol" [ref=e119] [cursor=pointer]:
+                - img
+                - text: Abone Ol
+            - generic [ref=e120]:
+              - heading "Yasal" [level=5] [ref=e121]
+              - list [ref=e122]:
+                - listitem [ref=e123]:
+                  - link "Hakkımızda" [ref=e124] [cursor=pointer]:
+                    - /url: /hakkimizda
+                - listitem [ref=e125]:
+                  - link "İletişim" [ref=e126] [cursor=pointer]:
+                    - /url: /iletisim
+                - listitem [ref=e127]:
+                  - link "Gizlilik Politikası" [ref=e128] [cursor=pointer]:
+                    - /url: /gizlilik
+                - listitem [ref=e129]:
+                  - link "Kullanım Koşulları" [ref=e130] [cursor=pointer]:
+                    - /url: /kullanim-kosullari
+        - generic [ref=e131]:
+          - paragraph [ref=e132]: © 2026 Rüya Tabirleri. Tüm hakları saklıdır.
+          - paragraph [ref=e133]:
+            - img [ref=e134]
+            - text: Türkiye'de yapıldı
+```

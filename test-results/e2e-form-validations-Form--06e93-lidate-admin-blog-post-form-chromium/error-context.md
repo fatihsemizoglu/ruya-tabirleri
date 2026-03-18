@@ -1,0 +1,64 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - region "Notifications (F8)":
+    - list
+  - region "Notifications alt+T"
+  - generic [ref=e5]:
+    - generic [ref=e6]:
+      - button [ref=e7] [cursor=pointer]:
+        - img [ref=e8]
+      - generic [ref=e11]:
+        - img [ref=e13]
+        - generic [ref=e15]:
+          - heading "Rüya Tabirleri'ne Hoş Geldiniz!" [level=2] [ref=e16]
+          - paragraph [ref=e17]: Adım 1 / 4
+    - generic [ref=e18]:
+      - paragraph [ref=e19]: Türkiye'nin en kapsamlı rüya yorumları sitesine hoş geldiniz. Size kısa bir tur sunalım.
+      - generic [ref=e20]:
+        - button [ref=e21] [cursor=pointer]
+        - button [ref=e22] [cursor=pointer]
+        - button [ref=e23] [cursor=pointer]
+        - button [ref=e24] [cursor=pointer]
+      - generic [ref=e25]:
+        - button "Geri" [disabled]:
+          - img
+          - text: Geri
+        - button "Geç" [ref=e26] [cursor=pointer]
+        - button "İleri" [ref=e27] [cursor=pointer]:
+          - text: İleri
+          - img
+  - generic [ref=e28]:
+    - generic [ref=e30]:
+      - link "Rüya Tabirleri" [ref=e31] [cursor=pointer]:
+        - /url: /
+        - img [ref=e33]
+        - generic [ref=e35]: Rüya Tabirleri
+      - heading "Giriş Yap" [level=1] [ref=e36]
+      - paragraph [ref=e37]: Hesabınıza giriş yapın ve rüya dünyanıza devam edin.
+      - generic [ref=e38]:
+        - generic [ref=e39]:
+          - text: E-posta
+          - generic [ref=e40]:
+            - img [ref=e41]
+            - textbox "E-posta" [ref=e44]:
+              - /placeholder: ornek@email.com
+        - generic [ref=e45]:
+          - text: Şifre
+          - generic [ref=e46]:
+            - img [ref=e47]
+            - textbox "Şifre" [ref=e50]:
+              - /placeholder: ••••••••
+            - button [ref=e51] [cursor=pointer]:
+              - img
+        - button "Giriş Yap" [ref=e52] [cursor=pointer]
+      - paragraph [ref=e53]:
+        - text: Hesabınız yok mu?
+        - link "Kayıt Olun" [ref=e54] [cursor=pointer]:
+          - /url: /kayit
+    - generic [ref=e59]:
+      - img [ref=e61]
+      - heading "Rüyalarınızın Gizli Anlamlarını Keşfedin" [level=2] [ref=e63]
+      - paragraph [ref=e64]: Binlerce rüya tabiri, kişisel günlük ve İslami & psikolojik yorumlarla rüyalarınızı anlayın.
+```

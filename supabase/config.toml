@@ -1,0 +1,25 @@
+project_id = "srpuegfijtujagpuksgs"
+
+[functions.publish-scheduled-posts]
+verify_jwt = false
+
+[functions.send-newsletter]
+verify_jwt = true
+
+[functions.subscribe-newsletter]
+verify_jwt = false
+ 
+ [functions.sitemap]
+ verify_jwt = false
+ 
+ [functions.generate-seo]
+ verify_jwt = false
+
+[functions.generate-content-suggestions]
+verify_jwt = false
+
+[functions.generate-internal-links]
+verify_jwt = false
+
+[functions.interpret-dream]
+verify_jwt = false

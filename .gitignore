@@ -1,0 +1,16 @@
+node_modules/
+server/node_modules/
+dist/
+build/
+.vite/
+.vite-cache/
+.env
+.env.local
+coverage/
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml

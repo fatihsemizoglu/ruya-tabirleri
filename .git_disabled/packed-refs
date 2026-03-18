@@ -1,0 +1,3 @@
+# pack-refs with: peeled fully-peeled sorted 
+f8e61765e901bb4867f9f4bf0cc0d0b32f492d2f refs/remotes/origin/main
+4699c9be5138b9cfa1bd6aa44c0b5441c7668d20 refs/remotes/origin/upgrade/vite-7.3.0

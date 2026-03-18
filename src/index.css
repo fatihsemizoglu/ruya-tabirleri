@@ -1,0 +1,234 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Rüya Tabirleri - Modern Minimalist Design System */
+
+@layer base {
+  :root {
+    /* Core palette - Dreamy indigo/purple theme */
+    --background: 240 20% 99%;
+    --foreground: 240 10% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 10%;
+
+    /* Primary - Deep indigo */
+    --primary: 245 58% 51%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary - Soft lavender */
+    --secondary: 250 30% 96%;
+    --secondary-foreground: 245 58% 40%;
+
+    /* Muted - Subtle gray-purple */
+    --muted: 240 15% 95%;
+    --muted-foreground: 240 10% 45%;
+
+    /* Accent - Warm golden */
+    --accent: 45 93% 58%;
+    --accent-foreground: 45 93% 20%;
+
+    /* Semantic colors */
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 38 92% 15%;
+
+    --info: 199 89% 48%;
+    --info-foreground: 0 0% 100%;
+
+    --border: 240 15% 90%;
+    --input: 240 15% 90%;
+    --ring: 245 58% 51%;
+
+    --radius: 0.75rem;
+
+    /* Custom dream theme tokens */
+    --dream-purple: 270 60% 60%;
+    --dream-blue: 220 70% 55%;
+    --dream-pink: 330 65% 65%;
+    --dream-gradient: linear-gradient(135deg, hsl(245 58% 51%), hsl(270 60% 60%));
+    --dream-gradient-soft: linear-gradient(135deg, hsl(250 30% 96%), hsl(270 30% 96%));
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 hsl(240 10% 10% / 0.05);
+    --shadow-md: 0 4px 6px -1px hsl(240 10% 10% / 0.08), 0 2px 4px -2px hsl(240 10% 10% / 0.05);
+    --shadow-lg: 0 10px 15px -3px hsl(240 10% 10% / 0.08), 0 4px 6px -4px hsl(240 10% 10% / 0.05);
+    --shadow-dream: 0 8px 32px -8px hsl(245 58% 51% / 0.25);
+
+    /* Sidebar */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 240 10% 30%;
+    --sidebar-primary: 245 58% 51%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 250 30% 96%;
+    --sidebar-accent-foreground: 245 58% 40%;
+    --sidebar-border: 240 15% 92%;
+    --sidebar-ring: 245 58% 51%;
+  }
+
+  .dark {
+    --background: 240 15% 8%;
+    --foreground: 240 10% 95%;
+
+    --card: 240 15% 12%;
+    --card-foreground: 240 10% 95%;
+
+    --popover: 240 15% 12%;
+    --popover-foreground: 240 10% 95%;
+
+    --primary: 250 60% 65%;
+    --primary-foreground: 240 15% 8%;
+
+    --secondary: 240 15% 18%;
+    --secondary-foreground: 250 60% 75%;
+
+    --muted: 240 15% 18%;
+    --muted-foreground: 240 10% 60%;
+
+    --accent: 45 93% 58%;
+    --accent-foreground: 45 93% 10%;
+
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 60% 45%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 80% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    --info: 199 75% 50%;
+    --info-foreground: 0 0% 100%;
+
+    --border: 240 15% 20%;
+    --input: 240 15% 20%;
+    --ring: 250 60% 65%;
+
+    --dream-purple: 270 50% 65%;
+    --dream-blue: 220 60% 60%;
+    --dream-pink: 330 55% 60%;
+    --dream-gradient: linear-gradient(135deg, hsl(250 60% 65%), hsl(270 50% 65%));
+    --dream-gradient-soft: linear-gradient(135deg, hsl(240 15% 12%), hsl(270 15% 15%));
+
+    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.3);
+    --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.4), 0 2px 4px -2px hsl(0 0% 0% / 0.3);
+    --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.4), 0 4px 6px -4px hsl(0 0% 0% / 0.3);
+    --shadow-dream: 0 8px 32px -8px hsl(250 60% 65% / 0.3);
+
+    --sidebar-background: 240 15% 10%;
+    --sidebar-foreground: 240 10% 80%;
+    --sidebar-primary: 250 60% 65%;
+    --sidebar-primary-foreground: 240 15% 8%;
+    --sidebar-accent: 240 15% 18%;
+    --sidebar-accent-foreground: 250 60% 75%;
+    --sidebar-border: 240 15% 18%;
+    --sidebar-ring: 250 60% 65%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-sans font-semibold tracking-tight;
+  }
+}
+
+@layer components {
+  .dream-card {
+    @apply bg-card rounded-xl p-6 transition-all duration-300;
+    box-shadow: var(--shadow-md);
+  }
+  
+  .dream-card:hover {
+    box-shadow: var(--shadow-dream);
+    transform: translateY(-2px);
+  }
+
+  .dream-gradient {
+    background: var(--dream-gradient);
+  }
+
+  .dream-gradient-soft {
+    background: var(--dream-gradient-soft);
+  }
+
+  .dream-glow {
+    box-shadow: var(--shadow-dream);
+  }
+
+  .search-highlight {
+    @apply bg-accent/30 text-accent-foreground rounded px-0.5;
+  }
+
+  .glass {
+    @apply bg-background/80 backdrop-blur-md;
+  }
+
+  .text-gradient {
+    background: var(--dream-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .animation-delay-150 {
+    animation-delay: 150ms;
+  }
+
+  .animation-delay-300 {
+    animation-delay: 300ms;
+  }
+
+  .animation-delay-450 {
+    animation-delay: 450ms;
+  }
+}
