@@ -178,7 +178,7 @@ test.describe('Blog Management E2E Tests', () => {
       
       await page.screenshot({ path: 'playwright-report/screenshots/blog-all-categories.png' });
       
-      expect(page.url()).toContain('categories') || expect(true).toBeTruthy();
+       expect(page.url()).toContain('categories');
     });
   });
 

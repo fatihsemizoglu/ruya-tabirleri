@@ -65,6 +65,12 @@ export interface Dream {
   updated_at: Date;
 }
 
+// Dream with category info (for joins)
+export interface DreamWithCategory extends Dream {
+  category_name?: string;
+  category_slug?: string;
+}
+
 // Comments
 export interface Comment {
   id: string;
@@ -251,6 +257,15 @@ export interface PaginatedResponse<T> {
 }
 
 // Auth Types
+// Lightweight public user type used across frontend/backend for authentication context
+export type UserPublic = {
+  id: string;
+  email: string;
+  name?: string;
+  profile?: Profile | null;
+  role?: AppRole;
+};
+
 export interface AuthUser {
   id: string;
   email: string;
@@ -270,14 +285,8 @@ export interface RegisterRequest {
   username?: string;
 }
 
-// Auth middleware/common request shape used by login/register endpoints
-export interface AuthRequest {
-  email: string;
-  password: string;
-}
-
 export interface AuthResponse {
-  user: AuthUser;
   token: string;
-  expiresIn: string;
+  user?: UserPublic;
+  expiresIn?: string;
 }

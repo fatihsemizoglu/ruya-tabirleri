@@ -1,27 +1,51 @@
-import { Router, Response, NextFunction } from 'express';
-import { authMiddleware, optionalAuthMiddleware, requireAdmin, requireModerator, AuthRequest } from '../middleware/auth.js';
-import { dreamService } from '../services/dreamService.js';
-import type { DreamWithCategory } from '../types/index.js';
-import { AppError } from '../middleware/errorMiddleware.js';
 import { pool } from '../config/database.js';
 import { v4 as uuidv4 } from 'uuid';
+import { AppError } from '../middleware/errorMiddleware.js';
+import type { Dream, Category, Comment, DreamLike, Favorite, ViewHistory } from '../types/index.js';
 
-const router = Router();
+interface DreamWithCategory extends Dream {
+  category_name?: string;
+  category_slug?: string;
+}
 
-// Get all dreams with pagination and filters
-router.get('/', optionalAuthMiddleware, async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 20;
+export class DreamService {
+  /**
+   * Get all dreams with pagination and filters
+   */
+  async getDreams(filters: {
+    page?: number;
+    limit?: number;
+    category_id?: string;
+    search?: string;
+    is_featured?: boolean;
+    sort_by?: string;
+    sort_order?: string;
+  }): Promise<{
+    dreams: DreamWithCategory[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  }> {
+    const page = filters.page ?? 1;
+    const limit = filters.limit ?? 20;
     const offset = (page - 1) * limit;
-    const category_id = req.query.category_id as string;
-    const search = req.query.search as string;
-    const is_featured = req.query.is_featured === 'true';
-    const sort_by = (req.query.sort_by as string) || 'created_at';
-    const sort_order = (req.query.sort_order as string) || 'DESC';
+    const category_id = filters.category_id;
+    const search = filters.search;
+    const is_featured = filters.is_featured;
+    const sort_by = filters.sort_by ?? 'created_at';
+    const sort_order = filters.sort_order ?? 'DESC';
+
+    // Validate sort parameters
+    const validSortColumns = ['created_at', 'view_count', 'like_count', 'title'];
+    const validSortOrders = ['ASC', 'DESC'];
+    const safeSortBy = validSortColumns.includes(sort_by) ? sort_by : 'created_at';
+    const safeSortOrder = validSortOrders.includes(sort_order.toUpperCase()) ? sort_order.toUpperCase() : 'DESC';
 
     let whereClause = 'WHERE is_published = TRUE';
-    const params: (string | number | boolean)[] = [];
+    const params: any[] = [];
 
     if (category_id) {
       whereClause += ' AND category_id = ?';
@@ -33,25 +57,20 @@ router.get('/', optionalAuthMiddleware, async (req: AuthRequest, res: Response, 
       params.push(`%${search}%`, `%${search}%`);
     }
 
-    if (req.query.is_featured !== undefined) {
+    if (is_featured !== undefined) {
       whereClause += ' AND is_featured = ?';
       params.push(is_featured);
     }
 
     // Get total count
-    const [countResult] = await (pool.execute as any)(
+    const [countResult] = await pool.execute(
       `SELECT COUNT(*) as count FROM dreams ${whereClause}`,
       params
-    );
-    const total = (countResult[0]?.count ?? 0) as number;
+    ) as any;
+    const total = countResult[0]?.count ?? 0;
 
     // Get dreams
-    const validSortColumns = ['created_at', 'view_count', 'like_count', 'title'];
-    const validSortOrders = ['ASC', 'DESC'];
-    const safeSortBy = validSortColumns.includes(sort_by) ? sort_by : 'created_at';
-    const safeSortOrder = validSortOrders.includes(sort_order.toUpperCase()) ? sort_order.toUpperCase() : 'DESC';
-
-    const [dreams] = await (pool.execute as any)(
+    const [dreams] = await pool.execute(
       `SELECT d.*, c.name as category_name, c.slug as category_slug 
        FROM dreams d 
        LEFT JOIN categories c ON d.category_id = c.id 
@@ -61,26 +80,21 @@ router.get('/', optionalAuthMiddleware, async (req: AuthRequest, res: Response, 
       [...params, limit, offset]
     ) as any;
 
-    res.json({
-      success: true,
-      data: dreams,
+    return {
+      dreams: dreams as DreamWithCategory[],
       pagination: {
         page,
         limit,
         total,
         totalPages: Math.ceil(total / limit),
       },
-    });
-  } catch (error) {
-    next(error);
+    };
   }
-});
 
-// Get featured dreams
-router.get('/featured', async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const limit = parseInt(req.query.limit as string) || 5;
-
+  /**
+   * Get featured dreams
+   */
+  async getFeaturedDreams(limit: number = 5): Promise<DreamWithCategory[]> {
     const [dreams] = await pool.execute(
       `SELECT d.*, c.name as category_name, c.slug as category_slug 
        FROM dreams d 
@@ -89,32 +103,33 @@ router.get('/featured', async (req: AuthRequest, res: Response, next: NextFuncti
        ORDER BY d.view_count DESC 
        LIMIT ?`,
       [limit]
-    ) as [any[], any];
+    ) as any;
 
-    res.json({ success: true, data: dreams });
-  } catch (error) {
-    next(error);
+    return dreams as DreamWithCategory[];
   }
-});
 
-// Get dream by slug
-router.get('/:slug', optionalAuthMiddleware, async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const { slug } = req.params;
-
+  /**
+   * Get dream by slug
+   */
+  async getDreamBySlug(slug: string): Promise<{
+    dream: DreamWithCategory;
+    isLiked: boolean;
+    isFavorited: boolean;
+    userId?: string;
+  } | null> {
     const [dreams] = await pool.execute(
       `SELECT d.*, c.name as category_name, c.slug as category_slug 
        FROM dreams d 
        LEFT JOIN categories c ON d.category_id = c.id 
        WHERE d.slug = ?`,
       [slug]
-    ) as [any[], any];
+    ) as any;
 
     if (dreams.length === 0) {
-      throw new AppError('Dream not found', 404);
+      return null;
     }
 
-    const dream = dreams[0];
+    const dream = dreams[0] as DreamWithCategory;
 
     // Increment view count
     await pool.execute(
@@ -122,61 +137,21 @@ router.get('/:slug', optionalAuthMiddleware, async (req: AuthRequest, res: Respo
       [dream.id]
     );
 
-    // Record view history if user is authenticated
-    if (req.user) {
-      // Check if already viewed
-      const [existing] = await pool.execute(
-        'SELECT * FROM view_history WHERE user_id = ? AND dream_id = ?',
-        [req.user.id, dream.id]
-      ) as [any[], any];
-
-      if (existing.length === 0) {
-        await pool.execute(
-          'INSERT INTO view_history (id, user_id, dream_id, viewed_at) VALUES (?, ?, ?, NOW())',
-          [uuidv4(), req.user.id, dream.id]
-        );
-      } else {
-        await pool.execute(
-          'UPDATE view_history SET viewed_at = NOW() WHERE user_id = ? AND dream_id = ?',
-          [req.user.id, dream.id]
-        );
-      }
-    }
-
-    // Check if user liked/favorited
-    let isLiked = false;
-    let isFavorited = false;
-
-    if (req.user) {
-      const [likes] = await pool.execute(
-        'SELECT * FROM dream_likes WHERE dream_id = ? AND user_id = ?',
-        [dream.id, req.user.id]
-      ) as [any[], any];
-      isLiked = likes.length > 0;
-
-      const [favorites] = await pool.execute(
-        'SELECT * FROM favorites WHERE dream_id = ? AND user_id = ?',
-        [dream.id, req.user.id]
-      ) as [any[], any];
-      isFavorited = favorites.length > 0;
-    }
-
-    res.json({
-      success: true,
-      data: {
-        ...dream,
-        isLiked,
-        isFavorited,
-      },
-    });
-  } catch (error) {
-    next(error);
+    return {
+      dream,
+      isLiked: false, // Will be set by caller if userId is provided
+      isFavorited: false,
+    };
   }
-});
 
-// Create dream (admin/moderator only)
-router.post('/', authMiddleware, requireModerator, async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
-  try {
+  /**
+   * Create dream
+   */
+  async createDream(
+    data: Omit<Dream, 'id' | 'created_at' | 'updated_at'> & {
+      userId: string;
+    }
+  ): Promise<Dream> {
     const {
       title,
       slug,
@@ -189,17 +164,14 @@ router.post('/', authMiddleware, requireModerator, async (req: AuthRequest, res:
       is_published,
       meta_title,
       meta_description,
-    } = req.body;
-
-    if (!title || !slug || !content) {
-      throw new AppError('Title, slug, and content are required', 400);
-    }
+      userId,
+    } = data;
 
     // Check if slug already exists
-    const [existingSlug] = await (pool.execute as any)(
+    const [existingSlug] = await pool.execute(
       'SELECT id FROM dreams WHERE slug = ?',
       [slug]
-    );
+    ) as any;
 
     if (existingSlug.length > 0) {
       throw new AppError('A dream with this slug already exists', 400);
@@ -231,18 +203,18 @@ router.post('/', authMiddleware, requireModerator, async (req: AuthRequest, res:
     const [newDream] = await pool.execute(
       'SELECT * FROM dreams WHERE id = ?',
       [id]
-    ) as [any[], any];
+    ) as any;
 
-    res.status(201).json({ success: true, data: newDream[0] });
-  } catch (error) {
-    next(error);
+    return newDream[0] as Dream;
   }
-});
 
-// Update dream (admin/moderator only)
-router.put('/:id', authMiddleware, requireModerator, async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const { id } = req.params;
+  /**
+   * Update dream
+   */
+  async updateDream(
+    id: string,
+    data: Partial<Omit<Dream, 'id' | 'created_at' | 'updated_at'> & { slug?: string }>
+  ): Promise<Dream> {
     const {
       title,
       slug,
@@ -255,23 +227,24 @@ router.put('/:id', authMiddleware, requireModerator, async (req: AuthRequest, re
       is_published,
       meta_title,
       meta_description,
-    } = req.body;
+    } = data;
 
+    // Check if dream exists
     const [existing] = await pool.execute(
       'SELECT * FROM dreams WHERE id = ?',
       [id]
-    ) as [any[], any];
+    ) as any;
 
     if (existing.length === 0) {
       throw new AppError('Dream not found', 404);
     }
 
-    // Check slug uniqueness
+    // Check slug uniqueness if slug is being updated
     if (slug && slug !== existing[0].slug) {
       const [existingSlug] = await pool.execute(
         'SELECT id FROM dreams WHERE slug = ? AND id != ?',
         [slug, id]
-      ) as [any[], any];
+      ) as any;
 
       if (existingSlug.length > 0) {
         throw new AppError('A dream with this slug already exists', 400);
@@ -312,23 +285,20 @@ router.put('/:id', authMiddleware, requireModerator, async (req: AuthRequest, re
     const [updated] = await pool.execute(
       'SELECT * FROM dreams WHERE id = ?',
       [id]
-    ) as [any[], any];
+    ) as any;
 
-    res.json({ success: true, data: updated[0] });
-  } catch (error) {
-    next(error);
+    return updated[0] as Dream;
   }
-});
 
-// Delete dream (admin only)
-router.delete('/:id', authMiddleware, requireAdmin, async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const { id } = req.params;
-
+  /**
+   * Delete dream
+   */
+  async deleteDream(id: string): Promise<{ message: string }> {
+    // Check if dream exists
     const [existing] = await pool.execute(
       'SELECT * FROM dreams WHERE id = ?',
       [id]
-    ) as [any[], any];
+    ) as any;
 
     if (existing.length === 0) {
       throw new AppError('Dream not found', 404);
@@ -336,103 +306,93 @@ router.delete('/:id', authMiddleware, requireAdmin, async (req: AuthRequest, res
 
     await pool.execute('DELETE FROM dreams WHERE id = ?', [id]);
 
-    res.json({ success: true, message: 'Dream deleted successfully' });
-  } catch (error) {
-    next(error);
+    return { message: 'Dream deleted successfully' };
   }
-});
 
-// Like/Unlike dream
-router.post('/:id/like', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const { id } = req.params;
-    const userId = req.user!.id;
-
+  /**
+   * Like/unlike dream
+   */
+  async toggleLike(dreamId: string, userId: string): Promise<{
+    liked: boolean;
+    message: string;
+  }> {
     const [existing] = await pool.execute(
       'SELECT * FROM dream_likes WHERE dream_id = ? AND user_id = ?',
-      [id, userId]
-    ) as [any[], any];
+      [dreamId, userId]
+    ) as any;
 
     if (existing.length > 0) {
       // Unlike
-      await pool.execute('DELETE FROM dream_likes WHERE dream_id = ? AND user_id = ?', [id, userId]);
+      await pool.execute('DELETE FROM dream_likes WHERE dream_id = ? AND user_id = ?', [dreamId, userId]);
       await pool.execute(
         'UPDATE dreams SET like_count = GREATEST(0, COALESCE(like_count, 0) - 1) WHERE id = ?',
-        [id]
+        [dreamId]
       );
-      res.json({ success: true, liked: false, message: 'Dream unliked' });
+      return { liked: false, message: 'Dream unliked' };
     } else {
       // Like
       await pool.execute(
         'INSERT INTO dream_likes (id, dream_id, user_id, created_at) VALUES (?, ?, ?, NOW())',
-        [uuidv4(), id, userId]
+        [uuidv4(), dreamId, userId]
       );
       await pool.execute(
         'UPDATE dreams SET like_count = COALESCE(like_count, 0) + 1 WHERE id = ?',
-        [id]
+        [dreamId]
       );
-      res.json({ success: true, liked: true, message: 'Dream liked' });
+      return { liked: true, message: 'Dream liked' };
     }
-  } catch (error) {
-    next(error);
   }
-});
 
-// Add/Remove from favorites
-router.post('/:id/favorite', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const { id } = req.params;
-    const userId = req.user!.id;
-
+  /**
+   * Toggle favorite
+   */
+  async toggleFavorite(dreamId: string, userId: string): Promise<{
+    favorited: boolean;
+    message: string;
+  }> {
     const [existing] = await pool.execute(
       'SELECT * FROM favorites WHERE dream_id = ? AND user_id = ?',
-      [id, userId]
-    ) as [any[], any];
+      [dreamId, userId]
+    ) as any;
 
     if (existing.length > 0) {
       // Remove from favorites
-      await pool.execute('DELETE FROM favorites WHERE dream_id = ? AND user_id = ?', [id, userId]);
-      res.json({ success: true, favorited: false, message: 'Removed from favorites' });
+      await pool.execute('DELETE FROM favorites WHERE dream_id = ? AND user_id = ?', [dreamId, userId]);
+      return { favorited: false, message: 'Removed from favorites' };
     } else {
       // Add to favorites
       await pool.execute(
         'INSERT INTO favorites (id, dream_id, user_id, created_at) VALUES (?, ?, ?, NOW())',
-        [uuidv4(), id, userId]
+        [uuidv4(), dreamId, userId]
       );
-      res.json({ success: true, favorited: true, message: 'Added to favorites' });
+      return { favorited: true, message: 'Added to favorites' };
     }
-  } catch (error) {
-    next(error);
   }
-});
 
-// Get comments for a dream
-router.get('/:id/comments', async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const { id } = req.params;
-
+  /**
+   * Get comments for a dream
+   */
+  async getComments(dreamId: string): Promise<Comment[]> {
     const [comments] = await pool.execute(
       `SELECT c.*, p.full_name as author_name, p.avatar_url as author_avatar 
        FROM comments c 
        JOIN profiles p ON c.user_id = p.user_id 
        WHERE c.dream_id = ? AND c.is_approved = TRUE 
        ORDER BY c.created_at DESC`,
-      [id]
-    ) as [any[], any];
+      [dreamId]
+    ) as any;
 
-    res.json({ success: true, data: comments });
-  } catch (error) {
-    next(error);
+    return comments as Comment[];
   }
-});
 
-// Add comment to dream
-router.post('/:id/comments', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const { id } = req.params;
-    const { content } = req.body;
-    const userId = req.user!.id;
-
+  /**
+   * Add comment to dream
+   */
+  async addComment(
+    dreamId: string,
+    userId: string,
+    content: string
+  ): Promise<Comment> {
     if (!content || content.trim().length === 0) {
       throw new AppError('Comment content is required', 400);
     }
@@ -442,7 +402,7 @@ router.post('/:id/comments', authMiddleware, async (req: AuthRequest, res: Respo
     await pool.execute(
       `INSERT INTO comments (id, content, dream_id, user_id, is_approved, like_count, created_at, updated_at) 
        VALUES (?, ?, ?, ?, TRUE, 0, NOW(), NOW())`,
-      [commentId, content, id, userId]
+      [commentId, content, dreamId, userId]
     );
 
     const [newComment] = await pool.execute(
@@ -451,25 +411,20 @@ router.post('/:id/comments', authMiddleware, async (req: AuthRequest, res: Respo
        JOIN profiles p ON c.user_id = p.user_id 
        WHERE c.id = ?`,
       [commentId]
-    ) as [any[], any];
+    ) as any;
 
-    res.status(201).json({ success: true, data: newComment[0] });
-  } catch (error) {
-    next(error);
+    return newComment[0] as Comment;
   }
-});
 
-// Get similar dreams
-router.get('/:id/similar', async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const { id } = req.params;
-    const limit = parseInt(req.query.limit as string) || 5;
-
+  /**
+   * Get similar dreams
+   */
+  async getSimilarDreams(dreamId: string, limit: number = 5): Promise<DreamWithCategory[]> {
     // Get the current dream's category
     const [currentDream] = await pool.execute(
       'SELECT category_id FROM dreams WHERE id = ?',
-      [id]
-    ) as [any[], any];
+      [dreamId]
+    ) as any;
 
     if (currentDream.length === 0) {
       throw new AppError('Dream not found', 404);
@@ -485,13 +440,12 @@ router.get('/:id/similar', async (req: AuthRequest, res: Response, next: NextFun
        WHERE d.category_id = ? AND d.id != ? AND d.is_published = TRUE 
        ORDER BY d.view_count DESC 
        LIMIT ?`,
-      [categoryId, id, limit]
-    ) as [any[], any];
+      [categoryId, dreamId, limit]
+    ) as any;
 
-    res.json({ success: true, data: similar });
-  } catch (error) {
-    next(error);
+    return similar as DreamWithCategory[];
   }
-});
+}
 
-export default router;
+// Export a singleton instance
+export const dreamService = new DreamService();

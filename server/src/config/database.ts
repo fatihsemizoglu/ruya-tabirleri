@@ -9,9 +9,9 @@ export const pool: any = mysql.createPool({
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || 'mystic_logbook',
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
+  waitForConnections: process.env.DB_WAIT_FOR_CONNECTIONS === 'false' ? false : true,
+  connectionLimit: parseInt(process.env.DB_CONNECTION_LIMIT || '10'),
+  queueLimit: parseInt(process.env.DB_QUEUE_LIMIT || '0'),
   enableKeepAlive: true,
   keepAliveInitialDelay: 0,
 });

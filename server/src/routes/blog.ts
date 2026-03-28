@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { pool } from '../config/database.js';
 import { authMiddleware, optionalAuthMiddleware, requireModerator, AuthRequest } from '../middleware/auth.js';
 import type { BlogPost, BlogCategory, BlogComment, BlogLike, BlogSubscriber } from '../types/index.js';
+type BlogPostWithExtras = BlogPost & { author_name?: string; category_name?: string; };
 
 const router = Router();
 
@@ -35,14 +36,14 @@ router.get('/posts', optionalAuthMiddleware, async (req: AuthRequest, res: Respo
     }
 
     // Get total count
-    const [countResult] = await pool.execute(
+    const [countResult] = await (pool.execute as any)(
       `SELECT COUNT(*) as count FROM blog_posts ${whereClause}`,
       params
     );
-    const total = countResult[0]?.count ?? 0;
+    const total = (countResult[0]?.count ?? 0) as number;
 
     // Get posts
-    const [posts] = await pool.execute(
+    const [posts] = await (pool.execute as any)(
       `SELECT bp.*, p.full_name as author_name, bc.name as category_name 
        FROM blog_posts bp 
        JOIN profiles p ON bp.author_id = p.user_id 
@@ -51,7 +52,7 @@ router.get('/posts', optionalAuthMiddleware, async (req: AuthRequest, res: Respo
        ORDER BY bp.created_at DESC 
        LIMIT ? OFFSET ?`,
       [...params, limit, offset]
-    );
+    ) as any;
 
     res.json({
       success: true,
@@ -74,7 +75,7 @@ router.get('/posts/:slug', optionalAuthMiddleware, async (req: AuthRequest, res:
   try {
     const { slug } = req.params;
 
-    const [posts] = await pool.execute(
+    const [posts] = await (pool.execute as any)(
       `SELECT bp.*, p.full_name as author_name, p.avatar_url as author_avatar, bc.name as category_name 
        FROM blog_posts bp 
        JOIN profiles p ON bp.author_id = p.user_id 
@@ -99,10 +100,10 @@ router.get('/posts/:slug', optionalAuthMiddleware, async (req: AuthRequest, res:
     // Check if user liked
     let isLiked = false;
     if (req.user) {
-      const [likes] = await pool.execute(
+      const [likes] = await (pool.execute as any)(
         'SELECT * FROM blog_likes WHERE post_id = ? AND user_id = ?',
-        [post.id, req.user.id]
-      ) as any;
+        [post.id, req.user!.id]
+      );
       isLiked = (likes?.length ?? 0) > 0;
     }
 
@@ -168,7 +169,7 @@ router.post('/posts', authMiddleware, requireModerator, async (req: AuthRequest,
       ]
     );
 
-    const [newPost] = await pool.execute(
+    const [newPost] = await (pool.execute as any)(
       'SELECT * FROM blog_posts WHERE id = ?',
       [id]
     );
@@ -199,7 +200,7 @@ router.put('/posts/:id', authMiddleware, requireModerator, async (req: AuthReque
       meta_description,
     } = req.body;
 
-    const [existing] = await pool.execute<BlogPost[]>(
+    const [existing] = await (pool.execute as any)(
       'SELECT * FROM blog_posts WHERE id = ?',
       [id]
     );
@@ -242,7 +243,7 @@ router.put('/posts/:id', authMiddleware, requireModerator, async (req: AuthReque
       ]
     );
 
-    const [updated] = await pool.execute<BlogPost[]>(
+    const [updated] = await (pool.execute as any)(
       'SELECT * FROM blog_posts WHERE id = ?',
       [id]
     );
@@ -259,7 +260,7 @@ router.delete('/posts/:id', authMiddleware, requireModerator, async (req: AuthRe
   try {
     const { id } = req.params;
 
-    const [existing] = await pool.execute<BlogPost[]>(
+    const [existing] = await (pool.execute as any)(
       'SELECT * FROM blog_posts WHERE id = ?',
       [id]
     );
@@ -284,7 +285,7 @@ router.post('/posts/:id/like', authMiddleware, async (req: AuthRequest, res: Res
     const { id } = req.params;
     const userId = req.user!.id;
 
-    const [existing] = await pool.execute<BlogLike[]>(
+    const [existing] = await (pool.execute as any)(
       'SELECT * FROM blog_likes WHERE post_id = ? AND user_id = ?',
       [id, userId]
     );
@@ -316,7 +317,7 @@ router.post('/posts/:id/like', authMiddleware, async (req: AuthRequest, res: Res
 // Get blog categories
 router.get('/categories', async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const [categories] = await pool.execute<(BlogCategory & { post_count: number })[]>(
+    const [categories] = await (pool.execute as any)(
       `SELECT bc.*, COUNT(bp.id) as post_count 
        FROM blog_categories bc 
        LEFT JOIN blog_posts bp ON bc.id = bp.category_id AND bp.is_published = TRUE 
@@ -349,7 +350,7 @@ router.post('/categories', authMiddleware, requireModerator, async (req: AuthReq
       [id, name, slug, description || null, icon || null, order_index || 0]
     );
 
-    const [newCategory] = await pool.execute<BlogCategory[]>(
+    const [newCategory] = await (pool.execute as any)(
       'SELECT * FROM blog_categories WHERE id = ?',
       [id]
     );
@@ -367,7 +368,7 @@ router.put('/categories/:id', authMiddleware, requireModerator, async (req: Auth
     const { id } = req.params;
     const { name, slug, description, icon, order_index } = req.body;
 
-    const [existing] = await pool.execute<BlogCategory[]>(
+    const [existing] = await (pool.execute as any)(
       'SELECT * FROM blog_categories WHERE id = ?',
       [id]
     );
@@ -389,7 +390,7 @@ router.put('/categories/:id', authMiddleware, requireModerator, async (req: Auth
       [name, slug, description, icon, order_index, id]
     );
 
-    const [updated] = await pool.execute<BlogCategory[]>(
+    const [updated] = await (pool.execute as any)(
       'SELECT * FROM blog_categories WHERE id = ?',
       [id]
     );
@@ -406,7 +407,7 @@ router.delete('/categories/:id', authMiddleware, requireModerator, async (req: A
   try {
     const { id } = req.params;
 
-    const [existing] = await pool.execute<BlogCategory[]>(
+    const [existing] = await (pool.execute as any)(
       'SELECT * FROM blog_categories WHERE id = ?',
       [id]
     );
@@ -436,7 +437,7 @@ router.get('/posts/:id/comments', async (req: AuthRequest, res: Response): Promi
   try {
     const { id } = req.params;
 
-    const [comments] = await pool.execute(
+    const [comments] = await (pool.execute as any)(
       `SELECT bc.*, p.full_name as author_name, p.avatar_url as author_avatar 
        FROM blog_comments bc 
        JOIN profiles p ON bc.user_id = p.user_id 
@@ -472,7 +473,7 @@ router.post('/posts/:id/comments', authMiddleware, async (req: AuthRequest, res:
       [commentId, content, id, userId, parent_id || null]
     );
 
-    const [newComment] = await pool.execute(
+    const [newComment] = await (pool.execute as any)(
       `SELECT bc.*, p.full_name as author_name, p.avatar_url as author_avatar 
        FROM blog_comments bc 
        JOIN profiles p ON bc.user_id = p.user_id 

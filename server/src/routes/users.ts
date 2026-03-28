@@ -15,14 +15,14 @@ router.get('/favorites', authMiddleware, async (req: AuthRequest, res: Response)
     const offset = (page - 1) * limit;
 
     // Get total count
-    const [countResult] = await pool.execute<{ count: number }[]>(
+    const [countResult] = await (pool.execute as any)(
       'SELECT COUNT(*) as count FROM favorites WHERE user_id = ?',
       [userId]
     );
     const total = countResult[0].count;
 
     // Get favorites with dream details
-    const [favorites] = await pool.execute<(Favorite & Dream & { category_name: string })[]>(
+    const [favorites] = await (pool.execute as any)(
       `SELECT f.*, d.*, c.name as category_name 
        FROM favorites f 
        JOIN dreams d ON f.dream_id = d.id 
@@ -58,14 +58,14 @@ router.get('/history', authMiddleware, async (req: AuthRequest, res: Response): 
     const offset = (page - 1) * limit;
 
     // Get total count
-    const [countResult] = await pool.execute<{ count: number }[]>(
-      'SELECT COUNT(*) as count FROM view_history WHERE user_id = ?',
+    const [countResult] = await (pool.execute as any)(
+      'SELECT COUNT(*) as count FROM history WHERE user_id = ?',
       [userId]
     );
     const total = countResult[0].count;
 
     // Get view history with dream details
-    const [history] = await pool.execute<(ViewHistory & Dream & { category_name: string })[]>(
+    const [history] = await (pool.execute as any)(
       `SELECT vh.*, d.*, c.name as category_name 
        FROM view_history vh 
        JOIN dreams d ON vh.dream_id = d.id 
@@ -101,14 +101,14 @@ router.get('/journal', authMiddleware, async (req: AuthRequest, res: Response): 
     const offset = (page - 1) * limit;
 
     // Get total count
-    const [countResult] = await pool.execute<{ count: number }[]>(
+    const [countResult] = await (pool.execute as any)(
       'SELECT COUNT(*) as count FROM dream_journal WHERE user_id = ?',
       [userId]
     );
     const total = countResult[0].count;
 
     // Get journal entries
-    const [entries] = await pool.execute<DreamJournalEntry[]>(
+    const [entries] = await (pool.execute as any)(
       `SELECT * FROM dream_journal 
        WHERE user_id = ? 
        ORDER BY dream_date DESC, created_at DESC 
@@ -161,7 +161,7 @@ router.post('/journal', authMiddleware, async (req: AuthRequest, res: Response):
       ]
     );
 
-    const [newEntry] = await pool.execute<DreamJournalEntry[]>(
+    const [newEntry] = await (pool.execute as any)(
       'SELECT * FROM dream_journal WHERE id = ?',
       [id]
     );
@@ -181,7 +181,7 @@ router.put('/journal/:id', authMiddleware, async (req: AuthRequest, res: Respons
     const { title, content, dream_date, mood, tags, is_private } = req.body;
 
     // Check ownership
-    const [existing] = await pool.execute<DreamJournalEntry[]>(
+    const [existing] = await (pool.execute as any)(
       'SELECT * FROM dream_journal WHERE id = ? AND user_id = ?',
       [id, userId]
     );
@@ -204,7 +204,7 @@ router.put('/journal/:id', authMiddleware, async (req: AuthRequest, res: Respons
       [title, content, dream_date, mood, tags ? JSON.stringify(tags) : null, is_private, id, userId]
     );
 
-    const [updated] = await pool.execute<DreamJournalEntry[]>(
+    const [updated] = await (pool.execute as any)(
       'SELECT * FROM dream_journal WHERE id = ?',
       [id]
     );
@@ -223,7 +223,7 @@ router.delete('/journal/:id', authMiddleware, async (req: AuthRequest, res: Resp
     const { id } = req.params;
 
     // Check ownership
-    const [existing] = await pool.execute<DreamJournalEntry[]>(
+    const [existing] = await (pool.execute as any)(
       'SELECT * FROM dream_journal WHERE id = ? AND user_id = ?',
       [id, userId]
     );
@@ -247,7 +247,7 @@ router.get('/likes', authMiddleware, async (req: AuthRequest, res: Response): Pr
   try {
     const userId = req.user!.id;
 
-    const [likes] = await pool.execute<(DreamLike & Dream)[]>(
+    const [likes] = await (pool.execute as any)(
       `SELECT dl.*, d.title, d.slug 
        FROM dream_likes dl 
        JOIN dreams d ON dl.dream_id = d.id 
@@ -313,36 +313,36 @@ router.get('/stats', authMiddleware, async (req: AuthRequest, res: Response): Pr
     const userId = req.user!.id;
 
     // Get favorites count
-    const [favCount] = await pool.execute<{ count: number }[]>(
+    const [favCount] = await (pool.execute as any)(
       'SELECT COUNT(*) as count FROM favorites WHERE user_id = ?',
       [userId]
     );
 
     // Get view history count
-    const [viewCount] = await pool.execute<{ count: number }[]>(
+    const [viewCount] = await (pool.execute as any)(
       'SELECT COUNT(*) as count FROM view_history WHERE user_id = ?',
       [userId]
     );
 
     // Get comments count
-    const [commentCount] = await pool.execute<{ count: number }[]>(
+    const [commentCount] = await (pool.execute as any)(
       'SELECT COUNT(*) as count FROM comments WHERE user_id = ?',
       [userId]
     );
 
     // Get total likes on user's comments
-    const [likesResult] = await pool.execute<{ total: number }[]>(
+    const [likesResult] = await (pool.execute as any)(
       'SELECT COALESCE(SUM(like_count), 0) as total FROM comments WHERE user_id = ?',
       [userId]
     );
 
     // Get journal entries count and mood distribution
-    const [journalCount] = await pool.execute<{ count: number }[]>(
+    const [journalCount] = await (pool.execute as any)(
       'SELECT COUNT(*) as count FROM dream_journal WHERE user_id = ?',
       [userId]
     );
 
-    const [moodData] = await pool.execute<{ mood: string; count: number }[]>(
+    const [moodData] = await (pool.execute as any)(
       'SELECT mood, COUNT(*) as count FROM dream_journal WHERE user_id = ? AND mood IS NOT NULL GROUP BY mood',
       [userId]
     );
@@ -353,7 +353,7 @@ router.get('/stats', authMiddleware, async (req: AuthRequest, res: Response): Pr
     });
 
     // Get recent comments with dream info
-    const [recentComments] = await pool.execute<(any)[]>(
+    const [recentComments] = await (pool.execute as any)(
       `SELECT c.created_at, d.title, d.slug 
        FROM comments c 
        JOIN dreams d ON c.dream_id = d.id 
@@ -364,7 +364,7 @@ router.get('/stats', authMiddleware, async (req: AuthRequest, res: Response): Pr
     );
 
     // Get recent journal entries
-    const [recentJournal] = await pool.execute<{ title: string; created_at: string }[]>(
+    const [recentJournal] = await (pool.execute as any)(
       'SELECT title, created_at FROM dream_journal WHERE user_id = ? ORDER BY created_at DESC LIMIT 3',
       [userId]
     );
@@ -418,7 +418,7 @@ router.get('/comments', authMiddleware, async (req: AuthRequest, res: Response):
     const limit = parseInt(req.query.limit as string) || 10;
     const offset = (page - 1) * limit;
 
-    const [comments] = await pool.execute<(any)[]>(
+    const [comments] = await (pool.execute as any)(
       `SELECT c.*, d.title, d.slug 
        FROM comments c 
        JOIN dreams d ON c.dream_id = d.id 
@@ -443,13 +443,13 @@ router.get('/all', requireAdmin, async (req: AuthRequest, res: Response): Promis
     const offset = (page - 1) * limit;
 
     // Get total count
-    const [countResult] = await pool.execute<{ count: number }[]>(
+    const [countResult] = await (pool.execute as any)(
       'SELECT COUNT(*) as count FROM profiles'
     );
     const total = countResult[0].count;
 
     // Get users with roles
-    const [users] = await pool.execute<(Profile & { role: string })[]>(
+    const [users] = await (pool.execute as any)(
       `SELECT p.*, ur.role 
        FROM profiles p 
        LEFT JOIN user_roles ur ON p.user_id = ur.user_id 

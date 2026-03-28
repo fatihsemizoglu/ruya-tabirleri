@@ -59,7 +59,7 @@ router.get('/:slug/dreams', optionalAuthMiddleware, async (req: AuthRequest, res
     const offset = (page - 1) * limit;
 
     // Get category
-    const [categories] = await pool.execute<Category[]>(
+    const [categories] = await (pool.execute as any)(
       'SELECT * FROM categories WHERE slug = ?',
       [slug]
     );

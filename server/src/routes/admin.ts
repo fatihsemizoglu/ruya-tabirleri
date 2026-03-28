@@ -30,11 +30,11 @@ router.use(requireModerator);
 router.get('/statistics', async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     // Get counts
-    const [dreamCount] = await pool.execute('SELECT COUNT(*) as count FROM dreams');
-    const [blogPostCount] = await pool.execute('SELECT COUNT(*) as count FROM blog_posts');
-    const [userCount] = await pool.execute('SELECT COUNT(*) as count FROM users');
-    const [categoryCount] = await pool.execute('SELECT COUNT(*) as count FROM categories');
-    const [subscriberCount] = await pool.execute('SELECT COUNT(*) as count FROM blog_subscribers WHERE is_verified = TRUE');
+    const [dreamCount] = await (pool.execute as any)('SELECT COUNT(*) as count FROM dreams');
+    const [blogPostCount] = await (pool.execute as any)('SELECT COUNT(*) as count FROM blog_posts');
+    const [userCount] = await (pool.execute as any)('SELECT COUNT(*) as count FROM users');
+    const [categoryCount] = await (pool.execute as any)('SELECT COUNT(*) as count FROM categories');
+    const [subscriberCount] = await (pool.execute as any)('SELECT COUNT(*) as count FROM blog_subscribers WHERE is_verified = TRUE');
 
     // Get recent activity
     const [recentDreams] = await pool.execute(
@@ -299,7 +299,7 @@ router.get('/users', requireAdmin, async (req: AuthRequest, res: Response): Prom
       [limit, offset]
     );
 
-    const [countResult] = await pool.execute<CountResult[]>('SELECT COUNT(*) as count FROM users');
+    const [countResult] = await (pool.execute as any)('SELECT COUNT(*) as count FROM users');
 
     res.json({
       success: true,
@@ -366,10 +366,10 @@ router.get('/audit-logs', requireAdmin, async (req: AuthRequest, res: Response):
       [...params, limit, offset]
     );
 
-    const [countResult] = await pool.execute<CountResult[]>(
-      `SELECT COUNT(*) as count FROM audit_logs ${whereClause}`,
-      params
-    );
+     const [countResult] = await (pool.execute as any)(
+       `SELECT COUNT(*) as count FROM audit_logs ${whereClause}`,
+       params
+     );
 
     res.json({
       success: true,
@@ -459,10 +459,10 @@ router.get('/notifications', requireModerator, async (req: AuthRequest, res: Res
       [...params, limit, offset]
     );
 
-    const [countResult] = await pool.execute<CountResult[]>(
-      `SELECT COUNT(*) as count FROM admin_notifications ${whereClause}`,
-      params
-    );
+     const [countResult] = await (pool.execute as any)(
+       `SELECT COUNT(*) as count FROM admin_notifications ${whereClause}`,
+       params
+     );
 
     res.json({
       success: true,
@@ -510,7 +510,7 @@ router.post('/notifications', requireModerator, async (req: AuthRequest, res: Re
       ]
     );
 
-    const [newNotification] = await pool.execute<any[]>('SELECT * FROM admin_notifications WHERE id = ?', [id]);
+    const [newNotification] = await (pool.execute as any)('SELECT * FROM admin_notifications WHERE id = ?', [id]);
 
     res.status(201).json({ success: true, data: newNotification[0] });
   } catch (error) {
@@ -522,11 +522,11 @@ router.post('/notifications', requireModerator, async (req: AuthRequest, res: Re
 // Update notification
 router.put('/notifications/:id', requireModerator, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
-    const { type, title, description, link, is_active, display_order, expires_at } = req.body;
-
-    const [existing] = await pool.execute<any[]>('SELECT * FROM admin_notifications WHERE id = ?', [id]);
-    if (existing.length === 0) {
+     const { id } = req.params;
+     const { type, title, description, link, is_active, display_order, expires_at } = req.body;
+ 
+     const [existing] = await (pool.execute as any)('SELECT * FROM admin_notifications WHERE id = ?', [id]);
+     if (existing.length === 0) {
       res.status(404).json({ success: false, error: 'Notification not found' });
       return;
     }
@@ -557,7 +557,7 @@ router.put('/notifications/:id', requireModerator, async (req: AuthRequest, res:
       ]
     );
 
-    const [updated] = await pool.execute<any[]>('SELECT * FROM admin_notifications WHERE id = ?', [id]);
+     const [updated] = await (pool.execute as any)('SELECT * FROM admin_notifications WHERE id = ?', [id]);
 
     res.json({ success: true, data: updated[0] });
   } catch (error) {
@@ -571,7 +571,7 @@ router.delete('/notifications/:id', requireModerator, async (req: AuthRequest, r
   try {
     const { id } = req.params;
 
-    const [existing] = await pool.execute<any[]>('SELECT * FROM admin_notifications WHERE id = ?', [id]);
+    const [existing] = await (pool.execute as any)('SELECT * FROM admin_notifications WHERE id = ?', [id]);
     if (existing.length === 0) {
       res.status(404).json({ success: false, error: 'Notification not found' });
       return;
@@ -591,7 +591,7 @@ router.patch('/notifications/:id/toggle', requireModerator, async (req: AuthRequ
   try {
     const { id } = req.params;
 
-    const [existing] = await pool.execute<any[]>('SELECT is_active FROM admin_notifications WHERE id = ?', [id]);
+    const [existing] = await (pool.execute as any)('SELECT is_active FROM admin_notifications WHERE id = ?', [id]);
     if (existing.length === 0) {
       res.status(404).json({ success: false, error: 'Notification not found' });
       return;
