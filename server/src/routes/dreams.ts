@@ -1,14 +1,11 @@
 import { Router, Response, NextFunction } from 'express';
 import { authMiddleware, optionalAuthMiddleware, requireAdmin, requireModerator, AuthRequest } from '../middleware/auth';
-import { dreamService } from '../services/dreamService';
-import type { DreamWithCategory } from '../types/index';
+import { supabase } from '../config/database';
 import { AppError } from '../middleware/errorMiddleware';
-import { pool } from '../config/database';
 import { v4 as uuidv4 } from 'uuid';
 
 const router = Router();
 
-// Get all dreams with pagination and filters
 router.get('/', optionalAuthMiddleware, async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const page = parseInt(req.query.page as string) || 1;
@@ -17,481 +14,193 @@ router.get('/', optionalAuthMiddleware, async (req: AuthRequest, res: Response, 
     const category_id = req.query.category_id as string;
     const search = req.query.search as string;
     const is_featured = req.query.is_featured === 'true';
-    const sort_by = (req.query.sort_by as string) || 'created_at';
-    const sort_order = (req.query.sort_order as string) || 'DESC';
 
-    let whereClause = 'WHERE is_published = TRUE';
-    const params: (string | number | boolean)[] = [];
+    let query = supabase.from('dreams').select('*, categories(name, slug)', { count: 'exact' }).eq('is_published', true);
+    if (category_id) query = query.eq('category_id', category_id);
+    if (search) query = query.or(`title.ilike.%${search}%,content.ilike.%${search}%`);
+    if (req.query.is_featured !== undefined) query = query.eq('is_featured', is_featured);
 
-    if (category_id) {
-      whereClause += ' AND category_id = ?';
-      params.push(category_id);
-    }
-
-    if (search) {
-      whereClause += ' AND (title LIKE ? OR content LIKE ?)';
-      params.push(`%${search}%`, `%${search}%`);
-    }
-
-    if (req.query.is_featured !== undefined) {
-      whereClause += ' AND is_featured = ?';
-      params.push(is_featured);
-    }
-
-    // Get total count
-    const [countResult] = await (pool.execute as any)(
-      `SELECT COUNT(*) as count FROM dreams ${whereClause}`,
-      params
-    );
-    const total = (countResult[0]?.count ?? 0) as number;
-
-    // Get dreams
     const validSortColumns = ['created_at', 'view_count', 'like_count', 'title'];
-    const validSortOrders = ['ASC', 'DESC'];
-    const safeSortBy = validSortColumns.includes(sort_by) ? sort_by : 'created_at';
-    const safeSortOrder = validSortOrders.includes(sort_order.toUpperCase()) ? sort_order.toUpperCase() : 'DESC';
+    const sortBy = validSortColumns.includes(req.query.sort_by as string) ? req.query.sort_by as string : 'created_at';
+    const sortOrder = (req.query.sort_order as string)?.toUpperCase() === 'ASC';
+    query = query.order(sortBy, { ascending: sortOrder }).range(offset, offset + limit - 1);
 
-    const [dreams] = await (pool.execute as any)(
-      `SELECT d.*, c.name as category_name, c.slug as category_slug 
-       FROM dreams d 
-       LEFT JOIN categories c ON d.category_id = c.id 
-       ${whereClause} 
-       ORDER BY d.${safeSortBy} ${safeSortOrder} 
-       LIMIT ? OFFSET ?`,
-      [...params, limit, offset]
-    ) as any;
+    const { data, error, count } = await query;
+    if (error) throw new AppError('Failed to fetch dreams', 500);
 
-    res.json({
-      success: true,
-      data: dreams,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
-    });
-  } catch (error) {
-    next(error);
-  }
+    const dreams = (data || []).map((d: any) => ({ ...d, category_name: d.categories?.name, category_slug: d.categories?.slug }));
+    res.json({ success: true, data: dreams, pagination: { page, limit, total: count || 0, totalPages: Math.ceil((count || 0) / limit) } });
+  } catch (error) { next(error); }
 });
 
-// Get featured dreams
 router.get('/featured', async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const limit = parseInt(req.query.limit as string) || 5;
-
-    const [dreams] = await pool.execute(
-      `SELECT d.*, c.name as category_name, c.slug as category_slug 
-       FROM dreams d 
-       LEFT JOIN categories c ON d.category_id = c.id 
-       WHERE d.is_published = TRUE AND d.is_featured = TRUE 
-       ORDER BY d.view_count DESC 
-       LIMIT ?`,
-      [limit]
-    ) as [any[], any];
-
+    const { data, error } = await supabase.from('dreams').select('*, categories(name, slug)').eq('is_published', true).eq('is_featured', true).order('view_count', { ascending: false }).limit(limit);
+    if (error) throw new AppError('Failed to fetch featured dreams', 500);
+    const dreams = (data || []).map((d: any) => ({ ...d, category_name: d.categories?.name, category_slug: d.categories?.slug }));
     res.json({ success: true, data: dreams });
-  } catch (error) {
-    next(error);
-  }
+  } catch (error) { next(error); }
 });
 
-// Get dream by slug
 router.get('/:slug', optionalAuthMiddleware, async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { slug } = req.params;
+    const { data: dream, error } = await supabase.from('dreams').select('*, categories(name, slug)').eq('slug', slug).single();
+    if (!dream || error) throw new AppError('Dream not found', 404);
 
-    const [dreams] = await pool.execute(
-      `SELECT d.*, c.name as category_name, c.slug as category_slug 
-       FROM dreams d 
-       LEFT JOIN categories c ON d.category_id = c.id 
-       WHERE d.slug = ?`,
-      [slug]
-    ) as [any[], any];
+    await supabase.from('dreams').update({ view_count: ((dream as any).view_count || 0) + 1 }).eq('id', dream.id);
 
-    if (dreams.length === 0) {
-      throw new AppError('Dream not found', 404);
-    }
-
-    const dream = dreams[0];
-
-    // Increment view count
-    await pool.execute(
-      'UPDATE dreams SET view_count = COALESCE(view_count, 0) + 1 WHERE id = ?',
-      [dream.id]
-    );
-
-    // Record view history if user is authenticated
     if (req.user) {
-      // Check if already viewed
-      const [existing] = await pool.execute(
-        'SELECT * FROM view_history WHERE user_id = ? AND dream_id = ?',
-        [req.user.id, dream.id]
-      ) as [any[], any];
-
-      if (existing.length === 0) {
-        await pool.execute(
-          'INSERT INTO view_history (id, user_id, dream_id, viewed_at) VALUES (?, ?, ?, NOW())',
-          [uuidv4(), req.user.id, dream.id]
-        );
+      const { data: existing } = await supabase.from('view_history').select('*').eq('user_id', req.user.id).eq('dream_id', dream.id).single();
+      if (!existing) {
+        await supabase.from('view_history').insert({ id: uuidv4(), user_id: req.user.id, dream_id: dream.id });
       } else {
-        await pool.execute(
-          'UPDATE view_history SET viewed_at = NOW() WHERE user_id = ? AND dream_id = ?',
-          [req.user.id, dream.id]
-        );
+        await supabase.from('view_history').update({ viewed_at: new Date().toISOString() }).eq('user_id', req.user.id).eq('dream_id', dream.id);
       }
     }
 
-    // Check if user liked/favorited
-    let isLiked = false;
-    let isFavorited = false;
-
+    let isLiked = false, isFavorited = false;
     if (req.user) {
-      const [likes] = await pool.execute(
-        'SELECT * FROM dream_likes WHERE dream_id = ? AND user_id = ?',
-        [dream.id, req.user.id]
-      ) as [any[], any];
-      isLiked = likes.length > 0;
-
-      const [favorites] = await pool.execute(
-        'SELECT * FROM favorites WHERE dream_id = ? AND user_id = ?',
-        [dream.id, req.user.id]
-      ) as [any[], any];
-      isFavorited = favorites.length > 0;
+      const { data: like } = await supabase.from('dream_likes').select('*').eq('dream_id', dream.id).eq('user_id', req.user.id).single();
+      isLiked = !!like;
+      const { data: fav } = await supabase.from('favorites').select('*').eq('dream_id', dream.id).eq('user_id', req.user.id).single();
+      isFavorited = !!fav;
     }
 
-    res.json({
-      success: true,
-      data: {
-        ...dream,
-        isLiked,
-        isFavorited,
-      },
-    });
-  } catch (error) {
-    next(error);
-  }
+    const result: any = { ...dream, category_name: (dream as any).categories?.name, category_slug: (dream as any).categories?.slug, isLiked, isFavorited };
+    delete result.categories;
+    res.json({ success: true, data: result });
+  } catch (error) { next(error); }
 });
 
-// Create dream (admin/moderator only)
 router.post('/', authMiddleware, requireModerator, async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const {
-      title,
-      slug,
-      content,
-      category_id,
-      islamic_interpretation,
-      psychological_interpretation,
-      keywords,
-      is_featured,
-      is_published,
-      meta_title,
-      meta_description,
-    } = req.body;
+    const { title, slug, content, category_id, islamic_interpretation, psychological_interpretation, keywords, is_featured, is_published, meta_title, meta_description } = req.body;
+    if (!title || !slug || !content) throw new AppError('Title, slug, and content are required', 400);
 
-    if (!title || !slug || !content) {
-      throw new AppError('Title, slug, and content are required', 400);
-    }
-
-    // Check if slug already exists
-    const [existingSlug] = await (pool.execute as any)(
-      'SELECT id FROM dreams WHERE slug = ?',
-      [slug]
-    );
-
-    if (existingSlug.length > 0) {
-      throw new AppError('A dream with this slug already exists', 400);
-    }
+    const { data: existingSlug } = await supabase.from('dreams').select('id').eq('slug', slug).single();
+    if (existingSlug) throw new AppError('A dream with this slug already exists', 400);
 
     const id = uuidv4();
+    const { data: newDream, error } = await supabase.from('dreams').insert({
+      id, title, slug, content, category_id: category_id || null, islamic_interpretation: islamic_interpretation || null,
+      psychological_interpretation: psychological_interpretation || null, keywords: keywords || [], is_featured: is_featured || false,
+      is_published: is_published !== undefined ? is_published : true, meta_title: meta_title || null, meta_description: meta_description || null
+    }).select().single();
 
-    await pool.execute(
-      `INSERT INTO dreams (
-        id, title, slug, content, category_id, islamic_interpretation, psychological_interpretation,
-        keywords, is_featured, is_published, meta_title, meta_description, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
-      [
-        id,
-        title,
-        slug,
-        content,
-        category_id || null,
-        islamic_interpretation || null,
-        psychological_interpretation || null,
-        JSON.stringify(keywords || []),
-        is_featured || false,
-        is_published !== undefined ? is_published : true,
-        meta_title || null,
-        meta_description || null,
-      ]
-    );
-
-    const [newDream] = await pool.execute(
-      'SELECT * FROM dreams WHERE id = ?',
-      [id]
-    ) as [any[], any];
-
-    res.status(201).json({ success: true, data: newDream[0] });
-  } catch (error) {
-    next(error);
-  }
+    if (error) throw new AppError('Failed to create dream', 500);
+    res.status(201).json({ success: true, data: newDream });
+  } catch (error) { next(error); }
 });
 
-// Update dream (admin/moderator only)
 router.put('/:id', authMiddleware, requireModerator, async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { id } = req.params;
-    const {
-      title,
-      slug,
-      content,
-      category_id,
-      islamic_interpretation,
-      psychological_interpretation,
-      keywords,
-      is_featured,
-      is_published,
-      meta_title,
-      meta_description,
-    } = req.body;
+    const { data: existing } = await supabase.from('dreams').select('*').eq('id', id).single();
+    if (!existing) throw new AppError('Dream not found', 404);
 
-    const [existing] = await pool.execute(
-      'SELECT * FROM dreams WHERE id = ?',
-      [id]
-    ) as [any[], any];
-
-    if (existing.length === 0) {
-      throw new AppError('Dream not found', 404);
+    if (req.body.slug && req.body.slug !== existing.slug) {
+      const { data: slugCheck } = await supabase.from('dreams').select('id').eq('slug', req.body.slug).neq('id', id).single();
+      if (slugCheck) throw new AppError('A dream with this slug already exists', 400);
     }
 
-    // Check slug uniqueness
-    if (slug && slug !== existing[0].slug) {
-      const [existingSlug] = await pool.execute(
-        'SELECT id FROM dreams WHERE slug = ? AND id != ?',
-        [slug, id]
-      ) as [any[], any];
-
-      if (existingSlug.length > 0) {
-        throw new AppError('A dream with this slug already exists', 400);
-      }
+    const updateData: any = { updated_at: new Date().toISOString() };
+    for (const key of ['title', 'slug', 'content', 'category_id', 'islamic_interpretation', 'psychological_interpretation', 'keywords', 'is_featured', 'is_published', 'meta_title', 'meta_description']) {
+      if (req.body[key] !== undefined) updateData[key] = req.body[key];
     }
 
-    await pool.execute(
-      `UPDATE dreams SET 
-        title = COALESCE(?, title),
-        slug = COALESCE(?, slug),
-        content = COALESCE(?, content),
-        category_id = ?,
-        islamic_interpretation = ?,
-        psychological_interpretation = ?,
-        keywords = ?,
-        is_featured = ?,
-        is_published = ?,
-        meta_title = ?,
-        meta_description = ?,
-        updated_at = NOW()
-      WHERE id = ?`,
-      [
-        title,
-        slug,
-        content,
-        category_id,
-        islamic_interpretation,
-        psychological_interpretation,
-        keywords ? JSON.stringify(keywords) : null,
-        is_featured,
-        is_published,
-        meta_title,
-        meta_description,
-        id,
-      ]
-    );
-
-    const [updated] = await pool.execute(
-      'SELECT * FROM dreams WHERE id = ?',
-      [id]
-    ) as [any[], any];
-
-    res.json({ success: true, data: updated[0] });
-  } catch (error) {
-    next(error);
-  }
+    const { data: updated, error } = await supabase.from('dreams').update(updateData).eq('id', id).select().single();
+    if (error) throw new AppError('Failed to update dream', 500);
+    res.json({ success: true, data: updated });
+  } catch (error) { next(error); }
 });
 
-// Delete dream (admin only)
 router.delete('/:id', authMiddleware, requireAdmin, async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { id } = req.params;
-
-    const [existing] = await pool.execute(
-      'SELECT * FROM dreams WHERE id = ?',
-      [id]
-    ) as [any[], any];
-
-    if (existing.length === 0) {
-      throw new AppError('Dream not found', 404);
-    }
-
-    await pool.execute('DELETE FROM dreams WHERE id = ?', [id]);
-
+    const { data: existing } = await supabase.from('dreams').select('id').eq('id', id).single();
+    if (!existing) throw new AppError('Dream not found', 404);
+    await supabase.from('dreams').delete().eq('id', id);
     res.json({ success: true, message: 'Dream deleted successfully' });
-  } catch (error) {
-    next(error);
-  }
+  } catch (error) { next(error); }
 });
 
-// Like/Unlike dream
 router.post('/:id/like', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { id } = req.params;
     const userId = req.user!.id;
+    const { data: existing } = await supabase.from('dream_likes').select('*').eq('dream_id', id).eq('user_id', userId).single();
 
-    const [existing] = await pool.execute(
-      'SELECT * FROM dream_likes WHERE dream_id = ? AND user_id = ?',
-      [id, userId]
-    ) as [any[], any];
-
-    if (existing.length > 0) {
-      // Unlike
-      await pool.execute('DELETE FROM dream_likes WHERE dream_id = ? AND user_id = ?', [id, userId]);
-      await pool.execute(
-        'UPDATE dreams SET like_count = GREATEST(0, COALESCE(like_count, 0) - 1) WHERE id = ?',
-        [id]
-      );
+    if (existing) {
+      await supabase.from('dream_likes').delete().eq('dream_id', id).eq('user_id', userId);
+      const { data: dream } = await supabase.from('dreams').select('like_count').eq('id', id).single();
+      await supabase.from('dreams').update({ like_count: Math.max(0, (dream?.like_count || 1) - 1) }).eq('id', id);
       res.json({ success: true, liked: false, message: 'Dream unliked' });
     } else {
-      // Like
-      await pool.execute(
-        'INSERT INTO dream_likes (id, dream_id, user_id, created_at) VALUES (?, ?, ?, NOW())',
-        [uuidv4(), id, userId]
-      );
-      await pool.execute(
-        'UPDATE dreams SET like_count = COALESCE(like_count, 0) + 1 WHERE id = ?',
-        [id]
-      );
+      await supabase.from('dream_likes').insert({ id: uuidv4(), dream_id: id, user_id: userId });
+      const { data: dream } = await supabase.from('dreams').select('like_count').eq('id', id).single();
+      await supabase.from('dreams').update({ like_count: (dream?.like_count || 0) + 1 }).eq('id', id);
       res.json({ success: true, liked: true, message: 'Dream liked' });
     }
-  } catch (error) {
-    next(error);
-  }
+  } catch (error) { next(error); }
 });
 
-// Add/Remove from favorites
 router.post('/:id/favorite', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { id } = req.params;
     const userId = req.user!.id;
+    const { data: existing } = await supabase.from('favorites').select('*').eq('dream_id', id).eq('user_id', userId).single();
 
-    const [existing] = await pool.execute(
-      'SELECT * FROM favorites WHERE dream_id = ? AND user_id = ?',
-      [id, userId]
-    ) as [any[], any];
-
-    if (existing.length > 0) {
-      // Remove from favorites
-      await pool.execute('DELETE FROM favorites WHERE dream_id = ? AND user_id = ?', [id, userId]);
+    if (existing) {
+      await supabase.from('favorites').delete().eq('dream_id', id).eq('user_id', userId);
       res.json({ success: true, favorited: false, message: 'Removed from favorites' });
     } else {
-      // Add to favorites
-      await pool.execute(
-        'INSERT INTO favorites (id, dream_id, user_id, created_at) VALUES (?, ?, ?, NOW())',
-        [uuidv4(), id, userId]
-      );
+      await supabase.from('favorites').insert({ id: uuidv4(), dream_id: id, user_id: userId });
       res.json({ success: true, favorited: true, message: 'Added to favorites' });
     }
-  } catch (error) {
-    next(error);
-  }
+  } catch (error) { next(error); }
 });
 
-// Get comments for a dream
 router.get('/:id/comments', async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { id } = req.params;
-
-    const [comments] = await pool.execute(
-      `SELECT c.*, p.full_name as author_name, p.avatar_url as author_avatar 
-       FROM comments c 
-       JOIN profiles p ON c.user_id = p.user_id 
-       WHERE c.dream_id = ? AND c.is_approved = TRUE 
-       ORDER BY c.created_at DESC`,
-      [id]
-    ) as [any[], any];
-
+    const { data, error } = await supabase.from('comments').select('*, profiles(full_name, avatar_url)').eq('dream_id', id).eq('is_approved', true).order('created_at', { ascending: false });
+    if (error) throw new AppError('Failed to fetch comments', 500);
+    const comments = (data || []).map((c: any) => ({ ...c, author_name: c.profiles?.full_name, author_avatar: c.profiles?.avatar_url }));
     res.json({ success: true, data: comments });
-  } catch (error) {
-    next(error);
-  }
+  } catch (error) { next(error); }
 });
 
-// Add comment to dream
 router.post('/:id/comments', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { id } = req.params;
     const { content } = req.body;
     const userId = req.user!.id;
-
-    if (!content || content.trim().length === 0) {
-      throw new AppError('Comment content is required', 400);
-    }
+    if (!content || content.trim().length === 0) throw new AppError('Comment content is required', 400);
 
     const commentId = uuidv4();
+    const { data: newComment, error } = await supabase.from('comments').insert({ id: commentId, content, dream_id: id, user_id: userId, is_approved: true, like_count: 0 }).select('*, profiles(full_name, avatar_url)').single();
+    if (error) throw new AppError('Failed to add comment', 500);
 
-    await pool.execute(
-      `INSERT INTO comments (id, content, dream_id, user_id, is_approved, like_count, created_at, updated_at) 
-       VALUES (?, ?, ?, ?, TRUE, 0, NOW(), NOW())`,
-      [commentId, content, id, userId]
-    );
-
-    const [newComment] = await pool.execute(
-      `SELECT c.*, p.full_name as author_name, p.avatar_url as author_avatar 
-       FROM comments c 
-       JOIN profiles p ON c.user_id = p.user_id 
-       WHERE c.id = ?`,
-      [commentId]
-    ) as [any[], any];
-
-    res.status(201).json({ success: true, data: newComment[0] });
-  } catch (error) {
-    next(error);
-  }
+    const result: any = { ...newComment, author_name: (newComment as any).profiles?.full_name, author_avatar: (newComment as any).profiles?.avatar_url };
+    delete result.profiles;
+    res.status(201).json({ success: true, data: result });
+  } catch (error) { next(error); }
 });
 
-// Get similar dreams
 router.get('/:id/similar', async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { id } = req.params;
     const limit = parseInt(req.query.limit as string) || 5;
+    const { data: currentDream } = await supabase.from('dreams').select('category_id').eq('id', id).single();
+    if (!currentDream) throw new AppError('Dream not found', 404);
 
-    // Get the current dream's category
-    const [currentDream] = await pool.execute(
-      'SELECT category_id FROM dreams WHERE id = ?',
-      [id]
-    ) as [any[], any];
-
-    if (currentDream.length === 0) {
-      throw new AppError('Dream not found', 404);
-    }
-
-    const categoryId = currentDream[0].category_id;
-
-    // Get similar dreams from same category
-    const [similar] = await pool.execute(
-      `SELECT d.*, c.name as category_name 
-       FROM dreams d 
-       LEFT JOIN categories c ON d.category_id = c.id 
-       WHERE d.category_id = ? AND d.id != ? AND d.is_published = TRUE 
-       ORDER BY d.view_count DESC 
-       LIMIT ?`,
-      [categoryId, id, limit]
-    ) as [any[], any];
-
+    const { data, error } = await supabase.from('dreams').select('*, categories(name)').eq('category_id', currentDream.category_id).neq('id', id).eq('is_published', true).order('view_count', { ascending: false }).limit(limit);
+    if (error) throw new AppError('Failed to fetch similar dreams', 500);
+    const similar = (data || []).map((d: any) => ({ ...d, category_name: d.categories?.name }));
     res.json({ success: true, data: similar });
-  } catch (error) {
-    next(error);
-  }
+  } catch (error) { next(error); }
 });
 
 export default router;

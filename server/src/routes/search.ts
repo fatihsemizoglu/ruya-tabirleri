@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { pool } from '../config/database';
+import { supabase } from '../config/database';
 import { optionalAuthMiddleware, AuthRequest } from '../middleware/auth';
 import type { Dream, SearchLog } from '../types/index';
 
@@ -19,39 +19,49 @@ router.get('/', optionalAuthMiddleware, async (req: AuthRequest, res: Response):
       return;
     }
 
-    const searchTerm = `%${q.trim()}%`;
+    const searchTerm = q.trim();
 
     // Get total count
-    const [countResult] = await pool.execute(
-      `SELECT COUNT(*) as count FROM dreams 
-       WHERE is_published = TRUE 
-       AND (title LIKE ? OR content LIKE ? OR keywords LIKE ?)`,
-      [searchTerm, searchTerm, searchTerm]
-    ) as any;
-    const total = countResult[0].count;
+    const { count } = await supabase
+      .from('dreams')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_published', true)
+      .or(`title.ilike.%${searchTerm}%,content.ilike.%${searchTerm}%,keywords.ilike.%${searchTerm}%`);
+
+    const total = count || 0;
 
     // Get results
-    const [dreams] = await pool.execute(
-      `SELECT d.*, c.name as category_name 
-       FROM dreams d 
-       LEFT JOIN categories c ON d.category_id = c.id 
-       WHERE d.is_published = TRUE 
-       AND (d.title LIKE ? OR d.content LIKE ? OR d.keywords LIKE ?) 
-       ORDER BY d.view_count DESC, d.created_at DESC 
-       LIMIT ? OFFSET ?`,
-      [searchTerm, searchTerm, searchTerm, limit, offset]
-    ) as any;
+    const { data: dreams, error } = await supabase
+      .from('dreams')
+      .select('*, categories(name)')
+      .eq('is_published', true)
+      .or(`title.ilike.%${searchTerm}%,content.ilike.%${searchTerm}%,keywords.ilike.%${searchTerm}%`)
+      .order('view_count', { ascending: false })
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (error) throw error;
+
+    const result = (dreams || []).map((d: any) => ({
+      ...d,
+      category_name: d.categories?.name,
+    }));
 
     // Log search
     const userId = req.user?.id || null;
-    await pool.execute(
-      'INSERT INTO search_logs (id, query, results_count, user_id, created_at) VALUES (?, ?, ?, ?, NOW())',
-      [uuidv4(), q.trim(), total, userId]
-    );
+    await supabase
+      .from('search_logs')
+      .insert({
+        id: uuidv4(),
+        query: searchTerm,
+        results_count: total,
+        user_id: userId,
+        created_at: new Date().toISOString(),
+      });
 
     res.json({
       success: true,
-      data: dreams,
+      data: result,
       query: q,
       pagination: {
         page,
@@ -77,18 +87,20 @@ router.get('/suggestions', async (req: AuthRequest, res: Response): Promise<void
       return;
     }
 
-    const searchTerm = `${q.trim()}%`;
+    const searchTerm = q.trim();
 
     // Get title suggestions
-    const [dreams] = await pool.execute(
-      `SELECT DISTINCT title, slug FROM dreams 
-       WHERE is_published = TRUE AND title LIKE ? 
-       ORDER BY view_count DESC 
-       LIMIT ?`,
-      [searchTerm, limit]
-    ) as any;
+    const { data: dreams, error } = await supabase
+      .from('dreams')
+      .select('title, slug')
+      .eq('is_published', true)
+      .ilike('title', `${searchTerm}%`)
+      .order('view_count', { ascending: false })
+      .limit(limit);
 
-    res.json({ success: true, data: dreams });
+    if (error) throw error;
+
+    res.json({ success: true, data: dreams || [] });
   } catch (error) {
     console.error('Search suggestions error:', error);
     res.status(500).json({ success: false, error: 'Failed to get suggestions' });
@@ -100,15 +112,27 @@ router.get('/popular', async (req: AuthRequest, res: Response): Promise<void> =>
   try {
     const limit = parseInt(req.query.limit as string) || 10;
 
-    const [searches] = await pool.execute(
-      `SELECT query, COUNT(*) as count 
-       FROM search_logs 
-       WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) 
-       GROUP BY query 
-       ORDER BY count DESC 
-       LIMIT ?`,
-      [limit]
-    ) as any;
+    // Get search logs from last 30 days
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const { data: logs, error } = await supabase
+      .from('search_logs')
+      .select('query')
+      .gte('created_at', thirtyDaysAgo.toISOString());
+
+    if (error) throw error;
+
+    // Count queries in application logic
+    const queryCount: Record<string, number> = {};
+    (logs || []).forEach((log: any) => {
+      queryCount[log.query] = (queryCount[log.query] || 0) + 1;
+    });
+
+    const searches = Object.entries(queryCount)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, limit)
+      .map(([query, count]) => ({ query, count }));
 
     res.json({ success: true, data: searches });
   } catch (error) {
@@ -133,27 +157,33 @@ router.get('/alphabet/:letter', async (req: AuthRequest, res: Response): Promise
     const letterPattern = `${letter.toUpperCase()}%`;
 
     // Get total count
-    const [countResult] = await pool.execute(
-      `SELECT COUNT(*) as count FROM dreams 
-       WHERE is_published = TRUE AND title LIKE ?`,
-      [letterPattern]
-    ) as any;
-    const total = countResult[0].count;
+    const { count } = await supabase
+      .from('dreams')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_published', true)
+      .ilike('title', letterPattern);
+
+    const total = count || 0;
 
     // Get dreams
-    const [dreams] = await pool.execute(
-      `SELECT d.*, c.name as category_name 
-       FROM dreams d 
-       LEFT JOIN categories c ON d.category_id = c.id 
-       WHERE d.is_published = TRUE AND d.title LIKE ? 
-       ORDER BY d.title ASC 
-       LIMIT ? OFFSET ?`,
-      [letterPattern, limit, offset]
-    ) as any;
+    const { data: dreams, error } = await supabase
+      .from('dreams')
+      .select('*, categories(name)')
+      .eq('is_published', true)
+      .ilike('title', letterPattern)
+      .order('title', { ascending: true })
+      .range(offset, offset + limit - 1);
+
+    if (error) throw error;
+
+    const result = (dreams || []).map((d: any) => ({
+      ...d,
+      category_name: d.categories?.name,
+    }));
 
     res.json({
       success: true,
-      data: dreams,
+      data: result,
       letter,
       pagination: {
         page,

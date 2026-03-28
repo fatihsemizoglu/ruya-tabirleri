@@ -1,24 +1,7 @@
 import { Router, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { pool } from '../config/database';
+import { supabase } from '../config/database';
 import { authMiddleware, requireAdmin, requireModerator, AuthRequest } from '../middleware/auth';
-import { RowDataPacket } from 'mysql2/promise';
-
-interface CountResult extends RowDataPacket {
-  count: number;
-}
-
-interface CategoryStats extends RowDataPacket {
-  name: string;
-  dreamCount: number;
-}
-
-interface TopDream extends RowDataPacket {
-  id: string;
-  title: string;
-  view_count: number;
-  like_count: number;
-}
 
 const router = Router();
 
@@ -29,34 +12,38 @@ router.use(requireModerator);
 // Get dashboard statistics
 router.get('/statistics', async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    // Get counts
-    const [dreamCount] = await (pool.execute as any)('SELECT COUNT(*) as count FROM dreams');
-    const [blogPostCount] = await (pool.execute as any)('SELECT COUNT(*) as count FROM blog_posts');
-    const [userCount] = await (pool.execute as any)('SELECT COUNT(*) as count FROM users');
-    const [categoryCount] = await (pool.execute as any)('SELECT COUNT(*) as count FROM categories');
-    const [subscriberCount] = await (pool.execute as any)('SELECT COUNT(*) as count FROM blog_subscribers WHERE is_verified = TRUE');
+    const { count: dreamCount } = await supabase.from('dreams').select('*', { count: 'exact', head: true });
+    const { count: blogPostCount } = await supabase.from('blog_posts').select('*', { count: 'exact', head: true });
+    const { count: userCount } = await supabase.from('users').select('*', { count: 'exact', head: true });
+    const { count: categoryCount } = await supabase.from('categories').select('*', { count: 'exact', head: true });
+    const { count: subscriberCount } = await supabase.from('blog_subscribers').select('*', { count: 'exact', head: true }).eq('is_verified', true);
 
     // Get recent activity
-    const [recentDreams] = await pool.execute(
-      'SELECT id, title, created_at FROM dreams ORDER BY created_at DESC LIMIT 5'
-    );
-    const [recentPosts] = await pool.execute(
-      'SELECT id, title, created_at FROM blog_posts ORDER BY created_at DESC LIMIT 5'
-    );
+    const { data: recentDreams } = await supabase
+      .from('dreams')
+      .select('id, title, created_at')
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    const { data: recentPosts } = await supabase
+      .from('blog_posts')
+      .select('id, title, created_at')
+      .order('created_at', { ascending: false })
+      .limit(5);
 
     res.json({
       success: true,
       data: {
-        totalDreams: dreamCount[0]?.count || 0,
-        totalCategories: categoryCount[0]?.count || 0,
-        totalUsers: userCount[0]?.count || 0,
+        totalDreams: dreamCount || 0,
+        totalCategories: categoryCount || 0,
+        totalUsers: userCount || 0,
         totalViews: 0,
         totalLikes: 0,
         totalComments: 0,
         featuredDreams: 0,
         avgViewsPerDream: 0,
-        dreams: dreamCount[0]?.count || 0,
-        categories: recentDreams,
+        dreams: dreamCount || 0,
+        categories: recentDreams || [],
       },
     });
   } catch (error) {
@@ -68,13 +55,28 @@ router.get('/statistics', async (req: AuthRequest, res: Response): Promise<void>
 // Get category statistics
 router.get('/category-stats', async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const [stats] = await pool.execute(
-      `SELECT c.name, COUNT(d.id) as dreamCount 
-       FROM categories c 
-       LEFT JOIN dreams d ON c.id = d.category_id 
-       GROUP BY c.id, c.name 
-       ORDER BY dreamCount DESC`
-    );
+    const { data: categories, error } = await supabase
+      .from('categories')
+      .select('*');
+
+    if (error) throw error;
+
+    // Get dream counts per category
+    const { data: dreams } = await supabase
+      .from('dreams')
+      .select('category_id');
+
+    const countMap: Record<string, number> = {};
+    (dreams || []).forEach((d: any) => {
+      if (d.category_id) {
+        countMap[d.category_id] = (countMap[d.category_id] || 0) + 1;
+      }
+    });
+
+    const stats = (categories || []).map((c: any) => ({
+      name: c.name,
+      dreamCount: countMap[c.id] || 0,
+    })).sort((a, b) => b.dreamCount - a.dreamCount);
 
     res.json({
       success: true,
@@ -90,18 +92,18 @@ router.get('/category-stats', async (req: AuthRequest, res: Response): Promise<v
 router.get('/top-dreams', async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const limit = parseInt(req.query.limit as string) || 10;
-    
-    const [dreams] = await pool.execute(
-      `SELECT id, title, COALESCE(view_count, 0) as view_count, COALESCE(like_count, 0) as like_count 
-       FROM dreams 
-       ORDER BY view_count DESC 
-       LIMIT ?`,
-      [limit]
-    );
+
+    const { data: dreams, error } = await supabase
+      .from('dreams')
+      .select('id, title, view_count, like_count')
+      .order('view_count', { ascending: false })
+      .limit(limit);
+
+    if (error) throw error;
 
     res.json({
       success: true,
-      data: dreams,
+      data: dreams || [],
     });
   } catch (error) {
     console.error('Get top dreams error:', error);
@@ -117,39 +119,36 @@ router.get('/comments', requireModerator, async (req: AuthRequest, res: Response
     const page = parseInt(req.query.page as string) || 1;
     const offset = (page - 1) * limit;
 
-    let whereClause = '';
-    const params: (string | number)[] = [];
+    let query = supabase
+      .from('blog_comments')
+      .select('*, profiles!user_id(full_name), blog_posts!post_id(title)', { count: 'exact' });
 
     if (status === 'pending') {
-      whereClause = 'WHERE bc.is_approved = FALSE';
+      query = query.eq('is_approved', false);
     } else if (status === 'approved') {
-      whereClause = 'WHERE bc.is_approved = TRUE';
+      query = query.eq('is_approved', true);
     }
 
-    const [comments] = await pool.execute(
-      `SELECT bc.*, p.full_name as author_name, bp.title as post_title 
-       FROM blog_comments bc 
-       LEFT JOIN profiles p ON bc.user_id = p.user_id 
-       LEFT JOIN blog_posts bp ON bc.post_id = bp.id 
-       ${whereClause}
-       ORDER BY bc.created_at DESC 
-       LIMIT ? OFFSET ?`,
-      [...params, limit, offset]
-    );
+    const { data: comments, count, error } = await query
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
 
-    const [countResult] = await pool.execute(
-      `SELECT COUNT(*) as count FROM blog_comments bc ${whereClause}`,
-      params
-    );
+    if (error) throw error;
+
+    const result = (comments || []).map((c: any) => ({
+      ...c,
+      author_name: c.profiles?.full_name,
+      post_title: c.blog_posts?.title,
+    }));
 
     res.json({
       success: true,
-      data: comments,
+      data: result,
       pagination: {
         page,
         limit,
-        total: countResult[0]?.count || 0,
-        totalPages: Math.ceil((countResult[0]?.count || 0) / limit),
+        total: count || 0,
+        totalPages: Math.ceil((count || 0) / limit),
       },
     });
   } catch (error) {
@@ -163,10 +162,10 @@ router.put('/comments/:id/approve', requireModerator, async (req: AuthRequest, r
   try {
     const { id } = req.params;
 
-    await pool.execute(
-      'UPDATE blog_comments SET is_approved = TRUE WHERE id = ?',
-      [id]
-    );
+    await supabase
+      .from('blog_comments')
+      .update({ is_approved: true })
+      .eq('id', id);
 
     res.json({ success: true, message: 'Comment approved' });
   } catch (error) {
@@ -180,10 +179,10 @@ router.put('/comments/:id/reject', requireModerator, async (req: AuthRequest, re
   try {
     const { id } = req.params;
 
-    await pool.execute(
-      'UPDATE blog_comments SET is_approved = FALSE WHERE id = ?',
-      [id]
-    );
+    await supabase
+      .from('blog_comments')
+      .update({ is_approved: false })
+      .eq('id', id);
 
     res.json({ success: true, message: 'Comment rejected' });
   } catch (error) {
@@ -197,7 +196,7 @@ router.delete('/comments/:id', requireModerator, async (req: AuthRequest, res: R
   try {
     const { id } = req.params;
 
-    await pool.execute('DELETE FROM blog_comments WHERE id = ?', [id]);
+    await supabase.from('blog_comments').delete().eq('id', id);
 
     res.json({ success: true, message: 'Comment deleted' });
   } catch (error) {
@@ -214,35 +213,31 @@ router.get('/contact-messages', requireAdmin, async (req: AuthRequest, res: Resp
     const offset = (page - 1) * limit;
     const isRead = req.query.is_read;
 
-    let whereClause = '';
-    const params: (string | number)[] = [];
+    let query = supabase
+      .from('contact_messages')
+      .select('*', { count: 'exact' });
 
     if (isRead !== undefined) {
-      whereClause = 'WHERE is_read = ?';
-      params.push(isRead === 'true' ? 1 : 0);
+      query = query.eq('is_read', isRead === 'true');
     }
 
-    const [messages] = await pool.execute(
-      `SELECT * FROM contact_messages ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-      [...params, limit, offset]
-    );
+    const { data: messages, count, error } = await query
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
 
-    const [countResult] = await pool.execute(
-      `SELECT COUNT(*) as count FROM contact_messages ${whereClause}`,
-      params
-    );
+    if (error) throw error;
 
     res.json({
       success: true,
       data: {
-        messages,
-        total: countResult[0]?.count || 0,
+        messages: messages || [],
+        total: count || 0,
       },
       pagination: {
         page,
         limit,
-        total: countResult[0]?.count || 0,
-        totalPages: Math.ceil((countResult[0]?.count || 0) / limit),
+        total: count || 0,
+        totalPages: Math.ceil((count || 0) / limit),
       },
     });
   } catch (error) {
@@ -256,10 +251,10 @@ router.put('/contact-messages/:id/read', requireAdmin, async (req: AuthRequest, 
   try {
     const { id } = req.params;
 
-    await pool.execute(
-      'UPDATE contact_messages SET is_read = TRUE WHERE id = ?',
-      [id]
-    );
+    await supabase
+      .from('contact_messages')
+      .update({ is_read: true })
+      .eq('id', id);
 
     res.json({ success: true, message: 'Message marked as read' });
   } catch (error) {
@@ -273,7 +268,7 @@ router.delete('/contact-messages/:id', requireAdmin, async (req: AuthRequest, re
   try {
     const { id } = req.params;
 
-    await pool.execute('DELETE FROM contact_messages WHERE id = ?', [id]);
+    await supabase.from('contact_messages').delete().eq('id', id);
 
     res.json({ success: true, message: 'Message deleted' });
   } catch (error) {
@@ -289,26 +284,32 @@ router.get('/users', requireAdmin, async (req: AuthRequest, res: Response): Prom
     const limit = parseInt(req.query.limit as string) || 20;
     const offset = (page - 1) * limit;
 
-    const [users] = await pool.execute(
-      `SELECT u.id, u.email, u.created_at, u.updated_at, p.full_name, p.username, ur.role 
-       FROM users u 
-       LEFT JOIN profiles p ON u.id = p.user_id 
-       LEFT JOIN user_roles ur ON u.id = ur.user_id 
-       ORDER BY u.created_at DESC 
-       LIMIT ? OFFSET ?`,
-      [limit, offset]
-    );
+    const { data: users, count, error } = await supabase
+      .from('users')
+      .select('id, email, created_at, updated_at, profiles(full_name, username), user_roles(role)', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
 
-    const [countResult] = await (pool.execute as any)('SELECT COUNT(*) as count FROM users');
+    if (error) throw error;
+
+    const result = (users || []).map((u: any) => ({
+      id: u.id,
+      email: u.email,
+      created_at: u.created_at,
+      updated_at: u.updated_at,
+      full_name: u.profiles?.[0]?.full_name,
+      username: u.profiles?.[0]?.username,
+      role: u.user_roles?.[0]?.role,
+    }));
 
     res.json({
       success: true,
-      data: users,
+      data: result,
       pagination: {
         page,
         limit,
-        total: countResult[0]?.count || 0,
-        totalPages: Math.ceil((countResult[0]?.count || 0) / limit),
+        total: count || 0,
+        totalPages: Math.ceil((count || 0) / limit),
       },
     });
   } catch (error) {
@@ -327,16 +328,17 @@ router.get('/profiles', requireAdmin, async (req: AuthRequest, res: Response): P
     }
 
     const userIds = ids.split(',');
-    const placeholders = userIds.map(() => '?').join(',');
 
-    const [profiles] = await pool.execute(
-      `SELECT * FROM profiles WHERE user_id IN (${placeholders})`,
-      userIds
-    );
+    const { data: profiles, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .in('user_id', userIds);
+
+    if (error) throw error;
 
     res.json({
       success: true,
-      data: profiles,
+      data: profiles || [],
     });
   } catch (error) {
     console.error('Get profiles error:', error);
@@ -352,36 +354,31 @@ router.get('/audit-logs', requireAdmin, async (req: AuthRequest, res: Response):
     const offset = (page - 1) * limit;
     const search = req.query.search as string;
 
-    let whereClause = '';
-    const params: (string | number)[] = [];
+    let query = supabase
+      .from('audit_logs')
+      .select('*', { count: 'exact' });
 
     if (search) {
-      whereClause = 'WHERE action LIKE ? OR details LIKE ?';
-      const searchTerm = `%${search}%`;
-      params.push(searchTerm, searchTerm);
+      query = query.or(`action.ilike.%${search}%,details.ilike.%${search}%`);
     }
 
-    const [logs] = await pool.execute(
-      `SELECT * FROM audit_logs ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-      [...params, limit, offset]
-    );
+    const { data: logs, count, error } = await query
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
 
-     const [countResult] = await (pool.execute as any)(
-       `SELECT COUNT(*) as count FROM audit_logs ${whereClause}`,
-       params
-     );
+    if (error) throw error;
 
     res.json({
       success: true,
       data: {
-        logs,
-        total: countResult[0]?.count || 0,
+        logs: logs || [],
+        total: count || 0,
       },
       pagination: {
         page,
         limit,
-        total: countResult[0]?.count || 0,
-        totalPages: Math.ceil((countResult[0]?.count || 0) / limit),
+        total: count || 0,
+        totalPages: Math.ceil((count || 0) / limit),
       },
     });
   } catch (error) {
@@ -401,11 +398,23 @@ router.put('/users/:id/role', requireAdmin, async (req: AuthRequest, res: Respon
       return;
     }
 
-    await pool.execute(
-      `INSERT INTO user_roles (user_id, role) VALUES (?, ?) 
-       ON DUPLICATE KEY UPDATE role = ?`,
-      [id, role, role]
-    );
+    // Upsert: try update first, then insert if not exists
+    const { data: existing } = await supabase
+      .from('user_roles')
+      .select('*')
+      .eq('user_id', id)
+      .single();
+
+    if (existing) {
+      await supabase
+        .from('user_roles')
+        .update({ role })
+        .eq('user_id', id);
+    } else {
+      await supabase
+        .from('user_roles')
+        .insert({ user_id: id, role, created_at: new Date().toISOString() });
+    }
 
     res.json({ success: true, message: 'Role updated' });
   } catch (error) {
@@ -425,9 +434,9 @@ router.delete('/users/:id', requireAdmin, async (req: AuthRequest, res: Response
       return;
     }
 
-    await pool.execute('DELETE FROM profiles WHERE user_id = ?', [id]);
-    await pool.execute('DELETE FROM user_roles WHERE user_id = ?', [id]);
-    await pool.execute('DELETE FROM users WHERE id = ?', [id]);
+    await supabase.from('profiles').delete().eq('user_id', id);
+    await supabase.from('user_roles').delete().eq('user_id', id);
+    await supabase.from('users').delete().eq('id', id);
 
     res.json({ success: true, message: 'User deleted' });
   } catch (error) {
@@ -446,32 +455,29 @@ router.get('/notifications', requireModerator, async (req: AuthRequest, res: Res
     const offset = (page - 1) * limit;
     const isActive = req.query.is_active;
 
-    let whereClause = '';
-    const params: (string | number)[] = [];
+    let query = supabase
+      .from('admin_notifications')
+      .select('*', { count: 'exact' });
 
     if (isActive !== undefined) {
-      whereClause = 'WHERE is_active = ?';
-      params.push(isActive === 'true' ? 1 : 0);
+      query = query.eq('is_active', isActive === 'true');
     }
 
-    const [notifications] = await pool.execute(
-      `SELECT * FROM admin_notifications ${whereClause} ORDER BY display_order ASC, created_at DESC LIMIT ? OFFSET ?`,
-      [...params, limit, offset]
-    );
+    const { data: notifications, count, error } = await query
+      .order('display_order', { ascending: true })
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
 
-     const [countResult] = await (pool.execute as any)(
-       `SELECT COUNT(*) as count FROM admin_notifications ${whereClause}`,
-       params
-     );
+    if (error) throw error;
 
     res.json({
       success: true,
-      data: notifications,
+      data: notifications || [],
       pagination: {
         page,
         limit,
-        total: countResult[0]?.count || 0,
-        totalPages: Math.ceil((countResult[0]?.count || 0) / limit),
+        total: count || 0,
+        totalPages: Math.ceil((count || 0) / limit),
       },
     });
   } catch (error) {
@@ -494,25 +500,27 @@ router.post('/notifications', requireModerator, async (req: AuthRequest, res: Re
     const validTypes = ['info', 'warning', 'success', 'error', 'comment', 'message'];
     const notificationType = validTypes.includes(type) ? type : 'info';
 
-    await pool.execute(
-      `INSERT INTO admin_notifications (id, type, title, description, link, is_active, display_order, created_by, expires_at, created_at, updated_at) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
-      [
+    const { data: newNotification, error } = await supabase
+      .from('admin_notifications')
+      .insert({
         id,
-        notificationType,
+        type: notificationType,
         title,
-        description || null,
-        link || null,
-        is_active !== undefined ? is_active : true,
-        display_order || 0,
-        req.user?.id,
-        expires_at || null,
-      ]
-    );
+        description: description || null,
+        link: link || null,
+        is_active: is_active !== undefined ? is_active : true,
+        display_order: display_order || 0,
+        created_by: req.user?.id,
+        expires_at: expires_at || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
 
-    const [newNotification] = await (pool.execute as any)('SELECT * FROM admin_notifications WHERE id = ?', [id]);
+    if (error) throw error;
 
-    res.status(201).json({ success: true, data: newNotification[0] });
+    res.status(201).json({ success: true, data: newNotification });
   } catch (error) {
     console.error('Create notification error:', error);
     res.status(500).json({ success: false, error: 'Failed to create notification' });
@@ -522,44 +530,42 @@ router.post('/notifications', requireModerator, async (req: AuthRequest, res: Re
 // Update notification
 router.put('/notifications/:id', requireModerator, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-     const { id } = req.params;
-     const { type, title, description, link, is_active, display_order, expires_at } = req.body;
- 
-     const [existing] = await (pool.execute as any)('SELECT * FROM admin_notifications WHERE id = ?', [id]);
-     if (existing.length === 0) {
+    const { id } = req.params;
+    const { type, title, description, link, is_active, display_order, expires_at } = req.body;
+
+    const { data: existing, error: fetchError } = await supabase
+      .from('admin_notifications')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (fetchError || !existing) {
       res.status(404).json({ success: false, error: 'Notification not found' });
       return;
     }
 
     const validTypes = ['info', 'warning', 'success', 'error', 'comment', 'message'];
-    const notificationType = type && validTypes.includes(type) ? type : existing[0].type;
+    const notificationType = type && validTypes.includes(type) ? type : existing.type;
 
-    await pool.execute(
-      `UPDATE admin_notifications SET 
-        type = ?,
-        title = COALESCE(?, title),
-        description = ?,
-        link = ?,
-        is_active = ?,
-        display_order = ?,
-        expires_at = ?,
-        updated_at = NOW()
-       WHERE id = ?`,
-      [
-        notificationType,
-        title || null,
-        description || null,
-        link || null,
-        is_active !== undefined ? is_active : existing[0].is_active,
-        display_order !== undefined ? display_order : existing[0].display_order,
-        expires_at || null,
-        id,
-      ]
-    );
+    const { data: updated, error } = await supabase
+      .from('admin_notifications')
+      .update({
+        type: notificationType,
+        title: title ?? existing.title,
+        description: description !== undefined ? description : existing.description,
+        link: link !== undefined ? link : existing.link,
+        is_active: is_active !== undefined ? is_active : existing.is_active,
+        display_order: display_order !== undefined ? display_order : existing.display_order,
+        expires_at: expires_at !== undefined ? expires_at : existing.expires_at,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .select()
+      .single();
 
-     const [updated] = await (pool.execute as any)('SELECT * FROM admin_notifications WHERE id = ?', [id]);
+    if (error) throw error;
 
-    res.json({ success: true, data: updated[0] });
+    res.json({ success: true, data: updated });
   } catch (error) {
     console.error('Update notification error:', error);
     res.status(500).json({ success: false, error: 'Failed to update notification' });
@@ -571,13 +577,18 @@ router.delete('/notifications/:id', requireModerator, async (req: AuthRequest, r
   try {
     const { id } = req.params;
 
-    const [existing] = await (pool.execute as any)('SELECT * FROM admin_notifications WHERE id = ?', [id]);
-    if (existing.length === 0) {
+    const { data: existing, error: fetchError } = await supabase
+      .from('admin_notifications')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (fetchError || !existing) {
       res.status(404).json({ success: false, error: 'Notification not found' });
       return;
     }
 
-    await pool.execute('DELETE FROM admin_notifications WHERE id = ?', [id]);
+    await supabase.from('admin_notifications').delete().eq('id', id);
 
     res.json({ success: true, message: 'Notification deleted' });
   } catch (error) {
@@ -591,14 +602,22 @@ router.patch('/notifications/:id/toggle', requireModerator, async (req: AuthRequ
   try {
     const { id } = req.params;
 
-    const [existing] = await (pool.execute as any)('SELECT is_active FROM admin_notifications WHERE id = ?', [id]);
-    if (existing.length === 0) {
+    const { data: existing, error: fetchError } = await supabase
+      .from('admin_notifications')
+      .select('is_active')
+      .eq('id', id)
+      .single();
+
+    if (fetchError || !existing) {
       res.status(404).json({ success: false, error: 'Notification not found' });
       return;
     }
 
-    const newStatus = !existing[0].is_active;
-    await pool.execute('UPDATE admin_notifications SET is_active = ?, updated_at = NOW() WHERE id = ?', [newStatus, id]);
+    const newStatus = !existing.is_active;
+    await supabase
+      .from('admin_notifications')
+      .update({ is_active: newStatus, updated_at: new Date().toISOString() })
+      .eq('id', id);
 
     res.json({ success: true, data: { is_active: newStatus } });
   } catch (error) {
@@ -612,7 +631,10 @@ router.patch('/notifications/:id/read', requireModerator, async (req: AuthReques
   try {
     const { id } = req.params;
 
-    await pool.execute('UPDATE admin_notifications SET is_read = TRUE, updated_at = NOW() WHERE id = ?', [id]);
+    await supabase
+      .from('admin_notifications')
+      .update({ is_read: true, updated_at: new Date().toISOString() })
+      .eq('id', id);
 
     res.json({ success: true, message: 'Notification marked as read' });
   } catch (error) {
@@ -624,15 +646,18 @@ router.patch('/notifications/:id/read', requireModerator, async (req: AuthReques
 // Get active notifications (for notification center)
 router.get('/notifications/active', async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const now = new Date();
-    
-    const [notifications] = await pool.execute(
-      `SELECT * FROM admin_notifications 
-       WHERE is_active = TRUE AND (expires_at IS NULL OR expires_at > NOW())
-       ORDER BY display_order ASC, created_at DESC LIMIT 20`
-    );
+    const { data: notifications, error } = await supabase
+      .from('admin_notifications')
+      .select('*')
+      .eq('is_active', true)
+      .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
+      .order('display_order', { ascending: true })
+      .order('created_at', { ascending: false })
+      .limit(20);
 
-    res.json({ success: true, data: notifications });
+    if (error) throw error;
+
+    res.json({ success: true, data: notifications || [] });
   } catch (error) {
     console.error('Get active notifications error:', error);
     res.status(500).json({ success: false, error: 'Failed to get notifications' });

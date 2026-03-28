@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { pool } from '../config/database';
+import { supabase } from '../config/database';
 import { authMiddleware, requireModerator, AuthRequest } from '../middleware/auth';
 import type { ContactMessage } from '../types/index';
 
@@ -18,11 +18,19 @@ router.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
 
     const id = uuidv4();
 
-    await pool.execute(
-      `INSERT INTO contact_messages (id, name, email, subject, message, is_read, created_at) 
-       VALUES (?, ?, ?, ?, ?, FALSE, NOW())`,
-      [id, name, email, subject, message]
-    );
+    const { error } = await supabase
+      .from('contact_messages')
+      .insert({
+        id,
+        name,
+        email,
+        subject,
+        message,
+        is_read: false,
+        created_at: new Date().toISOString(),
+      });
+
+    if (error) throw error;
 
     res.status(201).json({ success: true, message: 'Message sent successfully' });
   } catch (error) {
@@ -39,30 +47,25 @@ router.get('/', requireModerator, async (req: AuthRequest, res: Response): Promi
     const offset = (page - 1) * limit;
     const is_read = req.query.is_read as string;
 
-    let whereClause = '';
-    const params: (boolean | number)[] = [];
+    let query = supabase
+      .from('contact_messages')
+      .select('*', { count: 'exact' });
 
     if (is_read !== undefined) {
-      whereClause = 'WHERE is_read = ?';
-      params.push(is_read === 'true');
+      query = query.eq('is_read', is_read === 'true');
     }
 
-    // Get total count
-    const [countResult] = await pool.execute(
-      `SELECT COUNT(*) as count FROM contact_messages ${whereClause}`,
-      params
-    ) as any;
-    const total = countResult[0].count;
+    const { data: messages, count, error } = await query
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
 
-    // Get messages
-    const [messages] = await pool.execute(
-      `SELECT * FROM contact_messages ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-      [...params, limit, offset]
-    ) as any;
+    if (error) throw error;
+
+    const total = count || 0;
 
     res.json({
       success: true,
-      data: messages,
+      data: messages || [],
       pagination: {
         page,
         limit,
@@ -81,10 +84,10 @@ router.put('/:id/read', authMiddleware, requireModerator, async (req: AuthReques
   try {
     const { id } = req.params;
 
-    await pool.execute(
-      'UPDATE contact_messages SET is_read = TRUE WHERE id = ?',
-      [id]
-    );
+    await supabase
+      .from('contact_messages')
+      .update({ is_read: true })
+      .eq('id', id);
 
     res.json({ success: true, message: 'Message marked as read' });
   } catch (error) {
@@ -98,7 +101,10 @@ router.delete('/:id', authMiddleware, requireModerator, async (req: AuthRequest,
   try {
     const { id } = req.params;
 
-    await pool.execute('DELETE FROM contact_messages WHERE id = ?', [id]);
+    await supabase
+      .from('contact_messages')
+      .delete()
+      .eq('id', id);
 
     res.json({ success: true, message: 'Message deleted successfully' });
   } catch (error) {

@@ -1,27 +1,30 @@
-import mysql from 'mysql2/promise';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-export const pool: any = mysql.createPool({
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '3306'),
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'mystic_logbook',
-  waitForConnections: process.env.DB_WAIT_FOR_CONNECTIONS === 'false' ? false : true,
-  connectionLimit: parseInt(process.env.DB_CONNECTION_LIMIT || '10'),
-  queueLimit: parseInt(process.env.DB_QUEUE_LIMIT || '0'),
-  enableKeepAlive: true,
-  keepAliveInitialDelay: 0,
+const supabaseUrl = process.env.SUPABASE_URL || '';
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+
+if (!supabaseUrl || !supabaseServiceKey) {
+  console.warn('Warning: Supabase credentials not configured');
+}
+
+export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
 });
 
-// Test database connection
 export async function testConnection(): Promise<boolean> {
   try {
-    const connection = await pool.getConnection();
+    const { error } = await supabase.from('users').select('id').limit(1);
+    if (error) {
+      console.error('Database connection failed:', error.message);
+      return false;
+    }
     console.log('Database connected successfully');
-    connection.release();
     return true;
   } catch (error) {
     console.error('Database connection failed:', error);
@@ -29,4 +32,4 @@ export async function testConnection(): Promise<boolean> {
   }
 }
 
-export default pool;
+export default supabase;

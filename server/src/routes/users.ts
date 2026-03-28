@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { pool } from '../config/database';
+import { supabase } from '../config/database';
 import { authMiddleware, requireAdmin, AuthRequest } from '../middleware/auth';
 import type { Profile, UserRole, Favorite, ViewHistory, Dream, DreamJournalEntry, DreamLike } from '../types/index';
 
@@ -15,27 +15,32 @@ router.get('/favorites', authMiddleware, async (req: AuthRequest, res: Response)
     const offset = (page - 1) * limit;
 
     // Get total count
-    const [countResult] = await (pool.execute as any)(
-      'SELECT COUNT(*) as count FROM favorites WHERE user_id = ?',
-      [userId]
-    );
-    const total = countResult[0].count;
+    const { count } = await supabase
+      .from('favorites')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId);
+
+    const total = count || 0;
 
     // Get favorites with dream details
-    const [favorites] = await (pool.execute as any)(
-      `SELECT f.*, d.*, c.name as category_name 
-       FROM favorites f 
-       JOIN dreams d ON f.dream_id = d.id 
-       LEFT JOIN categories c ON d.category_id = c.id 
-       WHERE f.user_id = ? 
-       ORDER BY f.created_at DESC 
-       LIMIT ? OFFSET ?`,
-      [userId, limit, offset]
-    );
+    const { data: favorites, error } = await supabase
+      .from('favorites')
+      .select('*, dreams(*, categories(name))')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (error) throw error;
+
+    const result = (favorites || []).map((f: any) => ({
+      ...f,
+      ...(f.dreams || {}),
+      category_name: f.dreams?.categories?.name,
+    }));
 
     res.json({
       success: true,
-      data: favorites,
+      data: result,
       pagination: {
         page,
         limit,
@@ -58,27 +63,32 @@ router.get('/history', authMiddleware, async (req: AuthRequest, res: Response): 
     const offset = (page - 1) * limit;
 
     // Get total count
-    const [countResult] = await (pool.execute as any)(
-      'SELECT COUNT(*) as count FROM history WHERE user_id = ?',
-      [userId]
-    );
-    const total = countResult[0].count;
+    const { count } = await supabase
+      .from('view_history')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId);
+
+    const total = count || 0;
 
     // Get view history with dream details
-    const [history] = await (pool.execute as any)(
-      `SELECT vh.*, d.*, c.name as category_name 
-       FROM view_history vh 
-       JOIN dreams d ON vh.dream_id = d.id 
-       LEFT JOIN categories c ON d.category_id = c.id 
-       WHERE vh.user_id = ? 
-       ORDER BY vh.viewed_at DESC 
-       LIMIT ? OFFSET ?`,
-      [userId, limit, offset]
-    );
+    const { data: history, error } = await supabase
+      .from('view_history')
+      .select('*, dreams(*, categories(name))')
+      .eq('user_id', userId)
+      .order('viewed_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (error) throw error;
+
+    const result = (history || []).map((h: any) => ({
+      ...h,
+      ...(h.dreams || {}),
+      category_name: h.dreams?.categories?.name,
+    }));
 
     res.json({
       success: true,
-      data: history,
+      data: result,
       pagination: {
         page,
         limit,
@@ -101,24 +111,27 @@ router.get('/journal', authMiddleware, async (req: AuthRequest, res: Response): 
     const offset = (page - 1) * limit;
 
     // Get total count
-    const [countResult] = await (pool.execute as any)(
-      'SELECT COUNT(*) as count FROM dream_journal WHERE user_id = ?',
-      [userId]
-    );
-    const total = countResult[0].count;
+    const { count } = await supabase
+      .from('dream_journal')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId);
+
+    const total = count || 0;
 
     // Get journal entries
-    const [entries] = await (pool.execute as any)(
-      `SELECT * FROM dream_journal 
-       WHERE user_id = ? 
-       ORDER BY dream_date DESC, created_at DESC 
-       LIMIT ? OFFSET ?`,
-      [userId, limit, offset]
-    );
+    const { data: entries, error } = await supabase
+      .from('dream_journal')
+      .select('*')
+      .eq('user_id', userId)
+      .order('dream_date', { ascending: false })
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (error) throw error;
 
     res.json({
       success: true,
-      data: entries,
+      data: entries || [],
       pagination: {
         page,
         limit,
@@ -146,27 +159,26 @@ router.post('/journal', authMiddleware, async (req: AuthRequest, res: Response):
     const { v4: uuidv4 } = await import('uuid');
     const id = uuidv4();
 
-    await pool.execute(
-      `INSERT INTO dream_journal (id, user_id, title, content, dream_date, mood, tags, is_private, created_at, updated_at) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
-      [
+    const { data: newEntry, error } = await supabase
+      .from('dream_journal')
+      .insert({
         id,
-        userId,
+        user_id: userId,
         title,
         content,
-        dream_date || new Date(),
-        mood || null,
-        JSON.stringify(tags || []),
-        is_private !== undefined ? is_private : true,
-      ]
-    );
+        dream_date: dream_date || new Date().toISOString(),
+        mood: mood || null,
+        tags: JSON.stringify(tags || []),
+        is_private: is_private !== undefined ? is_private : true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
 
-    const [newEntry] = await (pool.execute as any)(
-      'SELECT * FROM dream_journal WHERE id = ?',
-      [id]
-    );
+    if (error) throw error;
 
-    res.status(201).json({ success: true, data: newEntry[0] });
+    res.status(201).json({ success: true, data: newEntry });
   } catch (error) {
     console.error('Create journal entry error:', error);
     res.status(500).json({ success: false, error: 'Failed to create journal entry' });
@@ -181,35 +193,37 @@ router.put('/journal/:id', authMiddleware, async (req: AuthRequest, res: Respons
     const { title, content, dream_date, mood, tags, is_private } = req.body;
 
     // Check ownership
-    const [existing] = await (pool.execute as any)(
-      'SELECT * FROM dream_journal WHERE id = ? AND user_id = ?',
-      [id, userId]
-    );
+    const { data: existing, error: fetchError } = await supabase
+      .from('dream_journal')
+      .select('*')
+      .eq('id', id)
+      .eq('user_id', userId)
+      .single();
 
-    if (existing.length === 0) {
+    if (fetchError || !existing) {
       res.status(404).json({ success: false, error: 'Journal entry not found' });
       return;
     }
 
-    await pool.execute(
-      `UPDATE dream_journal SET 
-        title = COALESCE(?, title),
-        content = COALESCE(?, content),
-        dream_date = COALESCE(?, dream_date),
-        mood = ?,
-        tags = ?,
-        is_private = ?,
-        updated_at = NOW()
-      WHERE id = ? AND user_id = ?`,
-      [title, content, dream_date, mood, tags ? JSON.stringify(tags) : null, is_private, id, userId]
-    );
+    const { data: updated, error } = await supabase
+      .from('dream_journal')
+      .update({
+        title: title ?? existing.title,
+        content: content ?? existing.content,
+        dream_date: dream_date ?? existing.dream_date,
+        mood: mood !== undefined ? mood : existing.mood,
+        tags: tags ? JSON.stringify(tags) : existing.tags,
+        is_private: is_private !== undefined ? is_private : existing.is_private,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .eq('user_id', userId)
+      .select()
+      .single();
 
-    const [updated] = await (pool.execute as any)(
-      'SELECT * FROM dream_journal WHERE id = ?',
-      [id]
-    );
+    if (error) throw error;
 
-    res.json({ success: true, data: updated[0] });
+    res.json({ success: true, data: updated });
   } catch (error) {
     console.error('Update journal entry error:', error);
     res.status(500).json({ success: false, error: 'Failed to update journal entry' });
@@ -223,17 +237,23 @@ router.delete('/journal/:id', authMiddleware, async (req: AuthRequest, res: Resp
     const { id } = req.params;
 
     // Check ownership
-    const [existing] = await (pool.execute as any)(
-      'SELECT * FROM dream_journal WHERE id = ? AND user_id = ?',
-      [id, userId]
-    );
+    const { data: existing, error: fetchError } = await supabase
+      .from('dream_journal')
+      .select('*')
+      .eq('id', id)
+      .eq('user_id', userId)
+      .single();
 
-    if (existing.length === 0) {
+    if (fetchError || !existing) {
       res.status(404).json({ success: false, error: 'Journal entry not found' });
       return;
     }
 
-    await pool.execute('DELETE FROM dream_journal WHERE id = ? AND user_id = ?', [id, userId]);
+    await supabase
+      .from('dream_journal')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', userId);
 
     res.json({ success: true, message: 'Journal entry deleted successfully' });
   } catch (error) {
@@ -247,16 +267,21 @@ router.get('/likes', authMiddleware, async (req: AuthRequest, res: Response): Pr
   try {
     const userId = req.user!.id;
 
-    const [likes] = await (pool.execute as any)(
-      `SELECT dl.*, d.title, d.slug 
-       FROM dream_likes dl 
-       JOIN dreams d ON dl.dream_id = d.id 
-       WHERE dl.user_id = ? 
-       ORDER BY dl.created_at DESC`,
-      [userId]
-    );
+    const { data: likes, error } = await supabase
+      .from('dream_likes')
+      .select('*, dreams(title, slug)')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
 
-    res.json({ success: true, data: likes });
+    if (error) throw error;
+
+    const result = (likes || []).map((l: any) => ({
+      ...l,
+      title: l.dreams?.title,
+      slug: l.dreams?.slug,
+    }));
+
+    res.json({ success: true, data: result });
   } catch (error) {
     console.error('Get likes error:', error);
     res.status(500).json({ success: false, error: 'Failed to get likes' });
@@ -269,7 +294,11 @@ router.delete('/favorites/:id', authMiddleware, async (req: AuthRequest, res: Re
     const userId = req.user!.id;
     const { id } = req.params;
 
-    await pool.execute('DELETE FROM favorites WHERE id = ? AND user_id = ?', [id, userId]);
+    await supabase
+      .from('favorites')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', userId);
 
     res.json({ success: true, message: 'Favorite removed successfully' });
   } catch (error) {
@@ -283,7 +312,10 @@ router.delete('/history', authMiddleware, async (req: AuthRequest, res: Response
   try {
     const userId = req.user!.id;
 
-    await pool.execute('DELETE FROM view_history WHERE user_id = ?', [userId]);
+    await supabase
+      .from('view_history')
+      .delete()
+      .eq('user_id', userId);
 
     res.json({ success: true, message: 'History cleared successfully' });
   } catch (error) {
@@ -298,7 +330,11 @@ router.delete('/history/:id', authMiddleware, async (req: AuthRequest, res: Resp
     const userId = req.user!.id;
     const { id } = req.params;
 
-    await pool.execute('DELETE FROM view_history WHERE id = ? AND user_id = ?', [id, userId]);
+    await supabase
+      .from('view_history')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', userId);
 
     res.json({ success: true, message: 'History item removed successfully' });
   } catch (error) {
@@ -313,75 +349,80 @@ router.get('/stats', authMiddleware, async (req: AuthRequest, res: Response): Pr
     const userId = req.user!.id;
 
     // Get favorites count
-    const [favCount] = await (pool.execute as any)(
-      'SELECT COUNT(*) as count FROM favorites WHERE user_id = ?',
-      [userId]
-    );
+    const { count: favCount } = await supabase
+      .from('favorites')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId);
 
     // Get view history count
-    const [viewCount] = await (pool.execute as any)(
-      'SELECT COUNT(*) as count FROM view_history WHERE user_id = ?',
-      [userId]
-    );
+    const { count: viewCount } = await supabase
+      .from('view_history')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId);
 
     // Get comments count
-    const [commentCount] = await (pool.execute as any)(
-      'SELECT COUNT(*) as count FROM comments WHERE user_id = ?',
-      [userId]
-    );
+    const { count: commentCount } = await supabase
+      .from('comments')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId);
 
     // Get total likes on user's comments
-    const [likesResult] = await (pool.execute as any)(
-      'SELECT COALESCE(SUM(like_count), 0) as total FROM comments WHERE user_id = ?',
-      [userId]
-    );
+    const { data: userComments } = await supabase
+      .from('comments')
+      .select('like_count')
+      .eq('user_id', userId);
 
-    // Get journal entries count and mood distribution
-    const [journalCount] = await (pool.execute as any)(
-      'SELECT COUNT(*) as count FROM dream_journal WHERE user_id = ?',
-      [userId]
-    );
+    const totalLikes = (userComments || []).reduce((sum: number, c: any) => sum + (c.like_count || 0), 0);
 
-    const [moodData] = await (pool.execute as any)(
-      'SELECT mood, COUNT(*) as count FROM dream_journal WHERE user_id = ? AND mood IS NOT NULL GROUP BY mood',
-      [userId]
-    );
+    // Get journal entries count
+    const { count: journalCount } = await supabase
+      .from('dream_journal')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId);
+
+    // Get mood distribution
+    const { data: journalEntries } = await supabase
+      .from('dream_journal')
+      .select('mood')
+      .eq('user_id', userId)
+      .not('mood', 'is', null);
 
     const moodDistribution: Record<string, number> = {};
-    moodData.forEach((item) => {
-      moodDistribution[item.mood] = item.count;
+    (journalEntries || []).forEach((item: any) => {
+      if (item.mood) {
+        moodDistribution[item.mood] = (moodDistribution[item.mood] || 0) + 1;
+      }
     });
 
     // Get recent comments with dream info
-    const [recentComments] = await (pool.execute as any)(
-      `SELECT c.created_at, d.title, d.slug 
-       FROM comments c 
-       JOIN dreams d ON c.dream_id = d.id 
-       WHERE c.user_id = ? 
-       ORDER BY c.created_at DESC 
-       LIMIT 3`,
-      [userId]
-    );
+    const { data: recentComments } = await supabase
+      .from('comments')
+      .select('created_at, dreams(title, slug)')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(3);
 
     // Get recent journal entries
-    const [recentJournal] = await (pool.execute as any)(
-      'SELECT title, created_at FROM dream_journal WHERE user_id = ? ORDER BY created_at DESC LIMIT 3',
-      [userId]
-    );
+    const { data: recentJournal } = await supabase
+      .from('dream_journal')
+      .select('title, created_at')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(3);
 
     // Build recent activity
     const recentActivity: { type: string; title: string; date: string; link?: string }[] = [];
 
-    recentComments.forEach((comment: any) => {
+    (recentComments || []).forEach((comment: any) => {
       recentActivity.push({
         type: 'comment',
-        title: `"${comment.title || 'Rüya'}" için yorum yaptiniz`,
+        title: `"${comment.dreams?.title || 'Rüya'}" için yorum yaptiniz`,
         date: comment.created_at,
-        link: comment.slug ? `/ruya/${comment.slug}` : undefined,
+        link: comment.dreams?.slug ? `/ruya/${comment.dreams.slug}` : undefined,
       });
     });
 
-    recentJournal.forEach((entry) => {
+    (recentJournal || []).forEach((entry: any) => {
       recentActivity.push({
         type: 'journal',
         title: `"${entry.title}" rüyasini kaydettiniz`,
@@ -395,11 +436,11 @@ router.get('/stats', authMiddleware, async (req: AuthRequest, res: Response): Pr
     res.json({
       success: true,
       data: {
-        totalFavorites: favCount[0].count,
-        totalViews: viewCount[0].count,
-        totalComments: commentCount[0].count,
-        totalLikes: likesResult[0].total,
-        journalEntries: journalCount[0].count,
+        totalFavorites: favCount || 0,
+        totalViews: viewCount || 0,
+        totalComments: commentCount || 0,
+        totalLikes,
+        journalEntries: journalCount || 0,
         moodDistribution,
         recentActivity: recentActivity.slice(0, 5),
       },
@@ -418,17 +459,22 @@ router.get('/comments', authMiddleware, async (req: AuthRequest, res: Response):
     const limit = parseInt(req.query.limit as string) || 10;
     const offset = (page - 1) * limit;
 
-    const [comments] = await (pool.execute as any)(
-      `SELECT c.*, d.title, d.slug 
-       FROM comments c 
-       JOIN dreams d ON c.dream_id = d.id 
-       WHERE c.user_id = ? 
-       ORDER BY c.created_at DESC 
-       LIMIT ? OFFSET ?`,
-      [userId, limit, offset]
-    );
+    const { data: comments, error } = await supabase
+      .from('comments')
+      .select('*, dreams(title, slug)')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
 
-    res.json({ success: true, data: comments });
+    if (error) throw error;
+
+    const result = (comments || []).map((c: any) => ({
+      ...c,
+      title: c.dreams?.title,
+      slug: c.dreams?.slug,
+    }));
+
+    res.json({ success: true, data: result });
   } catch (error) {
     console.error('Get comments error:', error);
     res.status(500).json({ success: false, error: 'Failed to get comments' });
@@ -443,24 +489,29 @@ router.get('/all', requireAdmin, async (req: AuthRequest, res: Response): Promis
     const offset = (page - 1) * limit;
 
     // Get total count
-    const [countResult] = await (pool.execute as any)(
-      'SELECT COUNT(*) as count FROM profiles'
-    );
-    const total = countResult[0].count;
+    const { count } = await supabase
+      .from('profiles')
+      .select('*', { count: 'exact', head: true });
+
+    const total = count || 0;
 
     // Get users with roles
-    const [users] = await (pool.execute as any)(
-      `SELECT p.*, ur.role 
-       FROM profiles p 
-       LEFT JOIN user_roles ur ON p.user_id = ur.user_id 
-       ORDER BY p.created_at DESC 
-       LIMIT ? OFFSET ?`,
-      [limit, offset]
-    );
+    const { data: users, error } = await supabase
+      .from('profiles')
+      .select('*, user_roles(role)')
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (error) throw error;
+
+    const result = (users || []).map((u: any) => ({
+      ...u,
+      role: u.user_roles?.[0]?.role,
+    }));
 
     res.json({
       success: true,
-      data: users,
+      data: result,
       pagination: {
         page,
         limit,
@@ -485,11 +536,23 @@ router.put('/:id/role', requireAdmin, async (req: AuthRequest, res: Response): P
       return;
     }
 
-    // Use INSERT...ON DUPLICATE KEY UPDATE to create or update the role
-    await pool.execute(
-      'INSERT INTO user_roles (id, user_id, role, created_at) VALUES (?, ?, ?, NOW()) ON DUPLICATE KEY UPDATE role = VALUES(role)',
-      [uuidv4(), id, role]
-    );
+    // Upsert: check if role exists, then update or insert
+    const { data: existing } = await supabase
+      .from('user_roles')
+      .select('*')
+      .eq('user_id', id)
+      .single();
+
+    if (existing) {
+      await supabase
+        .from('user_roles')
+        .update({ role })
+        .eq('user_id', id);
+    } else {
+      await supabase
+        .from('user_roles')
+        .insert({ id: uuidv4(), user_id: id, role, created_at: new Date().toISOString() });
+    }
 
     res.json({ success: true, message: 'User role updated successfully' });
   } catch (error) {

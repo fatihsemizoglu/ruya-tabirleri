@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { pool } from '../config/database';
+import { supabase } from '../config/database';
 import { authMiddleware, optionalAuthMiddleware, requireModerator, AuthRequest } from '../middleware/auth';
 import type { BlogPost, BlogCategory, BlogComment, BlogLike, BlogSubscriber } from '../types/index';
 type BlogPostWithExtras = BlogPost & { author_name?: string; category_name?: string; };
@@ -17,46 +17,40 @@ router.get('/posts', optionalAuthMiddleware, async (req: AuthRequest, res: Respo
     const tag = req.query.tag as string;
     const is_featured = req.query.is_featured === 'true';
 
-    let whereClause = 'WHERE is_published = TRUE';
-    const params: (string | number | boolean)[] = [];
+    let query = supabase
+      .from('blog_posts')
+      .select('*, profiles!author_id(full_name), blog_categories(name)', { count: 'exact' })
+      .eq('is_published', true);
 
     if (category_id) {
-      whereClause += ' AND category_id = ?';
-      params.push(category_id);
+      query = query.eq('category_id', category_id);
     }
 
     if (tag) {
-      whereClause += ' AND JSON_CONTAINS(tags, ?)';
-      params.push(JSON.stringify(tag));
+      query = query.contains('tags', JSON.stringify([tag]));
     }
 
     if (req.query.is_featured !== undefined) {
-      whereClause += ' AND is_featured = ?';
-      params.push(is_featured);
+      query = query.eq('is_featured', is_featured);
     }
 
-    // Get total count
-    const [countResult] = await (pool.execute as any)(
-      `SELECT COUNT(*) as count FROM blog_posts ${whereClause}`,
-      params
-    );
-    const total = (countResult[0]?.count ?? 0) as number;
+    const { data: posts, count, error } = await query
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
 
-    // Get posts
-    const [posts] = await (pool.execute as any)(
-      `SELECT bp.*, p.full_name as author_name, bc.name as category_name 
-       FROM blog_posts bp 
-       JOIN profiles p ON bp.author_id = p.user_id 
-       LEFT JOIN blog_categories bc ON bp.category_id = bc.id 
-       ${whereClause} 
-       ORDER BY bp.created_at DESC 
-       LIMIT ? OFFSET ?`,
-      [...params, limit, offset]
-    ) as any;
+    if (error) throw error;
+
+    const total = count || 0;
+
+    const result = (posts || []).map((p: any) => ({
+      ...p,
+      author_name: p.profiles?.full_name,
+      category_name: p.blog_categories?.name,
+    }));
 
     res.json({
       success: true,
-      data: posts,
+      data: result,
       pagination: {
         page,
         limit,
@@ -75,35 +69,31 @@ router.get('/posts/:slug', optionalAuthMiddleware, async (req: AuthRequest, res:
   try {
     const { slug } = req.params;
 
-    const [posts] = await (pool.execute as any)(
-      `SELECT bp.*, p.full_name as author_name, p.avatar_url as author_avatar, bc.name as category_name 
-       FROM blog_posts bp 
-       JOIN profiles p ON bp.author_id = p.user_id 
-       LEFT JOIN blog_categories bc ON bp.category_id = bc.id 
-       WHERE bp.slug = ?`,
-      [slug]
-    );
+    const { data: post, error } = await supabase
+      .from('blog_posts')
+      .select('*, profiles!author_id(full_name, avatar_url), blog_categories(name)')
+      .eq('slug', slug)
+      .single();
 
-    if (posts.length === 0) {
+    if (error || !post) {
       res.status(404).json({ success: false, error: 'Blog post not found' });
       return;
     }
 
-    const post = posts[0];
-
     // Increment view count
-    await pool.execute(
-      'UPDATE blog_posts SET view_count = COALESCE(view_count, 0) + 1 WHERE id = ?',
-      [post.id]
-    );
+    await supabase
+      .from('blog_posts')
+      .update({ view_count: (post.view_count || 0) + 1 })
+      .eq('id', post.id);
 
     // Check if user liked
     let isLiked = false;
     if (req.user) {
-      const [likes] = await (pool.execute as any)(
-        'SELECT * FROM blog_likes WHERE post_id = ? AND user_id = ?',
-        [post.id, req.user!.id]
-      );
+      const { data: likes } = await supabase
+        .from('blog_likes')
+        .select('*')
+        .eq('post_id', post.id)
+        .eq('user_id', req.user!.id);
       isLiked = (likes?.length ?? 0) > 0;
     }
 
@@ -111,6 +101,9 @@ router.get('/posts/:slug', optionalAuthMiddleware, async (req: AuthRequest, res:
       success: true,
       data: {
         ...post,
+        author_name: (post as any).profiles?.full_name,
+        author_avatar: (post as any).profiles?.avatar_url,
+        category_name: (post as any).blog_categories?.name,
         isLiked,
       },
     });
@@ -146,35 +139,32 @@ router.post('/posts', authMiddleware, requireModerator, async (req: AuthRequest,
     const id = uuidv4();
     const author_id = req.user!.id;
 
-    await pool.execute(
-      `INSERT INTO blog_posts (
-        id, title, slug, content, excerpt, author_id, category_id, featured_image,
-        is_published, is_featured, scheduled_at, tags, meta_title, meta_description, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
-      [
+    const { data: newPost, error } = await supabase
+      .from('blog_posts')
+      .insert({
         id,
         title,
         slug,
         content,
-        excerpt || null,
+        excerpt: excerpt || null,
         author_id,
-        category_id || null,
-        featured_image || null,
-        is_published !== undefined ? is_published : true,
-        is_featured || false,
-        scheduled_at || null,
-        JSON.stringify(tags || []),
-        meta_title || null,
-        meta_description || null,
-      ]
-    );
+        category_id: category_id || null,
+        featured_image: featured_image || null,
+        is_published: is_published !== undefined ? is_published : true,
+        is_featured: is_featured || false,
+        scheduled_at: scheduled_at || null,
+        tags: JSON.stringify(tags || []),
+        meta_title: meta_title || null,
+        meta_description: meta_description || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
 
-    const [newPost] = await (pool.execute as any)(
-      'SELECT * FROM blog_posts WHERE id = ?',
-      [id]
-    );
+    if (error) throw error;
 
-    res.status(201).json({ success: true, data: newPost[0] });
+    res.status(201).json({ success: true, data: newPost });
   } catch (error) {
     console.error('Create blog post error:', error);
     res.status(500).json({ success: false, error: 'Failed to create blog post' });
@@ -200,55 +190,41 @@ router.put('/posts/:id', authMiddleware, requireModerator, async (req: AuthReque
       meta_description,
     } = req.body;
 
-    const [existing] = await (pool.execute as any)(
-      'SELECT * FROM blog_posts WHERE id = ?',
-      [id]
-    );
+    const { data: existing, error: fetchError } = await supabase
+      .from('blog_posts')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-    if (existing.length === 0) {
+    if (fetchError || !existing) {
       res.status(404).json({ success: false, error: 'Blog post not found' });
       return;
     }
 
-    await pool.execute(
-      `UPDATE blog_posts SET 
-        title = COALESCE(?, title),
-        slug = COALESCE(?, slug),
-        content = COALESCE(?, content),
-        excerpt = ?,
-        category_id = ?,
-        featured_image = ?,
-        is_published = ?,
-        is_featured = ?,
-        scheduled_at = ?,
-        tags = ?,
-        meta_title = ?,
-        meta_description = ?,
-        updated_at = NOW()
-      WHERE id = ?`,
-      [
-        title,
-        slug,
-        content,
-        excerpt,
-        category_id,
-        featured_image,
-        is_published,
-        is_featured,
-        scheduled_at,
-        tags ? JSON.stringify(tags) : null,
-        meta_title,
-        meta_description,
-        id,
-      ]
-    );
+    const { data: updated, error } = await supabase
+      .from('blog_posts')
+      .update({
+        title: title ?? existing.title,
+        slug: slug ?? existing.slug,
+        content: content ?? existing.content,
+        excerpt: excerpt !== undefined ? excerpt : existing.excerpt,
+        category_id: category_id !== undefined ? category_id : existing.category_id,
+        featured_image: featured_image !== undefined ? featured_image : existing.featured_image,
+        is_published: is_published !== undefined ? is_published : existing.is_published,
+        is_featured: is_featured !== undefined ? is_featured : existing.is_featured,
+        scheduled_at: scheduled_at !== undefined ? scheduled_at : existing.scheduled_at,
+        tags: tags ? JSON.stringify(tags) : existing.tags,
+        meta_title: meta_title !== undefined ? meta_title : existing.meta_title,
+        meta_description: meta_description !== undefined ? meta_description : existing.meta_description,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .select()
+      .single();
 
-    const [updated] = await (pool.execute as any)(
-      'SELECT * FROM blog_posts WHERE id = ?',
-      [id]
-    );
+    if (error) throw error;
 
-    res.json({ success: true, data: updated[0] });
+    res.json({ success: true, data: updated });
   } catch (error) {
     console.error('Update blog post error:', error);
     res.status(500).json({ success: false, error: 'Failed to update blog post' });
@@ -260,17 +236,18 @@ router.delete('/posts/:id', authMiddleware, requireModerator, async (req: AuthRe
   try {
     const { id } = req.params;
 
-    const [existing] = await (pool.execute as any)(
-      'SELECT * FROM blog_posts WHERE id = ?',
-      [id]
-    );
+    const { data: existing, error: fetchError } = await supabase
+      .from('blog_posts')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-    if (existing.length === 0) {
+    if (fetchError || !existing) {
       res.status(404).json({ success: false, error: 'Blog post not found' });
       return;
     }
 
-    await pool.execute('DELETE FROM blog_posts WHERE id = ?', [id]);
+    await supabase.from('blog_posts').delete().eq('id', id);
 
     res.json({ success: true, message: 'Blog post deleted successfully' });
   } catch (error) {
@@ -285,27 +262,35 @@ router.post('/posts/:id/like', authMiddleware, async (req: AuthRequest, res: Res
     const { id } = req.params;
     const userId = req.user!.id;
 
-    const [existing] = await (pool.execute as any)(
-      'SELECT * FROM blog_likes WHERE post_id = ? AND user_id = ?',
-      [id, userId]
-    );
+    const { data: existing } = await supabase
+      .from('blog_likes')
+      .select('*')
+      .eq('post_id', id)
+      .eq('user_id', userId);
 
-    if (existing.length > 0) {
-      await pool.execute('DELETE FROM blog_likes WHERE post_id = ? AND user_id = ?', [id, userId]);
-      await pool.execute(
-        'UPDATE blog_posts SET like_count = GREATEST(0, COALESCE(like_count, 0) - 1) WHERE id = ?',
-        [id]
-      );
+    if ((existing?.length ?? 0) > 0) {
+      await supabase.from('blog_likes').delete().eq('post_id', id).eq('user_id', userId);
+
+      // Decrement like count
+      const { data: post } = await supabase.from('blog_posts').select('like_count').eq('id', id).single();
+      await supabase
+        .from('blog_posts')
+        .update({ like_count: Math.max(0, (post?.like_count || 0) - 1) })
+        .eq('id', id);
+
       res.json({ success: true, liked: false, message: 'Post unliked' });
     } else {
-      await pool.execute(
-        'INSERT INTO blog_likes (id, post_id, user_id, created_at) VALUES (?, ?, ?, NOW())',
-        [uuidv4(), id, userId]
-      );
-      await pool.execute(
-        'UPDATE blog_posts SET like_count = COALESCE(like_count, 0) + 1 WHERE id = ?',
-        [id]
-      );
+      await supabase
+        .from('blog_likes')
+        .insert({ id: uuidv4(), post_id: id, user_id: userId, created_at: new Date().toISOString() });
+
+      // Increment like count
+      const { data: post } = await supabase.from('blog_posts').select('like_count').eq('id', id).single();
+      await supabase
+        .from('blog_posts')
+        .update({ like_count: (post?.like_count || 0) + 1 })
+        .eq('id', id);
+
       res.json({ success: true, liked: true, message: 'Post liked' });
     }
   } catch (error) {
@@ -317,15 +302,33 @@ router.post('/posts/:id/like', authMiddleware, async (req: AuthRequest, res: Res
 // Get blog categories
 router.get('/categories', async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const [categories] = await (pool.execute as any)(
-      `SELECT bc.*, COUNT(bp.id) as post_count 
-       FROM blog_categories bc 
-       LEFT JOIN blog_posts bp ON bc.id = bp.category_id AND bp.is_published = TRUE 
-       GROUP BY bc.id 
-       ORDER BY bc.order_index ASC, bc.name ASC`
-    );
+    const { data: categories, error } = await supabase
+      .from('blog_categories')
+      .select('*')
+      .order('order_index', { ascending: true })
+      .order('name', { ascending: true });
 
-    res.json({ success: true, data: categories });
+    if (error) throw error;
+
+    // Get post counts
+    const { data: posts } = await supabase
+      .from('blog_posts')
+      .select('category_id')
+      .eq('is_published', true);
+
+    const postCountMap: Record<string, number> = {};
+    (posts || []).forEach((p: any) => {
+      if (p.category_id) {
+        postCountMap[p.category_id] = (postCountMap[p.category_id] || 0) + 1;
+      }
+    });
+
+    const result = (categories || []).map((c: any) => ({
+      ...c,
+      post_count: postCountMap[c.id] || 0,
+    }));
+
+    res.json({ success: true, data: result });
   } catch (error) {
     console.error('Get blog categories error:', error);
     res.status(500).json({ success: false, error: 'Failed to get blog categories' });
@@ -344,18 +347,24 @@ router.post('/categories', authMiddleware, requireModerator, async (req: AuthReq
 
     const id = uuidv4();
 
-    await pool.execute(
-      `INSERT INTO blog_categories (id, name, slug, description, icon, order_index, created_at, updated_at) 
-       VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`,
-      [id, name, slug, description || null, icon || null, order_index || 0]
-    );
+    const { data: newCategory, error } = await supabase
+      .from('blog_categories')
+      .insert({
+        id,
+        name,
+        slug,
+        description: description || null,
+        icon: icon || null,
+        order_index: order_index || 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
 
-    const [newCategory] = await (pool.execute as any)(
-      'SELECT * FROM blog_categories WHERE id = ?',
-      [id]
-    );
+    if (error) throw error;
 
-    res.status(201).json({ success: true, data: newCategory[0] });
+    res.status(201).json({ success: true, data: newCategory });
   } catch (error) {
     console.error('Create blog category error:', error);
     res.status(500).json({ success: false, error: 'Failed to create blog category' });
@@ -368,34 +377,34 @@ router.put('/categories/:id', authMiddleware, requireModerator, async (req: Auth
     const { id } = req.params;
     const { name, slug, description, icon, order_index } = req.body;
 
-    const [existing] = await (pool.execute as any)(
-      'SELECT * FROM blog_categories WHERE id = ?',
-      [id]
-    );
+    const { data: existing, error: fetchError } = await supabase
+      .from('blog_categories')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-    if (existing.length === 0) {
+    if (fetchError || !existing) {
       res.status(404).json({ success: false, error: 'Blog category not found' });
       return;
     }
 
-    await pool.execute(
-      `UPDATE blog_categories SET 
-        name = COALESCE(?, name),
-        slug = COALESCE(?, slug),
-        description = ?,
-        icon = ?,
-        order_index = ?,
-        updated_at = NOW()
-      WHERE id = ?`,
-      [name, slug, description, icon, order_index, id]
-    );
+    const { data: updated, error } = await supabase
+      .from('blog_categories')
+      .update({
+        name: name ?? existing.name,
+        slug: slug ?? existing.slug,
+        description: description !== undefined ? description : existing.description,
+        icon: icon !== undefined ? icon : existing.icon,
+        order_index: order_index !== undefined ? order_index : existing.order_index,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .select()
+      .single();
 
-    const [updated] = await (pool.execute as any)(
-      'SELECT * FROM blog_categories WHERE id = ?',
-      [id]
-    );
+    if (error) throw error;
 
-    res.json({ success: true, data: updated[0] });
+    res.json({ success: true, data: updated });
   } catch (error) {
     console.error('Update blog category error:', error);
     res.status(500).json({ success: false, error: 'Failed to update blog category' });
@@ -407,23 +416,24 @@ router.delete('/categories/:id', authMiddleware, requireModerator, async (req: A
   try {
     const { id } = req.params;
 
-    const [existing] = await (pool.execute as any)(
-      'SELECT * FROM blog_categories WHERE id = ?',
-      [id]
-    );
+    const { data: existing, error: fetchError } = await supabase
+      .from('blog_categories')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-    if (existing.length === 0) {
+    if (fetchError || !existing) {
       res.status(404).json({ success: false, error: 'Blog category not found' });
       return;
     }
 
     // Set category_id to NULL for posts in this category
-    await pool.execute(
-      'UPDATE blog_posts SET category_id = NULL WHERE category_id = ?',
-      [id]
-    );
+    await supabase
+      .from('blog_posts')
+      .update({ category_id: null })
+      .eq('category_id', id);
 
-    await pool.execute('DELETE FROM blog_categories WHERE id = ?', [id]);
+    await supabase.from('blog_categories').delete().eq('id', id);
 
     res.json({ success: true, message: 'Blog category deleted successfully' });
   } catch (error) {
@@ -437,16 +447,22 @@ router.get('/posts/:id/comments', async (req: AuthRequest, res: Response): Promi
   try {
     const { id } = req.params;
 
-    const [comments] = await (pool.execute as any)(
-      `SELECT bc.*, p.full_name as author_name, p.avatar_url as author_avatar 
-       FROM blog_comments bc 
-       JOIN profiles p ON bc.user_id = p.user_id 
-       WHERE bc.post_id = ? AND bc.is_approved = TRUE 
-       ORDER BY bc.created_at DESC`,
-      [id]
-    ) as any;
+    const { data: comments, error } = await supabase
+      .from('blog_comments')
+      .select('*, profiles!user_id(full_name, avatar_url)')
+      .eq('post_id', id)
+      .eq('is_approved', true)
+      .order('created_at', { ascending: false });
 
-    res.json({ success: true, data: comments });
+    if (error) throw error;
+
+    const result = (comments || []).map((c: any) => ({
+      ...c,
+      author_name: c.profiles?.full_name,
+      author_avatar: c.profiles?.avatar_url,
+    }));
+
+    res.json({ success: true, data: result });
   } catch (error) {
     console.error('Get blog comments error:', error);
     res.status(500).json({ success: false, error: 'Failed to get blog comments' });
@@ -467,21 +483,37 @@ router.post('/posts/:id/comments', authMiddleware, async (req: AuthRequest, res:
 
     const commentId = uuidv4();
 
-    await pool.execute(
-      `INSERT INTO blog_comments (id, content, post_id, user_id, parent_id, is_approved, like_count, created_at, updated_at) 
-       VALUES (?, ?, ?, ?, ?, TRUE, 0, NOW(), NOW())`,
-      [commentId, content, id, userId, parent_id || null]
-    );
+    const { error: insertError } = await supabase
+      .from('blog_comments')
+      .insert({
+        id: commentId,
+        content,
+        post_id: id,
+        user_id: userId,
+        parent_id: parent_id || null,
+        is_approved: true,
+        like_count: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
 
-    const [newComment] = await (pool.execute as any)(
-      `SELECT bc.*, p.full_name as author_name, p.avatar_url as author_avatar 
-       FROM blog_comments bc 
-       JOIN profiles p ON bc.user_id = p.user_id 
-       WHERE bc.id = ?`,
-      [commentId]
-    ) as any;
+    if (insertError) throw insertError;
 
-    res.status(201).json({ success: true, data: newComment[0] });
+    const { data: newComment, error } = await supabase
+      .from('blog_comments')
+      .select('*, profiles!user_id(full_name, avatar_url)')
+      .eq('id', commentId)
+      .single();
+
+    if (error) throw error;
+
+    const result: any = {
+      ...newComment,
+      author_name: (newComment as any).profiles?.full_name,
+      author_avatar: (newComment as any).profiles?.avatar_url,
+    };
+
+    res.status(201).json({ success: true, data: result });
   } catch (error) {
     console.error('Add blog comment error:', error);
     res.status(500).json({ success: false, error: 'Failed to add comment' });
@@ -499,18 +531,22 @@ router.post('/subscribe', async (req: AuthRequest, res: Response): Promise<void>
     }
 
     // Check if already subscribed
-    const [existing] = await pool.execute(
-      'SELECT * FROM blog_subscribers WHERE email = ?',
-      [email]
-    ) as any;
+    const { data: existing } = await supabase
+      .from('blog_subscribers')
+      .select('*')
+      .eq('email', email);
 
-    if (existing.length > 0) {
-      if (existing[0].unsubscribed_at) {
+    if ((existing?.length ?? 0) > 0) {
+      if (existing![0].unsubscribed_at) {
         // Resubscribe
-        await pool.execute(
-          'UPDATE blog_subscribers SET unsubscribed_at = NULL, subscribed_at = NOW(), updated_at = NOW() WHERE email = ?',
-          [email]
-        );
+        await supabase
+          .from('blog_subscribers')
+          .update({
+            unsubscribed_at: null,
+            subscribed_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq('email', email);
         res.json({ success: true, message: 'Resubscribed successfully' });
       } else {
         res.status(400).json({ success: false, error: 'Already subscribed' });
@@ -521,14 +557,21 @@ router.post('/subscribe', async (req: AuthRequest, res: Response): Promise<void>
     const id = uuidv4();
     const verificationToken = uuidv4();
 
-    await pool.execute(
-      `INSERT INTO blog_subscribers (id, email, name, is_verified, verification_token, subscribed_at, created_at, updated_at) 
-       VALUES (?, ?, ?, FALSE, ?, NOW(), NOW(), NOW())`,
-      [id, email, name || null, verificationToken]
-    );
+    await supabase
+      .from('blog_subscribers')
+      .insert({
+        id,
+        email,
+        name: name || null,
+        is_verified: false,
+        verification_token: verificationToken,
+        subscribed_at: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
 
-    res.status(201).json({ 
-      success: true, 
+    res.status(201).json({
+      success: true,
       message: 'Subscribed successfully. Please check your email to verify.',
       verification_token: verificationToken,
     });
@@ -548,20 +591,24 @@ router.post('/verify-subscription', async (req: AuthRequest, res: Response): Pro
       return;
     }
 
-    const [subscribers] = await pool.execute(
-      'SELECT * FROM blog_subscribers WHERE verification_token = ?',
-      [token]
-    ) as any;
+    const { data: subscribers, error } = await supabase
+      .from('blog_subscribers')
+      .select('*')
+      .eq('verification_token', token);
 
-    if (subscribers.length === 0) {
+    if (error || !subscribers || subscribers.length === 0) {
       res.status(404).json({ success: false, error: 'Invalid verification token' });
       return;
     }
 
-    await pool.execute(
-      'UPDATE blog_subscribers SET is_verified = TRUE, verification_token = NULL, updated_at = NOW() WHERE id = ?',
-      [subscribers[0].id]
-    );
+    await supabase
+      .from('blog_subscribers')
+      .update({
+        is_verified: true,
+        verification_token: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', subscribers[0].id);
 
     res.json({ success: true, message: 'Email verified successfully' });
   } catch (error) {
@@ -580,10 +627,13 @@ router.post('/unsubscribe', async (req: AuthRequest, res: Response): Promise<voi
       return;
     }
 
-    await pool.execute(
-      'UPDATE blog_subscribers SET unsubscribed_at = NOW(), updated_at = NOW() WHERE email = ?',
-      [email]
-    );
+    await supabase
+      .from('blog_subscribers')
+      .update({
+        unsubscribed_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('email', email);
 
     res.json({ success: true, message: 'Unsubscribed successfully' });
   } catch (error) {
@@ -595,14 +645,18 @@ router.post('/unsubscribe', async (req: AuthRequest, res: Response): Promise<voi
 // Get popular tags
 router.get('/tags', async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const [posts] = await pool.execute(
-      'SELECT tags FROM blog_posts WHERE is_published = TRUE AND tags IS NOT NULL'
-    ) as any;
+    const { data: posts, error } = await supabase
+      .from('blog_posts')
+      .select('tags')
+      .eq('is_published', true)
+      .not('tags', 'is', null);
+
+    if (error) throw error;
 
     const tagCount: Record<string, number> = {};
-    posts.forEach(post => {
+    (posts || []).forEach((post: any) => {
       try {
-        const tags = JSON.parse(post.tags as string);
+        const tags = typeof post.tags === 'string' ? JSON.parse(post.tags) : post.tags;
         if (Array.isArray(tags)) {
           tags.forEach(tag => {
             tagCount[tag] = (tagCount[tag] || 0) + 1;

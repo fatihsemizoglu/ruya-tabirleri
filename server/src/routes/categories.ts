@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { pool } from '../config/database';
+import { supabase } from '../config/database';
 import { authMiddleware, optionalAuthMiddleware, requireModerator, AuthRequest } from '../middleware/auth';
 import type { Category, Dream } from '../types/index';
 
@@ -9,15 +9,33 @@ const router = Router();
 // Get all categories
 router.get('/', async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const [categories] = await pool.execute(
-      `SELECT c.*, COUNT(d.id) as dream_count 
-       FROM categories c 
-       LEFT JOIN dreams d ON c.id = d.category_id AND d.is_published = TRUE 
-       GROUP BY c.id 
-       ORDER BY c.order_index ASC, c.name ASC`
-    ) as any;
+    const { data: categories, error } = await supabase
+      .from('categories')
+      .select('*')
+      .order('order_index', { ascending: true })
+      .order('name', { ascending: true });
 
-    res.json({ success: true, data: categories });
+    if (error) throw error;
+
+    // Get dream counts for published dreams
+    const { data: dreams } = await supabase
+      .from('dreams')
+      .select('category_id')
+      .eq('is_published', true);
+
+    const dreamCountMap: Record<string, number> = {};
+    (dreams || []).forEach((d: any) => {
+      if (d.category_id) {
+        dreamCountMap[d.category_id] = (dreamCountMap[d.category_id] || 0) + 1;
+      }
+    });
+
+    const result = (categories || []).map((c: any) => ({
+      ...c,
+      dream_count: dreamCountMap[c.id] || 0,
+    }));
+
+    res.json({ success: true, data: result });
   } catch (error) {
     console.error('Get categories error:', error);
     res.status(500).json({ success: false, error: 'Failed to get categories' });
@@ -29,21 +47,25 @@ router.get('/:slug', optionalAuthMiddleware, async (req: AuthRequest, res: Respo
   try {
     const { slug } = req.params;
 
-    const [categories] = await pool.execute(
-      `SELECT c.*, COUNT(d.id) as dream_count 
-       FROM categories c 
-       LEFT JOIN dreams d ON c.id = d.category_id AND d.is_published = TRUE 
-       WHERE c.slug = ? 
-       GROUP BY c.id`,
-      [slug]
-    ) as any;
+    const { data: category, error } = await supabase
+      .from('categories')
+      .select('*')
+      .eq('slug', slug)
+      .single();
 
-    if (categories.length === 0) {
+    if (error || !category) {
       res.status(404).json({ success: false, error: 'Category not found' });
       return;
     }
 
-    res.json({ success: true, data: categories[0] });
+    // Get dream count for this category
+    const { count } = await supabase
+      .from('dreams')
+      .select('*', { count: 'exact', head: true })
+      .eq('category_id', category.id)
+      .eq('is_published', true);
+
+    res.json({ success: true, data: { ...category, dream_count: count || 0 } });
   } catch (error) {
     console.error('Get category error:', error);
     res.status(500).json({ success: false, error: 'Failed to get category' });
@@ -59,37 +81,40 @@ router.get('/:slug/dreams', optionalAuthMiddleware, async (req: AuthRequest, res
     const offset = (page - 1) * limit;
 
     // Get category
-    const [categories] = await (pool.execute as any)(
-      'SELECT * FROM categories WHERE slug = ?',
-      [slug]
-    );
+    const { data: category, error: catError } = await supabase
+      .from('categories')
+      .select('*')
+      .eq('slug', slug)
+      .single();
 
-    if (categories.length === 0) {
+    if (catError || !category) {
       res.status(404).json({ success: false, error: 'Category not found' });
       return;
     }
 
-    const category = categories[0];
-
     // Get total count
-    const [countResult] = await pool.execute(
-      'SELECT COUNT(*) as count FROM dreams WHERE category_id = ? AND is_published = TRUE',
-      [category.id]
-    ) as any;
-    const total = countResult[0].count;
+    const { count } = await supabase
+      .from('dreams')
+      .select('*', { count: 'exact', head: true })
+      .eq('category_id', category.id)
+      .eq('is_published', true);
+
+    const total = count || 0;
 
     // Get dreams
-    const [dreams] = await pool.execute(
-      `SELECT * FROM dreams 
-       WHERE category_id = ? AND is_published = TRUE 
-       ORDER BY created_at DESC 
-       LIMIT ? OFFSET ?`,
-      [category.id, limit, offset]
-    ) as any;
+    const { data: dreams, error } = await supabase
+      .from('dreams')
+      .select('*')
+      .eq('category_id', category.id)
+      .eq('is_published', true)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (error) throw error;
 
     res.json({
       success: true,
-      data: dreams,
+      data: dreams || [],
       category,
       pagination: {
         page,
@@ -116,18 +141,25 @@ router.post('/', authMiddleware, requireModerator, async (req: AuthRequest, res:
 
     const id = uuidv4();
 
-    await pool.execute(
-      `INSERT INTO categories (id, name, slug, description, icon, parent_id, order_index, created_at, updated_at) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
-      [id, name, slug, description || null, icon || null, parent_id || null, order_index || 0]
-    );
+    const { data: newCategory, error } = await supabase
+      .from('categories')
+      .insert({
+        id,
+        name,
+        slug,
+        description: description || null,
+        icon: icon || null,
+        parent_id: parent_id || null,
+        order_index: order_index || 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
 
-    const [newCategory] = await pool.execute(
-      'SELECT * FROM categories WHERE id = ?',
-      [id]
-    ) as any;
+    if (error) throw error;
 
-    res.status(201).json({ success: true, data: newCategory[0] });
+    res.status(201).json({ success: true, data: newCategory });
   } catch (error) {
     console.error('Create category error:', error);
     res.status(500).json({ success: false, error: 'Failed to create category' });
@@ -140,45 +172,35 @@ router.put('/:id', authMiddleware, requireModerator, async (req: AuthRequest, re
     const { id } = req.params;
     const { name, slug, description, icon, parent_id, order_index } = req.body;
 
-    const [existing] = await pool.execute(
-      'SELECT * FROM categories WHERE id = ?',
-      [id]
-    ) as any;
+    const { data: existing, error: fetchError } = await supabase
+      .from('categories')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-    if (existing.length === 0) {
+    if (fetchError || !existing) {
       res.status(404).json({ success: false, error: 'Category not found' });
       return;
     }
 
-    const existingCategory = existing[0];
-    
-    // Use existing values if new values are undefined
-    const updatedName = name !== undefined ? name : existingCategory.name;
-    const updatedSlug = slug !== undefined ? slug : existingCategory.slug;
-    const updatedDescription = description !== undefined ? description : existingCategory.description;
-    const updatedIcon = icon !== undefined ? icon : existingCategory.icon;
-    const updatedParentId = parent_id !== undefined ? parent_id : existingCategory.parent_id;
-    const updatedOrderIndex = order_index !== undefined ? order_index : existingCategory.order_index;
+    const { data: updated, error } = await supabase
+      .from('categories')
+      .update({
+        name: name !== undefined ? name : existing.name,
+        slug: slug !== undefined ? slug : existing.slug,
+        description: description !== undefined ? description : existing.description,
+        icon: icon !== undefined ? icon : existing.icon,
+        parent_id: parent_id !== undefined ? parent_id : existing.parent_id,
+        order_index: order_index !== undefined ? order_index : existing.order_index,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .select()
+      .single();
 
-    await pool.execute(
-      `UPDATE categories SET 
-        name = ?,
-        slug = ?,
-        description = ?,
-        icon = ?,
-        parent_id = ?,
-        order_index = ?,
-        updated_at = NOW()
-      WHERE id = ?`,
-      [updatedName, updatedSlug, updatedDescription, updatedIcon, updatedParentId, updatedOrderIndex, id]
-    );
+    if (error) throw error;
 
-    const [updated] = await pool.execute(
-      'SELECT * FROM categories WHERE id = ?',
-      [id]
-    ) as any;
-
-    res.json({ success: true, data: updated[0] });
+    res.json({ success: true, data: updated });
   } catch (error) {
     console.error('Update category error:', error);
     res.status(500).json({ success: false, error: 'Failed to update category' });
@@ -190,23 +212,27 @@ router.delete('/:id', authMiddleware, requireModerator, async (req: AuthRequest,
   try {
     const { id } = req.params;
 
-    const [existing] = await pool.execute(
-      'SELECT * FROM categories WHERE id = ?',
-      [id]
-    ) as any;
+    const { data: existing, error: fetchError } = await supabase
+      .from('categories')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-    if (existing.length === 0) {
+    if (fetchError || !existing) {
       res.status(404).json({ success: false, error: 'Category not found' });
       return;
     }
 
     // Set category_id to NULL for dreams in this category
-    await pool.execute(
-      'UPDATE dreams SET category_id = NULL WHERE category_id = ?',
-      [id]
-    );
+    await supabase
+      .from('dreams')
+      .update({ category_id: null })
+      .eq('category_id', id);
 
-    await pool.execute('DELETE FROM categories WHERE id = ?', [id]);
+    await supabase
+      .from('categories')
+      .delete()
+      .eq('id', id);
 
     res.json({ success: true, message: 'Category deleted successfully' });
   } catch (error) {
