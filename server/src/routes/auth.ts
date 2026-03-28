@@ -1,6 +1,6 @@
 import { Router, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
-import { pool } from '../config/database';
+import { supabase } from '../config/database';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { authService } from '../services/authService';
 import type { LoginRequest, RegisterRequest, AuthResponse, UserPublic } from '../types/index';
@@ -81,30 +81,38 @@ router.post('/logout', authMiddleware, async (req: AuthRequest, res: Response): 
 // Update profile
 router.put('/profile', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const userId = req.user!.id; // req.user is guaranteed by authMiddleware
+    const userId = req.user!.id;
     const { full_name, username, bio, avatar_url } = req.body;
 
-    await pool.execute(
-      `UPDATE profiles 
-       SET full_name = ?, username = ?, bio = ?, avatar_url = ?, updated_at = NOW() 
-       WHERE user_id = ?`,
-      [full_name || null, username || null, bio || null, avatar_url || null, userId]
-    );
+    await supabase
+      .from('profiles')
+      .update({
+        full_name: full_name || null,
+        username: username || null,
+        bio: bio || null,
+        avatar_url: avatar_url || null,
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', userId);
 
-    const [profiles] = await pool.execute(
-      'SELECT * FROM profiles WHERE user_id = ?',
-      [userId]
-    ) as [any[], any];
+    const { data: updatedProfile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
 
-    const updatedProfile = profiles[0];
-    
-    // Get user role
-    const [roles] = await pool.execute(
-      'SELECT role FROM user_roles WHERE user_id = ?',
-      [userId]
-    ) as any;
-    
-    const role = (roles[0]?.role as 'admin' | 'moderator' | 'user') || 'user';
+    if (!updatedProfile) {
+      res.status(404).json({ success: false, error: 'Profile not found' });
+      return;
+    }
+
+    const { data: roleData } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .single();
+
+    const role = (roleData?.role as 'admin' | 'moderator' | 'user') || 'user';
 
     const user: UserPublic = {
       id: updatedProfile.user_id,
