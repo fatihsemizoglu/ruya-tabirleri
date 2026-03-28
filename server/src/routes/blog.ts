@@ -1,8 +1,8 @@
 import { Router, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { pool } from '../config/database.js';
-import { authMiddleware, optionalAuthMiddleware, requireModerator, AuthRequest } from '../middleware/auth.js';
-import type { BlogPost, BlogCategory, BlogComment, BlogLike, BlogSubscriber } from '../types/index.js';
+import { pool } from '../config/database';
+import { authMiddleware, optionalAuthMiddleware, requireModerator, AuthRequest } from '../middleware/auth';
+import type { BlogPost, BlogCategory, BlogComment, BlogLike, BlogSubscriber } from '../types/index';
 type BlogPostWithExtras = BlogPost & { author_name?: string; category_name?: string; };
 
 const router = Router();

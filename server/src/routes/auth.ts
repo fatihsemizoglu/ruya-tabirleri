@@ -1,11 +1,11 @@
 import { Router, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
-import { pool } from '../config/database.js';
-import { authMiddleware, AuthRequest } from '../middleware/auth.js';
-import { authService } from '../services/authService.js';
-import type { LoginRequest, RegisterRequest, AuthResponse, UserPublic } from '../types/index.js';
+import { pool } from '../config/database';
+import { authMiddleware, AuthRequest } from '../middleware/auth';
+import { authService } from '../services/authService';
+import type { LoginRequest, RegisterRequest, AuthResponse, UserPublic } from '../types/index';
 import { z } from 'zod';
-import { AppError } from '../middleware/errorMiddleware.js';
+import { AppError } from '../middleware/errorMiddleware';
 
 const router = Router();
 

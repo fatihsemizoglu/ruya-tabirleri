@@ -1,9 +1,9 @@
 import { Router, Response, NextFunction } from 'express';
-import { authMiddleware, optionalAuthMiddleware, requireAdmin, requireModerator, AuthRequest } from '../middleware/auth.js';
-import { dreamService } from '../services/dreamService.js';
-import type { DreamWithCategory } from '../types/index.js';
-import { AppError } from '../middleware/errorMiddleware.js';
-import { pool } from '../config/database.js';
+import { authMiddleware, optionalAuthMiddleware, requireAdmin, requireModerator, AuthRequest } from '../middleware/auth';
+import { dreamService } from '../services/dreamService';
+import type { DreamWithCategory } from '../types/index';
+import { AppError } from '../middleware/errorMiddleware';
+import { pool } from '../config/database';
 import { v4 as uuidv4 } from 'uuid';
 
 const router = Router();

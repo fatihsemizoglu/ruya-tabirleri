@@ -1,7 +1,7 @@
-import { pool } from '../config/database.js';
+import { pool } from '../config/database';
 import { v4 as uuidv4 } from 'uuid';
-import { AppError } from '../middleware/errorMiddleware.js';
-import type { Dream, Category, Comment, DreamLike, Favorite, ViewHistory } from '../types/index.js';
+import { AppError } from '../middleware/errorMiddleware';
+import type { Dream, Category, Comment, DreamLike, Favorite, ViewHistory } from '../types/index';
 
 interface DreamWithCategory extends Dream {
   category_name?: string;

@@ -21,3 +21,4 @@ test-results/
 *.db
 *.sqlite
 nul
+tsconfig.tsbuildinfo

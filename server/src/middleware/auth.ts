@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import { pool } from '../config/database.js';
-import type { UserPublic, Profile, UserRole } from '../types/index.js';
+import { pool } from '../config/database';
+import type { UserPublic, Profile, UserRole } from '../types/index';
 
 // Extend Express Request type
 export interface AuthRequest extends Request {

@@ -3,18 +3,18 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
-import { testConnection } from './config/database.js';
+import { testConnection } from './config/database';
 
 // Import routes
-import authRoutes from './routes/auth.js';
-import dreamRoutes from './routes/dreams.js';
-import categoryRoutes from './routes/categories.js';
-import userRoutes from './routes/users.js';
-import blogRoutes from './routes/blog.js';
-import searchRoutes from './routes/search.js';
-import contactRoutes from './routes/contact.js';
-import adminRoutes from './routes/admin.js';
-import { errorHandler } from './middleware/errorMiddleware.js';
+import authRoutes from './routes/auth';
+import dreamRoutes from './routes/dreams';
+import categoryRoutes from './routes/categories';
+import userRoutes from './routes/users';
+import blogRoutes from './routes/blog';
+import searchRoutes from './routes/search';
+import contactRoutes from './routes/contact';
+import adminRoutes from './routes/admin';
+import { errorHandler } from './middleware/errorMiddleware';
 
 // Load environment variables
 dotenv.config();

@@ -1,7 +1,7 @@
 import { Router, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { pool } from '../config/database.js';
-import { authMiddleware, requireAdmin, requireModerator, AuthRequest } from '../middleware/auth.js';
+import { pool } from '../config/database';
+import { authMiddleware, requireAdmin, requireModerator, AuthRequest } from '../middleware/auth';
 import { RowDataPacket } from 'mysql2/promise';
 
 interface CountResult extends RowDataPacket {

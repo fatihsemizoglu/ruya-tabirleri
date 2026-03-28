@@ -1,9 +1,9 @@
-import { pool } from '../config/database.js';
+import { pool } from '../config/database';
 import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcryptjs';
-import { AppError } from '../middleware/errorMiddleware.js';
-import type { LoginRequest, RegisterRequest, AuthResponse, UserPublic, Profile, UserRole } from '../types/index.js';
-import { generateToken, AuthRequest } from '../middleware/auth.js';
+import { AppError } from '../middleware/errorMiddleware';
+import type { LoginRequest, RegisterRequest, AuthResponse, UserPublic, Profile, UserRole } from '../types/index';
+import { generateToken, AuthRequest } from '../middleware/auth';
 
 export class AuthService {
   /**

@@ -1,8 +1,8 @@
 import { Router, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { pool } from '../config/database.js';
-import { optionalAuthMiddleware, AuthRequest } from '../middleware/auth.js';
-import type { Dream, SearchLog } from '../types/index.js';
+import { pool } from '../config/database';
+import { optionalAuthMiddleware, AuthRequest } from '../middleware/auth';
+import type { Dream, SearchLog } from '../types/index';
 
 const router = Router();
 

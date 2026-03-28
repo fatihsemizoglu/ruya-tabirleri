@@ -1,8 +1,8 @@
 import { Router, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { pool } from '../config/database.js';
-import { authMiddleware, requireModerator, AuthRequest } from '../middleware/auth.js';
-import type { ContactMessage } from '../types/index.js';
+import { pool } from '../config/database';
+import { authMiddleware, requireModerator, AuthRequest } from '../middleware/auth';
+import type { ContactMessage } from '../types/index';
 
 const router = Router();
 
