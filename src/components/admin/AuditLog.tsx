@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { adminApi } from '@/lib/api';
+import { queryKeys } from '@/lib/query/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -104,7 +105,7 @@ export function AuditLog() {
   const pageSize = 20;
 
   const { data, isLoading, refetch, isRefetching } = useQuery({
-    queryKey: ['audit-logs', page, entityFilter, actionFilter, searchQuery],
+    queryKey: queryKeys.admin.auditLogs.list({ page, entityFilter, actionFilter, searchQuery }),
     queryFn: async () => {
       const response = await adminApi.getAuditLogs({
         page,

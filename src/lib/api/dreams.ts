@@ -2,13 +2,15 @@ import { fetchApi } from './client';
 import { Dream, Comment, ApiResponse } from './types';
 
 export const dreamsApi = {
-    async getAll(page = 1, limit = 20, filters: any = {}) {
-        let query = `?page=${page}&limit=${limit}`;
-        if (filters.category) query += `&category=${filters.category}`;
-        if (filters.search) query += `&search=${filters.search}`;
-        if (filters.is_featured !== undefined) query += `&is_featured=${filters.is_featured}`;
+    async getAll(params: any = {}) {
+        const searchParams = new URLSearchParams();
+        Object.entries(params).forEach(([key, value]) => {
+            if (value !== undefined && value !== null && value !== '') {
+                searchParams.append(key, String(value));
+            }
+        });
 
-        return fetchApi<Dream[]>(`/dreams${query}`);
+        return fetchApi<Dream[]>(`/dreams?${searchParams.toString()}`);
     },
 
     async getFeatured(limit = 5) {

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { blogApi } from '@/lib/api';
+import { queryKeys } from '@/lib/query/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -51,7 +52,7 @@ export function BlogCategoryManagement() {
   });
 
   const { data: categories, isLoading } = useQuery({
-    queryKey: ['admin-blog-categories'],
+    queryKey: queryKeys.admin.blog.categories,
     queryFn: async () => {
       const response = await blogApi.getCategories();
       if (!response.success) throw new Error(response.error || 'Failed to fetch categories');
@@ -71,7 +72,7 @@ export function BlogCategoryManagement() {
       const response = await blogApi.createCategory({ name: values.name, slug: values.slug, description: values.description || null, icon: values.icon || null, order_index: values.order_index || 0 });
       if (!response.success) throw new Error(response.error || 'Failed to create category');
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['admin-blog-categories'] }); toast.success('Kategori oluşturuldu'); handleClose(); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.admin.blog.categories }); toast.success('Kategori oluşturuldu'); handleClose(); },
     onError: (error: Error) => { toast.error(`Hata: ${error.message}`); },
   });
 
@@ -80,13 +81,13 @@ export function BlogCategoryManagement() {
       const response = await blogApi.updateCategory(id, { name: values.name, slug: values.slug, description: values.description || null, icon: values.icon || null, order_index: values.order_index || 0 });
       if (!response.success) throw new Error(response.error || 'Failed to update category');
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['admin-blog-categories'] }); toast.success('Kategori güncellendi'); handleClose(); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.admin.blog.categories }); toast.success('Kategori güncellendi'); handleClose(); },
     onError: (error: Error) => { toast.error(`Hata: ${error.message}`); },
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => { const response = await blogApi.deleteCategory(id); if (!response.success) throw new Error(response.error || 'Failed to delete category'); },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['admin-blog-categories'] }); toast.success('Kategori silindi'); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.admin.blog.categories }); toast.success('Kategori silindi'); },
     onError: (error: Error) => { toast.error(`Hata: ${error.message}`); },
   });
 

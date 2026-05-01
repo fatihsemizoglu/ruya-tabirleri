@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { Heart, Trash2, MoreHorizontal, Flag, ChevronDown, ChevronUp } from 'lucide-react';
+import { EmojiReactions } from './EmojiReactions';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -244,6 +245,7 @@ export function CommentList({ comments, dreamId, onRefresh }: CommentListProps) 
                   />
                   <span>{comment.like_count || 0}</span>
                 </button>
+                <EmojiReactions commentId={comment.id} />
               </div>
             </div>
           );

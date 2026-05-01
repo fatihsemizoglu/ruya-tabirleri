@@ -42,7 +42,7 @@ interface SpeechRecognition extends EventTarget {
   start(): void;
   stop(): void;
 }
-import { TrendingUp, Eye, Heart, Star, ChevronUp, Loader2, Flame, Award, Sparkles, Search, Grid3X3, List, Calendar, Clock, Filter, Mic, MicOff, Pencil, Edit } from 'lucide-react';
+import { TrendingUp, Eye, Heart, Star, ChevronUp, Loader2, Flame, Award, Sparkles, Search, Grid3X3, List, Calendar, Clock, Filter, Mic, Pencil } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -75,6 +75,9 @@ export default function Popular() {
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('trending');
   const [showScrollTop, setShowScrollTop] = useState(false);
+  
+  const [totalPages, setTotalPages] = useState({ viewed: 1, liked: 1, featured: 1 });
+  const [currentPages, setCurrentPages] = useState({ viewed: 1, liked: 1, featured: 1 });
   
   // Edit dialog state
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -127,11 +130,6 @@ export default function Popular() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  // Refetch when time filter changes
-  useEffect(() => {
-    fetchDreams();
-  }, [timeFilter]);
 
   // Initialize speech recognition
   useEffect(() => {
@@ -252,7 +250,6 @@ export default function Popular() {
     setLoadingMore(true);
     try {
       if (type === 'viewed') {
-        const offset = viewedPage * ITEMS_PER_PAGE;
         const response = await dreamsApi.getAll({
           limit: ITEMS_PER_PAGE,
           page: viewedPage + 1,
@@ -261,8 +258,11 @@ export default function Popular() {
         });
         if (response.success && response.data) {
           setMostViewed(prev => [...prev, ...response.data]);
-          setHasMoreViewed(response.data.length === ITEMS_PER_PAGE);
+          setHasMoreViewed(currentPages.viewed < totalPages.viewed);
           setViewedPage(prev => prev + 1);
+          if (response.pagination) {
+            setTotalPages(prev => ({ ...prev, viewed: response.pagination.totalPages }));
+          }
         }
       } else if (type === 'liked') {
         const response = await dreamsApi.getAll({
@@ -273,8 +273,11 @@ export default function Popular() {
         });
         if (response.success && response.data) {
           setMostLiked(prev => [...prev, ...response.data]);
-          setHasMoreLiked(response.data.length === ITEMS_PER_PAGE);
+          setHasMoreLiked(currentPages.liked < totalPages.liked);
           setLikedPage(prev => prev + 1);
+          if (response.pagination) {
+            setTotalPages(prev => ({ ...prev, liked: response.pagination.totalPages }));
+          }
         }
       } else {
         const response = await dreamsApi.getFeatured((featuredPage + 1) * ITEMS_PER_PAGE);

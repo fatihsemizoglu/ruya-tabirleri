@@ -1,4 +1,6 @@
 import { authApi } from './auth';
+import { fetchApi } from './client';
+import { queryClient, queryKeys } from '../query/client';
 import { dreamsApi } from './dreams';
 import { categoriesApi } from './categories';
 import { usersApi } from './users';
@@ -19,6 +21,7 @@ export * from './search';
 export * from './contact';
 export * from './admin';
 export * from './media';
+export * from './features';
 
 export const api = {
     auth: authApi,

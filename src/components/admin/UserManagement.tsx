@@ -1,45 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchApi } from '@/lib/api';
 import type { Profile, AppRole } from '@/lib/api';
+import { queryKeys } from '@/lib/query/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Users, 
-  Search, 
-  Shield, 
-  ShieldCheck,
-  Crown,
-  User,
-  Calendar,
-  MoreVertical,
-  RefreshCw,
-  UserCheck,
-  UserX,
-  Mail,
-  X,
-  Check
-} from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Users, Search, Shield, ShieldCheck, Crown, User, Calendar, MoreVertical, RefreshCw, UserCheck, Mail } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
@@ -74,55 +44,33 @@ function StatCard({ label, value, icon: Icon, color, bgColor }: StatCardProps) {
 }
 
 export function UserManagement() {
-  const [users, setUsers] = useState<UserWithRole[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<'all' | AppRole>('all');
   const [selectedUser, setSelectedUser] = useState<UserWithRole | null>(null);
   const [editingRole, setEditingRole] = useState(false);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  const fetchUsers = async () => {
-    setLoading(true);
-    try {
+  const { data: users = [], isLoading, refetch } = useQuery({
+    queryKey: queryKeys.admin.users,
+    queryFn: async () => {
       const response = await fetchApi<UserWithRole[]>('/admin/users');
       if (!response.success) throw new Error(response.error || 'Failed to fetch users');
-      setUsers(response.data || []);
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      toast.error('Kullanıcılar yüklenirken hata oluştu');
-    } finally {
-      setLoading(false);
-    }
-  };
+      return response.data || [];
+    },
+  });
 
-  const updateUserRole = async (userId: string, newRole: AppRole) => {
-    try {
-      const response = await fetchApi(`/admin/users/${userId}/role`, {
-        method: 'PUT',
-        body: JSON.stringify({ role: newRole }),
-      });
-
-      if (!response.success) throw new Error(response.error || 'Failed to update role');
-
-      setUsers(users.map(u => 
-        u.user_id === userId ? { ...u, role: newRole } : u
-      ));
-      
-      if (selectedUser?.user_id === userId) {
-        setSelectedUser({ ...selectedUser, role: newRole });
-      }
-
-      toast.success('Kullanıcı rolü güncellendi');
+  const updateRole = useMutation({
+    mutationFn: ({ userId, role }: { userId: string; role: AppRole }) =>
+      fetchApi(`/admin/users/${userId}/role`, { method: 'PUT', body: JSON.stringify({ role }) }),
+    onSuccess: (_, { userId, role }) => {
+      queryClient.setQueryData<UserWithRole[]>(queryKeys.admin.users, (old) =>
+        old?.map(u => u.user_id === userId ? { ...u, role } : u)
+      );
       setEditingRole(false);
-    } catch (error) {
-      console.error('Error updating role:', error);
-      toast.error('Rol güncellenirken hata oluştu');
-    }
-  };
+      toast.success('Kullanıcı rolü güncellendi');
+    },
+    onError: () => toast.error('Rol güncellenirken hata oluştu'),
+  });
 
   const getRoleBadge = (role: AppRole | undefined) => {
     switch (role) {
@@ -148,7 +96,7 @@ export function UserManagement() {
   const moderatorCount = users.filter(u => u.role === 'moderator').length;
   const userCount = users.filter(u => u.role === 'user' || !u.role).length;
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="rounded-xl border bg-white p-8 dark:bg-slate-900/50">
         <div className="flex items-center justify-center gap-3">
@@ -215,7 +163,7 @@ export function UserManagement() {
             <SelectItem value="user">Kullanıcı</SelectItem>
           </SelectContent>
         </Select>
-        <Button variant="outline" size="icon" className="h-9 w-9 shrink-0" onClick={fetchUsers}>
+        <Button variant="outline" size="icon" className="h-9 w-9 shrink-0" onClick={() => refetch()}>
           <RefreshCw className="h-4 w-4" />
         </Button>
       </div>
@@ -375,7 +323,7 @@ export function UserManagement() {
                     {(['user', 'moderator', 'admin'] as AppRole[]).map((role) => (
                       <button
                         key={role}
-                        onClick={() => selectedUser.user_id && updateUserRole(selectedUser.user_id, role)}
+                        onClick={() => selectedUser.user_id && updateRole.mutate({ userId: selectedUser.user_id, role })}
                         className={cn(
                           "flex flex-col items-center gap-1.5 rounded-lg border p-3 transition-all",
                           selectedUser.role === role 

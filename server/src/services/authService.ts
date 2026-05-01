@@ -1,15 +1,33 @@
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '../config/database';
 import { AppError } from '../middleware/errorMiddleware';
+import { env } from '../config/env';
 import type { LoginRequest, RegisterRequest, AuthResponse, UserPublic } from '../types/index';
+import type { Response } from 'express';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
+const COOKIE_NAME = 'auth_token';
 
 export function generateToken(userId: string, email: string): string {
-  return jwt.sign({ userId, email }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+  return jwt.sign({ userId, email }, env.JWT_SECRET, { expiresIn: env.JWT_EXPIRES_IN as jwt.SignOptions['expiresIn'] });
+}
+
+export function setAuthCookie(res: Response, token: string): void {
+  const isProduction = env.NODE_ENV === 'production';
+  const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+  res.cookie(COOKIE_NAME, token, {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: 'lax',
+    maxAge,
+    path: '/',
+  });
+}
+
+export function clearAuthCookie(res: Response): void {
+  res.clearCookie(COOKIE_NAME, { path: '/' });
 }
 
 export class AuthService {
@@ -71,7 +89,7 @@ export class AuthService {
         role: 'user',
       },
       token,
-      expiresIn: JWT_EXPIRES_IN,
+      expiresIn: env.JWT_EXPIRES_IN,
     };
   }
 
@@ -89,22 +107,11 @@ export class AuthService {
     const isValidPassword = await bcrypt.compare(password, user.password);
     if (!isValidPassword) throw new AppError('Invalid email or password', 401);
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('user_id', user.id)
-      .single();
-
-    const { data: roleData } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .single();
-
-    await supabase
-      .from('users')
-      .update({ updated_at: new Date().toISOString() })
-      .eq('id', user.id);
+    const [{ data: profile }, { data: roleData }] = await Promise.all([
+      supabase.from('profiles').select('*').eq('user_id', user.id).single(),
+      supabase.from('user_roles').select('role').eq('user_id', user.id).single(),
+      supabase.from('users').update({ updated_at: new Date().toISOString() }).eq('id', user.id),
+    ]);
 
     const token = generateToken(user.id, user.email);
     const role = (roleData?.role as 'admin' | 'moderator' | 'user') || 'user';
@@ -118,24 +125,17 @@ export class AuthService {
         role,
       },
       token,
-      expiresIn: JWT_EXPIRES_IN,
+      expiresIn: env.JWT_EXPIRES_IN,
     };
   }
 
   async getProfile(userId: string): Promise<{ user: UserPublic }> {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
+    const [{ data: profile }, { data: roleData }] = await Promise.all([
+      supabase.from('profiles').select('*').eq('user_id', userId).single(),
+      supabase.from('user_roles').select('role').eq('user_id', userId).single(),
+    ]);
 
     if (!profile) throw new AppError('Profile not found', 404);
-
-    const { data: roleData } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId)
-      .single();
 
     const role = (roleData?.role as 'admin' | 'moderator' | 'user') || 'user';
 

@@ -3,12 +3,15 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { supabase } from '../config/database';
 import type { UserPublic, Profile, UserRole } from '../types/index';
+import logger from '../utils/logger';
+
+import { env } from '../config/env';
 
 export interface AuthRequest extends Request {
   user?: UserPublic;
 }
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const JWT_SECRET = env.JWT_SECRET;
 
 export interface JwtPayload {
   userId: string;
@@ -31,107 +34,67 @@ export const verifyToken = (token: string): JwtPayload | null => {
 
 export const authMiddleware = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
+    let token: string | undefined;
     const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    const cookieToken = req.cookies?.auth_token;
+
+    if (authHeader?.startsWith('Bearer ')) {
+      token = authHeader.split(' ')[1];
+    } else if (cookieToken) {
+      token = cookieToken;
+    }
+
+    if (!token) {
       res.status(401).json({ success: false, error: 'No token provided' });
       return;
     }
 
-    const token = authHeader.split(' ')[1];
     const decoded = verifyToken(token);
     if (!decoded) {
       res.status(401).json({ success: false, error: 'Invalid or expired token' });
       return;
     }
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('user_id', decoded.userId)
-      .single();
+    const [{ data: profile }, { data: roleData }] = await Promise.all([
+      supabase.from('profiles').select('*').eq('user_id', decoded.userId).single(),
+      supabase.from('user_roles').select('role').eq('user_id', decoded.userId).single(),
+    ]);
 
-    if (!profile) {
-      const { data: existingUser } = await supabase
-        .from('users')
-        .select('id, email')
-        .eq('email', decoded.email)
-        .single();
-
-      if (existingUser) {
-        const { data: emailProfile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('email', decoded.email)
-          .single();
-
-        if (emailProfile) {
-          const { data: roleData } = await supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', existingUser.id)
-            .single();
-
-          (req as AuthRequest).user = {
-            id: decoded.userId,
-            email: decoded.email,
-            profile: emailProfile,
-            role: (roleData?.role as 'admin' | 'moderator' | 'user') || 'user',
-          };
-        } else {
-          const profileId = crypto.randomUUID();
-          await supabase.from('profiles').insert({
-            id: profileId,
-            user_id: decoded.userId,
-            email: decoded.email,
-            full_name: 'Admin',
-            username: 'admin',
-          });
-
-          await supabase.from('user_roles').insert({
-            id: crypto.randomUUID(),
-            user_id: decoded.userId,
-            role: 'admin',
-          });
-
-          (req as AuthRequest).user = {
-            id: decoded.userId,
-            email: decoded.email,
-            profile: {
-              id: profileId,
-              user_id: decoded.userId,
-              email: decoded.email,
-              full_name: 'Admin',
-              username: 'admin',
-              avatar_url: null,
-              bio: null,
-              created_at: new Date(),
-              updated_at: new Date(),
-            },
-            role: 'admin',
-          };
-        }
-      } else {
-        res.status(401).json({ success: false, error: 'User not found in database' });
-        return;
-      }
-    } else {
-      const { data: roleData } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', decoded.userId)
-        .single();
-
+    if (profile) {
       (req as AuthRequest).user = {
-        id: decoded.userId,
-        email: decoded.email,
-        profile,
+        id: decoded.userId, email: decoded.email, profile,
         role: (roleData?.role as 'admin' | 'moderator' | 'user') || 'user',
       };
+      next();
+      return;
     }
 
+    const [{ data: existingUser }] = await Promise.all([
+      supabase.from('users').select('id, email').eq('email', decoded.email).single(),
+    ]);
+
+    if (!existingUser) {
+      res.status(401).json({ success: false, error: 'User not found in database' });
+      return;
+    }
+
+    const profileId = crypto.randomUUID();
+    const roleId = crypto.randomUUID();
+    const now = new Date();
+
+    await Promise.all([
+      supabase.from('profiles').insert({ id: profileId, user_id: decoded.userId, email: decoded.email, full_name: decoded.email.split('@')[0], username: decoded.email.split('@')[0] }),
+      supabase.from('user_roles').insert({ id: roleId, user_id: decoded.userId, role: 'user' }),
+    ]);
+
+    (req as AuthRequest).user = {
+      id: decoded.userId, email: decoded.email,
+      profile: { id: profileId, user_id: decoded.userId, email: decoded.email, full_name: decoded.email.split('@')[0], username: decoded.email.split('@')[0], avatar_url: null, bio: null, created_at: now, updated_at: now },
+      role: 'user',
+    };
     next();
   } catch (error) {
-    console.error('Auth middleware error:', error);
+    logger.error({ err: error }, 'Auth middleware error');
     res.status(500).json({ success: false, error: 'Authentication failed' });
   }
 };
@@ -139,12 +102,20 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
 export const optionalAuthMiddleware = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    const cookieToken = req.cookies?.auth_token;
+
+    let token: string | undefined;
+    if (authHeader?.startsWith('Bearer ')) {
+      token = authHeader.split(' ')[1];
+    } else if (cookieToken) {
+      token = cookieToken;
+    }
+
+    if (!token) {
       next();
       return;
     }
 
-    const token = authHeader.split(' ')[1];
     const decoded = verifyToken(token);
     if (!decoded) {
       next();
@@ -174,7 +145,7 @@ export const optionalAuthMiddleware = async (req: Request, res: Response, next: 
 
     next();
   } catch (error) {
-    console.error('Optional auth middleware error:', error);
+    logger.error({ err: error }, 'Auth middleware error');
     next();
   }
 };
@@ -196,3 +167,4 @@ export const requireRole = (...roles: ('admin' | 'moderator' | 'user')[]) => {
 
 export const requireAdmin = requireRole('admin');
 export const requireModerator = requireRole('admin', 'moderator');
+

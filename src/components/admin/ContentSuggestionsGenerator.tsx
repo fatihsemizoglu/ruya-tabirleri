@@ -62,7 +62,7 @@ export function ContentSuggestionsGenerator({
         toast.success('Anahtar kelime önerileri oluşturuldu');
       }
     } catch (error) {
-      console.error('Keyword generation error:', error);
+      toast.error(`İşlem sırasında hata oluştu`);
       toast.error('Anahtar kelime önerileri oluşturulamadı');
     } finally {
       setIsLoadingKeywords(false);
@@ -91,7 +91,7 @@ export function ContentSuggestionsGenerator({
         toast.success('İlişkili içerik önerileri oluşturuldu');
       }
     } catch (error) {
-      console.error('Related suggestions error:', error);
+      toast.error(`İşlem sırasında hata oluştu`);
       toast.error('İlişkili içerik önerileri oluşturulamadı');
     } finally {
       setIsLoadingRelated(false);
@@ -255,3 +255,4 @@ export function ContentSuggestionsGenerator({
     </div>
   );
 }
+

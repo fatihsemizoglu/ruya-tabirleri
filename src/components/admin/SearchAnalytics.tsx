@@ -1,4 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/query/client';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,7 +16,6 @@ import {
 import { formatDistanceToNow, subDays, format } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { toast } from 'sonner';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Select,
   SelectContent,
@@ -54,9 +55,8 @@ export function SearchAnalytics() {
   const [timeRange, setTimeRange] = useState('7');
   const queryClient = useQueryClient();
 
-  // Fetch top searches - using mock data since API doesn't support full analytics
   const { data: topSearches, isLoading: isLoadingTop } = useQuery({
-    queryKey: ['admin-search-analytics', timeRange],
+    queryKey: [...queryKeys.admin.searchAnalytics.all, timeRange],
     queryFn: async () => {
       const response = await searchApi.getPopular(20);
       
@@ -68,14 +68,12 @@ export function SearchAnalytics() {
         }));
       }
       
-      // Return mock data if API returns empty
       return mockSearchData;
     },
   });
 
-  // Fetch search stats
   const { data: stats, isLoading: isLoadingStats } = useQuery({
-    queryKey: ['admin-search-stats', timeRange],
+    queryKey: [...queryKeys.admin.searchAnalytics.stats, timeRange],
     queryFn: async () => {
       const response = await searchApi.getPopular(100);
       const searches = response.data || [];
@@ -99,8 +97,8 @@ export function SearchAnalytics() {
       return new Promise(resolve => setTimeout(resolve, 1000));
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-search-analytics'] });
-      queryClient.invalidateQueries({ queryKey: ['admin-search-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.searchAnalytics.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.searchAnalytics.stats });
       toast.success('30 günden eski loglar temizlendi');
     },
     onError: (error: Error) => {
@@ -147,8 +145,8 @@ export function SearchAnalytics() {
             variant="outline" 
             size="icon"
             onClick={() => {
-              queryClient.invalidateQueries({ queryKey: ['admin-search-analytics'] });
-              queryClient.invalidateQueries({ queryKey: ['admin-search-stats'] });
+              queryClient.invalidateQueries({ queryKey: queryKeys.admin.searchAnalytics.all });
+              queryClient.invalidateQueries({ queryKey: queryKeys.admin.searchAnalytics.stats });
             }}
           >
             <RefreshCw className="w-4 h-4" />

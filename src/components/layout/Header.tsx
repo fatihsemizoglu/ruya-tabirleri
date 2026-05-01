@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Moon, Sun, Menu, X, User, LogOut, Book, Heart, Clock, Settings, ChevronDown, Sparkles, icons } from 'lucide-react';
+import { Moon, Sun, Menu, X, User, LogOut, Book, Heart, Clock, Settings, ChevronDown, Sparkles, Bell, icons } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -21,6 +21,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { SearchWithDropdown } from '@/components/search/SearchWithDropdown';
 import { categoriesApi } from '@/lib/api';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 
 interface Category {
   id: string;
@@ -33,7 +34,9 @@ const navLinks = [
   { to: '/ruya-tabirleri', label: 'Rüya Tabirleri' },
   { to: '/ruya-yorumlat', label: '✨ Rüya Yorumlat' },
   { to: '/kategoriler', label: 'Kategoriler' },
-  { to: '/populer', label: 'Popüler' },
+  { to: '/sozluk', label: 'Sembol Sözlüğü' },
+  { to: '/harita', label: 'Dünya Haritası' },
+  { to: '/danismanlik', label: 'Danışmanlık' },
   { to: '/blog', label: 'Blog' },
 ];
 
@@ -89,9 +92,9 @@ export function Header() {
   return (
     <header 
       className={cn(
-        "sticky top-0 z-50 w-full transition-all duration-300",
+        "sticky top-0 z-50 w-full transition-all duration-500",
         isScrolled 
-          ? "bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg shadow-sm border-b border-slate-200/50 dark:border-slate-800/50" 
+          ? "bg-white/80 dark:bg-slate-950/80 backdrop-blur-2xl shadow-lg shadow-slate-200/20 dark:shadow-slate-950/20 border-b border-slate-200/30 dark:border-slate-800/30" 
           : "bg-transparent"
       )}
     >
@@ -195,6 +198,45 @@ export function Header() {
             Popüler
           </Link>
 
+          {/* Sembol Sözlüğü Link */}
+          <Link
+            to="/sozluk"
+            className={cn(
+              "px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200",
+              isActiveLink('/sozluk')
+                ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50"
+                : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+            )}
+          >
+            Sözlük
+          </Link>
+
+          {/* Dünya Haritası Link */}
+          <Link
+            to="/harita"
+            className={cn(
+              "px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200",
+              isActiveLink('/harita')
+                ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50"
+                : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+            )}
+          >
+            Harita
+          </Link>
+
+          {/* Danışmanlık Link */}
+          <Link
+            to="/danismanlik"
+            className={cn(
+              "px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200",
+              isActiveLink('/danismanlik')
+                ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50"
+                : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+            )}
+          >
+            Danışmanlık
+          </Link>
+
           {/* Blog Link */}
           <Link 
             to="/blog" 
@@ -220,6 +262,9 @@ export function Header() {
           <Button variant="ghost" size="icon" onClick={toggleTheme} className="hidden sm:flex rounded-lg">
             {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </Button>
+
+          {/* Notification Bell */}
+          <NotificationBell />
 
           {/* User Menu */}
           {user ? (
@@ -260,6 +305,18 @@ export function Header() {
                   <Link to="/profil?tab=gecmis" className="cursor-pointer">
                     <Clock className="mr-2 h-4 w-4" />
                     Geçmiş
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/bildirimler" className="cursor-pointer">
+                    <Bell className="mr-2 h-4 w-4" />
+                    Bildirimler
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/ruya-gunlugum" className="cursor-pointer">
+                    <Book className="mr-2 h-4 w-4" />
+                    Rüya Günlüğü & Takvim
                   </Link>
                 </DropdownMenuItem>
                 {isAdmin && (

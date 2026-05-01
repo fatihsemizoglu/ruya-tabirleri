@@ -1,9 +1,11 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { api, setAuthToken, User, Profile, AppRole } from '@/lib/api';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { authApi } from '@/lib/api';
+import { User, Profile, AppRole } from '@/lib/api/types';
+import { queryKeys } from '@/lib/query/client';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface AuthContextType {
   user: User | null;
-  session: { user: User } | null;
   profile: Profile | null;
   userRole: AppRole;
   loading: boolean;
@@ -22,40 +24,34 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  const refreshUser = async () => {
+  const refreshUser = useCallback(async () => {
     try {
-      const response = await api.auth.getCurrentUser();
+      const response = await authApi.getCurrentUser();
       if (response.success && response.data) {
         setUser(response.data);
+        queryClient.setQueryData(queryKeys.auth.me, response.data);
       } else {
         setUser(null);
-        setAuthToken(null);
       }
     } catch {
       setUser(null);
-      setAuthToken(null);
     } finally {
       setLoading(false);
     }
-  };
+  }, [queryClient]);
 
   useEffect(() => {
-    // Check for existing session on mount
-    const token = localStorage.getItem('auth_token');
-    if (token) {
-      refreshUser();
-    } else {
-      setLoading(false);
-    }
-  }, []);
+    refreshUser();
+  }, [refreshUser]);
 
   const signIn = async (email: string, password: string) => {
     try {
-      const response = await api.auth.login(email, password);
+      const response = await authApi.login(email, password);
       if (response.success && response.data) {
         setUser(response.data.user);
-        setAuthToken(response.data.token);
+        queryClient.setQueryData(queryKeys.auth.me, response.data.user);
         return { error: null };
       }
       return { error: new Error(response.error || 'Login failed') };
@@ -70,9 +66,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     metadata?: { full_name?: string; username?: string }
   ) => {
     try {
-      const response = await api.auth.register(email, password, metadata?.full_name, metadata?.username);
+      const response = await authApi.register(email, password, metadata?.full_name, metadata?.username);
       if (response.success && response.data) {
         setUser(response.data.user);
+        queryClient.setQueryData(queryKeys.auth.me, response.data.user);
         return { error: null };
       }
       return { error: new Error(response.error || 'Registration failed') };
@@ -82,16 +79,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    await api.auth.logout();
+    await authApi.logout();
     setUser(null);
-    setAuthToken(null);
+    queryClient.setQueryData(queryKeys.auth.me, null);
   };
 
   const updateProfile = async (data: Partial<Profile>) => {
     try {
-      const response = await api.auth.updateProfile(data);
+      const response = await authApi.updateProfile(data);
       if (response.success && response.data) {
         setUser(response.data);
+        queryClient.setQueryData(queryKeys.auth.me, response.data);
         return { error: null };
       }
       return { error: new Error(response.error || 'Update failed') };
@@ -109,7 +107,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
-        session: user ? { user } : null,
         profile,
         userRole,
         loading,
@@ -136,5 +133,4 @@ export function useAuth() {
   return context;
 }
 
-// Export types for backward compatibility
 export type { User, Profile, AppRole };

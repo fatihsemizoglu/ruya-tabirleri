@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { Sparkles, Star, Moon, ArrowRight } from 'lucide-react';
 import { SearchWithDropdown } from '@/components/search/SearchWithDropdown';
+import { Typewriter } from '@/components/ui/typewriter';
+import { ParticleField } from '@/components/ui/particle-field';
 import { dreamsApi } from '@/lib/api';
 
 const alphabet = 'ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ'.split('');
@@ -16,6 +18,14 @@ const popularSearches = [
   'Düğün görmek',
   'Uçmak',
   'Düşmek',
+];
+
+const typewriterWords = [
+  'gizemini çözün.',
+  'anlamını keşfedin.',
+  'mesajlarını okuyun.',
+  'rüyalarınızı yorumlayın.',
+  'geleceğinizi öğrenin.',
 ];
 
 type LetterCounts = Record<string, number>;
@@ -95,10 +105,24 @@ export function HeroSection() {
         style={{ y: backgroundY }}
       />
       
+      {/* Aurora Background - Parallax Layer 1.5 */}
+      <motion.div 
+        className="absolute inset-0 aurora-bg opacity-40 dark:opacity-30"
+        style={{ y: backgroundY }}
+      />
+      
       {/* Mesh Gradient Overlays - Parallax Layer 2 */}
       <motion.div className="absolute inset-0" style={{ y: backgroundY }}>
         <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.2),rgba(255,255,255,0))]" />
         <div className="absolute bottom-0 right-0 w-full h-full bg-[radial-gradient(ellipse_80%_80%_at_80%_100%,rgba(99,102,241,0.15),rgba(255,255,255,0))]" />
+      </motion.div>
+
+      {/* Particle Field */}
+      <motion.div 
+        className="absolute inset-0 pointer-events-none"
+        style={{ y: starsY }}
+      >
+        <ParticleField count={40} color="rgba(99, 102, 241, 0.12)" maxSize={3} speed={0.3} />
       </motion.div>
       
       {/* Animated Gradient Orbs - Parallax Layer 3 (faster) - Hidden on small mobile */}
@@ -177,7 +201,7 @@ export function HeroSection() {
             <span className="xs:hidden">En kapsamlı rüya tabirleri</span>
           </motion.div>
 
-          {/* Title - Responsive sizing */}
+          {/* Title - Responsive sizing with animated gradient */}
           <motion.h1 
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -186,12 +210,12 @@ export function HeroSection() {
           >
             <span className="text-slate-900 dark:text-white">Rüyalarınızın</span>
             <br />
-            <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+            <span className="text-gradient-animated">
               Anlamını Keşfedin
             </span>
           </motion.h1>
 
-          {/* Subtitle - Responsive */}
+          {/* Subtitle - Responsive with Typewriter */}
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -200,8 +224,15 @@ export function HeroSection() {
           >
             <span className="hidden sm:inline">Binlerce rüya tabiri arasında arama yapın. İslami ve psikolojik yorumlarla </span>
             <span className="sm:hidden">İslami ve psikolojik yorumlarla </span>
-            <span className="text-indigo-600 dark:text-indigo-400 font-medium">rüyalarınızın gizemini </span>
-            çözün.
+            <span className="text-indigo-600 dark:text-indigo-400 font-medium">
+              rüyalarınızın{' '}
+              <Typewriter 
+                words={typewriterWords} 
+                typingSpeed={70} 
+                deletingSpeed={35} 
+                pauseDuration={2500}
+              />
+            </span>
           </motion.p>
 
           {/* Alphabet Navigation - Compact on mobile with counts */}

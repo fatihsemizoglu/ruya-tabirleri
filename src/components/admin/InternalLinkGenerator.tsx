@@ -65,7 +65,7 @@ export function InternalLinkGenerator({
         setHasGenerated(true);
       }
     } catch (error) {
-      console.error('Error generating links:', error);
+      toast.error(`İşlem sırasında hata oluştu`);
       toast.error('Bağlantı önerileri oluşturulurken hata oluştu');
     } finally {
       setIsLoading(false);
@@ -245,3 +245,4 @@ export function InternalLinkGenerator({
     </Card>
   );
 }
+

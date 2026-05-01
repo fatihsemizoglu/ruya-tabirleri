@@ -6,6 +6,13 @@ export const usersApi = {
         return fetchApi<Favorite[]>(`/users/favorites?page=${page}&limit=${limit}`);
     },
 
+    async addFavorite(dreamId: string) {
+        return fetchApi('/users/favorites', {
+            method: 'POST',
+            body: JSON.stringify({ dream_id: dreamId }),
+        });
+    },
+
     async removeFavorite(id: string) {
         return fetchApi(`/users/favorites/${id}`, {
             method: 'DELETE',
@@ -18,6 +25,12 @@ export const usersApi = {
 
     async clearHistory() {
         return fetchApi('/users/history', {
+            method: 'DELETE',
+        });
+    },
+
+    async removeFromHistory(dreamId: string) {
+        return fetchApi(`/users/history/${dreamId}`, {
             method: 'DELETE',
         });
     },

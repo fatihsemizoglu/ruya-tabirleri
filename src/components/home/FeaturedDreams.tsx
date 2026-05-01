@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Eye, Heart, Star, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { TiltCard } from '@/components/ui/tilt-card';
 import { dreamsApi, categoriesApi, type Dream, type Category } from '@/lib/api';
 
 const gradientStyles = [
@@ -159,7 +160,7 @@ export function FeaturedDreams() {
           </motion.div>
         </div>
 
-        {/* Featured Grid - Modern Cards */}
+        {/* Featured Grid - Modern Cards with 3D Tilt */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {dreams.slice(0, 4).map((dream, index) => (
             <motion.div
@@ -168,58 +169,67 @@ export function FeaturedDreams() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-50px" }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
-              whileHover={{ y: -8 }}
             >
-              <Link
-                to={`/ruya/${dream.slug}`}
-                className="group relative block h-full bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden hover:shadow-2xl hover:shadow-slate-200/50 dark:hover:shadow-slate-950/50 transition-shadow duration-300"
-              >
-                {/* Top Gradient Bar */}
-                <div className={`h-1.5 w-full bg-gradient-to-r ${getGradient(index)}`} />
-                
-                <div className="p-6">
-                  {/* Category & Featured Badge */}
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="px-3 py-1.5 text-xs font-semibold rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                      {getCategoryName(dream.category_id)}
-                    </span>
-                    {dream.is_featured && (
-                      <div className="flex items-center gap-1 text-amber-500">
-                        <Star className="h-4 w-4 fill-current" />
+              <TiltCard tiltAmount={4} className="h-full">
+                <Link
+                  to={`/ruya/${dream.slug}`}
+                  className="group relative block h-full bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden hover:shadow-2xl hover:shadow-indigo-500/10 dark:hover:shadow-indigo-500/5 transition-all duration-500 glow-card"
+                >
+                  {/* Top Gradient Bar with Glow */}
+                  <div className={`h-1.5 w-full bg-gradient-to-r ${getGradient(index)} group-hover:h-2 transition-all duration-300`} />
+                  
+                  <div className="p-6">
+                    {/* Category & Featured Badge */}
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="px-3 py-1.5 text-xs font-semibold rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-950/50 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                        {getCategoryName(dream.category_id)}
+                      </span>
+                      {dream.is_featured && (
+                        <motion.div 
+                          className="flex items-center gap-1 text-amber-500"
+                          animate={{ rotate: [0, 10, -10, 0] }}
+                          transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+                        >
+                          <Star className="h-4 w-4 fill-current" />
+                        </motion.div>
+                      )}
+                    </div>
+
+                    {/* Title */}
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                      {dream.title}
+                    </h3>
+
+                    {/* Excerpt */}
+                    <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-3 mb-5 leading-relaxed">
+                      {dream.content?.substring(0, 150)}...
+                    </p>
+
+                    {/* Stats */}
+                    <div className="flex items-center gap-4 text-sm text-slate-400 dark:text-slate-500">
+                      <div className="flex items-center gap-1.5 group-hover:text-indigo-500 transition-colors">
+                        <Eye className="h-4 w-4" />
+                        <span className="font-medium">{(dream.view_count || 0).toLocaleString('tr-TR')}</span>
                       </div>
-                    )}
-                  </div>
-
-                  {/* Title */}
-                  <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                    {dream.title}
-                  </h3>
-
-                  {/* Excerpt */}
-                  <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-3 mb-5 leading-relaxed">
-                    {dream.content?.substring(0, 150)}...
-                  </p>
-
-                  {/* Stats */}
-                  <div className="flex items-center gap-4 text-sm text-slate-400 dark:text-slate-500">
-                    <div className="flex items-center gap-1.5">
-                      <Eye className="h-4 w-4" />
-                      <span className="font-medium">{(dream.view_count || 0).toLocaleString('tr-TR')}</span>
+                      <div className="flex items-center gap-1.5 group-hover:text-pink-500 transition-colors">
+                        <Heart className="h-4 w-4" />
+                        <span className="font-medium">{(dream.like_count || 0).toLocaleString('tr-TR')}</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <Heart className="h-4 w-4" />
-                      <span className="font-medium">{(dream.like_count || 0).toLocaleString('tr-TR')}</span>
+
+                    {/* Hover Arrow with Glow */}
+                    <div className="absolute bottom-6 right-6 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-2 group-hover:translate-x-0">
+                      <motion.div 
+                        className={`w-10 h-10 rounded-full bg-gradient-to-r ${getGradient(index)} flex items-center justify-center shadow-lg`}
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                      >
+                        <ArrowRight className="h-5 w-5 text-white" />
+                      </motion.div>
                     </div>
                   </div>
-
-                  {/* Hover Arrow */}
-                  <div className="absolute bottom-6 right-6 opacity-0 group-hover:opacity-100 transition-all duration-300">
-                    <div className={`w-10 h-10 rounded-full bg-gradient-to-r ${getGradient(index)} flex items-center justify-center shadow-lg`}>
-                      <ArrowRight className="h-5 w-5 text-white" />
-                    </div>
-                  </div>
-                </div>
-              </Link>
+                </Link>
+              </TiltCard>
             </motion.div>
           ))}
         </div>

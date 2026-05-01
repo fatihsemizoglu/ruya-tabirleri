@@ -48,7 +48,7 @@ export function ImageUpload({
         throw new Error('URL alınamadı');
       }
     } catch (error: any) {
-      console.error('Upload error:', error);
+      toast.error(`İşlem sırasında hata oluştu`);
       toast.error(error.message || 'Görsel yüklenirken bir hata oluştu');
     } finally {
       setIsUploading(false);
@@ -94,7 +94,7 @@ export function ImageUpload({
           try {
             await mediaApi.deleteFile(filePath, bucket);
           } catch (error) {
-            console.error('Delete error:', error);
+            toast.error(`İşlem sırasında hata oluştu`);
           }
         }
       } catch (e) {
@@ -182,3 +182,4 @@ export function ImageUpload({
     </div>
   );
 }
+

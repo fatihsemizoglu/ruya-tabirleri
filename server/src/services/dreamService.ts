@@ -1,12 +1,7 @@
-import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '../config/database';
 import { AppError } from '../middleware/errorMiddleware';
-import type { Dream, Category, Comment, DreamLike, Favorite, ViewHistory } from '../types/index';
-
-interface DreamWithCategory extends Dream {
-  category_name?: string;
-  category_slug?: string;
-}
+import { v4 as uuidv4 } from 'uuid';
+import type { Dream, Category } from '../types/index';
 
 export class DreamService {
   async getDreams(filters: {
@@ -15,34 +10,32 @@ export class DreamService {
     category_id?: string;
     search?: string;
     is_featured?: boolean;
+    is_published?: string;
     sort_by?: string;
     sort_order?: string;
-  }): Promise<{
-    dreams: DreamWithCategory[];
-    pagination: { page: number; limit: number; total: number; totalPages: number };
-  }> {
-    const page = filters.page ?? 1;
-    const limit = filters.limit ?? 20;
+    isAdmin?: boolean;
+  }) {
+    const { page = 1, limit = 20, category_id, search, is_featured, is_published, sort_by, sort_order, isAdmin } = filters;
     const offset = (page - 1) * limit;
 
-    let query = supabase
-      .from('dreams')
-      .select('*, categories(name, slug)', { count: 'exact' })
-      .eq('is_published', true);
+    let query = supabase.from('dreams').select('*, categories(name, slug)', { count: 'exact' });
 
-    if (filters.category_id) query = query.eq('category_id', filters.category_id);
-    if (filters.search) query = query.or(`title.ilike.%${filters.search}%,content.ilike.%${filters.search}%`);
-    if (filters.is_featured !== undefined) query = query.eq('is_featured', filters.is_featured);
+    if (is_published !== undefined && is_published !== 'all') {
+      query = query.eq('is_published', is_published === 'true');
+    } else if (!isAdmin) {
+      query = query.eq('is_published', true);
+    }
+
+    if (category_id) query = query.eq('category_id', category_id);
+    if (search) query = query.or(`title.ilike.%${search}%,content.ilike.%${search}%`);
+    if (is_featured !== undefined) query = query.eq('is_featured', is_featured);
 
     const validSortColumns = ['created_at', 'view_count', 'like_count', 'title'];
-    const sortBy = validSortColumns.includes(filters.sort_by || '') ? filters.sort_by! : 'created_at';
-    const sortOrder = filters.sort_order?.toUpperCase() === 'ASC' ? true : false;
-    query = query.order(sortBy, { ascending: sortOrder });
-
-    query = query.range(offset, offset + limit - 1);
+    const sortCol = validSortColumns.includes(sort_by || '') ? sort_by! : 'created_at';
+    const ascending = sort_order?.toUpperCase() === 'ASC';
+    query = query.order(sortCol, { ascending }).range(offset, offset + limit - 1);
 
     const { data, error, count } = await query;
-
     if (error) throw new AppError('Failed to fetch dreams', 500);
 
     const dreams = (data || []).map((d: any) => ({
@@ -52,17 +45,12 @@ export class DreamService {
     }));
 
     return {
-      dreams,
-      pagination: {
-        page,
-        limit,
-        total: count || 0,
-        totalPages: Math.ceil((count || 0) / limit),
-      },
+      data: dreams,
+      pagination: { page, limit, total: count || 0, totalPages: Math.ceil((count || 0) / limit) },
     };
   }
 
-  async getFeaturedDreams(limit: number = 5): Promise<DreamWithCategory[]> {
+  async getFeaturedDreams(limit = 5) {
     const { data, error } = await supabase
       .from('dreams')
       .select('*, categories(name, slug)')
@@ -80,49 +68,84 @@ export class DreamService {
     }));
   }
 
-  async getDreamBySlug(slug: string): Promise<{
-    dream: DreamWithCategory;
-    isLiked: boolean;
-    isFavorited: boolean;
-    userId?: string;
-  } | null> {
-    const { data, error } = await supabase
+  async getDreamBySlug(slug: string, userId?: string) {
+    const { data: dream, error } = await supabase
       .from('dreams')
       .select('*, categories(name, slug)')
       .eq('slug', slug)
       .single();
 
-    if (!data || error) return null;
+    if (!dream || error) throw new AppError('Dream not found', 404);
 
-    await supabase
-      .from('dreams')
-      .update({ view_count: (data.view_count || 0) + 1 })
-      .eq('id', data.id);
+    const dreamData = dream as any;
 
-    const dream: DreamWithCategory = {
-      ...data,
-      category_name: (data as any).categories?.name,
-      category_slug: (data as any).categories?.slug,
+    await Promise.all([
+      supabase
+        .from('dreams')
+        .update({ view_count: (dreamData.view_count || 0) + 1 })
+        .eq('id', dream.id),
+      userId ? this.recordViewHistory(userId, dream.id) : Promise.resolve(),
+    ]);
+
+    let isLiked = false;
+    let isFavorited = false;
+    if (userId) {
+      const [likeRes, favRes] = await Promise.all([
+        supabase.from('dream_likes').select('id').eq('dream_id', dream.id).eq('user_id', userId).single(),
+        supabase.from('favorites').select('id').eq('dream_id', dream.id).eq('user_id', userId).single(),
+      ]);
+      isLiked = !!likeRes.data;
+      isFavorited = !!favRes.data;
+    }
+
+    return {
+      ...dreamData,
+      category_name: dreamData.categories?.name,
+      category_slug: dreamData.categories?.slug,
+      isLiked,
+      isFavorited,
     };
-
-    return { dream, isLiked: false, isFavorited: false };
   }
 
-  async createDream(
-    data: Omit<Dream, 'id' | 'created_at' | 'updated_at'> & { userId: string }
-  ): Promise<Dream> {
-    const { title, slug, content, category_id, islamic_interpretation, psychological_interpretation, keywords, is_featured, is_published, meta_title, meta_description } = data;
-
-    const { data: existingSlug } = await supabase
-      .from('dreams')
+  private async recordViewHistory(userId: string, dreamId: string) {
+    const { data: existing } = await supabase
+      .from('view_history')
       .select('id')
-      .eq('slug', slug)
+      .eq('user_id', userId)
+      .eq('dream_id', dreamId)
       .single();
 
+    if (existing) {
+      await supabase
+        .from('view_history')
+        .update({ viewed_at: new Date().toISOString() })
+        .eq('user_id', userId)
+        .eq('dream_id', dreamId);
+    } else {
+      await supabase.from('view_history').insert({ id: uuidv4(), user_id: userId, dream_id: dreamId });
+    }
+  }
+
+  async createDream(data: {
+    title: string;
+    slug: string;
+    content: string;
+    category_id?: string;
+    islamic_interpretation?: string;
+    psychological_interpretation?: string;
+    keywords?: string[];
+    is_featured?: boolean;
+    is_published?: boolean;
+    meta_title?: string;
+    meta_description?: string;
+  }) {
+    const { title, slug, content } = data;
+    if (!title || !slug || !content) throw new AppError('Title, slug, and content are required', 400);
+
+    const { data: existingSlug } = await supabase.from('dreams').select('id').eq('slug', slug).single();
     if (existingSlug) throw new AppError('A dream with this slug already exists', 400);
 
     const id = uuidv4();
-
     const { data: newDream, error } = await supabase
       .from('dreams')
       .insert({
@@ -130,83 +153,72 @@ export class DreamService {
         title,
         slug,
         content,
-        category_id: category_id || null,
-        islamic_interpretation: islamic_interpretation || null,
-        psychological_interpretation: psychological_interpretation || null,
-        keywords: keywords || [],
-        is_featured: is_featured || false,
-        is_published: is_published !== undefined ? is_published : true,
-        meta_title: meta_title || null,
-        meta_description: meta_description || null,
+        category_id: data.category_id || null,
+        islamic_interpretation: data.islamic_interpretation || null,
+        psychological_interpretation: data.psychological_interpretation || null,
+        keywords: data.keywords || [],
+        is_featured: data.is_featured || false,
+        is_published: data.is_published !== undefined ? data.is_published : true,
+        meta_title: data.meta_title || null,
+        meta_description: data.meta_description || null,
       })
       .select()
       .single();
 
     if (error) throw new AppError('Failed to create dream', 500);
-    return newDream as Dream;
+    return newDream;
   }
 
-  async updateDream(
-    id: string,
-    data: Partial<Omit<Dream, 'id' | 'created_at' | 'updated_at'> & { slug?: string }>
-  ): Promise<Dream> {
-    const { data: existing } = await supabase
-      .from('dreams')
-      .select('*')
-      .eq('id', id)
-      .single();
-
+  async updateDream(id: string, data: {
+    title?: string;
+    slug?: string;
+    content?: string;
+    category_id?: string;
+    islamic_interpretation?: string;
+    psychological_interpretation?: string;
+    keywords?: string[];
+    is_featured?: boolean;
+    is_published?: boolean;
+    meta_title?: string;
+    meta_description?: string;
+  }) {
+    const { data: existing } = await supabase.from('dreams').select('slug').eq('id', id).single();
     if (!existing) throw new AppError('Dream not found', 404);
 
     if (data.slug && data.slug !== existing.slug) {
-      const { data: slugCheck } = await supabase
-        .from('dreams')
-        .select('id')
-        .eq('slug', data.slug)
-        .neq('id', id)
-        .single();
-
+      const { data: slugCheck } = await supabase.from('dreams').select('id').eq('slug', data.slug).neq('id', id).single();
       if (slugCheck) throw new AppError('A dream with this slug already exists', 400);
     }
 
-    const updateData: any = { updated_at: new Date().toISOString() };
-    if (data.title !== undefined) updateData.title = data.title;
-    if (data.slug !== undefined) updateData.slug = data.slug;
-    if (data.content !== undefined) updateData.content = data.content;
-    if (data.category_id !== undefined) updateData.category_id = data.category_id;
-    if (data.islamic_interpretation !== undefined) updateData.islamic_interpretation = data.islamic_interpretation;
-    if (data.psychological_interpretation !== undefined) updateData.psychological_interpretation = data.psychological_interpretation;
-    if (data.keywords !== undefined) updateData.keywords = data.keywords;
-    if (data.is_featured !== undefined) updateData.is_featured = data.is_featured;
-    if (data.is_published !== undefined) updateData.is_published = data.is_published;
-    if (data.meta_title !== undefined) updateData.meta_title = data.meta_title;
-    if (data.meta_description !== undefined) updateData.meta_description = data.meta_description;
+    const updateData = {
+      ...(data.title !== undefined && { title: data.title }),
+      ...(data.slug !== undefined && { slug: data.slug }),
+      ...(data.content !== undefined && { content: data.content }),
+      ...(data.category_id !== undefined && { category_id: data.category_id }),
+      ...(data.islamic_interpretation !== undefined && { islamic_interpretation: data.islamic_interpretation }),
+      ...(data.psychological_interpretation !== undefined && { psychological_interpretation: data.psychological_interpretation }),
+      ...(data.keywords !== undefined && { keywords: data.keywords }),
+      ...(data.is_featured !== undefined && { is_featured: data.is_featured }),
+      ...(data.is_published !== undefined && { is_published: data.is_published }),
+      ...(data.meta_title !== undefined && { meta_title: data.meta_title }),
+      ...(data.meta_description !== undefined && { meta_description: data.meta_description }),
+      updated_at: new Date().toISOString(),
+    };
 
-    const { data: updated, error } = await supabase
-      .from('dreams')
-      .update(updateData)
-      .eq('id', id)
-      .select()
-      .single();
-
+    const { data: updated, error } = await supabase.from('dreams').update(updateData).eq('id', id).select().single();
     if (error) throw new AppError('Failed to update dream', 500);
-    return updated as Dream;
+    return updated;
   }
 
-  async deleteDream(id: string): Promise<{ message: string }> {
-    const { data: existing } = await supabase
-      .from('dreams')
-      .select('id')
-      .eq('id', id)
-      .single();
-
+  async deleteDream(id: string) {
+    const { data: existing } = await supabase.from('dreams').select('id').eq('id', id).single();
     if (!existing) throw new AppError('Dream not found', 404);
 
     await supabase.from('dreams').delete().eq('id', id);
-    return { message: 'Dream deleted successfully' };
+    return { success: true, message: 'Dream deleted successfully' };
   }
 
-  async toggleLike(dreamId: string, userId: string): Promise<{ liked: boolean; message: string }> {
+  async toggleLike(dreamId: string, userId: string) {
     const { data: existing } = await supabase
       .from('dream_likes')
       .select('*')
@@ -217,17 +229,26 @@ export class DreamService {
     if (existing) {
       await supabase.from('dream_likes').delete().eq('dream_id', dreamId).eq('user_id', userId);
       const { data: dream } = await supabase.from('dreams').select('like_count').eq('id', dreamId).single();
-      await supabase.from('dreams').update({ like_count: Math.max(0, (dream?.like_count || 1) - 1) }).eq('id', dreamId);
-      return { liked: false, message: 'Dream unliked' };
+      await supabase
+        .from('dreams')
+        .update({ like_count: Math.max(0, (dream?.like_count || 1) - 1) })
+        .eq('id', dreamId);
+      return { success: true, liked: false, message: 'Dream unliked' };
     } else {
-      await supabase.from('dream_likes').insert({ id: uuidv4(), dream_id: dreamId, user_id: userId });
-      const { data: dream } = await supabase.from('dreams').select('like_count').eq('id', dreamId).single();
-      await supabase.from('dreams').update({ like_count: (dream?.like_count || 0) + 1 }).eq('id', dreamId);
-      return { liked: true, message: 'Dream liked' };
+      const [likeRes, dreamRes] = await Promise.all([
+        supabase.from('dream_likes').insert({ id: uuidv4(), dream_id: dreamId, user_id: userId }),
+        supabase.from('dreams').select('like_count').eq('id', dreamId).single(),
+      ]);
+      const likeCount = dreamRes.data?.like_count || 0;
+      await supabase
+        .from('dreams')
+        .update({ like_count: likeCount + 1 })
+        .eq('id', dreamId);
+      return { success: true, liked: true, message: 'Dream liked' };
     }
   }
 
-  async toggleFavorite(dreamId: string, userId: string): Promise<{ favorited: boolean; message: string }> {
+  async toggleFavorite(dreamId: string, userId: string) {
     const { data: existing } = await supabase
       .from('favorites')
       .select('*')
@@ -237,59 +258,15 @@ export class DreamService {
 
     if (existing) {
       await supabase.from('favorites').delete().eq('dream_id', dreamId).eq('user_id', userId);
-      return { favorited: false, message: 'Removed from favorites' };
+      return { success: true, favorited: false, message: 'Removed from favorites' };
     } else {
       await supabase.from('favorites').insert({ id: uuidv4(), dream_id: dreamId, user_id: userId });
-      return { favorited: true, message: 'Added to favorites' };
+      return { success: true, favorited: true, message: 'Added to favorites' };
     }
   }
 
-  async getComments(dreamId: string): Promise<Comment[]> {
-    const { data, error } = await supabase
-      .from('comments')
-      .select('*, profiles(full_name, avatar_url)')
-      .eq('dream_id', dreamId)
-      .eq('is_approved', true)
-      .order('created_at', { ascending: false });
-
-    if (error) throw new AppError('Failed to fetch comments', 500);
-
-    return (data || []).map((c: any) => ({
-      ...c,
-      author_name: c.profiles?.full_name,
-      author_avatar: c.profiles?.avatar_url,
-    }));
-  }
-
-  async addComment(dreamId: string, userId: string, content: string): Promise<Comment> {
-    if (!content || content.trim().length === 0) {
-      throw new AppError('Comment content is required', 400);
-    }
-
-    const commentId = uuidv4();
-
-    const { data: newComment, error } = await supabase
-      .from('comments')
-      .insert({ id: commentId, content, dream_id: dreamId, user_id: userId, is_approved: true, like_count: 0 })
-      .select('*, profiles(full_name, avatar_url)')
-      .single();
-
-    if (error) throw new AppError('Failed to add comment', 500);
-
-    return {
-      ...newComment,
-      author_name: (newComment as any).profiles?.full_name,
-      author_avatar: (newComment as any).profiles?.avatar_url,
-    } as Comment;
-  }
-
-  async getSimilarDreams(dreamId: string, limit: number = 5): Promise<DreamWithCategory[]> {
-    const { data: currentDream } = await supabase
-      .from('dreams')
-      .select('category_id')
-      .eq('id', dreamId)
-      .single();
-
+  async getSimilarDreams(dreamId: string, limit = 5) {
+    const { data: currentDream } = await supabase.from('dreams').select('category_id').eq('id', dreamId).single();
     if (!currentDream) throw new AppError('Dream not found', 404);
 
     const { data, error } = await supabase

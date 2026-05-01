@@ -1,0 +1,55 @@
+- generic [ref=e2]:
+  - navigation [ref=e3]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - link "Gmail" [ref=e8] [cursor=pointer]:
+          - /url: https://mail.google.com/mail/&ogbl
+        - link "Görsellerde arama yapın" [ref=e10] [cursor=pointer]:
+          - /url: https://www.google.com/imghp?hl=tr&ogbl
+          - text: Görseller
+      - button "Google uygulamaları" [ref=e13] [cursor=pointer]:
+        - img [ref=e14]
+      - link "Oturum açın" [ref=e18] [cursor=pointer]:
+        - /url: https://accounts.google.com/ServiceLogin?hl=tr&passive=true&continue=https://www.google.com/&ec=futura_exp_og_so_72776762_e
+  - img "Google" [ref=e21]
+  - search [ref=e24]:
+    - generic [ref=e26]:
+      - generic [ref=e28]:
+        - img [ref=e32]
+        - combobox "Ara" [active] [ref=e35]
+        - generic [ref=e36]:
+          - generic [ref=e37]:
+            - button "Harf çevirme aracı" [ref=e38] [cursor=pointer]:
+              - img [ref=e40]
+            - button "Sesle arama yapın" [ref=e42] [cursor=pointer]:
+              - img [ref=e43]
+            - button "Görselle arama" [ref=e45] [cursor=pointer]:
+              - img [ref=e46]
+          - link "AI Modu" [ref=e48] [cursor=pointer]:
+            - generic [ref=e50]:
+              - img [ref=e52]
+              - generic [ref=e59]: AI Modu
+      - generic [ref=e61]:
+        - button "Google'da Ara" [ref=e62] [cursor=pointer]
+        - button "Kendimi Şanslı Hissediyorum" [ref=e63] [cursor=pointer]
+  - contentinfo [ref=e66]:
+    - generic [ref=e67]: Türkiye
+    - generic [ref=e68]:
+      - generic [ref=e69]:
+        - link "Hakkında" [ref=e70] [cursor=pointer]:
+          - /url: https://about.google/?utm_source=google-TR&utm_medium=referral&utm_campaign=hp-footer&fg=1
+        - link "Reklam" [ref=e71] [cursor=pointer]:
+          - /url: https://www.google.com/intl/tr_tr/ads/?subid=ww-ww-et-g-awa-a-g_hpafoot1_1!o2&utm_source=google.com&utm_medium=referral&utm_campaign=google_hpafooter&fg=1
+        - link "İşletme" [ref=e72] [cursor=pointer]:
+          - /url: https://www.google.com/services/?subid=ww-ww-et-g-awa-a-g_hpbfoot1_1!o2&utm_source=google.com&utm_medium=referral&utm_campaign=google_hpbfooter&fg=1
+        - link "Arama nasıl çalışır?" [ref=e73] [cursor=pointer]:
+          - /url: https://google.com/search/howsearchworks/?fg=1
+      - link "İklimle ilgili çalışmalarımızın üçüncü on yılı" [ref=e75] [cursor=pointer]:
+        - /url: https://sustainability.google/intl/tr/carbon-free/?utm_source=googlehpfooter&utm_medium=housepromos&utm_campaign=bottom-footer&utm_content=
+      - generic [ref=e76]:
+        - link "Gizlilik" [ref=e77] [cursor=pointer]:
+          - /url: https://policies.google.com/privacy?hl=tr&fg=1
+        - link "Şartlar" [ref=e78] [cursor=pointer]:
+          - /url: https://policies.google.com/terms?hl=tr&fg=1
+        - button "Ayarlar" [ref=e82] [cursor=pointer]:
+          - generic [ref=e83]: Ayarlar

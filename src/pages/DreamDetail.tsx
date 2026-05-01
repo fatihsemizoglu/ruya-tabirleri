@@ -11,6 +11,8 @@ import { SimilarDreams } from '@/components/dream/SimilarDreams';
 import { SocialShareBar } from '@/components/dream/SocialShareBar';
 import { CommentSection } from '@/components/dream/CommentSection';
 import { dreamsApi, type Dream, type Comment, type ApiResponse } from '@/lib/api';
+import { queryKeys } from '@/lib/query/client';
+import { JsonLd, buildDreamSchema, buildBreadcrumbSchema } from '@/components/seo/JsonLd';
 
 // SEO Meta component
 function DreamMeta({ dream }: { dream: Dream }) {
@@ -43,7 +45,7 @@ export default function DreamDetail() {
     isLoading: isDreamLoading,
     error: dreamError
   } = useQuery({
-    queryKey: ['dream', slug],
+    queryKey: queryKeys.dreams.bySlug(slug!),
     queryFn: () => dreamsApi.getBySlug(slug!),
     enabled: !!slug,
   });
@@ -55,7 +57,7 @@ export default function DreamDetail() {
     data: commentsResponse,
     isLoading: isCommentsLoading
   } = useQuery({
-    queryKey: ['comments', dream?.id],
+    queryKey: queryKeys.comments.byDream(dream?.id || ''),
     queryFn: () => dreamsApi.getComments(dream!.id),
     enabled: !!dream?.id,
   });
@@ -67,7 +69,7 @@ export default function DreamDetail() {
     mutationFn: (id: string) => dreamsApi.like(id),
     onSuccess: (response) => {
       if (response.success) {
-        queryClient.invalidateQueries({ queryKey: ['dream', slug] });
+        queryClient.invalidateQueries({ queryKey: queryKeys.dreams.bySlug(slug!) });
       } else {
         toast.error(response.error || 'Beğeni işlemi başarısız');
       }
@@ -79,7 +81,7 @@ export default function DreamDetail() {
     mutationFn: (id: string) => dreamsApi.favorite(id) as Promise<ApiResponse<{ favorited: boolean }>>,
     onSuccess: (response) => {
       if (response.success && response.data) {
-        queryClient.invalidateQueries({ queryKey: ['dream', slug] });
+        queryClient.invalidateQueries({ queryKey: queryKeys.dreams.bySlug(slug!) });
         toast.success(response.data.favorited ? 'Favorilere eklendi' : 'Favorilerden kaldırıldı');
       } else {
         toast.error(response.error || 'Favori işlemi başarısız');
@@ -146,6 +148,12 @@ export default function DreamDetail() {
   return (
     <Layout>
       <DreamMeta dream={dream} />
+      <JsonLd data={buildDreamSchema(dream)} />
+      <JsonLd data={buildBreadcrumbSchema([
+        { name: 'Ana Sayfa', url: 'https://ruyatabirleri.com/' },
+        { name: dream.category_name || 'Rüya Tabirleri', url: `https://ruyatabirleri.com/kategori/${dream.category_slug || ''}` },
+        { name: dream.title, url: `https://ruyatabirleri.com/ruya/${dream.slug}` },
+      ])} />
 
       {/* Floating Share Bar - visible on scroll */}
       <SocialShareBar
@@ -317,7 +325,7 @@ export default function DreamDetail() {
             dreamId={dream.id}
             comments={comments}
             isLoading={isCommentsLoading}
-            onRefresh={() => queryClient.invalidateQueries({ queryKey: ['comments', dream.id] })}
+            onRefresh={() => queryClient.invalidateQueries({ queryKey: queryKeys.comments.byDream(dream.id) })}
           />
         </div>
       </article>

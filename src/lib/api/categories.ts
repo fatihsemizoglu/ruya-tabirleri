@@ -1,5 +1,5 @@
 import { fetchApi } from './client';
-import { Category } from './types';
+import { Category, Dream } from './types';
 
 export const categoriesApi = {
     async getAll() {
@@ -8,6 +8,10 @@ export const categoriesApi = {
 
     async getBySlug(slug: string) {
         return fetchApi<Category>(`/categories/${slug}`);
+    },
+
+    async getDreams(slug: string, page = 1, limit = 20) {
+        return fetchApi<Dream[]>(`/categories/${slug}/dreams?page=${page}&limit=${limit}`);
     },
 
     async create(data: Partial<Category>) {

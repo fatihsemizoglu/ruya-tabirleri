@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PageTransition } from '@/components/ui/page-transition';
 import { fetchApi } from '@/lib/api';
+import { VoiceRecorder } from '@/components/dream/VoiceRecorder';
 
 interface InterpretationResult {
   islamic_interpretation: string;
@@ -97,7 +98,10 @@ export default function DreamInterpret() {
                 maxLength={2000}
               />
               <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
-                <span className="text-xs text-muted-foreground">{dream.length}/2000 karakter</span>
+                <div className="flex items-center gap-2">
+                  <VoiceRecorder onTranscript={(text) => setDream(prev => (prev + ' ' + text).trim())} />
+                  <span className="text-xs text-muted-foreground">{dream.length}/2000 karakter</span>
+                </div>
                 <div className="flex gap-2">
                   {result && (
                     <Button variant="outline" size="sm" onClick={handleReset} className="rounded-lg">

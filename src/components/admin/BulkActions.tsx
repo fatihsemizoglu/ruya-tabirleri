@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { adminApi, dreamsApi } from '@/lib/api';
+import { adminApi, dreamsApi, blogApi } from '@/lib/api';
+import { queryKeys } from '@/lib/query/client';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -35,7 +36,7 @@ import { toast } from 'sonner';
 interface BulkActionsProps {
   selectedIds: string[];
   onClearSelection: () => void;
-  type: 'dreams' | 'comments' | 'messages';
+  type: 'dreams' | 'comments' | 'messages' | 'blog' | 'users';
 }
 
 export function BulkActions({ selectedIds, onClearSelection, type }: BulkActionsProps) {
@@ -45,11 +46,15 @@ export function BulkActions({ selectedIds, onClearSelection, type }: BulkActions
   const getQueryKey = () => {
     switch (type) {
       case 'dreams':
-        return 'admin-dreams';
+        return queryKeys.admin.dreams.all;
       case 'comments':
-        return 'admin-comments';
+        return queryKeys.admin.comments.all;
       case 'messages':
-        return 'admin-messages';
+        return queryKeys.admin.messages.all;
+      case 'blog':
+        return queryKeys.admin.blog.posts;
+      case 'users':
+        return queryKeys.admin.users;
     }
   };
 
@@ -61,9 +66,14 @@ export function BulkActions({ selectedIds, onClearSelection, type }: BulkActions
             return dreamsApi.delete(id);
           } else if (type === 'comments') {
             return adminApi.deleteComment(id);
-          } else {
+          } else if (type === 'messages') {
             return adminApi.deleteMessage(id);
+          } else if (type === 'blog') {
+            return blogApi.deletePost(id);
+          } else if (type === 'users') {
+            return adminApi.deleteUser(id);
           }
+          return Promise.resolve({ success: false });
         })
       );
       
@@ -73,8 +83,8 @@ export function BulkActions({ selectedIds, onClearSelection, type }: BulkActions
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [getQueryKey()] });
-      queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
+      queryClient.invalidateQueries({ queryKey: getQueryKey() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.stats });
       toast.success(`${selectedIds.length} öğe başarıyla silindi`);
       onClearSelection();
       setShowDeleteDialog(false);
@@ -96,7 +106,7 @@ export function BulkActions({ selectedIds, onClearSelection, type }: BulkActions
       }
     },
     onSuccess: (_, { publish }) => {
-      queryClient.invalidateQueries({ queryKey: ['admin-dreams'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.dreams.all });
       toast.success(`${selectedIds.length} rüya ${publish ? 'yayınlandı' : 'taslağa alındı'}`);
       onClearSelection();
     },
@@ -117,7 +127,7 @@ export function BulkActions({ selectedIds, onClearSelection, type }: BulkActions
       }
     },
     onSuccess: (_, { feature }) => {
-      queryClient.invalidateQueries({ queryKey: ['admin-dreams'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.dreams.all });
       toast.success(`${selectedIds.length} rüya ${feature ? 'öne çıkarıldı' : 'öne çıkarılmadan kaldırıldı'}`);
       onClearSelection();
     },
@@ -140,8 +150,8 @@ export function BulkActions({ selectedIds, onClearSelection, type }: BulkActions
       }
     },
     onSuccess: (_, { approve }) => {
-      queryClient.invalidateQueries({ queryKey: ['admin-comments'] });
-      queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.comments.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.stats });
       toast.success(`${selectedIds.length} yorum ${approve ? 'onaylandı' : 'reddedildi'}`);
       onClearSelection();
     },
@@ -162,7 +172,7 @@ export function BulkActions({ selectedIds, onClearSelection, type }: BulkActions
       }
     },
     onSuccess: (_, { read }) => {
-      queryClient.invalidateQueries({ queryKey: ['admin-messages'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.messages.all });
       toast.success(`${selectedIds.length} mesaj ${read ? 'okundu' : 'okunmadı'} olarak işaretlendi`);
       onClearSelection();
     },
@@ -198,6 +208,27 @@ export function BulkActions({ selectedIds, onClearSelection, type }: BulkActions
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
             {type === 'dreams' && (
+              <>
+                <DropdownMenuItem onClick={() => bulkPublishMutation.mutate({ ids: selectedIds, publish: true })}>
+                  <Eye className="w-4 h-4 mr-2" />
+                  Yayınla
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => bulkPublishMutation.mutate({ ids: selectedIds, publish: false })}>
+                  <EyeOff className="w-4 h-4 mr-2" />
+                  Taslağa Al
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => bulkFeatureMutation.mutate({ ids: selectedIds, feature: true })}>
+                  <Star className="w-4 h-4 mr-2" />
+                  Öne Çıkar
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => bulkFeatureMutation.mutate({ ids: selectedIds, feature: false })}>
+                  <Star className="w-4 h-4 mr-2 opacity-50" />
+                  Öne Çıkarmayı Kaldır
+                </DropdownMenuItem>
+              </>
+            )}
+            {type === 'blog' && (
               <>
                 <DropdownMenuItem onClick={() => bulkPublishMutation.mutate({ ids: selectedIds, publish: true })}>
                   <Eye className="w-4 h-4 mr-2" />

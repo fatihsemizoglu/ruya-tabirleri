@@ -1,0 +1,5 @@
+[     783ms] [ERROR] Failed to load resource: net::ERR_ADDRESS_INVALID @ https://ogads-pa.clients6.google.com/$rpc/google.internal.onegoogle.asyncdata.v1.AsyncDataService/GetAsyncData:0
+[    1831ms] [ERROR] Refused to get unsafe header "X-Sg-Cs" @ https://www.google.com/:25
+[    1831ms] [ERROR] Refused to get unsafe header "X-Sorry-Redirect" @ https://www.google.com/:25
+[  101445ms] [ERROR] Refused to get unsafe header "X-Sg-Cs" @ https://www.google.com/:25
+[  101445ms] [ERROR] Refused to get unsafe header "X-Sorry-Redirect" @ https://www.google.com/:25

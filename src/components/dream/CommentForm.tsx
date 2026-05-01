@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { dreamsApi } from '@/lib/api';
+import { queryKeys } from '@/lib/query/client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/hooks/useAuth';
@@ -41,7 +42,7 @@ export function CommentForm({ dreamId, onSuccess }: CommentFormProps) {
     onSuccess: () => {
       setContent('');
       toast.success('Yorumunuz başarıyla eklendi');
-      queryClient.invalidateQueries({ queryKey: ['dream-comments', dreamId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.comments.byDream(dreamId) });
       onSuccess?.();
     },
     onError: (error: Error) => {

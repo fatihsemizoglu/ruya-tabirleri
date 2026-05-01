@@ -37,7 +37,7 @@ export function SEOGenerator({ title, content, type, onGenerated, disabled }: SE
         toast.success('SEO meta verileri başarıyla oluşturuldu');
       }
     } catch (error) {
-      console.error('SEO generation error:', error);
+      toast.error(`İşlem sırasında hata oluştu`);
       toast.error(error instanceof Error ? error.message : 'SEO oluşturulurken hata oluştu');
     } finally {
       setIsGenerating(false);
@@ -67,3 +67,4 @@ export function SEOGenerator({ title, content, type, onGenerated, disabled }: SE
     </Button>
   );
 }
+

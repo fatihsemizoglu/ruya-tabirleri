@@ -138,13 +138,13 @@ export const adminApi = {
 
     async toggleNotification(id: string) {
         return fetchApi<{ is_active: boolean }>(`/admin/notifications/${id}/toggle`, {
-            method: 'PATCH',
+            method: 'POST',
         });
     },
 
     async markNotificationRead(id: string) {
         return fetchApi(`/admin/notifications/${id}/read`, {
-            method: 'PATCH',
+            method: 'POST',
         });
     },
 };

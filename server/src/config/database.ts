@@ -1,5 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
+import logger from '../utils/logger';
 
 dotenv.config();
 
@@ -7,7 +8,7 @@ const supabaseUrl = process.env.SUPABASE_URL || '';
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 if (!supabaseUrl || !supabaseServiceKey) {
-  console.warn('Warning: Supabase credentials not configured');
+  logger.warn({ msg: 'Warning: Supabase credentials not configured' }, 'Missing credentials');
 }
 
 export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseServiceKey, {
@@ -21,13 +22,13 @@ export async function testConnection(): Promise<boolean> {
   try {
     const { error } = await supabase.from('users').select('id').limit(1);
     if (error) {
-      console.error('Database connection failed:', error.message);
+      logger.error({ err: error }, 'Database connection failed');
       return false;
     }
-    console.log('Database connected successfully');
+    logger.info({}, 'Database connected successfully');
     return true;
   } catch (error) {
-    console.error('Database connection failed:', error);
+    logger.error({ err: error }, 'Database connection failed');
     return false;
   }
 }

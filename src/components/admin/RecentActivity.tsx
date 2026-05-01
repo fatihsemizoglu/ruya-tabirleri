@@ -4,6 +4,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { Link } from 'react-router-dom';
 import { adminApi } from '@/lib/api';
+import { queryKeys } from '@/lib/query/client';
 
 interface ActivityItem {
   id: string;
@@ -25,7 +26,7 @@ const mockActivities: ActivityItem[] = [
 
 export function RecentActivity() {
   const { data: activities, isLoading } = useQuery({
-    queryKey: ['admin-recent-activity'],
+    queryKey: queryKeys.admin.recentActivity,
     queryFn: async () => {
       // Fetch recent dreams and comments from admin API
       const [dreamsResponse, commentsResponse] = await Promise.all([

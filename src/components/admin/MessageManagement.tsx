@@ -1,39 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminApi } from '@/lib/api';
+import { queryKeys } from '@/lib/query/client';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Mail, 
-  Search, 
-  Trash2, 
-  Eye, 
-  EyeOff, 
-  Clock, 
-  User,
-  X,
-  CheckCircle,
-  AlertCircle,
-  RefreshCw,
-  Inbox
-} from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { Mail, Search, Trash2, Eye, EyeOff, Clock, User, CheckCircle, AlertCircle, RefreshCw, Inbox } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
@@ -49,106 +24,66 @@ interface ContactMessage {
 }
 
 export function MessageManagement() {
-  const [messages, setMessages] = useState<ContactMessage[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all');
   const [selectedMessage, setSelectedMessage] = useState<ContactMessage | null>(null);
   const [messageToDelete, setMessageToDelete] = useState<ContactMessage | null>(null);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    fetchMessages();
-  }, []);
-
-  const fetchMessages = async () => {
-    setLoading(true);
-    try {
+  const { data: messages = [], isLoading, refetch } = useQuery({
+    queryKey: queryKeys.admin.messages.all,
+    queryFn: async () => {
       const response = await adminApi.getContactMessages();
+      if (!response.success) throw new Error(response.error || 'Failed to fetch messages');
+      return response.data?.messages || [];
+    },
+  });
 
-      if (!response.success) {
-        throw new Error(response.error || 'Failed to fetch messages');
-      }
-      
-      setMessages(response.data?.messages || []);
-    } catch (error) {
-      console.error('Error fetching messages:', error);
-      toast.error('Mesajlar yüklenirken hata oluştu');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const toggleRead = useMutation({
+    mutationFn: (id: string) => adminApi.markMessageAsRead(id),
+    onSuccess: (_, id) => {
+      queryClient.setQueryData<ContactMessage[]>(queryKeys.admin.messages.all, (old) =>
+        old?.map(m => m.id === id ? { ...m, is_read: !m.is_read } : m)
+      );
+    },
+  });
 
-  const toggleReadStatus = async (message: ContactMessage) => {
-    try {
-      const response = await adminApi.markMessageAsRead(message.id);
-
-      if (!response.success) {
-        throw new Error(response.error || 'Failed to update message');
-      }
-
-      setMessages(messages.map(m => 
-        m.id === message.id ? { ...m, is_read: !m.is_read } : m
-      ));
-      
-      toast.success(message.is_read ? 'Okunmadı olarak işaretlendi' : 'Okundu olarak işaretlendi');
-    } catch (error) {
-      console.error('Error updating message:', error);
-      toast.error('İşlem başarısız');
-    }
-  };
-
-  const deleteMessage = async () => {
-    if (!messageToDelete) return;
-
-    try {
-      const response = await adminApi.deleteMessage(messageToDelete.id);
-
-      if (!response.success) {
-        throw new Error(response.error || 'Failed to delete message');
-      }
-
-      setMessages(messages.filter(m => m.id !== messageToDelete.id));
+  const deleteMsg = useMutation({
+    mutationFn: (id: string) => adminApi.deleteMessage(id),
+    onSuccess: (_, id) => {
+      queryClient.setQueryData<ContactMessage[]>(queryKeys.admin.messages.all, (old) =>
+        old?.filter(m => m.id !== id)
+      );
       setMessageToDelete(null);
       toast.success('Mesaj silindi');
-    } catch (error) {
-      console.error('Error deleting message:', error);
-      toast.error('Silme işlemi başarısız');
-    }
-  };
+    },
+  });
 
   const openMessage = async (message: ContactMessage) => {
     setSelectedMessage(message);
-    
     if (!message.is_read) {
-      try {
-        await adminApi.markMessageAsRead(message.id);
-
-        setMessages(messages.map(m => 
-          m.id === message.id ? { ...m, is_read: true } : m
-        ));
-      } catch (error) {
-        console.error('Error marking as read:', error);
-      }
+      await toggleRead.mutateAsync(message.id);
+      queryClient.setQueryData<ContactMessage[]>(queryKeys.admin.messages.all, (old) =>
+        old?.map(m => m.id === message.id ? { ...m, is_read: true } : m)
+      );
     }
   };
 
   const filteredMessages = messages.filter(message => {
-    const matchesSearch = 
+    const matchesSearch =
       message.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       message.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       message.subject.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesFilter = 
+    const matchesFilter =
       filter === 'all' ||
       (filter === 'unread' && !message.is_read) ||
       (filter === 'read' && message.is_read);
-
     return matchesSearch && matchesFilter;
   });
 
   const unreadCount = messages.filter(m => !m.is_read).length;
 
-  if (loading) {
+  if (isLoading) {
     return (
       <Card className="p-8">
         <div className="flex items-center justify-center gap-3">
@@ -281,14 +216,14 @@ export function MessageManagement() {
                       <Clock className="h-3 w-3" />
                       {format(new Date(message.created_at), 'dd MMM', { locale: tr })}
                     </span>
-                    <div className="flex gap-1">
+<div className="flex gap-1">
                       <Button
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8"
                         onClick={(e) => {
                           e.stopPropagation();
-                          toggleReadStatus(message);
+                          toggleRead.mutate(message.id);
                         }}
                       >
                         {message.is_read ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -372,7 +307,7 @@ export function MessageManagement() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>İptal</AlertDialogCancel>
-            <AlertDialogAction onClick={deleteMessage} className="bg-red-600 hover:bg-red-700">
+            <AlertDialogAction onClick={() => messageToDelete && deleteMsg.mutate(messageToDelete.id)} className="bg-red-600 hover:bg-red-700">
               Sil
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -381,3 +316,4 @@ export function MessageManagement() {
     </div>
   );
 }
+

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/query/client';
 import { 
   Bell, 
   Plus, 
@@ -78,7 +79,7 @@ export function NotificationManagement() {
   });
 
   const { data: notificationsData, isLoading } = useQuery({
-    queryKey: ['admin-notifications'],
+    queryKey: queryKeys.admin.notifications,
     queryFn: () => adminApi.getNotifications({ limit: 100 }),
   });
 
@@ -87,7 +88,7 @@ export function NotificationManagement() {
   const createMutation = useMutation({
     mutationFn: (data: any) => adminApi.createNotification(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-notifications'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.notifications });
       setIsDialogOpen(false);
       resetForm();
     },
@@ -97,7 +98,7 @@ export function NotificationManagement() {
     mutationFn: ({ id, data }: { id: string; data: any }) => 
       adminApi.updateNotification(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-notifications'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.notifications });
       setIsDialogOpen(false);
       setEditingNotification(null);
       resetForm();
@@ -107,14 +108,14 @@ export function NotificationManagement() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => adminApi.deleteNotification(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-notifications'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.notifications });
     },
   });
 
   const toggleMutation = useMutation({
     mutationFn: (id: string) => adminApi.toggleNotification(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-notifications'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.notifications });
     },
   });
 

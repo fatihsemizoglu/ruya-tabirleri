@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { usersApi } from '@/lib/api';
 import type { DreamJournalEntry, DreamMood } from '@/types/database';
+import { DreamCalendar } from '@/components/dream/DreamCalendar';
 
 const moodOptions: { value: DreamMood; label: string; emoji: string }[] = [
   { value: 'happy', label: 'Mutlu', emoji: '😊' },
@@ -256,6 +257,11 @@ export default function DreamJournal() {
               </form>
             </DialogContent>
           </Dialog>
+        </div>
+
+        {/* Calendar View */}
+        <div className="mb-8">
+          <DreamCalendar />
         </div>
 
         {/* Entries */}

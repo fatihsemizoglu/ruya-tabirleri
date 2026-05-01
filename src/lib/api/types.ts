@@ -15,6 +15,22 @@ export interface ApiResponse<T = unknown> {
     };
 }
 
+export interface SuccessResponse<T = unknown> {
+    success: true;
+    data: T;
+    message?: string;
+    pagination?: ApiResponse['pagination'];
+}
+
+export interface ErrorResponse {
+    success: false;
+    error: string;
+    code?: string;
+    details?: ValidationErrorDetail[];
+}
+
+export type ApiResult<T> = SuccessResponse<T> | ErrorResponse;
+
 export interface User {
     id: string;
     email: string;
@@ -98,6 +114,9 @@ export interface BlogPost {
     scheduled_at: string | null;
     meta_title: string | null;
     meta_description: string | null;
+    tags: string[] | null;
+    view_count: number | null;
+    like_count: number | null;
     author_name?: string;
     author_avatar?: string | null;
     category_name?: string;
@@ -197,3 +216,29 @@ export interface ViewHistory {
 export type DreamMood = 'happy' | 'sad' | 'scared' | 'confused' | 'peaceful' | 'anxious' | 'excited' | 'neutral';
 
 export type AppRole = 'admin' | 'moderator' | 'user';
+
+export interface ApiError {
+    code: string;
+    message: string;
+    field?: string;
+    details?: Record<string, string[]>;
+}
+
+export interface ValidationErrorDetail {
+    field: string;
+    message: string;
+    code?: string;
+}
+
+export interface PaginatedResponse<T> {
+    items: T[];
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+}
+
+export interface BatchResponse<T> {
+    successful: T[];
+    failed: { id: string; error: string }[];
+}

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { mediaApi } from '@/lib/api';
+import { queryKeys } from '@/lib/query/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -66,7 +67,7 @@ export function MediaLibrary() {
   const queryClient = useQueryClient();
 
   const { data: files, isLoading, refetch, isRefetching } = useQuery({
-    queryKey: ['media-library'],
+    queryKey: queryKeys.admin.media,
     queryFn: async () => {
       const response = await mediaApi.listFiles('blog-images');
       if (!response.success) throw new Error(response.error || 'Failed to fetch media files');
@@ -81,7 +82,7 @@ export function MediaLibrary() {
       return fileName;
     },
     onSuccess: (fileName) => {
-      queryClient.invalidateQueries({ queryKey: ['media-library'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.media });
       logAction({
         action: 'delete',
         entityType: 'setting',
@@ -111,7 +112,7 @@ export function MediaLibrary() {
       return fileNames;
     },
     onSuccess: (fileNames) => {
-      queryClient.invalidateQueries({ queryKey: ['media-library'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.media });
       logAction({
         action: 'delete',
         entityType: 'setting',

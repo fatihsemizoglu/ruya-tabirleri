@@ -1,9 +1,11 @@
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 import { testConnection } from './config/database';
+import { env, isDevelopment } from './config/env';
+import logger from './utils/logger';
 
 // Import routes
 import authRoutes from './routes/auth';
@@ -14,18 +16,20 @@ import blogRoutes from './routes/blog';
 import searchRoutes from './routes/search';
 import contactRoutes from './routes/contact';
 import adminRoutes from './routes/admin';
+import communityRoutes from './routes/community';
+import symbolRoutes from './routes/symbols';
+import notificationRoutes from './routes/notifications';
+import featureRoutes from './routes/features';
 import { errorHandler } from './middleware/errorMiddleware';
-
-// Load environment variables
-dotenv.config();
+import { etagMiddleware } from './middleware/etag';
+import { premiumRateLimit } from './middleware/perUserRateLimit';
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = env.PORT;
 
 // CORS configuration
-const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
 app.use(cors({
-  origin: frontendUrl,
+  origin: env.FRONTEND_URL,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -34,22 +38,28 @@ app.use(cors({
 // Body parser
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(cookieParser());
 app.use(helmet());
+app.use(etagMiddleware);
 
-// Rate limiting - relaxed for development
+// Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // limit each IP to 1000 requests per windowMs (increased for development)
+  max: isDevelopment ? 1000 : 100, // 1000 for dev, 100 for production
   message: { success: false, error: 'Too many requests, please try again later.' },
-  skip: () => process.env.NODE_ENV === 'development', // Skip in development
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 app.use('/api/', limiter);
+app.use('/api/', premiumRateLimit);
 
 // Stricter rate limit for auth endpoints
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // limit each IP to 10 requests per windowMs
+  max: isDevelopment ? 10 : 10, // 10 for dev, 10 for production
   message: { success: false, error: 'Too many authentication attempts, please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
@@ -57,6 +67,29 @@ app.use('/api/auth/register', authLimiter);
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Sitemap
+app.get('/sitemap.xml', async (req, res) => {
+  try {
+    const { generateSitemap } = await import('./services/sitemapService');
+    const xml = await generateSitemap();
+    res.set('Content-Type', 'application/xml');
+    res.send(xml);
+  } catch (error) {
+    res.status(500).send('<?xml version="1.0"?><error>Failed to generate sitemap</error>');
+  }
+});
+
+// Robots.txt
+app.get('/robots.txt', (req, res) => {
+  res.set('Content-Type', 'text/plain');
+  res.send(`User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Sitemap: ${env.FRONTEND_URL || 'https://ruyatabirleri.com'}/sitemap.xml
+`);
 });
 
 // API Routes
@@ -68,32 +101,35 @@ app.use('/api/blog', blogRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/community', communityRoutes);
+app.use('/api/symbols', symbolRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/features', featureRoutes);
 
-// 404 handler
+// Error handling middleware (must be before 404 handler)
+app.use(errorHandler);
+
+// 404 handler (must be last)
 app.use((req, res) => {
   res.status(404).json({ success: false, error: 'Not found' });
 });
 
-// Error handling middleware
-app.use(errorHandler);
-
 // Start server
 async function startServer() {
   try {
-    // Test database connection
     const dbConnected = await testConnection();
 
     if (!dbConnected) {
-      console.error('Failed to connect to database. Exiting...');
+      logger.fatal('Failed to connect to database. Exiting...');
       process.exit(1);
     }
 
     app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-      console.log(`API available at http://localhost:${PORT}/api`);
+      logger.info({ port: PORT }, 'Server running');
+      logger.info(`API available at http://localhost:${PORT}/api`);
     });
   } catch (error) {
-    console.error('Failed to start server:', error);
+    logger.fatal({ err: error }, 'Failed to start server');
     process.exit(1);
   }
 }

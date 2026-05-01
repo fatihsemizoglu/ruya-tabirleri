@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/query/client';
 import { 
   Bell, 
   MessageSquare, 
@@ -73,7 +74,7 @@ export function NotificationCenter() {
 
   // Fetch pending comments
   const { data: pendingComments } = useQuery({
-    queryKey: ['admin-pending-comments'],
+    queryKey: queryKeys.admin.comments.pending,
     queryFn: async () => {
       const response = await adminApi.getComments({ status: 'pending', limit: 10 });
       return response.data || [];
@@ -83,10 +84,9 @@ export function NotificationCenter() {
 
   // Fetch unread messages
   const { data: unreadMessages } = useQuery({
-    queryKey: ['admin-unread-messages'],
+    queryKey: queryKeys.admin.messages.unread,
     queryFn: async () => {
       const response = await adminApi.getContactMessages({ limit: 10 });
-      // Filter unread messages if available
       const messages = response.data?.messages || [];
       return messages.filter((m: any) => !m.is_read);
     },
@@ -95,7 +95,7 @@ export function NotificationCenter() {
 
   // Fetch custom admin notifications
   const { data: customNotifications } = useQuery({
-    queryKey: ['admin-custom-notifications'],
+    queryKey: queryKeys.admin.notifications,
     queryFn: async () => {
       const response = await adminApi.getActiveNotifications();
       return response.data || [];

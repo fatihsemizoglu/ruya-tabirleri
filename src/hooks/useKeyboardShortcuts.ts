@@ -1,102 +1,76 @@
 import { useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 
-interface ShortcutConfig {
-  key: string;
-  ctrl?: boolean;
-  alt?: boolean;
-  shift?: boolean;
-  action: () => void;
-  description: string;
+interface ShortcutOptions {
+  onSave?: () => void;
+  onSearch?: () => void;
+  onEscape?: () => void;
+  onNew?: () => void;
+  onDelete?: () => void;
+  enabled?: boolean;
 }
 
-export function useKeyboardShortcuts() {
-  const navigate = useNavigate();
+export function useKeyboardShortcuts({
+  onSave,
+  onSearch,
+  onEscape,
+  onNew,
+  onDelete,
+  enabled = true,
+}: ShortcutOptions) {
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (!enabled) return;
 
-  const shortcuts: ShortcutConfig[] = [
-    {
-      key: 'k',
-      ctrl: true,
-      action: () => {
-        // Focus search input
-        const searchInput = document.querySelector('[data-search-input]') as HTMLInputElement;
-        if (searchInput) {
-          searchInput.focus();
-        }
-      },
-      description: 'Aramayı aç',
-    },
-    {
-      key: '/',
-      action: () => {
-        const searchInput = document.querySelector('[data-search-input]') as HTMLInputElement;
-        if (searchInput && document.activeElement !== searchInput) {
-          searchInput.focus();
-        }
-      },
-      description: 'Aramayı aç',
-    },
-    {
-      key: 'h',
-      alt: true,
-      action: () => navigate('/'),
-      description: 'Ana sayfaya git',
-    },
-    {
-      key: 'p',
-      alt: true,
-      action: () => navigate('/populer'),
-      description: 'Popüler sayafasına git',
-    },
-    {
-      key: 'k',
-      alt: true,
-      action: () => navigate('/kategoriler'),
-      description: 'Kategorilere git',
-    },
-    {
-      key: 'Escape',
-      action: () => {
-        // Close any open modal or dropdown
-        const activeElement = document.activeElement as HTMLElement;
-        if (activeElement) {
-          activeElement.blur();
-        }
-      },
-      description: 'Kapat',
-    },
-  ];
+    const target = e.target as HTMLElement;
+    const isInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable;
+    const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+    const modifier = isMac ? e.metaKey : e.ctrlKey;
 
-  const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    // Ignore if user is typing in an input/textarea
-    const target = event.target as HTMLElement;
-    const isTyping = target.tagName === 'INPUT' || 
-                     target.tagName === 'TEXTAREA' || 
-                     target.isContentEditable;
-    
-    // Allow Ctrl+K and Escape even when typing
-    const allowedWhileTyping = (event.ctrlKey && event.key === 'k') || event.key === 'Escape';
-    
-    if (isTyping && !allowedWhileTyping) return;
-
-    for (const shortcut of shortcuts) {
-      const ctrlMatch = shortcut.ctrl ? event.ctrlKey || event.metaKey : !event.ctrlKey && !event.metaKey;
-      const altMatch = shortcut.alt ? event.altKey : !event.altKey;
-      const shiftMatch = shortcut.shift ? event.shiftKey : !event.shiftKey;
-      const keyMatch = event.key.toLowerCase() === shortcut.key.toLowerCase();
-
-      if (keyMatch && ctrlMatch && altMatch && shiftMatch) {
-        event.preventDefault();
-        shortcut.action();
-        break;
-      }
+    if (modifier && e.key === 's') {
+      e.preventDefault();
+      onSave?.();
+    } else if (modifier && e.key === 'k') {
+      e.preventDefault();
+      onSearch?.();
+    } else if (modifier && e.key === 'n') {
+      e.preventDefault();
+      onNew?.();
+    } else if (modifier && e.key === 'Backspace') {
+      e.preventDefault();
+      onDelete?.();
+    } else if (e.key === 'Escape' && !isInput) {
+      e.preventDefault();
+      onEscape?.();
     }
-  }, [navigate, shortcuts]);
+  }, [enabled, onSave, onSearch, onEscape, onNew, onDelete]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
+}
 
-  return shortcuts;
+export function KeyboardShortcutsHelp() {
+  const isMac = typeof navigator !== 'undefined' && navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+  const mod = isMac ? '⌘' : 'Ctrl';
+
+  return (
+    <div className="fixed bottom-4 left-4 text-xs text-muted-foreground space-y-1">
+      <div className="flex gap-2">
+        <kbd className="px-1.5 py-0.5 rounded border bg-muted">{mod}+S</kbd>
+        <span>Kaydet</span>
+      </div>
+      <div className="flex gap-2">
+        <kbd className="px-1.5 py-0.5 rounded border bg-muted">{mod}+K</kbd>
+        <span>Ara</span>
+      </div>
+      <div className="flex gap-2">
+        <kbd className="px-1.5 py-0.5 rounded border bg-muted">{mod}+N</kbd>
+        <span>Yeni</span>
+      </div>
+      <div className="flex gap-2">
+        <kbd className="px-1.5 py-0.5 rounded border bg-muted">Esc</kbd>
+        <span>Kapat</span>
+      </div>
+    </div>
+  );
 }

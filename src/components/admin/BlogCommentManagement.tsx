@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminApi } from '@/lib/api';
+import { queryKeys } from '@/lib/query/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -42,7 +43,7 @@ export function BlogCommentManagement() {
   const queryClient = useQueryClient();
 
   const { data: comments, isLoading } = useQuery({
-    queryKey: ['admin-blog-comments', activeTab],
+    queryKey: [...queryKeys.admin.blog.comments(), activeTab],
     queryFn: async () => {
       const status = activeTab === 'all' ? undefined : activeTab as 'pending' | 'approved';
       const response = await adminApi.getComments({ status, limit: 100 });
@@ -52,7 +53,7 @@ export function BlogCommentManagement() {
   });
 
   const { data: allComments } = useQuery({
-    queryKey: ['admin-blog-comments', 'all'],
+    queryKey: queryKeys.admin.blog.comments('all'),
     queryFn: async () => {
       const response = await adminApi.getComments({ limit: 100 });
       return (response.data || []) as BlogComment[];
@@ -74,19 +75,17 @@ export function BlogCommentManagement() {
 
   const approveMutation = useMutation({
     mutationFn: async (id: string) => { const response = await adminApi.approveComment(id); if (!response.success) throw new Error(response.error || 'Failed to approve comment'); },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['admin-blog-comments'] }); toast.success('Yorum onaylandı'); },
-    onError: (error: Error) => { toast.error(`Hata: ${error.message}`); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.admin.blog.comments() }); toast.success('Yorum onaylandı'); },
   });
 
   const rejectMutation = useMutation({
-    mutationFn: async (id: string) => { const response = await adminApi.rejectComment(id); if (!response.success) throw new Error(response.error || 'Failed to reject comment'); },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['admin-blog-comments'] }); toast.success('Yorum reddedildi'); },
-    onError: (error: Error) => { toast.error(`Hata: ${error.message}`); },
+    mutationFn: async (id: string) => { await adminApi.rejectComment(id); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.admin.blog.comments() }); toast.success('Yorum reddedildi'); },
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => { const response = await adminApi.deleteComment(id); if (!response.success) throw new Error(response.error || 'Failed to delete comment'); },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['admin-blog-comments'] }); toast.success('Yorum silindi'); },
+    mutationFn: async (id: string) => { await adminApi.deleteComment(id); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.admin.blog.comments() }); toast.success('Yorum silindi'); },
     onError: (error: Error) => { toast.error(`Hata: ${error.message}`); },
   });
 

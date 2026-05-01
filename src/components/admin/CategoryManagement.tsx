@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { categoriesApi } from '@/lib/api';
 import type { Category } from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -11,11 +11,13 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { 
-  Plus, Pencil, Trash2, Loader2, Search, X, 
+  Plus, Pencil, Trash2, Loader2, Search, 
   Folder, Hash, Sparkles
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useItemMutations } from '@/hooks/useList';
+import { queryKeys } from '@/lib/query/client';
 
 const categorySchema = z.object({
   name: z.string().min(2, 'Kategori adı en az 2 karakter olmalıdır').max(100),
@@ -52,7 +54,6 @@ export function CategoryManagement() {
   const [isOpen, setIsOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const queryClient = useQueryClient();
 
   const form = useForm<CategoryFormValues>({
     resolver: zodResolver(categorySchema),
@@ -65,8 +66,8 @@ export function CategoryManagement() {
     },
   });
 
-  const { data: categoriesResponse, isLoading } = useQuery({
-    queryKey: ['admin-categories'],
+  const { data: categoriesResponse, isLoading, refetch } = useQuery({
+    queryKey: queryKeys.admin.categories.list,
     queryFn: async () => {
       const response = await categoriesApi.getAll();
       if (!response.success) throw new Error(response.error || 'Failed to fetch categories');
@@ -91,8 +92,9 @@ export function CategoryManagement() {
     );
   });
 
-  const createMutation = useMutation({
-    mutationFn: async (values: CategoryFormValues) => {
+  const mutations = useItemMutations<Category>({
+    queryKey: queryKeys.admin.categories.list,
+    createFn: async (values) => {
       const response = await categoriesApi.create({
         name: values.name,
         slug: values.slug,
@@ -101,50 +103,25 @@ export function CategoryManagement() {
         order_index: values.order_index || 0,
       });
       if (!response.success) throw new Error(response.error || 'Failed to create category');
+      return response;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-categories'] });
-      toast.success('Kategori başarıyla oluşturuldu');
-      handleClose();
-    },
-    onError: (error: Error) => {
-      toast.error(`Hata: ${error.message}`);
-    },
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: async ({ id, values }: { id: string; values: CategoryFormValues }) => {
+    updateFn: async ({ id, data }) => {
       const response = await categoriesApi.update(id, {
-        name: values.name,
-        slug: values.slug,
-        description: values.description || null,
-        icon: values.icon || null,
-        order_index: values.order_index || 0,
+        name: data.name,
+        slug: data.slug,
+        description: data.description || null,
+        icon: data.icon || null,
+        order_index: data.order_index || 0,
       });
       if (!response.success) throw new Error(response.error || 'Failed to update category');
+      return response;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-categories'] });
-      toast.success('Kategori başarıyla güncellendi');
-      handleClose();
-    },
-    onError: (error: Error) => {
-      toast.error(`Hata: ${error.message}`);
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
+    deleteFn: async (id) => {
       const response = await categoriesApi.delete(id);
       if (!response.success) throw new Error(response.error || 'Failed to delete category');
+      return response;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-categories'] });
-      toast.success('Kategori başarıyla silindi');
-    },
-    onError: (error: Error) => {
-      toast.error(`Hata: ${error.message}`);
-    },
+    onSuccess: () => handleClose(),
   });
 
   const handleClose = () => {
@@ -173,15 +150,15 @@ export function CategoryManagement() {
 
   const handleDelete = (category: Category) => {
     if (confirm(`"${category.name}" kategorisini silmek istediğinize emin misiniz?`)) {
-      deleteMutation.mutate(category.id);
+      mutations.remove(category.id);
     }
   };
 
   const onSubmit = (values: CategoryFormValues) => {
     if (editingCategory) {
-      updateMutation.mutate({ id: editingCategory.id, values });
+      mutations.update({ id: editingCategory.id, data: values });
     } else {
-      createMutation.mutate(values);
+      mutations.create(values);
     }
   };
 
@@ -343,9 +320,9 @@ export function CategoryManagement() {
                   </Button>
                   <Button 
                     type="submit" 
-                    disabled={createMutation.isPending || updateMutation.isPending}
+                    disabled={mutations.isCreating || mutations.isUpdating}
                   >
-                    {(createMutation.isPending || updateMutation.isPending) && (
+                    {(mutations.isCreating || mutations.isUpdating) && (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     )}
                     {editingCategory ? 'Güncelle' : 'Oluştur'}
@@ -408,7 +385,7 @@ export function CategoryManagement() {
                     size="icon" 
                     className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
                     onClick={() => handleDelete(category)}
-                    disabled={deleteMutation.isPending}
+                    disabled={mutations.isDeleting}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>

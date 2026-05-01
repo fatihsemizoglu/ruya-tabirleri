@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { dreamsApi, blogApi, categoriesApi } from '@/lib/api';
+import { queryKeys } from '@/lib/query/client';
 import type { Dream, BlogPost, Category, BlogCategory } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -39,12 +40,9 @@ export function BulkImportExport() {
   const [isImporting, setIsImporting] = useState(false);
   const [importProgress, setImportProgress] = useState(0);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
-  
-  const queryClient = useQueryClient();
 
-  // Fetch dreams for export
   const { data: dreams } = useQuery({
-    queryKey: ['export-dreams'],
+    queryKey: queryKeys.admin.bulk.exportDreams,
     queryFn: async () => {
       const response = await dreamsApi.getAll({ limit: 1000 });
       if (!response.success) throw new Error(response.error || 'Failed to fetch dreams');
@@ -53,9 +51,8 @@ export function BulkImportExport() {
     enabled: contentType === 'dreams',
   });
 
-  // Fetch blog posts for export
   const { data: blogPosts } = useQuery({
-    queryKey: ['export-blog-posts'],
+    queryKey: queryKeys.admin.bulk.exportBlogs,
     queryFn: async () => {
       const response = await blogApi.getPosts({ limit: 1000 });
       if (!response.success) throw new Error(response.error || 'Failed to fetch blog posts');
@@ -64,9 +61,8 @@ export function BulkImportExport() {
     enabled: contentType === 'blog',
   });
 
-  // Fetch categories for import mapping
   const { data: categories } = useQuery({
-    queryKey: ['import-categories'],
+    queryKey: queryKeys.admin.bulk.importCategories,
     queryFn: async () => {
       const response = await categoriesApi.getAll();
       if (!response.success) throw new Error(response.error || 'Failed to fetch categories');
@@ -75,7 +71,7 @@ export function BulkImportExport() {
   });
 
   const { data: blogCategories } = useQuery({
-    queryKey: ['import-blog-categories'],
+    queryKey: queryKeys.admin.bulk.importBlogCategories,
     queryFn: async () => {
       const response = await blogApi.getCategories();
       if (!response.success) throw new Error(response.error || 'Failed to fetch blog categories');
@@ -259,7 +255,7 @@ export function BulkImportExport() {
       setImportResult(result);
       
       if (result.success > 0) {
-        queryClient.invalidateQueries({ queryKey: contentType === 'dreams' ? ['admin-dreams'] : ['admin-blog-posts'] });
+        queryClient.invalidateQueries({ queryKey: contentType === 'dreams' ? queryKeys.admin.dreams.all : queryKeys.admin.blog.posts });
         toast.success(`${result.success} kayıt başarıyla içe aktarıldı`);
       }
       

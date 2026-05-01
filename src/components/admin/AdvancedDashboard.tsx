@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { queryKeys } from '@/lib/query/client';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -92,7 +93,7 @@ function KPICard({ title, value, previousValue, icon, color, suffix = '' }: KPIC
 
 export function AdvancedDashboard() {
   const { data: stats, isLoading } = useQuery({
-    queryKey: ['advanced-dashboard-stats'],
+    queryKey: queryKeys.admin.advancedStats,
     queryFn: async () => {
       const statsResponse = await adminApi.getStatistics();
       const categoryResponse = await adminApi.getCategoryStats();

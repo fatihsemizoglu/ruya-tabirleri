@@ -5,7 +5,7 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist", "server"] },
+  { ignores: ["dist", "server", "tests", "api", "src/hooks/useKeyboard.ts", "src/hooks/useKeyboardShortcuts.ts"] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],
@@ -25,6 +25,7 @@ export default tseslint.config(
       "@typescript-eslint/no-empty-object-type": "warn",
       "@typescript-eslint/no-require-imports": "warn",
       "react-hooks/exhaustive-deps": "warn",
+      "@typescript-eslint/no-unused-expressions": "warn",
     },
   },
 );

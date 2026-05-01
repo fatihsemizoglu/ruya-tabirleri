@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminApi } from '@/lib/api';
+import { queryKeys } from '@/lib/query/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -49,7 +50,7 @@ export function CommentManagement() {
   const queryClient = useQueryClient();
 
   const { data: comments, isLoading } = useQuery({
-    queryKey: ['admin-comments', activeTab],
+    queryKey: [...queryKeys.admin.comments.all, activeTab],
     queryFn: async () => {
       const status = activeTab as 'pending' | 'approved' | 'all';
       const response = await adminApi.getComments({ status, limit: 50 });
@@ -91,8 +92,8 @@ export function CommentManagement() {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-comments'] });
-      queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.comments.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.stats });
       toast.success('Yorum onaylandı');
     },
     onError: (error: Error) => {
@@ -108,7 +109,7 @@ export function CommentManagement() {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-comments'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.comments.all });
       toast.success('Yorum reddedildi');
     },
     onError: (error: Error) => {
@@ -124,8 +125,8 @@ export function CommentManagement() {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-comments'] });
-      queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.comments.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.stats });
       toast.success('Yorum silindi');
     },
     onError: (error: Error) => {

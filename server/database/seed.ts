@@ -1,6 +1,6 @@
-import pool from '../src/config/database.js';
+import { supabase } from '../src/config/database.js';
 import { v4 as uuidv4 } from 'uuid';
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 
 // Admin user data
 const adminUser = {
@@ -339,27 +339,22 @@ const dreams = [
 ];
 
 async function seedDatabase() {
-  const connection = await pool.getConnection();
-  
   try {
-    await connection.beginTransaction();
-    
     console.log('Seeder starting...');
     
-    // Clear existing data (in reverse order of dependencies)
+    // Clear existing data
     console.log('Clearing existing data...');
-    await connection.execute('SET FOREIGN_KEY_CHECKS = 0');
-    await connection.execute('DELETE FROM dream_likes');
-    await connection.execute('DELETE FROM favorites');
-    await connection.execute('DELETE FROM view_history');
-    await connection.execute('DELETE FROM comments');
-    await connection.execute('DELETE FROM comment_likes');
-    await connection.execute('DELETE FROM dreams');
-    await connection.execute('DELETE FROM categories');
-    await connection.execute('DELETE FROM user_roles');
-    await connection.execute('DELETE FROM profiles');
-    await connection.execute('DELETE FROM users');
-    await connection.execute('SET FOREIGN_KEY_CHECKS = 1');
+    await Promise.all([
+      supabase.from('dream_likes').delete().neq('id', ''),
+      supabase.from('favorites').delete().neq('id', ''),
+      supabase.from('view_history').delete().neq('id', ''),
+      supabase.from('comments').delete().neq('id', ''),
+      supabase.from('dreams').delete().neq('id', ''),
+      supabase.from('categories').delete().neq('id', ''),
+      supabase.from('user_roles').delete().neq('id', ''),
+      supabase.from('profiles').delete().neq('id', ''),
+      supabase.from('users').delete().neq('id', ''),
+    ]);
     console.log('Existing data cleared.');
     
     // Create admin user
@@ -368,22 +363,11 @@ async function seedDatabase() {
     const adminProfileId = uuidv4();
     const adminRoleId = uuidv4();
     const hashedPassword = await bcrypt.hash(adminUser.password, 10);
+    const now = new Date().toISOString();
     
-    await connection.execute(
-      'INSERT INTO users (id, email, password, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())',
-      [adminUserId, adminUser.email, hashedPassword]
-    );
-    
-    await connection.execute(
-      `INSERT INTO profiles (id, user_id, email, full_name, username, created_at, updated_at) 
-       VALUES (?, ?, ?, ?, ?, NOW(), NOW())`,
-      [adminProfileId, adminUserId, adminUser.email, adminUser.full_name, adminUser.username]
-    );
-    
-    await connection.execute(
-      'INSERT INTO user_roles (id, user_id, role, created_at) VALUES (?, ?, ?, NOW())',
-      [adminRoleId, adminUserId, 'admin']
-    );
+    await supabase.from('users').insert({ id: adminUserId, email: adminUser.email, password: hashedPassword, created_at: now, updated_at: now });
+    await supabase.from('profiles').insert({ id: adminProfileId, user_id: adminUserId, email: adminUser.email, full_name: adminUser.full_name, username: adminUser.username, created_at: now, updated_at: now });
+    await supabase.from('user_roles').insert({ id: adminRoleId, user_id: adminUserId, role: 'admin', created_at: now });
     console.log('Admin user created.');
     
     // Store category IDs for parent relationships
@@ -394,12 +378,7 @@ async function seedDatabase() {
     for (const category of categories.filter(c => !c.parent_slug)) {
       const id = uuidv4();
       categoryIds[category.slug] = id;
-      
-      await connection.execute(
-        `INSERT INTO categories (id, name, slug, description, icon, parent_id, order_index) 
-         VALUES (?, ?, ?, ?, ?, NULL, ?)`,
-        [id, category.name, category.slug, category.description, category.icon, category.order_index]
-      );
+      await supabase.from('categories').insert({ id, name: category.name, slug: category.slug, description: category.description, icon: category.icon, parent_id: null, order_index: category.order_index, created_at: now, updated_at: now });
     }
     
     // Insert sub-categories (with parents)
@@ -407,12 +386,7 @@ async function seedDatabase() {
     for (const category of categories.filter(c => c.parent_slug)) {
       const id = uuidv4();
       categoryIds[category.slug] = id;
-      
-      await connection.execute(
-        `INSERT INTO categories (id, name, slug, description, icon, parent_id, order_index) 
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [id, category.name, category.slug, category.description, category.icon, categoryIds[category.parent_slug!], category.order_index]
-      );
+      await supabase.from('categories').insert({ id, name: category.name, slug: category.slug, description: category.description, icon: category.icon, parent_id: categoryIds[category.parent_slug!], order_index: category.order_index, created_at: now, updated_at: now });
     }
     
     console.log(`Inserted ${categories.length} categories`);
@@ -423,44 +397,32 @@ async function seedDatabase() {
       const id = uuidv4();
       const categoryId = categoryIds[dream.category_slug];
       
-      await connection.execute(
-        `INSERT INTO dreams (
-          id, title, slug, content, category_id, 
-          islamic_interpretation, psychological_interpretation, keywords, 
-          is_featured, is_published, view_count, like_count,
-          meta_title, meta_description
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          id,
-          dream.title,
-          dream.slug,
-          dream.content,
-          categoryId,
-          dream.islamic_interpretation,
-          dream.psychological_interpretation,
-          JSON.stringify(dream.keywords),
-          dream.is_featured,
-          true, // is_published
-          dream.view_count,
-          dream.like_count,
-          dream.title + ' - Ruya Tabiri',
-          dream.content.substring(0, 160) + '...'
-        ]
-      );
+      await supabase.from('dreams').insert({
+        id,
+        title: dream.title,
+        slug: dream.slug,
+        content: dream.content,
+        category_id: categoryId,
+        islamic_interpretation: dream.islamic_interpretation,
+        psychological_interpretation: dream.psychological_interpretation,
+        keywords: dream.keywords,
+        is_featured: dream.is_featured,
+        is_published: true,
+        view_count: dream.view_count,
+        like_count: dream.like_count,
+        meta_title: dream.title + ' - Rüya Tabiri',
+        meta_description: dream.content.substring(0, 160) + '...',
+        created_at: now,
+        updated_at: now,
+      });
     }
     
     console.log(`Inserted ${dreams.length} dreams`);
-    
-    await connection.commit();
     console.log('Database seeding completed successfully!');
     
   } catch (error) {
-    await connection.rollback();
     console.error('Error during seeding:', error);
     throw error;
-  } finally {
-    connection.release();
-    await pool.end();
   }
 }
 

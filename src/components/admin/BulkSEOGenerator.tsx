@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchApi, adminApi } from '@/lib/api';
+import { queryKeys } from '@/lib/query/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -37,7 +38,7 @@ export function BulkSEOGenerator() {
 
   // Fetch dreams without complete SEO
   const { data: dreams, isLoading: dreamsLoading, refetch: refetchDreams } = useQuery({
-    queryKey: ['bulk-seo-dreams'],
+    queryKey: queryKeys.admin.bulk.seoDreams,
     queryFn: async () => {
       const response = await fetchApi<ContentItem[]>('/admin/content-without-seo?type=dream');
       if (!response.success) throw new Error(response.error);
@@ -47,7 +48,7 @@ export function BulkSEOGenerator() {
 
   // Fetch blog posts without complete SEO
   const { data: blogs, isLoading: blogsLoading, refetch: refetchBlogs } = useQuery({
-    queryKey: ['bulk-seo-blogs'],
+    queryKey: queryKeys.admin.bulk.seoBlogs,
     queryFn: async () => {
       const response = await fetchApi<ContentItem[]>('/admin/content-without-seo?type=blog');
       if (!response.success) throw new Error(response.error);
@@ -161,10 +162,10 @@ export function BulkSEOGenerator() {
     }
 
     // Refresh data
-    queryClient.invalidateQueries({ queryKey: ['bulk-seo-dreams'] });
-    queryClient.invalidateQueries({ queryKey: ['bulk-seo-blogs'] });
-    queryClient.invalidateQueries({ queryKey: ['admin-dreams'] });
-    queryClient.invalidateQueries({ queryKey: ['admin-blog-posts'] });
+queryClient.invalidateQueries({ queryKey: queryKeys.admin.bulk.seoDreams });
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.bulk.seoBlogs });
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.dreams.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.blog.posts });
     
     setSelectedIds(new Set());
     setIsProcessing(false);

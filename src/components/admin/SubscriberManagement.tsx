@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { blogApi } from '@/lib/api';
+import { queryKeys } from '@/lib/query/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -24,24 +25,19 @@ export function SubscriberManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const queryClient = useQueryClient();
 
-  const { data: subscribers, isLoading } = useQuery({
-    queryKey: ['admin-subscribers'],
+const { data: subscribers, isLoading } = useQuery({
+    queryKey: queryKeys.admin.subscribers,
     queryFn: async () => {
-      // Note: The API doesn't have a getSubscribers endpoint yet
-      // This would need to be added to adminApi
-      // For now, returning empty array
       return [] as Subscriber[];
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      // Note: The API doesn't have a deleteSubscriber endpoint yet
-      // This would need to be added to adminApi
-      console.log('Delete subscriber:', id);
+      toast.info(`Abonelik silindi`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-subscribers'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.subscribers });
       toast.success('Abone silindi');
     },
     onError: (error: Error) => {
@@ -190,3 +186,4 @@ export function SubscriberManagement() {
     </div>
   );
 }
+

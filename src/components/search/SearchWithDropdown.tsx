@@ -67,8 +67,8 @@ const DEBOUNCE_MS = 250;
 const MIN_CHARS = 2;
 const RECENT_SEARCHES_KEY = 'dream_recent_searches';
 
-export function SearchWithDropdown({ 
-  variant = 'header', 
+export function SearchWithDropdown({
+  variant = 'header',
   placeholder,
   className,
   inputClassName,
@@ -85,7 +85,7 @@ export function SearchWithDropdown({
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const recognitionRef = useRef<SpeechRecognition | null>(null);
-  
+
   // Voice recognition states
   const [isListening, setIsListening] = useState(false);
   const [voiceSupported, setVoiceSupported] = useState(false);
@@ -142,6 +142,14 @@ export function SearchWithDropdown({
       recognitionRef.current.onend = () => {
         setIsListening(false);
       };
+
+      // Cleanup on unmount to prevent memory leaks
+      return () => {
+        if (recognitionRef.current) {
+          recognitionRef.current.stop();
+          recognitionRef.current = null;
+        }
+      };
     }
   }, []);
 
@@ -179,12 +187,12 @@ export function SearchWithDropdown({
   const normalizeSearchQuery = (query: string): string => {
     const normalized = query.toLowerCase().trim();
     const ruyadaPrefix = 'rüyada ';
-    
+
     // If already starts with "rüyada ", return as-is
     if (normalized.startsWith(ruyadaPrefix)) {
       return query;
     }
-    
+
     // Otherwise, add the prefix version to increase search matches
     return `${query} ${ruyadaPrefix}${query}`;
   };
@@ -302,7 +310,7 @@ export function SearchWithDropdown({
           onFocus={() => setShowDropdown(true)}
           onKeyDown={handleKeyDown}
           className={cn(
-            isHero 
+            isHero
               ? "w-full h-14 pl-5 pr-24 text-lg rounded-2xl bg-background/80 backdrop-blur border-2 border-primary/20 focus:border-primary shadow-lg shadow-primary/5"
               : isMobile
               ? "w-full pr-24"
@@ -317,8 +325,8 @@ export function SearchWithDropdown({
               onClick={toggleVoiceSearch}
               className={cn(
                 "p-1.5 rounded-full transition-all duration-200",
-                isListening 
-                  ? 'bg-red-500 text-white animate-pulse' 
+                isListening
+                  ? 'bg-red-500 text-white animate-pulse'
                   : 'text-muted-foreground hover:text-foreground hover:bg-muted',
                 isHero ? "h-10 w-10" : "h-8 w-8"
               )}
@@ -327,14 +335,14 @@ export function SearchWithDropdown({
               <Mic className={isHero ? "h-5 w-5" : "h-4 w-4"} />
             </button>
           )}
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             variant={isHero ? "default" : "ghost"}
-            size="icon" 
+            size="icon"
             className={cn(
               "",
-              isHero 
-                ? "h-10 w-10 rounded-xl dream-gradient" 
+              isHero
+                ? "h-10 w-10 rounded-xl dream-gradient"
                 : "h-8 w-8"
             )}
           >
@@ -392,7 +400,7 @@ export function SearchWithDropdown({
                   <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                 </button>
               ))}
-              
+
               {/* Search for query option */}
               {query.trim() && (
                 <button

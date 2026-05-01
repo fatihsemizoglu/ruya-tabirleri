@@ -13,6 +13,10 @@ export const blogApi = {
         return fetchApi<BlogPost[]>(`/blog/posts?${searchParams.toString()}`);
     },
 
+    async getPosts(params: any = {}) {
+        return this.getAll(params);
+    },
+
     async getPostBySlug(slug: string) {
         return fetchApi<BlogPost>(`/blog/posts/${slug}`);
     },

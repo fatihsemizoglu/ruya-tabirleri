@@ -1,30 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { fetchApi } from '@/lib/api';
+import { queryKeys } from '@/lib/query/client';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { 
-  Settings, 
-  Globe, 
-  Mail, 
-  Bell, 
-  Shield, 
-  Palette,
-  Save,
-  RefreshCw,
-  Check,
-  AlertCircle
-} from 'lucide-react';
+import { Settings, Globe, Mail, Bell, Shield, Palette, Save, RefreshCw, Check, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface SiteSettings {
   siteName: string;
@@ -61,60 +47,41 @@ const defaultSettings: SiteSettings = {
 };
 
 export function SiteSettings() {
-  const [settings, setSettings] = useState<SiteSettings>(defaultSettings);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
-  useEffect(() => {
-    fetchSettings();
-  }, []);
-
-  const fetchSettings = async () => {
-    setLoading(true);
-    try {
+  const { data: settingsData, isLoading } = useQuery({
+    queryKey: [...queryKeys.admin.all, 'settings'],
+    queryFn: async () => {
       const response = await fetchApi<{ settings: Record<string, any> }>('/admin/site-settings');
-
-      if (response.success && response.data?.settings) {
-        const loadedSettings = { ...defaultSettings };
-        Object.entries(response.data.settings).forEach(([key, value]) => {
-          if (key in loadedSettings && value !== null) {
-            (loadedSettings as any)[key] = value;
-          }
-        });
-        setSettings(loadedSettings);
-      }
-    } catch (error) {
-      console.error('Error fetching settings:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const saveSettings = async () => {
-    setSaving(true);
-    try {
-      const response = await fetchApi('/admin/site-settings', {
-        method: 'PUT',
-        body: JSON.stringify({ settings }),
+      if (!response.success) throw new Error(response.error || 'Failed to fetch settings');
+      const loadedSettings = { ...defaultSettings };
+      Object.entries(response.data?.settings || {}).forEach(([key, value]) => {
+        if (key in loadedSettings && value !== null) {
+          (loadedSettings as any)[key] = value;
+        }
       });
+      return loadedSettings;
+    },
+  });
 
-      if (!response.success) {
-        throw new Error(response.error || 'Ayarlar kaydedilirken hata oluştu');
-      }
-
+  const saveMutation = useMutation({
+    mutationFn: (data: SiteSettings) => fetchApi('/admin/site-settings', {
+      method: 'PUT',
+      body: JSON.stringify({ settings: data }),
+    }),
+    onSuccess: () => {
       setHasChanges(false);
       toast.success('Ayarlar kaydedildi');
-    } catch (error) {
-      console.error('Error saving settings:', error);
-      toast.error('Ayarlar kaydedilirken hata oluştu');
-    } finally {
-      setSaving(false);
-    }
-  };
+    },
+    onError: () => toast.error('Ayarlar kaydedilirken hata oluştu'),
+  });
+
+  const settings = settingsData as SiteSettings | undefined;
 
   const updateSetting = <K extends keyof SiteSettings>(key: K, value: SiteSettings[K]) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
+    if (settings) {
+      const newSettings = { ...settings, [key]: value };
+    }
     setHasChanges(true);
   };
 
@@ -401,3 +368,4 @@ export function SiteSettings() {
     </div>
   );
 }
+

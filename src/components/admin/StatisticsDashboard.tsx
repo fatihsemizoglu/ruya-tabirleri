@@ -1,37 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { adminApi } from '@/lib/api';
+import { queryKeys } from '@/lib/query/client';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { 
-  TrendingUp, 
-  Eye, 
-  Heart, 
-  MessageSquare, 
-  Users,
-  BookOpen,
-  FolderOpen,
-  Calendar,
-  ArrowUpRight,
-  ArrowDownRight,
-  RefreshCw
-} from 'lucide-react';
-import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-  AreaChart,
-  Area
-} from 'recharts';
+import { TrendingUp, Eye, Heart, MessageSquare, Users, BookOpen, FolderOpen, Calendar, ArrowUpRight, ArrowDownRight, RefreshCw } from 'lucide-react';
+import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, AreaChart, Area } from 'recharts';
 import { format, subDays, startOfDay, endOfDay } from 'date-fns';
 import { tr } from 'date-fns/locale';
 
@@ -61,64 +35,37 @@ interface TopDream {
 }
 
 export function StatisticsDashboard() {
-  const [stats, setStats] = useState<StatsData | null>(null);
-  const [categoryStats, setCategoryStats] = useState<CategoryStats[]>([]);
-  const [topDreams, setTopDreams] = useState<TopDream[]>([]);
-  const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d'>('30d');
 
-  useEffect(() => {
-    fetchAllStats();
-  }, [timeRange]);
+  const { data: statsData, isLoading: statsLoading, refetch: refetchStats } = useQuery({
+    queryKey: [...queryKeys.admin.stats, timeRange],
+    queryFn: async () => {
+      const response = await adminApi.getStatistics();
+      if (!response.success || !response.data) throw new Error(response.error || 'Failed to fetch stats');
+      return response.data as StatsData;
+    },
+  });
 
-  const fetchAllStats = async () => {
-    setLoading(true);
-    try {
-      await Promise.all([
-        fetchOverviewStats(),
-        fetchCategoryStats(),
-        fetchTopDreams(),
-      ]);
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: categoryStats = [], isLoading: catLoading, refetch: refetchCat } = useQuery({
+    queryKey: [...queryKeys.admin.advancedStats, 'categories'],
+    queryFn: async () => {
+      const response = await adminApi.getCategoryStats();
+      if (!response.success) throw new Error(response.error || 'Failed to fetch category stats');
+      return response.data as CategoryStats[];
+    },
+  });
 
-  const fetchOverviewStats = async () => {
-    const response = await adminApi.getStatistics();
-    
-    if (response.success && response.data) {
-      const data = response.data;
-      setStats({
-        totalDreams: data.totalDreams,
-        totalCategories: data.totalCategories,
-        totalUsers: data.totalUsers,
-        totalViews: data.totalViews,
-        totalLikes: data.totalLikes,
-        totalComments: data.totalComments,
-        featuredDreams: data.featuredDreams,
-        avgViewsPerDream: data.avgViewsPerDream,
-      });
-    }
-  };
+  const { data: topDreams = [], isLoading: dreamsLoading, refetch: refetchDreams } = useQuery({
+    queryKey: [...queryKeys.admin.stats, 'top-dreams'],
+    queryFn: async () => {
+      const response = await adminApi.getTopDreams({ limit: 5 });
+      if (!response.success) throw new Error(response.error || 'Failed to fetch top dreams');
+      return response.data as TopDream[];
+    },
+  });
 
-  const fetchCategoryStats = async () => {
-    const response = await adminApi.getCategoryStats();
-    
-    if (response.success && response.data) {
-      setCategoryStats(response.data.sort((a, b) => b.dreamCount - a.dreamCount));
-    }
-  };
-
-  const fetchTopDreams = async () => {
-    const response = await adminApi.getTopDreams(10);
-    
-    if (response.success && response.data) {
-      setTopDreams(response.data);
-    }
-  };
+const isLoading = statsLoading || catLoading || dreamsLoading;
+  const stats = statsData as StatsData | undefined;
 
   // Generate mock trend data based on time range
   const generateTrendData = () => {
@@ -139,7 +86,7 @@ export function StatisticsDashboard() {
 
   const trendData = generateTrendData();
 
-  if (loading) {
+  if (isLoading) {
     return (
       <Card className="p-8">
         <div className="flex items-center justify-center gap-3">
@@ -177,7 +124,7 @@ export function StatisticsDashboard() {
           >
             90 Gün
           </Button>
-          <Button variant="outline" size="icon" onClick={fetchAllStats}>
+          <Button variant="outline" size="icon" onClick={() => { refetchStats(); refetchCat(); refetchDreams(); }}>
             <RefreshCw className="h-4 w-4" />
           </Button>
         </div>
@@ -408,3 +355,4 @@ export function StatisticsDashboard() {
     </div>
   );
 }
+
