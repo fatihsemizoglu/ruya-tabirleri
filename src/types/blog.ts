@@ -18,13 +18,13 @@ export interface BlogPost {
   featured_image: string | null;
   category_id: string | null;
   author_id: string;
-  is_published: boolean;
-  is_featured: boolean;
-  view_count: number;
-  like_count: number;
+  is_published: boolean | null;
+  is_featured: boolean | null;
+  view_count: number | null;
+  like_count: number | null;
   meta_title: string | null;
   meta_description: string | null;
-  tags: string[];
+  tags: string[] | null;
   created_at: string;
   updated_at: string;
   category?: BlogCategory;

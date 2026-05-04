@@ -34,11 +34,12 @@ export function useList<T extends { id: string }>({
   });
 
   useEffect(() => {
-    if (query.data?.pagination) {
+    const pagination = query.data?.pagination;
+    if (query.data && pagination) {
       setPagination(prev => ({
         ...prev,
-        total: query.data.pagination.total,
-        totalPages: query.data.pagination.totalPages,
+        total: pagination.total,
+        totalPages: pagination.totalPages,
       }));
     }
   }, [query.data?.pagination]);
@@ -70,6 +71,7 @@ export function useList<T extends { id: string }>({
     items: query.data?.data || [],
     isLoading: query.isLoading,
     error: query.error,
+    params,
     pagination,
     setPage,
     setLimit,
@@ -83,8 +85,8 @@ export function useList<T extends { id: string }>({
 interface UseItemMutationsOptions<T> {
   queryKey: string[];
   createFn?: (data: any) => Promise<ApiResponse<T>>;
-  updateFn?: (id: string, data: any) => Promise<ApiResponse<T>>;
-  deleteFn?: (id: string) => Promise<ApiResponse<void>>;
+  updateFn?: (params: { id: string; data: any }) => Promise<ApiResponse<T>>;
+  deleteFn?: (id: string) => Promise<any>;
   onSuccess?: (action: 'create' | 'update' | 'delete', data?: T) => void;
   onError?: (action: 'create' | 'update' | 'delete', error: Error) => void;
 }
@@ -111,8 +113,8 @@ export function useItemMutations<T extends { id: string }>({
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) =>
-      updateFn ? updateFn(id, data) : Promise.reject(new Error('updateFn not provided')),
+    mutationFn: (params: { id: string; data: any }) =>
+      updateFn ? updateFn(params) : Promise.reject(new Error('updateFn not provided')),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey });
       onSuccess?.('update', data.data);

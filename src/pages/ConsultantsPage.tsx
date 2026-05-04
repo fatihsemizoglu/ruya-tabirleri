@@ -76,7 +76,7 @@ export default function ConsultantsPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-            {(consultants || []).map((consultant: any) => (
+            {(consultants?.data || []).map((consultant: any) => (
               <Card key={consultant.id} className="hover:shadow-md transition-all">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4 mb-4">
@@ -125,11 +125,11 @@ export default function ConsultantsPage() {
         )}
 
         {/* Randevularım */}
-        {user && appointments && appointments.length > 0 && (
-          <div>
-            <h2 className="text-2xl font-serif font-semibold mb-4">Randevularım</h2>
-            <div className="space-y-3">
-              {appointments.map((apt: any) => (
+        {user && appointments?.data && appointments.data.length > 0 && (
+            <div>
+              <h2 className="text-2xl font-serif font-bold mb-4">Randevularım</h2>
+              <div className="space-y-3">
+                {(appointments?.data || []).map((apt: any) => (
                 <Card key={apt.id}>
                   <CardContent className="p-4 flex items-center justify-between">
                     <div>

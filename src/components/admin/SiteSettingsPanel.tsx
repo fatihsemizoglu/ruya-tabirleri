@@ -48,8 +48,9 @@ const defaultSettings: SiteSettings = {
 
 export function SiteSettings() {
   const [hasChanges, setHasChanges] = useState(false);
+  const [localSettings, setLocalSettings] = useState<SiteSettings | null>(null);
 
-  const { data: settingsData, isLoading } = useQuery({
+  const { isLoading, data: settingsData } = useQuery({
     queryKey: [...queryKeys.admin.all, 'settings'],
     queryFn: async () => {
       const response = await fetchApi<{ settings: Record<string, any> }>('/admin/site-settings');
@@ -76,16 +77,23 @@ export function SiteSettings() {
     onError: () => toast.error('Ayarlar kaydedilirken hata oluştu'),
   });
 
-  const settings = settingsData as SiteSettings | undefined;
+  const settings = localSettings || settingsData;
 
   const updateSetting = <K extends keyof SiteSettings>(key: K, value: SiteSettings[K]) => {
     if (settings) {
       const newSettings = { ...settings, [key]: value };
+      setLocalSettings(newSettings);
+      setHasChanges(true);
     }
-    setHasChanges(true);
   };
 
-  if (loading) {
+  const handleSave = () => {
+    if (settings) {
+      saveMutation.mutate(settings);
+    }
+  };
+
+  if (isLoading || !settings) {
     return (
       <Card className="p-8">
         <div className="flex items-center justify-center gap-3">
@@ -105,16 +113,16 @@ export function SiteSettings() {
           <p className="text-sm text-slate-500">Sitenin genel ayarlarını yönetin</p>
         </div>
         <Button 
-          onClick={saveSettings} 
-          disabled={!hasChanges || saving}
+          onClick={handleSave} 
+          disabled={!hasChanges || saveMutation.isPending}
           className="gap-2"
         >
-          {saving ? (
+          {saveMutation.isPending ? (
             <RefreshCw className="h-4 w-4 animate-spin" />
           ) : (
             <Save className="h-4 w-4" />
           )}
-          {saving ? 'Kaydediliyor...' : 'Kaydet'}
+          {saveMutation.isPending ? 'Kaydediliyor...' : 'Kaydet'}
         </Button>
       </div>
 
@@ -359,8 +367,8 @@ export function SiteSettings() {
           <Card className="p-4 flex items-center gap-4 shadow-lg border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/50">
             <AlertCircle className="h-5 w-5 text-amber-600" />
             <span className="text-sm font-medium text-amber-700 dark:text-amber-400">Kaydedilmemiş değişiklikler var</span>
-            <Button size="sm" onClick={saveSettings} disabled={saving}>
-              {saving ? <RefreshCw className="h-4 w-4 animate-spin" /> : 'Kaydet'}
+            <Button size="sm" onClick={handleSave} disabled={saveMutation.isPending}>
+              {saveMutation.isPending ? <RefreshCw className="h-4 w-4 animate-spin" /> : 'Kaydet'}
             </Button>
           </Card>
         </div>
@@ -368,4 +376,3 @@ export function SiteSettings() {
     </div>
   );
 }
-

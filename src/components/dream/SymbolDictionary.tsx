@@ -155,11 +155,11 @@ export function SymbolDetail({ slug }: { slug: string }) {
         </div>
       )}
 
-      {related && related.length > 0 && (
+      {related?.data && related.data.length > 0 && (
         <div>
           <h3 className="text-xl font-serif font-semibold mb-4">İlgili Semboller</h3>
           <div className="flex flex-wrap gap-2">
-            {related.map((r: any) => (
+            {related.data.map((r: any) => (
               <Link key={r.slug} to={`/sembol/${r.slug}`}>
                 <Badge variant="outline" className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors">
                   {r.name}

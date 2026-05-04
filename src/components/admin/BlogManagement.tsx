@@ -64,7 +64,6 @@ export function BlogManagement() {
     deleteFn: async (id) => {
       const response = await blogApi.deletePost(id);
       if (!response.success) throw new Error(response.error || 'Failed to delete blog post');
-      return response;
     },
     onSuccess: () => setIsOpen(false),
   });
@@ -205,8 +204,8 @@ export function BlogManagement() {
               tags: Array.isArray(editingPost.tags) ? editingPost.tags.join(', ') : '',
               meta_title: editingPost.meta_title || '',
               meta_description: editingPost.meta_description || '',
-              is_published: editingPost.is_published,
-              is_featured: editingPost.is_featured,
+              is_published: editingPost.is_published ?? false,
+              is_featured: editingPost.is_featured ?? false,
             } : undefined}
             onSubmit={(values) => editingPost ? mutations.update({ id: editingPost.id, data: values }) : mutations.create(values)}
             onCancel={() => setIsOpen(false)}

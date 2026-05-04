@@ -257,11 +257,11 @@ export default function Popular() {
           sort_order: 'desc'
         });
         if (response.success && response.data) {
-          setMostViewed(prev => [...prev, ...response.data]);
+          setMostViewed(prev => [...prev, ...(response.data as Dream[])]);
           setHasMoreViewed(currentPages.viewed < totalPages.viewed);
           setViewedPage(prev => prev + 1);
-          if (response.pagination) {
-            setTotalPages(prev => ({ ...prev, viewed: response.pagination.totalPages }));
+          if ((response as any).pagination) {
+            setTotalPages(prev => ({ ...prev, viewed: (response as any).pagination.totalPages }));
           }
         }
       } else if (type === 'liked') {
@@ -272,15 +272,15 @@ export default function Popular() {
           sort_order: 'desc'
         });
         if (response.success && response.data) {
-          setMostLiked(prev => [...prev, ...response.data]);
+          setMostLiked(prev => [...prev, ...(response.data as Dream[])]);
           setHasMoreLiked(currentPages.liked < totalPages.liked);
           setLikedPage(prev => prev + 1);
-          if (response.pagination) {
-            setTotalPages(prev => ({ ...prev, liked: response.pagination.totalPages }));
+          if ((response as any).pagination) {
+            setTotalPages(prev => ({ ...prev, liked: (response as any).pagination.totalPages }));
           }
         }
       } else {
-        const response = await dreamsApi.getFeatured((featuredPage + 1) * ITEMS_PER_PAGE);
+        const response = await dreamsApi.getFeatured(((featuredPage + 1) * ITEMS_PER_PAGE) as any);
         if (response.success && response.data) {
           const newItems = response.data.slice(featured.length);
           setFeatured(prev => [...prev, ...newItems]);

@@ -99,6 +99,12 @@ export const adminApi = {
         return fetchApi<User[]>(`/admin/users?page=${page}&limit=${limit}`);
     },
 
+    async deleteUser(id: string) {
+        return fetchApi(`/admin/users/${id}`, {
+            method: 'DELETE',
+        });
+    },
+
     async getProfiles(userIds: string[]) {
         return fetchApi<Profile[]>(`/admin/profiles?ids=${userIds.join(',')}`);
     },

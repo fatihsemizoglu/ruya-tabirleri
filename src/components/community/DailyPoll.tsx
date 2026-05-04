@@ -24,7 +24,7 @@ export function DailyPoll() {
   });
 
   const poll = pollResponse?.data;
-  const userVote = pollResponse?.userVote;
+  const userVote = pollResponse?.data?.userVote;
   const hasVoted = userVote !== null && userVote !== undefined;
 
   if (isLoading || !poll) return null;

@@ -4,8 +4,13 @@ export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:30
 const REQUEST_TIMEOUT = 30000;
 const MAX_RETRIES = 2;
 
-export function getAuthToken(): string | null {
+function getAuthToken(): string | null {
     return localStorage.getItem('auth_token');
+}
+
+function getAuthHeaders():Record<string, string> {
+    const token = getAuthToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
 class NetworkError extends Error {
@@ -97,6 +102,7 @@ async function requestWithRetry<T>(
                 ...options,
                 headers: {
                     'Content-Type': 'application/json',
+                    ...getAuthHeaders(),
                     ...options.headers,
                 },
                 credentials: 'include',
@@ -165,4 +171,12 @@ const fetchApi = async <T>(
     return requestWithRetry<T>(endpoint, options);
 };
 
-export { fetchApi };
+function setAuthToken(token: string): void {
+    localStorage.setItem('auth_token', token);
+}
+
+function clearAuthToken(): void {
+    localStorage.removeItem('auth_token');
+}
+
+export { fetchApi, getAuthToken, getAuthHeaders, setAuthToken, clearAuthToken };

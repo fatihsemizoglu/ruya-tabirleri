@@ -50,7 +50,7 @@ export function NotificationBell() {
     },
   });
 
-  const unreadCount = countResponse?.count || 0;
+  const unreadCount = countResponse?.data?.count || 0;
   const notifications = notifResponse?.data || [];
 
   if (!user) return null;

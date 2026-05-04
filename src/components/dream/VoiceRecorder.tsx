@@ -38,7 +38,7 @@ export function VoiceRecorder({ onTranscript, className }: VoiceRecorderProps) {
 
     return () => {
       if (recognitionRef.current) {
-        try { recognitionRef.current.stop(); } catch {}
+        try { recognitionRef.current.stop(); } catch { /* ignore */ }
       }
     };
   }, [onTranscript]);

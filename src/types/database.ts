@@ -10,7 +10,7 @@ export interface Category {
   description: string | null;
   icon: string | null;
   parent_id: string | null;
-  order_index: number;
+  order_index: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -23,11 +23,11 @@ export interface Dream {
   islamic_interpretation: string | null;
   psychological_interpretation: string | null;
   category_id: string | null;
-  keywords: string[];
-  view_count: number;
-  like_count: number;
-  is_featured: boolean;
-  is_published: boolean;
+  keywords: string[] | null;
+  view_count: number | null;
+  like_count: number | null;
+  is_featured: boolean | null;
+  is_published: boolean | null;
   meta_title: string | null;
   meta_description: string | null;
   created_at: string;
@@ -60,7 +60,7 @@ export interface DreamJournalEntry {
   content: string;
   dream_date: string;
   mood: DreamMood | null;
-  tags: string[];
+  tags: string[] | null;
   is_private: boolean;
   created_at: string;
   updated_at: string;

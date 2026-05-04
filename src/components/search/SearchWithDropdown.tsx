@@ -210,7 +210,7 @@ export function SearchWithDropdown({
       const data = await searchApi.getSuggestions(normalizedQuery, 6);
 
       if (data) {
-        setSuggestions(data.map((d: any) => ({
+        setSuggestions((data.data || []).map((d: any) => ({
           id: d.id,
           title: d.title,
           slug: d.slug,

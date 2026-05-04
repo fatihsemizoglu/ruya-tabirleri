@@ -31,7 +31,7 @@ export function SimilarDreams({ currentDream, categoryId, keywords }: SimilarDre
     setIsLoading(true);
     try {
       // Use the API's getSimilar endpoint which handles category and keyword matching
-      const response = await dreamsApi.getSimilar(currentDream.id, 8);
+      const response = await dreamsApi.getSimilar(currentDream.id);
       
       if (response.success && response.data) {
         // Transform the API response to include match metadata

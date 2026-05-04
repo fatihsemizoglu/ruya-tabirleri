@@ -21,7 +21,7 @@ export function ShareModal({ url, title, description, image, trigger }: ShareMod
     if (navigator.share) {
       setNativeSupported(true);
       try {
-        await navigator.share({ url, title, text: description, images: image ? [image] : undefined });
+        await navigator.share({ url, title, text: description });
         setOpen(false);
       } catch {
         setNativeSupported(false);

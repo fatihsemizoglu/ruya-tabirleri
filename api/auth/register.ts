@@ -1,14 +1,13 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import jwt from 'jsonwebtoken';
-import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 
 const supabaseUrl = process.env.SUPABASE_URL || '';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-const JWT_SECRET = process.env.JWT_SECRET!;
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || '';
+const JWT_SECRET = process.env.JWT_SECRET || 'ruya-tabirleri-secret-key-2024';
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const allowedOrigin = process.env.FRONTEND_URL || 'https://ruya-tabirleri.vercel.app';
@@ -32,35 +31,53 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ success: false, error: 'Email and password are required' });
     }
 
-    const { data: existing } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('email', email)
-      .single();
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${allowedOrigin}/auth/callback`,
+        data: { full_name, username },
+      },
+    });
 
-    if (existing) {
-      return res.status(400).json({ success: false, error: 'Email already registered' });
+    if (authError) {
+      if (authError.message.includes('already registered')) {
+        return res.status(400).json({ success: false, error: 'User already registered' });
+      }
+      return res.status(400).json({ success: false, error: authError.message });
     }
 
-    const userId = uuidv4();
-    const hashedPassword = await bcrypt.hash(password, 10);
+    if (!authData.user) {
+      return res.status(500).json({ success: false, error: 'Registration failed' });
+    }
 
-    await supabase.from('users').insert({ id: userId, email, password: hashedPassword });
-    await supabase.from('profiles').insert({
-      id: uuidv4(),
+    const userId = authData.user.id;
+
+    await supabase.from('profiles').upsert({
+      id: userId,
       user_id: userId,
       email,
       full_name: full_name || null,
       username: username || null,
-    });
-    await supabase.from('user_roles').insert({ id: uuidv4(), user_id: userId, role: 'user' });
+    }, { onConflict: 'id' });
+
+    await supabase.from('user_roles').upsert({
+      user_id: userId,
+      role: 'user',
+    }, { onConflict: 'user_id' });
 
     const token = jwt.sign({ userId, email }, JWT_SECRET, { expiresIn: '7d' });
 
-    return res.status(201).json({
+    res.json({
       success: true,
       data: {
-        user: { id: userId, email, name: full_name || username, role: 'user' },
+        user: {
+          id: userId,
+          email,
+          name: full_name || username || email.split('@')[0],
+          profile: { full_name, username },
+          role: 'user',
+        },
         token,
       },
     });

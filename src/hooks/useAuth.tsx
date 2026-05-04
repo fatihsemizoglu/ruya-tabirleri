@@ -3,6 +3,7 @@ import { authApi } from '@/lib/api';
 import { User, Profile, AppRole } from '@/lib/api/types';
 import { queryKeys } from '@/lib/query/client';
 import { useQueryClient } from '@tanstack/react-query';
+import { setAuthToken, clearAuthToken } from '@/lib/api/client';
 
 interface AuthContextType {
   user: User | null;
@@ -13,6 +14,8 @@ interface AuthContextType {
   isAdmin: boolean;
   isModerator: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signInAsAdmin: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signInWithOAuth: (provider: 'google' | 'facebook' | 'github') => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, metadata?: { full_name?: string; username?: string }) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   updateProfile: (data: Partial<Profile>) => Promise<{ error: Error | null }>;
@@ -51,12 +54,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await authApi.login(email, password);
       if (response.success && response.data) {
         setUser(response.data.user);
+        setAuthToken(response.data.token || response.data.user.id);
         queryClient.setQueryData(queryKeys.auth.me, response.data.user);
         return { error: null };
       }
       return { error: new Error(response.error || 'Login failed') };
     } catch (error) {
       return { error: error instanceof Error ? error : new Error('Login failed') };
+    }
+  };
+
+  const signInAsAdmin = async (email: string, password: string) => {
+    try {
+      const response = await authApi.adminLogin(email, password);
+      if (response.success && response.data) {
+        setUser(response.data.user);
+        setAuthToken(response.data.token || response.data.user.id);
+        queryClient.setQueryData(queryKeys.auth.me, response.data.user);
+        return { error: null };
+      }
+      return { error: new Error(response.error || 'Admin login failed') };
+    } catch (error) {
+      return { error: error instanceof Error ? error : new Error('Admin login failed') };
+    }
+  };
+
+  const signInWithOAuth = async (provider: 'google' | 'facebook' | 'github') => {
+    try {
+      const response = await authApi.signInWithOAuth(provider);
+      if (response.success && response.data?.url) {
+        window.location.href = response.data.url;
+        return { error: null };
+      }
+      return { error: new Error(response.error || 'OAuth failed') };
+    } catch (error) {
+      return { error: error instanceof Error ? error : new Error('OAuth failed') };
     }
   };
 
@@ -81,6 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     await authApi.logout();
     setUser(null);
+    clearAuthToken();
     queryClient.setQueryData(queryKeys.auth.me, null);
   };
 
@@ -114,6 +147,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAdmin,
         isModerator,
         signIn,
+        signInAsAdmin,
+        signInWithOAuth,
         signUp,
         signOut,
         updateProfile,

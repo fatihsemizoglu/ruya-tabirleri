@@ -147,8 +147,8 @@ export default function DreamDetail() {
 
   return (
     <Layout>
-      <DreamMeta dream={dream} />
-      <JsonLd data={buildDreamSchema(dream)} />
+      <DreamMeta dream={(dream as any)} />
+      <JsonLd data={buildDreamSchema((dream as any))} />
       <JsonLd data={buildBreadcrumbSchema([
         { name: 'Ana Sayfa', url: 'https://ruyatabirleri.com/' },
         { name: dream.category_name || 'Rüya Tabirleri', url: `https://ruyatabirleri.com/kategori/${dream.category_slug || ''}` },
@@ -323,7 +323,7 @@ export default function DreamDetail() {
           {/* Comments Section */}
           <CommentSection
             dreamId={dream.id}
-            comments={comments}
+            comments={comments as any}
             isLoading={isCommentsLoading}
             onRefresh={() => queryClient.invalidateQueries({ queryKey: queryKeys.comments.byDream(dream.id) })}
           />

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Moon, Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Moon, Eye, EyeOff, Mail, Lock, User, Github, Chrome, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,8 +30,9 @@ export default function Auth({ mode }: AuthProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isAdminLogin, setIsAdminLogin] = useState(false);
 
-  const { signIn, signUp, user } = useAuth();
+  const { signIn, signInAsAdmin, signUp, signInWithOAuth, user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -77,7 +78,8 @@ export default function Auth({ mode }: AuthProps) {
 
     try {
       if (mode === 'login') {
-        const { error } = await signIn(email, password);
+        const loginFn = isAdminLogin ? signInAsAdmin : signIn;
+        const { error } = await loginFn(email, password);
         if (error) {
           toast({
             variant: 'destructive',
@@ -116,6 +118,28 @@ export default function Auth({ mode }: AuthProps) {
         variant: 'destructive',
         title: 'Bir hata oluştu',
         description: 'Lütfen tekrar deneyin.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleOAuthSignIn = async (provider: 'google' | 'facebook' | 'github') => {
+    setIsLoading(true);
+    try {
+      const { error } = await signInWithOAuth(provider);
+      if (error) {
+        toast({
+          variant: 'destructive',
+          title: 'OAuth Hatası',
+          description: error.message,
+        });
+      }
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Bir hata oluştu',
+        description: 'Sosyal medya ile giriş başarısız oldu.',
       });
     } finally {
       setIsLoading(false);
@@ -227,10 +251,62 @@ export default function Auth({ mode }: AuthProps) {
               {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
             </div>
 
+            {mode === 'login' && (
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="adminLogin"
+                  checked={isAdminLogin}
+                  onChange={(e) => setIsAdminLogin(e.target.checked)}
+                  className="w-4 h-4 rounded border-input"
+                />
+                <Label htmlFor="adminLogin" className="text-sm font-normal flex items-center gap-1 cursor-pointer">
+                  <Shield className="h-4 w-4" />
+                  Admin girişi
+                </Label>
+              </div>
+            )}
+
             <Button type="submit" className="w-full dream-gradient" disabled={isLoading}>
-              {isLoading ? 'Lütfen bekleyin...' : mode === 'login' ? 'Giriş Yap' : 'Kayıt Ol'}
+              {isLoading ? 'Lütfen bekleyin...' : isAdminLogin ? 'Admin Girişi' : mode === 'login' ? 'Giriş Yap' : 'Kayıt Ol'}
             </Button>
           </form>
+
+          {/* Divider */}
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                veya
+              </span>
+            </div>
+          </div>
+
+          {/* OAuth Buttons */}
+          <div className="grid grid-cols-2 gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => handleOAuthSignIn('google')}
+              disabled={isLoading}
+              className="h-11"
+            >
+              <Chrome className="mr-2 h-4 w-4" />
+              Google
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => handleOAuthSignIn('github')}
+              disabled={isLoading}
+              className="h-11"
+            >
+              <Github className="mr-2 h-4 w-4" />
+              GitHub
+            </Button>
+          </div>
 
           {/* Switch Mode */}
           <p className="text-center text-sm text-muted-foreground mt-6">

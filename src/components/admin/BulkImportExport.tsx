@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { dreamsApi, blogApi, categoriesApi } from '@/lib/api';
 import { queryKeys } from '@/lib/query/client';
 import type { Dream, BlogPost, Category, BlogCategory } from '@/lib/api';
@@ -40,6 +40,8 @@ export function BulkImportExport() {
   const [isImporting, setIsImporting] = useState(false);
   const [importProgress, setImportProgress] = useState(0);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
+
+  const queryClient = useQueryClient();
 
   const { data: dreams } = useQuery({
     queryKey: queryKeys.admin.bulk.exportDreams,

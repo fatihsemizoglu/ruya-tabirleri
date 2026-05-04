@@ -2,6 +2,7 @@ import { Router, Response, NextFunction } from 'express';
 import { optionalAuthMiddleware, authMiddleware, requireModerator, AuthRequest } from '../middleware/auth';
 import { cacheMiddleware } from '../middleware/cache';
 import { blogService } from '../services/blogService';
+import { AppError } from '../middleware/errorMiddleware';
 
 const router = Router();
 

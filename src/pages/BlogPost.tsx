@@ -47,11 +47,11 @@ export default function BlogPost() {
 
   useEffect(() => {
     if (post && user) {
-      setIsLiked(post.isLiked || false);
+      setIsLiked((post as any).isLiked || false);
     }
   }, [post, user]);
 
-  const fetchPost = async () => {
+    const fetchPost = async () => {
     setIsLoading(true);
 
     const response = await blogApi.getPostBySlug(slug!);
@@ -64,7 +64,7 @@ export default function BlogPost() {
     const data = response.data;
 
     const postData: BlogPostType = {
-      ...data,
+      ...(data as any),
       category: data.category_id ? {
         id: data.category_id,
         name: data.category_name || '',
@@ -81,8 +81,8 @@ export default function BlogPost() {
 
     setPost(postData);
     setAuthorBio(null);
-    setLikeCount(postData.like_count || 0);
-    setIsLiked(postData.isLiked || false);
+    setLikeCount((data as any).like_count || 0);
+    setIsLiked((data as any).isLiked || false);
 
     // Fetch related posts
     if (data.category_id) {

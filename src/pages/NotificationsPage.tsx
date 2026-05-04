@@ -63,8 +63,8 @@ export default function NotificationsPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notification-preferences'] }),
   });
 
-  const notifications = response?.data || [];
-  const total = response?.total || 0;
+  const notifications = response?.data?.data || [];
+  const total = response?.data?.total || 0;
   const prefs = prefsResponse?.data || {};
 
   if (!user) {

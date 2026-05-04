@@ -50,11 +50,7 @@ const Install = lazy(() => import("./pages/Install"));
 const SubscriptionVerify = lazy(() => import("./pages/SubscriptionVerify"));
 const SubscriptionCancel = lazy(() => import("./pages/SubscriptionCancel"));
 const DreamInterpret = lazy(() => import("./pages/DreamInterpret"));
-const SymbolDictionaryPage = lazy(() => import("./pages/SymbolDictionaryPage"));
-const SymbolDetailPage = lazy(() => import("./pages/SymbolDetailPage"));
-const CulturalMapPage = lazy(() => import("./pages/CulturalMapPage"));
 const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
-const ConsultantsPage = lazy(() => import("./pages/ConsultantsPage"));
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -63,7 +59,6 @@ function AnimatedRoutes() {
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<Suspense fallback={<PageLoader />}><Index /></Suspense>}></Route>
-        <Route path="/ruya-yorumlat" element={<Suspense fallback={<PageLoader />}><DreamInterpret /></Suspense>}></Route>
         <Route path="/giris" element={<Suspense fallback={<PageLoader />}><Auth mode="login" /></Suspense>}></Route>
         <Route path="/kayit" element={<Suspense fallback={<PageLoader />}><Auth mode="register" /></Suspense>}></Route>
         <Route path="/ara" element={<Suspense fallback={<PageLoader />}><Search /></Suspense>}></Route>
@@ -89,12 +84,7 @@ function AnimatedRoutes() {
         <Route path="/yukle" element={<Suspense fallback={<PageLoader />}><Install /></Suspense>}></Route>
         <Route path="/abonelik-dogrula" element={<Suspense fallback={<PageLoader />}><SubscriptionVerify /></Suspense>}></Route>
         <Route path="/abonelik-iptal" element={<Suspense fallback={<PageLoader />}><SubscriptionCancel /></Suspense>}></Route>
-        <Route path="/sozluk" element={<Suspense fallback={<PageLoader />}><SymbolDictionaryPage /></Suspense>}></Route>
-        <Route path="/sembol/:slug" element={<Suspense fallback={<PageLoader />}><SymbolDetailPage /></Suspense>}></Route>
-        <Route path="/harita" element={<Suspense fallback={<PageLoader />}><CulturalMapPage /></Suspense>}></Route>
-        <Route path="/harita/:code" element={<Suspense fallback={<PageLoader />}><CulturalMapPage /></Suspense>}></Route>
         <Route path="/bildirimler" element={<Suspense fallback={<PageLoader />}><NotificationsPage /></Suspense>}></Route>
-        <Route path="/danismanlik" element={<Suspense fallback={<PageLoader />}><ConsultantsPage /></Suspense>}></Route>
         <Route path="*" element={<Suspense fallback={<PageLoader />}><NotFound /></Suspense>}></Route>
       </Routes>
     </AnimatePresence>

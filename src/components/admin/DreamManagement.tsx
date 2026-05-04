@@ -185,8 +185,8 @@ export function DreamManagement() {
               keywords: Array.isArray(editingDream.keywords) ? editingDream.keywords.join(', ') : '',
               meta_title: editingDream.meta_title || '',
               meta_description: editingDream.meta_description || '',
-              is_published: editingDream.is_published,
-              is_featured: editingDream.is_featured,
+              is_published: editingDream.is_published ?? false,
+              is_featured: editingDream.is_featured ?? false,
             } : undefined}
             onSubmit={(values) => editingDream ? mutations.update({ id: editingDream.id, data: values }) : mutations.create(values)}
             onCancel={() => setIsOpen(false)}

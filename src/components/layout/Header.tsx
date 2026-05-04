@@ -32,12 +32,9 @@ interface Category {
 
 const navLinks = [
   { to: '/ruya-tabirleri', label: 'Rüya Tabirleri' },
-  { to: '/ruya-yorumlat', label: '✨ Rüya Yorumlat' },
   { to: '/kategoriler', label: 'Kategoriler' },
-  { to: '/sozluk', label: 'Sembol Sözlüğü' },
-  { to: '/harita', label: 'Dünya Haritası' },
-  { to: '/danismanlik', label: 'Danışmanlık' },
   { to: '/blog', label: 'Blog' },
+  { to: '/iletisim', label: 'İletişim' },
 ];
 
 export function Header() {
@@ -98,7 +95,7 @@ export function Header() {
           : "bg-transparent"
       )}
     >
-      <div className="container flex h-16 md:h-18 items-center justify-between">
+        <div className="container flex h-14 md:h-16 items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2.5 group">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/25 group-hover:shadow-indigo-500/40 transition-shadow">
@@ -123,22 +120,6 @@ export function Header() {
             )}
           >
             Rüya Tabirleri
-          </Link>
-
-          {/* Rüya Yorumlat Link */}
-          <Link 
-            to="/ruya-yorumlat" 
-            className={cn(
-              "px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200",
-              isActiveLink('/ruya-yorumlat')
-                ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50"
-                : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
-            )}
-          >
-            <span className="flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5" />
-              Rüya Yorumlat
-            </span>
           </Link>
 
           <NavigationMenu>
@@ -198,45 +179,6 @@ export function Header() {
             Popüler
           </Link>
 
-          {/* Sembol Sözlüğü Link */}
-          <Link
-            to="/sozluk"
-            className={cn(
-              "px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200",
-              isActiveLink('/sozluk')
-                ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50"
-                : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
-            )}
-          >
-            Sözlük
-          </Link>
-
-          {/* Dünya Haritası Link */}
-          <Link
-            to="/harita"
-            className={cn(
-              "px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200",
-              isActiveLink('/harita')
-                ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50"
-                : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
-            )}
-          >
-            Harita
-          </Link>
-
-          {/* Danışmanlık Link */}
-          <Link
-            to="/danismanlik"
-            className={cn(
-              "px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200",
-              isActiveLink('/danismanlik')
-                ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50"
-                : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
-            )}
-          >
-            Danışmanlık
-          </Link>
-
           {/* Blog Link */}
           <Link 
             to="/blog" 
@@ -248,6 +190,19 @@ export function Header() {
             )}
           >
             Blog
+          </Link>
+
+          {/* İletişim Link */}
+          <Link 
+            to="/iletisim" 
+            className={cn(
+              "px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200",
+              location.pathname === '/iletisim'
+                ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50"
+                : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+            )}
+          >
+            İletişim
           </Link>
         </nav>
 

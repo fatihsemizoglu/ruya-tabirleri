@@ -58,7 +58,7 @@ export function StatisticsDashboard() {
   const { data: topDreams = [], isLoading: dreamsLoading, refetch: refetchDreams } = useQuery({
     queryKey: [...queryKeys.admin.stats, 'top-dreams'],
     queryFn: async () => {
-      const response = await adminApi.getTopDreams({ limit: 5 });
+      const response = await adminApi.getTopDreams(5);
       if (!response.success) throw new Error(response.error || 'Failed to fetch top dreams');
       return response.data as TopDream[];
     },

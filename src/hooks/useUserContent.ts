@@ -67,7 +67,7 @@ export function useCreateJournalEntry() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: { title: string; content: string; mood?: string }) => 
-      usersApi.createJournalEntry(data),
+      usersApi.createJournalEntry({ ...data, mood: data.mood as any }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.user.journal });
     },
@@ -78,7 +78,7 @@ export function useUpdateJournalEntry() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<{ title: string; content: string; mood: string }> }) => 
-      usersApi.updateJournalEntry(id, data),
+      usersApi.updateJournalEntry(id, { ...data, mood: data.mood as any }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.user.journal });
     },
