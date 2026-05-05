@@ -49,6 +49,54 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const method = req.method || 'GET';
 
+  // --- HEALTH CHECK ---
+  if (path === '/health' || path === '') {
+    return res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  }
+
+  // --- AUTH: LOGIN ---
+  if (path === '/auth/login' && method === 'POST') {
+    const { email, password, isAdmin } = req.body || {};
+    if (!email || !password) {
+      return res.status(400).json({ success: false, error: 'Email and password required' });
+    }
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email, password });
+    if (authError || !authData.user) {
+      return res.status(401).json({ success: false, error: 'Invalid credentials' });
+    }
+    const userId = authData.user.id;
+    if (isAdmin) {
+      const { data: roleData } = await supabase.from('user_roles').select('role').eq('user_id', userId).single();
+      if (!roleData?.role || !['admin', 'moderator'].includes(roleData.role)) {
+        return res.status(403).json({ success: false, error: 'Admin access required' });
+      }
+    }
+    const { data: profile } = await supabase.from('profiles').select('*').eq('user_id', userId).single();
+    const { data: roleData } = await supabase.from('user_roles').select('role').eq('user_id', userId).single();
+    const token = jwt.sign({ userId, email }, JWT_SECRET, { expiresIn: '7d' });
+    return res.json({
+      success: true,
+      data: {
+        user: { id: userId, email, name: profile?.full_name || profile?.username || email.split('@')[0], profile, role: roleData?.role || 'user' },
+        token
+      }
+    });
+  }
+
+  // --- AUTH: ME ---
+  if (path === '/auth/me' && method === 'GET') {
+    const user = await getAuthenticatedUser(req);
+    if (!user) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+    const { data: profile } = await supabase.from('profiles').select('*').eq('user_id', user.userId).single();
+    const { data: roleData } = await supabase.from('user_roles').select('role').eq('user_id', user.userId).single();
+    return res.json({
+      success: true,
+      data: { id: user.userId, email: user.email, name: profile?.full_name || profile?.username, profile, role: roleData?.role || 'user' }
+    });
+  }
+
   try {
     const user = await getAuthenticatedUser(req);
     const userIsAdmin = user ? await isAdmin(user.userId) : false;
