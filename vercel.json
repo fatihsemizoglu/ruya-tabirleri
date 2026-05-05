@@ -3,15 +3,18 @@
   "buildCommand": "npm install && npx vite build",
   "outputDirectory": "dist",
   "framework": null,
-  "rewrites": [
-    {
-      "source": "/((?!api/).*)",
-      "destination": "/index.html"
-    }
-    ,
+"rewrites": [
     {
       "source": "/health",
       "destination": "/api/health"
+    },
+    {
+      "source": "/auth/:path*",
+      "destination": "/api/auth/:path*"
+    },
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
     }
   ],
   "headers": [

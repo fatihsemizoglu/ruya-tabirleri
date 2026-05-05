@@ -29,7 +29,7 @@ test('auth/me returns user info', async ({ request }) => {
   expect(token).toBeDefined();
   
   // Then call /auth/me with token
-  const meRes = await request.get('/api/auth/me', {
+  const meRes = await request.get('/auth/me', {
     headers: {
       Authorization: `Bearer ${token}`
     }
