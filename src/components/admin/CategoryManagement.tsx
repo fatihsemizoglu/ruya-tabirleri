@@ -10,14 +10,15 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { 
-  Plus, Pencil, Trash2, Loader2, Search, 
+import {
+  Plus, Pencil, Trash2, Loader2, Search,
   Folder, Hash, Sparkles
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useItemMutations } from '@/hooks/useList';
 import { queryKeys } from '@/lib/query/client';
+import { useAuth } from '@/hooks/useAuth';
 
 const categorySchema = z.object({
   name: z.string().min(2, 'Kategori adı en az 2 karakter olmalıdır').max(100),
@@ -54,6 +55,7 @@ export function CategoryManagement() {
   const [isOpen, setIsOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const { isModerator } = useAuth();
 
   const form = useForm<CategoryFormValues>({
     resolver: zodResolver(categorySchema),
@@ -95,6 +97,9 @@ export function CategoryManagement() {
   const mutations = useItemMutations<Category>({
     queryKey: queryKeys.admin.categories.list,
     createFn: async (values) => {
+      if (!isModerator) {
+        throw new Error('Bu işlem için yeterli yetkiniz yok.');
+      }
       const response = await categoriesApi.create({
         name: values.name,
         slug: values.slug,
@@ -106,6 +111,9 @@ export function CategoryManagement() {
       return response;
     },
     updateFn: async ({ id, data }) => {
+      if (!isModerator) {
+        throw new Error('Bu işlem için yeterli yetkiniz yok.');
+      }
       const response = await categoriesApi.update(id, {
         name: data.name,
         slug: data.slug,
@@ -117,11 +125,32 @@ export function CategoryManagement() {
       return response;
     },
     deleteFn: async (id) => {
+      if (!isModerator) {
+        throw new Error('Bu işlem için yeterli yetkiniz yok.');
+      }
       const response = await categoriesApi.delete(id);
       if (!response.success) throw new Error(response.error || 'Failed to delete category');
       return response;
     },
-    onSuccess: () => handleClose(),
+    onSuccess: (action) => {
+      handleClose();
+      toast.success(
+        action === 'create' ? 'Kategori eklendi' :
+        action === 'update' ? 'Kategori güncellendi' :
+        'Kategori silindi'
+      );
+    },
+    onError: (action, error) => {
+      console.error(`${action} error:`, error);
+      toast.error(
+        action === 'create' ? 'Kategori eklenemedi' :
+        action === 'update' ? 'Kategori güncellenemedi' :
+        'Kategori silinemedi',
+        {
+          description: error.message || 'Bir hata oluştu.',
+        }
+      );
+    },
   });
 
   const handleClose = () => {
@@ -149,6 +178,13 @@ export function CategoryManagement() {
   };
 
   const handleDelete = (category: Category) => {
+    if (!isModerator) {
+      toast.error('Yetkisiz İşlem', {
+        description: 'Kategori silme işlemi için yeterli yetkiniz yok.',
+      });
+      return;
+    }
+
     if (confirm(`"${category.name}" kategorisini silmek istediğinize emin misiniz?`)) {
       mutations.remove(category.id);
     }
@@ -231,7 +267,7 @@ export function CategoryManagement() {
         </div>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
-            <Button size="sm" className="h-9 gap-1.5">
+            <Button size="sm" className="h-9 gap-1.5" disabled={!isModerator}>
               <Plus className="h-4 w-4" />
               <span className="hidden sm:inline">Yeni Kategori</span>
             </Button>
@@ -377,18 +413,22 @@ export function CategoryManagement() {
                   </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(category)}>
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                    onClick={() => handleDelete(category)}
-                    disabled={mutations.isDeleting}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  {isModerator && (
+                    <>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(category)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                        onClick={() => handleDelete(category)}
+                        disabled={mutations.isDeleting}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
             ))}

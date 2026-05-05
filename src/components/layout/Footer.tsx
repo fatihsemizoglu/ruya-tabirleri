@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
 import { Moon, Mail, Heart } from 'lucide-react';
-import { NewsletterSubscribeForm } from '@/components/newsletter/NewsletterSubscribeForm';
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
@@ -76,34 +75,27 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Newsletter */}
+          {/* Legal Links */}
           <div>
-            <h4 className="font-bold text-lg mb-5">Bültene Abone Ol</h4>
-            <p className="text-slate-400 text-sm mb-4">
-              Yeni içeriklerden haberdar olmak için bültenimize abone olun.
-            </p>
-            <NewsletterSubscribeForm variant="footer" />
-            
-            <div className="mt-6 pt-6 border-t border-slate-800">
-              <h5 className="font-semibold text-sm mb-3">Yasal</h5>
-              <ul className="space-y-2">
-                {[
-                  { to: '/hakkimizda', label: 'Hakkımızda' },
-                  { to: '/iletisim', label: 'İletişim' },
-                  { to: '/gizlilik', label: 'Gizlilik Politikası' },
-                  { to: '/kullanim-kosullari', label: 'Kullanım Koşulları' },
-                ].map((link) => (
-                  <li key={link.to}>
-                    <Link 
-                      to={link.to} 
-                      className="text-slate-400 hover:text-white transition-colors text-sm"
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            <h4 className="font-bold text-lg mb-5">Kurumsal</h4>
+            <ul className="space-y-3">
+              {[
+                { to: '/hakkimizda', label: 'Hakkımızda' },
+                { to: '/iletisim', label: 'İletişim' },
+                { to: '/gizlilik', label: 'Gizlilik Politikası' },
+                { to: '/kullanim-kosullari', label: 'Kullanım Koşulları' },
+              ].map((link) => (
+                <li key={link.to}>
+                  <Link 
+                    to={link.to} 
+                    className="text-slate-400 hover:text-white transition-colors inline-flex items-center gap-1 group"
+                  >
+                    <span className="w-0 h-px bg-indigo-500 group-hover:w-3 transition-all duration-300" />
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
 

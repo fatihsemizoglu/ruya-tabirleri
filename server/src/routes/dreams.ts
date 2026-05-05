@@ -58,7 +58,7 @@ router.put('/:id', authMiddleware, requireModerator, async (req: AuthRequest, re
   } catch (error) { next(error); }
 });
 
-router.delete('/:id', authMiddleware, requireAdmin, async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+router.delete('/:id', authMiddleware, requireModerator, async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { id } = req.params;
     const result = await dreamService.deleteDream(id);

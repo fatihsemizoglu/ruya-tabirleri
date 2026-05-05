@@ -117,6 +117,7 @@ app.use((req, res) => {
 // Start server
 async function startServer() {
   try {
+    console.log('PORT value:', PORT);
     const dbConnected = await testConnection();
 
     if (!dbConnected) {
@@ -124,16 +125,46 @@ async function startServer() {
       process.exit(1);
     }
 
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, '127.0.0.1', () => {
       logger.info({ port: PORT }, 'Server running');
       logger.info(`API available at http://localhost:${PORT}/api`);
+      console.log(`Server listening on port ${PORT}`);
+      console.log('Server address:', server.address());
     });
+
+    // Handle server errors
+    server.on('error', (error) => {
+      console.error('Server error:', error);
+      logger.fatal({ err: error }, 'Server error');
+      process.exit(1);
+    });
+
+    server.on('listening', () => {
+      console.log('Server event: listening');
+    });
+
+    server.on('close', () => {
+      console.log('Server event: close');
+    });
+
+    // Keep the process alive
+    process.on('SIGINT', () => {
+      logger.info('Shutting down server...');
+      server.close(() => {
+        logger.info('Server shut down');
+        process.exit(0);
+      });
+    });
+
   } catch (error) {
     logger.fatal({ err: error }, 'Failed to start server');
     process.exit(1);
   }
 }
 
-startServer();
+startServer().catch((error) => {
+  logger.fatal({ err: error }, 'Unhandled error in startServer');
+  process.exit(1);
+});
 
 export default app;

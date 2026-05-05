@@ -1,3 +1,5 @@
+import { Request } from 'express';
+
 // Database Types for MySQL
 
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
@@ -289,4 +291,9 @@ export interface AuthResponse {
   token: string;
   user?: UserPublic;
   expiresIn?: string;
+}
+
+// Express Request extension for authenticated requests
+export interface AuthRequest extends Request {
+  user?: UserPublic;
 }

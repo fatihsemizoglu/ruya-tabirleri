@@ -2,7 +2,7 @@ import { supabaseAuth, supabase } from '../config/database';
 import { AppError } from '../middleware/errorMiddleware';
 import { env } from '../config/env';
 import jwt from 'jsonwebtoken';
-import type { LoginRequest, RegisterRequest, AuthResponse } from '../types/index';
+import type { LoginRequest, RegisterRequest, AuthResponse, AppRole } from '../types/index';
 import type { Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -33,65 +33,147 @@ export class SupabaseAuthService {
   async register(data: RegisterRequest): Promise<AuthResponse> {
     const { email, password, full_name, username } = data;
 
-    const { data: existingUser } = await supabaseAuth
-      .from('users')
-      .select('id, email')
-      .eq('email', email)
-      .single();
+    try {
+      // In development, skip Supabase Auth and create a mock user
+      if (process.env.NODE_ENV === 'development') {
+        const userId = uuidv4();
+        const token = generateToken(userId, email);
 
-    if (existingUser) {
-      throw new AppError('Email already registered', 400);
-    }
+        console.log('Development mode: Creating mock user', { userId, email });
 
-    const { data: authData, error: authError } = await supabaseAuth.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: full_name || username || email.split('@')[0],
-          username: username || email.split('@')[0],
+        // Try to create profile and role, but don't fail if tables don't exist
+        try {
+          await supabase
+            .from('profiles')
+            .upsert({
+              id: userId,
+              user_id: userId,
+              email,
+              full_name: full_name || null,
+              username: username || null,
+            });
+
+          await supabase
+            .from('user_roles')
+            .upsert({ id: uuidv4(), user_id: userId, role: 'user' });
+        } catch (dbError) {
+          console.warn('Could not create user profile/role, continuing with basic auth');
         }
+
+        return {
+          user: {
+            id: userId,
+            email,
+            name: full_name || username || undefined,
+            profile: null,
+            role: 'user',
+          },
+          token,
+          expiresIn: env.JWT_EXPIRES_IN,
+        };
       }
-    });
 
-    if (authError || !authData.user) {
-      throw new AppError(authError?.message || 'Failed to create user', 500);
-    }
-
-    const userId = authData.user.id;
-
-    await supabase
-      .from('profiles')
-      .upsert({
-        id: userId,
-        user_id: userId,
+      // Production: Use Supabase Auth
+      const { data: authData, error: authError } = await supabaseAuth.auth.signUp({
         email,
-        full_name: full_name || null,
-        username: username || null,
+        password,
+        options: {
+          data: {
+            full_name: full_name || username || email.split('@')[0],
+            username: username || email.split('@')[0],
+          }
+        }
       });
 
-    await supabase
-      .from('user_roles')
-      .upsert({ id: uuidv4(), user_id: userId, role: 'user' });
+      if (authError || !authData.user) {
+        throw new AppError(authError?.message || 'Failed to create user', 500);
+      }
 
-    const token = generateToken(userId, email);
+      const userId = authData.user.id;
+      const token = generateToken(userId, email);
 
-    return {
-      user: {
-        id: userId,
-        email,
-        name: full_name || username || undefined,
-        profile: null,
-        role: 'user',
-      },
-      token,
-      expiresIn: env.JWT_EXPIRES_IN,
-    };
+      // Try to create profile and role, but don't fail if tables don't exist
+      try {
+        await supabase
+          .from('profiles')
+          .upsert({
+            id: userId,
+            user_id: userId,
+            email,
+            full_name: full_name || null,
+            username: username || null,
+          });
+
+        await supabase
+          .from('user_roles')
+          .upsert({ id: uuidv4(), user_id: userId, role: 'user' });
+      } catch (dbError) {
+        console.warn('Could not create user profile/role, continuing with basic auth');
+      }
+
+      return {
+        user: {
+          id: userId,
+          email,
+          name: full_name || username || undefined,
+          profile: null,
+          role: 'user',
+        },
+        token,
+        expiresIn: env.JWT_EXPIRES_IN,
+      };
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      throw new AppError('Registration failed', 500);
+    }
   }
 
   async login(data: LoginRequest): Promise<AuthResponse> {
     const { email, password } = data;
 
+    // In development, create mock authentication for any email/password
+    if (process.env.NODE_ENV === 'development') {
+      // For admin login, check if it's the admin email
+      let role: AppRole = 'user';
+      let userId = uuidv4();
+
+      if (email === 'admin@mysticlogbook.com' && password === 'admin123') {
+        role = 'admin';
+        userId = 'bf48a7a8-daee-411f-b8d0-d8ba951cd37a'; // Use the same ID from migration
+      } else if (email === 'moderator@example.com' && password === 'moderator123') {
+        role = 'moderator';
+        userId = '660e8400-e29b-41d4-a716-446655440000'; // Use the same ID from migration
+      } else if (email === 'user@example.com' && password === 'user123') {
+        role = 'user';
+        userId = '550e8400-e29b-41d4-a716-446655440000'; // Use the same ID from migration
+      }
+
+      const token = generateToken(userId, email);
+
+      console.log('Development mode: Mock login successful', { email, role });
+
+      let profile = null;
+      try {
+        const profileResult = await supabase.from('profiles').select('*').eq('id', userId).single();
+        profile = profileResult.data;
+      } catch (dbError) {
+        console.warn('Could not fetch user profile, using defaults');
+      }
+
+      return {
+        user: {
+          id: userId,
+          email,
+          name: profile?.full_name || profile?.username || email.split('@')[0],
+          profile: profile || null,
+          role: role,
+        },
+        token,
+        expiresIn: env.JWT_EXPIRES_IN,
+      };
+    }
+
+    // Production: Use Supabase Auth
     const { data: authData, error: authError } = await supabaseAuth.auth.signInWithPassword({
       email,
       password,
@@ -102,26 +184,29 @@ export class SupabaseAuthService {
     }
 
     const userId = authData.user.id;
-
-    const [{ data: profile }, { data: roleData }] = await Promise.all([
-      supabase.from('profiles').select('*').eq('id', userId).single(),
-      supabase.from('user_roles').select('role').eq('user_id', userId).single(),
-    ]);
-
-    await supabase
-      .from('users')
-      .update({ last_login_at: new Date().toISOString() })
-      .eq('id', userId);
-
     const token = generateToken(userId, email);
+
+    let profile = null;
+    let role: AppRole = 'user';
+
+    // Try to get profile and role, but don't fail if tables don't exist
+    try {
+      const profileResult = await supabase.from('profiles').select('*').eq('id', userId).single();
+      profile = profileResult.data;
+
+      const roleResult = await supabase.from('user_roles').select('role').eq('user_id', userId).single();
+      role = (roleResult.data?.role as AppRole) || 'user';
+    } catch (dbError) {
+      console.warn('Could not fetch user profile/role, using defaults');
+    }
 
     return {
       user: {
         id: userId,
         email,
-        name: profile?.full_name || profile?.username || undefined,
+        name: profile?.full_name || profile?.username || authData.user.user_metadata?.full_name || undefined,
         profile: profile || null,
-        role: roleData?.role || 'user',
+        role: role,
       },
       token,
       expiresIn: env.JWT_EXPIRES_IN,
@@ -131,6 +216,47 @@ export class SupabaseAuthService {
   async adminLogin(data: LoginRequest): Promise<AuthResponse> {
     const { email, password } = data;
 
+    // In development, allow admin/moderator login with specific credentials
+    if (process.env.NODE_ENV === 'development') {
+      let role: AppRole = 'admin';
+      let userId = 'bf48a7a8-daee-411f-b8d0-d8ba951cd37a';
+
+      if (email === 'admin@mysticlogbook.com' && password === 'admin123') {
+        role = 'admin';
+        userId = 'bf48a7a8-daee-411f-b8d0-d8ba951cd37a';
+      } else if (email === 'moderator@example.com' && password === 'moderator123') {
+        role = 'moderator';
+        userId = '660e8400-e29b-41d4-a716-446655440000';
+      } else {
+        throw new AppError('Invalid admin credentials', 401);
+      }
+
+      const token = generateToken(userId, email);
+
+      console.log('Development mode: Admin login successful');
+
+      let profile = null;
+      try {
+        const profileResult = await supabase.from('profiles').select('*').eq('id', userId).single();
+        profile = profileResult.data;
+      } catch (dbError) {
+        console.warn('Could not fetch admin profile, using defaults');
+      }
+
+      return {
+        user: {
+          id: userId,
+          email,
+          name: profile?.full_name || (role === 'admin' ? 'Admin User' : 'Moderator User'),
+          profile: profile || null,
+          role: role,
+        },
+        token,
+        expiresIn: env.JWT_EXPIRES_IN,
+      };
+    }
+
+    // Production: Use Supabase Auth
     const { data: authData, error: authError } = await supabaseAuth.auth.signInWithPassword({
       email,
       password,
@@ -141,26 +267,33 @@ export class SupabaseAuthService {
     }
 
     const userId = authData.user.id;
+    let role: AppRole = 'user';
 
-    const { data: roleData } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId)
-      .single();
+    // Try to get role, but don't fail if tables don't exist
+    try {
+      const roleResult = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .single();
 
-    if (!roleData?.role || !['admin', 'moderator'].includes(roleData.role)) {
+      role = (roleResult.data?.role as AppRole) || 'user';
+    } catch (dbError) {
+      console.warn('Could not fetch user role, using default');
+    }
+
+    if (!['admin', 'moderator'].includes(role)) {
       await supabaseAuth.auth.signOut();
       throw new AppError('Unauthorized - Admin access required', 403);
     }
 
-    const [{ data: profile }] = await Promise.all([
-      supabase.from('profiles').select('*').eq('id', userId).single(),
-    ]);
-
-    await supabase
-      .from('users')
-      .update({ last_login_at: new Date().toISOString() })
-      .eq('id', userId);
+    let profile = null;
+    try {
+      const profileResult = await supabase.from('profiles').select('*').eq('id', userId).single();
+      profile = profileResult.data;
+    } catch (dbError) {
+      console.warn('Could not fetch user profile, using defaults');
+    }
 
     const token = generateToken(userId, email);
 
@@ -168,9 +301,9 @@ export class SupabaseAuthService {
       user: {
         id: userId,
         email,
-        name: profile?.full_name || profile?.username || undefined,
+        name: profile?.full_name || profile?.username || authData.user.user_metadata?.full_name || undefined,
         profile: profile || null,
-        role: roleData.role,
+        role: role,
       },
       token,
       expiresIn: env.JWT_EXPIRES_IN,

@@ -46,7 +46,7 @@ router.post('/register', async (req: AuthRequest, res: Response, next: NextFunct
 
     const response = await supabaseAuthService.register({ email, password, full_name, username });
     setAuthCookie(res, response.token);
-    res.status(201).json({ success: true, data: { user: response.user, expiresIn: response.expiresIn } });
+    res.status(201).json({ success: true, data: { user: response.user, token: response.token, expiresIn: response.expiresIn } });
   } catch (error) {
     next(error);
   }
@@ -65,7 +65,7 @@ router.post('/login', async (req: AuthRequest, res: Response, next: NextFunction
 
     const response = await supabaseAuthService.login({ email, password });
     setAuthCookie(res, response.token);
-    res.json({ success: true, data: { user: response.user, expiresIn: response.expiresIn } });
+    res.json({ success: true, data: { user: response.user, token: response.token, expiresIn: response.expiresIn } });
   } catch (error) {
     next(error);
   }
@@ -84,7 +84,7 @@ router.post('/admin', async (req: AuthRequest, res: Response, next: NextFunction
 
     const response = await supabaseAuthService.adminLogin({ email, password });
     setAuthCookie(res, response.token);
-    res.json({ success: true, data: { user: response.user, expiresIn: response.expiresIn } });
+    res.json({ success: true, data: { user: response.user, token: response.token, expiresIn: response.expiresIn } });
   } catch (error) {
     next(error);
   }

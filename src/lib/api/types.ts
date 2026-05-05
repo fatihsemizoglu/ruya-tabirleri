@@ -217,6 +217,12 @@ export type DreamMood = 'happy' | 'sad' | 'scared' | 'confused' | 'peaceful' | '
 
 export type AppRole = 'admin' | 'moderator' | 'user';
 
+export interface AuthResponse {
+    user: User;
+    token: string;
+    expiresIn: string;
+}
+
 export interface ApiError {
     code: string;
     message: string;

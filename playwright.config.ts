@@ -27,6 +27,12 @@ export default defineConfig({
   ],
   webServer: [
     {
+      command: 'cd server && npm run dev',
+      url: 'http://localhost:3001/health',
+      reuseExistingServer: true,
+      timeout: 120000,
+    },
+    {
       command: 'npm run dev',
       url: 'http://localhost:8080',
       reuseExistingServer: true,

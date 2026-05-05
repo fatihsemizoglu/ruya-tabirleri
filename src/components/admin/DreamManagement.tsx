@@ -8,19 +8,23 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Eye, Star } from 'lucide-react';
+import { Search, Eye, Star, Trash2, Edit } from 'lucide-react';
 import { DataTable } from '@/components/ui/data-table';
 import { DreamForm } from './DreamForm';
 import { BulkActions } from './BulkActions';
 import { useSelection } from '@/hooks/useCRUD';
 import { useList } from '@/hooks/useList';
 import { useItemMutations } from '@/hooks/useList';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
 
 const ITEMS_PER_PAGE = 10;
 
 export function DreamManagement() {
   const [isOpen, setIsOpen] = useState(false);
   const [editingDream, setEditingDream] = useState<Dream | null>(null);
+  const { isAdmin, isModerator } = useAuth();
+  const { toast } = useToast();
 
   const { data: categoriesResponse } = useQuery({
     queryKey: queryKeys.admin.categories.select,
@@ -67,9 +71,18 @@ export function DreamManagement() {
     },
     onSuccess: (action) => {
       setIsOpen(false);
+      toast({
+        title: action === 'create' ? 'Rüya eklendi' : action === 'update' ? 'Rüya güncellendi' : 'Rüya silindi',
+        description: 'İşlem başarıyla tamamlandı.',
+      });
     },
     onError: (action, error) => {
-      // error handled by mutation
+      console.error(`${action} error:`, error);
+      toast({
+        variant: 'destructive',
+        title: action === 'create' ? 'Rüya eklenemedi' : action === 'update' ? 'Rüya güncellenemedi' : 'Rüya silinemedi',
+        description: error.message || 'Bir hata oluştu.',
+      });
     },
   });
 
@@ -124,6 +137,15 @@ export function DreamManagement() {
   };
 
   const handleDelete = (dream: Dream) => {
+    if (!isModerator) {
+      toast({
+        variant: 'destructive',
+        title: 'Yetkisiz İşlem',
+        description: 'Rüya silme işlemi için yeterli yetkiniz yok.',
+      });
+      return;
+    }
+
     if (confirm(`"${dream.title}" silinsin mi?`)) {
       mutations.remove(dream.id);
     }
@@ -213,8 +235,8 @@ export function DreamManagement() {
             data={list.items}
             getId={(d) => d.id}
             selection={selection}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
+            onEdit={isModerator ? handleEdit : undefined}
+            onDelete={isModerator ? handleDelete : undefined}
             page={list.pagination.page}
             totalPages={list.pagination.totalPages}
             onPageChange={list.setPage}

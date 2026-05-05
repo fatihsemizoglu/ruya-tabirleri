@@ -23,7 +23,18 @@ const moodOptions = [
 
 export default function Profile() {
   const [searchParams] = useSearchParams();
-  const activeTab = searchParams.get('tab') || 'profile';
+  const rawTab = searchParams.get('tab') || 'profile';
+  
+  // Map Turkish tab names to internal values
+  const tabMapping: Record<string, string> = {
+    'profil': 'profile',
+    'favoriler': 'favorites',
+    'gecmis': 'history',
+    'gunluk': 'journal'
+  };
+  
+  const activeTab = tabMapping[rawTab] || rawTab;
+  
   const { user, profile, signOut } = useAuth();
   
   const { data: favoritesData, isLoading: favoritesLoading, error: favoritesError } = useFavorites();
@@ -73,7 +84,7 @@ export default function Profile() {
           </TabsList>
 
           <TabsContent value="profile">
-            <ProfileInfo profile={profile} onSignOut={handleSignOut} />
+            <ProfileInfo user={user} profile={profile} onSignOut={handleSignOut} />
           </TabsContent>
 
           <TabsContent value="favorites">
@@ -163,7 +174,7 @@ export default function Profile() {
   );
 }
 
-function ProfileInfo({ profile, onSignOut }: { profile: any; onSignOut: () => void }) {
+function ProfileInfo({ user, profile, onSignOut }: { user: any; profile: any; onSignOut: () => void }) {
   return (
     <div className="max-w-2xl">
       <div className="flex items-center gap-4 mb-8">
@@ -171,8 +182,8 @@ function ProfileInfo({ profile, onSignOut }: { profile: any; onSignOut: () => vo
           <User className="w-10 h-10 text-primary" />
         </div>
         <div>
-          <h2 className="text-2xl font-bold">{profile?.full_name || 'Kullanıcı'}</h2>
-          <p className="text-muted-foreground">{profile?.email}</p>
+          <h2 className="text-2xl font-bold">{profile?.full_name || profile?.username || 'Kullanıcı'}</h2>
+          <p className="text-muted-foreground">{profile?.email || user?.email}</p>
         </div>
       </div>
 

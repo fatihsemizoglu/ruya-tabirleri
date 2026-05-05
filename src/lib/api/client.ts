@@ -1,6 +1,6 @@
 import { ApiResponse, ApiError } from './types';
 
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+export const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 const REQUEST_TIMEOUT = 30000;
 const MAX_RETRIES = 2;
 
@@ -116,7 +116,20 @@ async function requestWithRetry<T>(
             return { success: true } as ApiResponse<T>;
         }
 
-        const data = await response.json();
+        let data: any = {};
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+            try {
+                data = await response.json();
+            } catch (e) {
+                console.error('[API] Failed to parse JSON:', e);
+                data = { error: 'Invalid JSON response from server' };
+            }
+        } else {
+            const text = await response.text();
+            console.warn('[API] Non-JSON response:', text.substring(0, 100));
+            data = { error: `Server returned non-JSON response (${response.status})` };
+        }
 
         if (response.status === 401) {
             return { success: false, error: 'Oturum süresi dolmuş. Lütfen tekrar giriş yapın.' };

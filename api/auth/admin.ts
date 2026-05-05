@@ -1,7 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import jwt from 'jsonwebtoken';
-import { v4 as uuidv4 } from 'uuid';
 
 const supabaseUrl = process.env.SUPABASE_URL || '';
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
@@ -25,46 +24,41 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { email, password, full_name, username } = req.body || {};
+    const { email, password } = req.body || {};
 
     if (!email || !password) {
-      return res.status(400).json({ success: false, error: 'Email and password are required' });
+      return res.status(400).json({ success: false, error: 'Email and password required' });
     }
 
-    const { data: authData, error: authError } = await supabase.auth.signUp({
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
       email,
       password,
-      options: {
-        emailRedirectTo: `${allowedOrigin}/auth/callback`,
-        data: { full_name, username },
-      },
     });
 
-    if (authError) {
-      if (authError.message.includes('already registered')) {
-        return res.status(400).json({ success: false, error: 'User already registered' });
-      }
-      return res.status(400).json({ success: false, error: authError.message });
-    }
-
-    if (!authData.user) {
-      return res.status(500).json({ success: false, error: 'Registration failed' });
+    if (authError || !authData.user) {
+      return res.status(401).json({ success: false, error: 'Invalid credentials' });
     }
 
     const userId = authData.user.id;
 
-    await supabase.from('profiles').upsert({
-      id: userId,
-      user_id: userId,
-      email,
-      full_name: full_name || null,
-      username: username || null,
-    }, { onConflict: 'id' });
+    // Check for admin role
+    const { data: roleData } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .single();
 
-    await supabase.from('user_roles').upsert({
-      user_id: userId,
-      role: 'user',
-    }, { onConflict: 'user_id' });
+    const role = roleData?.role || 'user';
+
+    if (!['admin', 'moderator'].includes(role)) {
+      return res.status(403).json({ success: false, error: 'Admin access required' });
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
 
     const token = jwt.sign({ userId, email }, JWT_SECRET, { expiresIn: '7d' });
 
@@ -74,15 +68,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         user: {
           id: userId,
           email,
-          name: full_name || username || email.split('@')[0],
-          profile: { full_name, username },
-          role: 'user',
+          name: profile?.full_name || profile?.username || email.split('@')[0],
+          profile,
+          role,
         },
         token,
       },
     });
   } catch (error: any) {
-    console.error('Register error:', error);
+    console.error('Admin login error:', error);
     return res.status(500).json({ success: false, error: 'Internal server error' });
   }
 }

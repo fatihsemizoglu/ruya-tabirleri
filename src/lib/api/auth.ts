@@ -1,25 +1,25 @@
 import { fetchApi } from './client';
-import { User, Profile, ApiResponse } from './types';
+import { User, Profile, AuthResponse } from './types';
 
 export const authApi = {
     async register(email: string, password: string, full_name?: string, username?: string) {
-        return fetchApi<{ user: User; expiresIn: string }>('/auth/register', {
+        return fetchApi<AuthResponse>('/auth/register', {
             method: 'POST',
             body: JSON.stringify({ email, password, full_name, username }),
         });
     },
 
     async login(email: string, password: string) {
-        return fetchApi<{ user: User; expiresIn: string }>('/auth/login', {
+        return fetchApi<AuthResponse>('/auth/login', {
             method: 'POST',
             body: JSON.stringify({ email, password }),
         });
     },
 
     async adminLogin(email: string, password: string) {
-        return fetchApi<{ user: User; expiresIn: string }>('/auth/login', {
+        return fetchApi<AuthResponse>('/auth/admin', {
             method: 'POST',
-            body: JSON.stringify({ email, password, isAdmin: true }),
+            body: JSON.stringify({ email, password }),
         });
     },
 

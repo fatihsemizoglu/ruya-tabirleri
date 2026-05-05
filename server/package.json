@@ -8,7 +8,8 @@
     "start": "node dist/index.js",
     "seed": "tsx database/seed.ts",
     "migrate": "tsx database/migrate.js",
-    "scrape": "tsx scripts/scrape-dreams.ts"
+    "scrape": "tsx scripts/scrape-dreams.ts",
+    "lint": "eslint src"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.100.1",

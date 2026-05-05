@@ -26,7 +26,7 @@ const ToastViewport = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "toast-group absolute top-0 z-[100] flex max-h-screen w-full flex-col-reverse gap-2 overflow-y-auto px-[25px] py-[10px] sm:max-h-screen sm:flex-col sm:overflow-hidden",
+      "fixed bottom-0 right-0 z-[100] flex max-h-screen w-full flex-col-reverse gap-2 p-4 sm:max-w-[420px] sm:flex-col",
       className
     )}
     {...props}
@@ -35,13 +35,15 @@ const ToastViewport = React.forwardRef<
 ToastViewport.displayName = "ToastViewport"
 
 const toastVariants = cva(
-  "group pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded-md border p-4 pr-8 shadow-lg transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-bottom-full",
+  "group pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded-xl border p-4 pr-8 shadow-2xl transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-top-full sm:data-[state=open]:slide-in-from-bottom-full backdrop-blur-md",
   {
     variants: {
       variant: {
-        default: "border bg-background text-foreground",
+        default: "border-border/50 bg-background/80 text-foreground shadow-purple-500/10",
         destructive:
-          "destructive group border-destructive bg-destructive text-destructive-foreground",
+          "destructive group border-destructive/50 bg-destructive/90 text-destructive-foreground shadow-destructive/20",
+        success: "border-emerald-500/50 bg-emerald-500/90 text-white shadow-emerald-500/20",
+        mystic: "border-purple-500/50 bg-purple-900/80 text-white shadow-purple-500/30",
       },
     },
     defaultVariants: {
@@ -57,7 +59,7 @@ const Toast = React.forwardRef<HTMLDivElement, ToastProps>(
     return (
       <div
         ref={ref}
-        className={cn(toastVariants({ variant }), className)}
+        className={cn(toastVariants({ variant }), "border-t border-l border-white/10", className)}
         {...props}
       />
     )
@@ -71,7 +73,7 @@ const ToastTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <h5
     ref={ref}
-    className={cn("text-sm font-semibold leading-none tracking-tight", className)}
+    className={cn("text-sm font-bold leading-none tracking-tight font-serif", className)}
     {...props}
   />
 ))
@@ -83,7 +85,7 @@ const ToastDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("text-sm leading-relaxed opacity-90", className)}
+    className={cn("text-xs leading-relaxed opacity-90 font-medium", className)}
     {...props}
   />
 ))
@@ -96,12 +98,12 @@ const ToastClose = React.forwardRef<
   <button
     ref={ref}
     className={cn(
-      "absolute right-2 top-2 rounded-md p-1 text-foreground/50 opacity-0 transition-opacity hover:text-foreground focus:opacity-100 focus:outline-none focus:ring-2 group-hover:opacity-100",
+      "absolute right-2 top-2 rounded-full p-1 text-foreground/50 opacity-0 transition-all hover:text-foreground hover:bg-white/10 focus:opacity-100 focus:outline-none focus:ring-2 group-hover:opacity-100",
       className
     )}
     {...props}
   >
-    <X className="h-4 w-4" />
+    <X className="h-3.5 w-3.5" />
   </button>
 ))
 ToastClose.displayName = "ToastClose"

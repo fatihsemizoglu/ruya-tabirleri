@@ -49,6 +49,7 @@ const BlogTag = lazy(() => import("./pages/BlogTag"));
 const Install = lazy(() => import("./pages/Install"));
 const SubscriptionVerify = lazy(() => import("./pages/SubscriptionVerify"));
 const SubscriptionCancel = lazy(() => import("./pages/SubscriptionCancel"));
+const PasswordReset = lazy(() => import("./pages/PasswordReset"));
 const DreamInterpret = lazy(() => import("./pages/DreamInterpret"));
 const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
 
@@ -61,6 +62,7 @@ function AnimatedRoutes() {
         <Route path="/" element={<Suspense fallback={<PageLoader />}><Index /></Suspense>}></Route>
         <Route path="/giris" element={<Suspense fallback={<PageLoader />}><Auth mode="login" /></Suspense>}></Route>
         <Route path="/kayit" element={<Suspense fallback={<PageLoader />}><Auth mode="register" /></Suspense>}></Route>
+        <Route path="/sifre-sifirla" element={<Suspense fallback={<PageLoader />}><Suspense fallback={<PageLoader />}><PasswordReset /></Suspense></Suspense>}></Route>
         <Route path="/ara" element={<Suspense fallback={<PageLoader />}><Search /></Suspense>}></Route>
         <Route path="/ruya/:slug" element={<Suspense fallback={<PageLoader />}><DreamDetail /></Suspense>}></Route>
         <Route path="/ruya-tabirleri" element={<Suspense fallback={<PageLoader />}><Popular /></Suspense>}></Route>
