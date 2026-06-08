@@ -31,6 +31,7 @@ export function BlogCommentSection({ postId }: BlogCommentSectionProps) {
     if (user) {
       fetchUserLikes();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postId, user]);
 
   const fetchComments = async () => {

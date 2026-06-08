@@ -31,6 +31,7 @@ export function PopularPosts() {
 
   useEffect(() => {
     fetchPopularPosts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sortBy]);
 
   const fetchPopularPosts = async () => {

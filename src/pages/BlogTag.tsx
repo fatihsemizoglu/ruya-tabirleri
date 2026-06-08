@@ -22,6 +22,7 @@ export default function BlogTag() {
     if (decodedTag) {
       fetchPostsByTag();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [decodedTag]);
 
   const fetchPostsByTag = async () => {

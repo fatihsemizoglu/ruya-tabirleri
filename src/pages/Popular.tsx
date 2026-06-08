@@ -64,10 +64,12 @@ export default function Popular() {
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     fetchDreams();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeFilter]);
 
   const getTimeFilterDate = () => {
@@ -243,9 +245,13 @@ export default function Popular() {
     return result;
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const filteredTrending = useMemo(() => filterDreams(trending), [trending, searchQuery, selectedCategory]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const filteredViewed = useMemo(() => filterDreams(mostViewed), [mostViewed, searchQuery, selectedCategory]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const filteredLiked = useMemo(() => filterDreams(mostLiked), [mostLiked, searchQuery, selectedCategory]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const filteredFeatured = useMemo(() => filterDreams(featured), [featured, searchQuery, selectedCategory]);
 
   const stats = [

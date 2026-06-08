@@ -28,6 +28,13 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
+interface RawHistoryRow {
+  id: string;
+  dream_id: string;
+  viewed_at: string;
+  dream: HistoryItem['dream'];
+}
+
 interface HistoryItem {
   id: string;
   dream_id: string;
@@ -64,6 +71,7 @@ export default function History() {
       fetchHistory();
       fetchCategories();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const fetchCategories = async () => {
@@ -91,7 +99,7 @@ export default function History() {
       if (error) throw error;
 
       // Remove duplicates, keep only the latest view for each dream
-      const uniqueHistory = data?.reduce((acc: HistoryItem[], curr: any) => {
+      const uniqueHistory = data?.reduce((acc: HistoryItem[], curr: RawHistoryRow) => {
         const exists = acc.find(h => h.dream_id === curr.dream_id);
         if (!exists && curr.dream) {
           acc.push({
@@ -140,8 +148,9 @@ export default function History() {
       if (error) throw error;
       toast({ title: 'Geçmiş temizlendi' });
       setHistory([]);
-    } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Hata', description: error.message });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Bir hata oluştu';
+      toast({ variant: 'destructive', title: 'Hata', description: message });
     }
   };
 
@@ -155,8 +164,9 @@ export default function History() {
       if (error) throw error;
       setHistory(history.filter(h => h.id !== id));
       toast({ title: 'Öğe geçmişten kaldırıldı' });
-    } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Hata', description: error.message });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Bir hata oluştu';
+      toast({ variant: 'destructive', title: 'Hata', description: message });
     }
   };
 

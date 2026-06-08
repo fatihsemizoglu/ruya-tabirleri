@@ -41,9 +41,9 @@ export function NewsletterSubscribeForm({ variant = 'default', className = '' }:
       } else {
         throw new Error(data.error || 'Bir hata oluştu');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Subscribe error:', error);
-      toast.error(error.message || 'Abonelik sırasında bir hata oluştu');
+      toast.error(error instanceof Error ? error.message : 'Abonelik sırasında bir hata oluştu');
     } finally {
       setIsLoading(false);
     }

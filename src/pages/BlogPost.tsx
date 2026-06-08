@@ -43,12 +43,14 @@ export default function BlogPost() {
     if (slug) {
       fetchPost();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
 
   useEffect(() => {
     if (post && user) {
       checkIfLiked();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [post, user]);
 
   const fetchPost = async () => {

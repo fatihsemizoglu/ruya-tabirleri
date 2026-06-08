@@ -68,7 +68,7 @@ export const translations = {
 
 // Export helper function for template literals
 export const t = (key: string, replacements?: Record<string, string | number>) => {
-  let value = key.split('.').reduce((obj, k) => obj?.[k], translations as any);
+  const value = key.split('.').reduce<unknown>((obj, k) => (obj as Record<string, unknown>)?.[k], translations);
   
   if (typeof value === 'string' && replacements) {
     return Object.entries(replacements).reduce(
@@ -77,5 +77,5 @@ export const t = (key: string, replacements?: Record<string, string | number>) =
     );
   }
   
-  return value || key;
+  return (value as string) || key;
 };

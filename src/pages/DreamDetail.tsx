@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, useScroll, useSpring } from 'framer-motion';
-import { Eye, Heart, Bookmark, ArrowLeft, Calendar, BookOpen, Sparkles, Clock, ChevronRight, Share2, Tag, Folder, Check } from 'lucide-react';
+import { Eye, Heart, Bookmark, ArrowLeft, Calendar, BookOpen, Sparkles, Clock, ChevronRight, Share2, Tag, Folder, Check, Moon } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { SimilarDreams } from '@/components/dream/SimilarDreams';
 import { CommentSection } from '@/components/dream/CommentSection';
 import { ShareCard } from '@/components/share/ShareCard';
-import type { Dream, Comment, Profile } from '@/types/database';
+import type { Dream, Comment, Profile, Category } from '@/types/database';
 
 const gradientPalette = [
   'from-violet-500 to-fuchsia-500',
@@ -133,6 +133,7 @@ export default function DreamDetail() {
     if (slug) {
       fetchDream();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
 
   const fetchDream = async () => {
@@ -318,7 +319,7 @@ export default function DreamDetail() {
     );
   }
 
-  const category = dream.category as any;
+  const category = dream.category as Category;
   const heroGradient = pickGradient(dream.id + dream.slug);
   const formattedDate = new Date(dream.created_at).toLocaleDateString('tr-TR', {
     day: 'numeric',

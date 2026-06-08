@@ -91,6 +91,7 @@ export function useKeyboardShortcuts() {
         break;
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate, shortcuts]);
 
   useEffect(() => {

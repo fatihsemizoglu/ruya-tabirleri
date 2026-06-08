@@ -112,7 +112,7 @@ export function SearchWithDropdown({
           title: d.title,
           slug: d.slug,
           view_count: d.view_count,
-          category_name: (d.categories as any)?.name || undefined
+          category_name: (d.categories as { name?: string })?.name || undefined
         })));
       }
     } catch (error) {
@@ -292,7 +292,7 @@ export function SearchWithDropdown({
               {/* Search for query option */}
               {query.trim() && (
                 <button
-                  onClick={handleSubmit as any}
+                  onClick={handleSubmit as unknown as React.MouseEventHandler<HTMLButtonElement>}
                   className="w-full text-left px-3 py-3 rounded-lg hover:bg-muted transition-colors flex items-center gap-3 border-t mt-2 pt-3"
                 >
                   <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
@@ -311,7 +311,7 @@ export function SearchWithDropdown({
             <div className="p-4 text-center text-muted-foreground">
               <p className="mb-2">"{query}" için öneri bulunamadı</p>
               <button
-                onClick={handleSubmit as any}
+                onClick={handleSubmit as unknown as React.MouseEventHandler<HTMLButtonElement>}
                 className="text-primary hover:underline text-sm"
               >
                 Yine de ara →

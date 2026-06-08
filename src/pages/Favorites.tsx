@@ -65,6 +65,7 @@ export default function Favorites() {
       fetchFavorites();
       fetchCategories();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const fetchFavorites = async () => {
@@ -103,8 +104,9 @@ export default function Favorites() {
       if (error) throw error;
       toast.success('Favorilerden kaldırıldı');
       setFavorites(favorites.filter(f => f.id !== id));
-    } catch (error: any) {
-      toast.error(error.message || 'Bir hata oluştu');
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Bir hata oluştu';
+      toast.error(message);
     }
   };
 
@@ -120,8 +122,9 @@ export default function Favorites() {
       setFavorites(favorites.filter(f => !selectedItems.has(f.id)));
       setSelectedItems(new Set());
       setIsSelectionMode(false);
-    } catch (error: any) {
-      toast.error(error.message || 'Bir hata oluştu');
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Bir hata oluştu';
+      toast.error(message);
     }
   };
 

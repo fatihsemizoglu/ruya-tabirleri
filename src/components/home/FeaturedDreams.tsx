@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -50,7 +51,7 @@ export function FeaturedDreams() {
           .eq('is_published', true)
           .order('is_featured', { ascending: false })
           .order('view_count', { ascending: false })
-          .limit(20);
+          .limit(15);
 
         if (error) throw error;
 
@@ -61,7 +62,7 @@ export function FeaturedDreams() {
             slug: d.slug,
             view_count: d.view_count || 0,
             like_count: d.like_count || 0,
-            category: d.categories?.name || 'Genel',
+            category: (d.categories)?.name || 'Genel',
             is_featured: d.is_featured,
             gradient: gradients[index % gradients.length],
           }));

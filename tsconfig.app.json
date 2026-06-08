@@ -14,13 +14,14 @@
     "noEmit": true,
     "jsx": "react-jsx",
 
-    /* Linting */
+    /* Linting - gevşek, büyük projeler için */
     "strict": false,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noImplicitAny": false,
     "noFallthroughCasesInSwitch": false,
-    "ignoreDeprecations": "6.0",
+    "noUncheckedIndexedAccess": false,
+    "exactOptionalPropertyTypes": false,
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]

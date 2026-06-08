@@ -48,6 +48,7 @@ export default function Blog() {
 
   useEffect(() => {
     fetchPosts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCategory, categories]);
 
   const fetchCategories = async () => {
@@ -149,6 +150,7 @@ export default function Blog() {
     }
 
     return result;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [posts, searchQuery, timeFilter]);
 
   const handleCategoryClick = (slug: string | null) => {

@@ -21,6 +21,7 @@ export function TagCloud({ className, maxTags = 20 }: TagCloudProps) {
 
   useEffect(() => {
     fetchTags();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchTags = async () => {

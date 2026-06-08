@@ -27,7 +27,7 @@ interface CategoryFormProps {
   isSubmitting?: boolean;
 }
 
-function SectionLabel({ icon: Icon, label }: { icon: any; label: string }) {
+function SectionLabel({ icon: Icon, label }: { icon: React.ComponentType<{ className?: string }>; label: string }) {
   return (
     <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
       <Icon className="h-3.5 w-3.5" />

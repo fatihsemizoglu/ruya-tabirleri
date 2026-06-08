@@ -53,6 +53,7 @@ export default function CategoryDetail() {
     if (slug) {
       fetchCategoryAndDreams();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
 
   useEffect(() => {

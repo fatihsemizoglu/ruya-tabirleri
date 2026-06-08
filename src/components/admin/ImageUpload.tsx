@@ -53,9 +53,9 @@ export function ImageUpload({
 
       onChange(publicUrl);
       toast.success('Görsel yüklendi');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Upload error:', error);
-      toast.error(error.message || 'Görsel yüklenirken bir hata oluştu');
+      toast.error(error instanceof Error ? error.message : 'Görsel yüklenirken bir hata oluştu');
     } finally {
       setIsUploading(false);
     }

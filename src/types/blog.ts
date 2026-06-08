@@ -25,6 +25,8 @@ export interface BlogPost {
   meta_title: string | null;
   meta_description: string | null;
   tags: string[];
+  read_time?: number | null;
+  scheduled_at?: string | null;
   created_at: string;
   updated_at: string;
   category?: BlogCategory;

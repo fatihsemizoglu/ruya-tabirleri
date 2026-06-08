@@ -43,6 +43,7 @@ export default function DreamJournal() {
     if (user) {
       fetchEntries();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const fetchEntries = async () => {
@@ -96,8 +97,9 @@ export default function DreamJournal() {
       setSelectedEntry(null);
       setFormData({ title: '', content: '', dream_date: new Date().toISOString().split('T')[0], mood: '', tags: '' });
       fetchEntries();
-    } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Hata', description: error.message });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Bir hata oluştu';
+      toast({ variant: 'destructive', title: 'Hata', description: message });
     }
   };
 
@@ -113,8 +115,9 @@ export default function DreamJournal() {
       if (error) throw error;
       toast({ title: 'Rüya silindi' });
       fetchEntries();
-    } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Hata', description: error.message });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Bir hata oluştu';
+      toast({ variant: 'destructive', title: 'Hata', description: message });
     }
   };
 

@@ -95,35 +95,45 @@ export function Header() {
 
   useEffect(() => {
     const fetchAll = async () => {
-      const [{ data: dreamCats }, { data: blogCatsData }, { data: postsData }] = await Promise.all([
-        supabase.from('categories').select('id, name, slug, icon').limit(50),
-        supabase
-          .from('blog_categories')
-          .select('id, name, slug, description, icon, order_index, created_at, updated_at')
-          .order('order_index', { ascending: true })
-          .order('name', { ascending: true })
-          .limit(20),
-        supabase
-          .from('blog_posts')
-          .select(
-            'id, title, slug, featured_image, category:blog_categories(id, name, slug, description, icon, order_index, created_at, updated_at)'
-          )
-          .eq('is_published', true)
-          .order('created_at', { ascending: false })
-          .limit(4),
-      ]);
+      try {
+        const [{ data: dreamCats, error: dreamCatsError }, { data: blogCatsData, error: blogCatsError }, { data: postsData, error: postsError }] = await Promise.all([
+          supabase.from('categories').select('id, name, slug, icon').limit(50),
+          supabase
+            .from('blog_categories')
+            .select('id, name, slug, description, icon, order_index, created_at, updated_at')
+            .order('order_index', { ascending: true })
+            .order('name', { ascending: true })
+            .limit(20),
+          supabase
+            .from('blog_posts')
+            .select(
+              'id, title, slug, featured_image, category:blog_categories(id, name, slug, description, icon, order_index, created_at, updated_at)'
+            )
+            .eq('is_published', true)
+            .order('created_at', { ascending: false })
+            .limit(4),
+        ]);
 
-      if (dreamCats) {
-        const sorted = [...dreamCats].sort((a, b) =>
-          a.name.localeCompare(b.name, 'tr', { sensitivity: 'base' })
-        );
-        setCategories(sorted);
-      }
-      if (blogCatsData) {
-        setBlogCategories(blogCatsData as BlogCategory[]);
-      }
-      if (postsData) {
-        setRecentPosts(postsData as unknown as BlogPostPreview[]);
+        if (dreamCatsError) {
+          console.error('Error fetching dream categories:', dreamCatsError);
+        } else if (dreamCats) {
+          const sorted = [...dreamCats].sort((a, b) =>
+            a.name.localeCompare(b.name, 'tr', { sensitivity: 'base' })
+          );
+          setCategories(sorted);
+        }
+        if (blogCatsError) {
+          console.error('Error fetching blog categories:', blogCatsError);
+        } else if (blogCatsData) {
+          setBlogCategories(blogCatsData as BlogCategory[]);
+        }
+        if (postsError) {
+          console.error('Error fetching recent posts:', postsError);
+        } else if (postsData) {
+          setRecentPosts(postsData as unknown as BlogPostPreview[]);
+        }
+      } catch (err) {
+        console.error('Error in Header fetchAll:', err);
       }
     };
     fetchAll();
@@ -177,6 +187,13 @@ export function Header() {
   const cancelClose = () => {
     if (closeTimer.current) window.clearTimeout(closeTimer.current);
   };
+
+  // Timer cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (closeTimer.current) window.clearTimeout(closeTimer.current);
+    };
+  }, []);
 
   // ESC ile kapatma
   useEffect(() => {
@@ -235,20 +252,6 @@ export function Header() {
             )}
           >
             Anasayfa
-          </Link>
-
-          {/* Rüya Tabirleri */}
-          <Link
-            to="/ruya-tabirleri"
-            onMouseEnter={cancelClose}
-            className={cn(
-              'px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 shrink-0',
-              isActiveLink('/ruya-tabirleri')
-                ? 'text-primary bg-primary/5'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-            )}
-          >
-            Rüya Tabirleri
           </Link>
 
           {/* Kategoriler (Dropdown) */}
@@ -641,9 +644,6 @@ export function Header() {
           <nav className="flex flex-col gap-1">
             {/* Anasayfa */}
             <MobileNavLink to="/" label="Anasayfa" onClose={() => setIsMenuOpen(false)} />
-
-            {/* Rüya Tabirleri */}
-            <MobileNavLink to="/ruya-tabirleri" label="Rüya Tabirleri" onClose={() => setIsMenuOpen(false)} />
 
             {/* Kategoriler (Accordion) */}
             <div>

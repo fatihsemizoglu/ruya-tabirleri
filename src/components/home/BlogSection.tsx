@@ -30,26 +30,33 @@ export function BlogSection() {
   }, []);
 
   const fetchPosts = async () => {
-    const { data: postsData } = await supabase
-      .from('blog_posts')
-      .select(`
-        *,
-        category:blog_categories(id, name, slug, icon)
-      `)
-      .eq('is_published', true)
-      .order('created_at', { ascending: false })
-      .limit(6);
+    try {
+      const { data: postsData, error: postsError } = await supabase
+        .from('blog_posts')
+        .select(`
+          *,
+          category:blog_categories(id, name, slug, icon)
+        `)
+        .eq('is_published', true)
+        .order('created_at', { ascending: false })
+        .limit(6);
 
-    if (!postsData || postsData.length === 0) {
-      setIsLoading(false);
-      return;
-    }
+      if (postsError) {
+        console.error('Error fetching blog posts:', postsError);
+        setIsLoading(false);
+        return;
+      }
 
-    const authorIds = [...new Set(postsData.map((p) => p.author_id))];
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('user_id, full_name, username, avatar_url')
-      .in('user_id', authorIds);
+      if (!postsData || postsData.length === 0) {
+        setIsLoading(false);
+        return;
+      }
+
+      const authorIds = [...new Set(postsData.map((p) => p.author_id))];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, username, avatar_url')
+        .in('user_id', authorIds);
 
     const profileMap = new Map(profiles?.map((p) => [p.user_id, p]));
 
@@ -67,8 +74,12 @@ export function BlogSection() {
       } as BlogPost;
     });
 
-    setPosts(enrichedPosts);
-    setIsLoading(false);
+      setPosts(enrichedPosts);
+    } catch (err) {
+      console.error('Error in fetchPosts:', err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (!isLoading && posts.length === 0) {
@@ -203,19 +214,21 @@ export function BlogSection() {
                   }}
                   className="group bg-card border border-border/50 rounded-2xl overflow-hidden hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/5 transition-all duration-300 flex flex-col"
                 >
-                  <Link to={`/blog/${post.slug}`} className="block relative aspect-[16/9] overflow-hidden">
-                    {post.cover_image ? (
+                  <Link to={`/blog/${post.slug}`} className="block relative aspect-[16/9] overflow-hidden bg-gradient-to-br from-violet-500/20 via-fuchsia-500/15 to-pink-500/20">
+                    {post.featured_image ? (
                       <img
-                        src={post.cover_image}
+                        src={post.featured_image}
                         alt={post.title}
                         loading="lazy"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).style.display = 'none';
+                        }}
                         className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                       />
-                    ) : (
-                      <div className="absolute inset-0 bg-gradient-to-br from-violet-500/30 via-fuchsia-500/20 to-pink-500/30 flex items-center justify-center">
-                        <BookOpen className="w-10 h-10 text-primary/40" />
-                      </div>
-                    )}
+                    ) : null}
+                    <div className={`absolute inset-0 flex items-center justify-center ${post.featured_image ? 'opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-black/20' : ''}`}>
+                      <BookOpen className="w-10 h-10 text-primary/40" />
+                    </div>
                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/0 to-black/0" />
                     {post.category && (
                       <div className="absolute top-3 left-3">

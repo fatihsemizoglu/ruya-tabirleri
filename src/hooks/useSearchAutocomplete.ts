@@ -47,7 +47,7 @@ export function useSearchAutocomplete(options: UseSearchAutocompleteOptions = {}
           id: d.id,
           title: d.title,
           slug: d.slug,
-          category_name: (d.categories as any)?.name || undefined
+          category_name: (d.categories as { name?: string })?.name || undefined
         })));
       }
     };
@@ -81,7 +81,7 @@ export function useSearchAutocomplete(options: UseSearchAutocompleteOptions = {}
           id: d.id,
           title: d.title,
           slug: d.slug,
-          category_name: (d.categories as any)?.name || undefined
+          category_name: (d.categories as { name?: string })?.name || undefined
         })));
       }
     } catch (error) {

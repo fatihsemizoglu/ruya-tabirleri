@@ -163,15 +163,6 @@ export function ShareCard({ title, description, onFeedback, className = '', chil
     },
   ];
 
-  const tooltipKeyMap: Record<string, string> = {
-    share: 'shareTooltip',
-    copy: 'copyTooltip',
-    copied: 'copyTooltip',
-    qrCode: 'qrTooltip',
-    print: 'printTooltip',
-    email: 'emailTooltip',
-  };
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -307,9 +298,24 @@ export function ShareCard({ title, description, onFeedback, className = '', chil
                 <TooltipProvider delayDuration={300}>
                   <div className="flex items-center justify-center gap-2 flex-wrap">
                     {quickActions.map((action) => {
-                      const actionLabel = t(`shareCard.${action.key}` as 'shareCard.share');
-                      const tooltipKey = tooltipKeyMap[action.key];
-                      const tooltipText = tooltipKey ? t(`shareCard.${tooltipKey}` as 'shareCard.shareTooltip') : '';
+                      const actionLabels: Record<string, string> = {
+                        share: 'Paylaş',
+                        copy: 'Kopyala',
+                        copied: 'Kopyalandı',
+                        qrCode: 'QR Kod',
+                        print: 'Yazdır',
+                        email: 'E-posta',
+                      };
+                      const actionLabel = actionLabels[action.key] || action.key;
+                      const tooltipLabels: Record<string, string> = {
+                        share: 'Cihazınızla paylaş',
+                        copy: 'Bağlantıyı kopyala',
+                        copied: 'Bağlantı kopyalandı',
+                        qrCode: 'QR kodu göster/gizle',
+                        print: 'Bu sayfayı yazdır',
+                        email: 'E-posta ile gönder',
+                      };
+                      const tooltipText = tooltipLabels[action.key] || '';
                       return (
                         <Tooltip key={action.key}>
                           <TooltipTrigger asChild>
