@@ -1,10 +1,34 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Loader2, Sparkles, ChevronRight, Clock, X } from 'lucide-react';
+import { Search, Loader2, Sparkles, ChevronRight, Clock, X, Mic, MicOff } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+
+interface SpeechRecognitionInstance {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  maxAlternatives: number;
+  onstart: (() => void) | null;
+  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+  abort: () => void;
+}
+
+interface SpeechRecognitionEvent {
+  resultIndex: number;
+  results: SpeechRecognitionResultList;
+}
+
+interface SpeechRecognitionErrorEvent {
+  error: string;
+}
 
 interface Suggestion {
   id: string;
@@ -34,15 +58,41 @@ export function SearchWithDropdown({
   onSearchSubmit
 }: SearchWithDropdownProps) {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [isListening, setIsListening] = useState(false);
+  const [voiceSupported, setVoiceSupported] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
+
+  // Detect SpeechRecognition support
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const SR = ((window as unknown) as Record<string, unknown>).SpeechRecognition ||
+        ((window as unknown) as Record<string, unknown>).webkitSpeechRecognition;
+      setVoiceSupported(!!SR);
+    }
+  }, []);
+
+  // Cleanup recognition on unmount
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch (_) {
+          // ignore
+        }
+      }
+    };
+  }, []);
 
   // Load recent searches
   useEffect(() => {
@@ -178,6 +228,116 @@ export function SearchWithDropdown({
     onSearchSubmit?.();
   };
 
+  const performSearch = useCallback((searchTerm: string) => {
+    const term = searchTerm.trim();
+    if (!term) return;
+    saveRecentSearch(term);
+    logSearch(term, 0);
+    navigate(`/ara?q=${encodeURIComponent(term)}`);
+    setQuery('');
+    setShowDropdown(false);
+    onSearchSubmit?.();
+  }, [recentSearches, navigate, onSearchSubmit]);
+
+  const handleVoiceSearch = () => {
+    if (isListening) {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch (_) {
+          // ignore
+        }
+      }
+      setIsListening(false);
+      return;
+    }
+
+    const SR =
+      ((window as unknown as Record<string, unknown>).SpeechRecognition as { new(): SpeechRecognitionInstance } | undefined) ||
+      ((window as unknown as Record<string, unknown>).webkitSpeechRecognition as { new(): SpeechRecognitionInstance } | undefined);
+    if (!SR) {
+      toast({
+        title: 'Sesli arama desteklenmiyor',
+        description: 'Tarayıcınız sesli aramayı desteklemiyor.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const recognition = new SR();
+      recognition.lang = 'tr-TR';
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.maxAlternatives = 1;
+
+      recognition.onstart = () => {
+        setIsListening(true);
+      };
+
+      recognition.onresult = (event: SpeechRecognitionEvent) => {
+        let finalTranscript = '';
+        let interimTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript;
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+        const text = finalTranscript || interimTranscript;
+        if (text) {
+          setQuery(text);
+          if (finalTranscript) {
+            setIsListening(false);
+            // Otomatik arama
+            setTimeout(() => {
+              performSearch(text.trim());
+            }, 200);
+          }
+        }
+      };
+
+      recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+        setIsListening(false);
+        if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+          toast({
+            title: 'Mikrofon erişimi reddedildi',
+            description: 'Sesli arama için mikrofon iznine ihtiyaç var.',
+            variant: 'destructive',
+          });
+        } else if (event.error === 'no-speech') {
+          toast({
+            title: 'Ses algılanamadı',
+            description: 'Lütfen tekrar deneyin ve mikrofonunuza yakın konuşun.',
+            variant: 'destructive',
+          });
+        } else if (event.error !== 'aborted') {
+          toast({
+            title: 'Sesli arama hatası',
+            description: 'Lütfen tekrar deneyin.',
+            variant: 'destructive',
+          });
+        }
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+    } catch (err) {
+      setIsListening(false);
+      toast({
+        title: 'Sesli arama başlatılamadı',
+        description: 'Tarayıcınız sesli aramayı desteklemiyor olabilir.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     const totalItems = suggestions.length + Math.min(recentSearches.length, 5);
 
@@ -222,13 +382,41 @@ export function SearchWithDropdown({
           onKeyDown={handleKeyDown}
           className={cn(
             isHero 
-              ? "w-full h-14 pl-5 pr-14 text-lg rounded-2xl bg-background/80 backdrop-blur border-2 border-primary/20 focus:border-primary shadow-lg shadow-primary/5"
+              ? voiceSupported 
+                ? "w-full h-14 pl-5 pr-28 text-lg rounded-2xl bg-background/80 backdrop-blur border-2 border-primary/20 focus:border-primary shadow-lg shadow-primary/5"
+                : "w-full h-14 pl-5 pr-14 text-lg rounded-2xl bg-background/80 backdrop-blur border-2 border-primary/20 focus:border-primary shadow-lg shadow-primary/5"
               : isMobile
-              ? "w-full pr-10"
-              : "w-[200px] lg:w-[280px] pr-10 bg-muted/50",
+              ? voiceSupported
+                ? "w-full pr-22"
+                : "w-full pr-10"
+              : voiceSupported
+                ? "w-[200px] lg:w-[280px] pr-22 bg-muted/50"
+                : "w-[200px] lg:w-[280px] pr-10 bg-muted/50",
             inputClassName
           )}
         />
+        {voiceSupported && (
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            onClick={handleVoiceSearch}
+            className={cn(
+              "absolute top-1/2 -translate-y-1/2 transition-all",
+              isHero
+                ? isListening
+                  ? "right-14 h-10 w-10 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500/20 animate-pulse ring-2 ring-red-500/40"
+                  : "right-14 h-10 w-10 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground"
+                : isListening
+                  ? "right-10 h-9 w-9 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 animate-pulse ring-2 ring-red-500/40"
+                  : "right-10 h-9 w-9 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground"
+            )}
+            aria-label={isListening ? 'Sesli aramayı durdur' : 'Sesli arama başlat'}
+            title={isListening ? 'Dinleniyor... (durdurmak için tıklayın)' : 'Sesli arama'}
+          >
+            {isListening ? <MicOff className={isHero ? "h-5 w-5" : "h-4 w-4"} /> : <Mic className={isHero ? "h-5 w-5" : "h-4 w-4"} />}
+          </Button>
+        )}
         <Button 
           type="submit" 
           variant={isHero ? "default" : "ghost"}
@@ -243,6 +431,20 @@ export function SearchWithDropdown({
           <Search className={isHero ? "h-5 w-5" : "h-4 w-4"} />
         </Button>
       </form>
+
+      {/* Voice search listening indicator */}
+      {isListening && (
+        <div className={cn(
+          "absolute left-0 right-0 z-10 flex items-center justify-center gap-2 text-xs text-red-500 animate-in fade-in slide-in-from-top-1",
+          isHero ? "-bottom-8" : "-bottom-7"
+        )}>
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
+          </span>
+          {isHero ? "Dinleniyor... Konuşun" : "Dinleniyor..."}
+        </div>
+      )}
 
       {/* Dropdown */}
       {showDropdownContent && (
