@@ -10,7 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Pencil, Trash2, Star, BookOpen, Check } from 'lucide-react';
+import { Plus, Pencil, Trash2, Star, BookOpen, Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import { DreamForm, type DreamFormValues } from './DreamForm';
 import { SkeletonAdminRow } from '@/components/ui/skeleton-card';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -38,25 +38,44 @@ const dreamSchema = z.object({
 
 export type { DreamFormValues };
 
+const PAGE_SIZE = 50;
+
 export function DreamManagement() {
   const [isOpen, setIsOpen] = useState(false);
   const [editingDream, setEditingDream] = useState<Dream | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
   const queryClient = useQueryClient();
 
-  const { data: dreams, isLoading } = useQuery({
-    queryKey: ['admin-dreams'],
+  // Toplam rüya sayısını çek
+  const { data: totalCount } = useQuery({
+    queryKey: ['admin-dreams-count'],
     queryFn: async () => {
+      const { count, error } = await supabase
+        .from('dreams')
+        .select('*', { count: 'exact', head: true });
+      if (error) throw error;
+      return count || 0;
+    },
+    staleTime: 60000,
+  });
+
+  const { data: dreams, isLoading } = useQuery({
+    queryKey: ['admin-dreams', currentPage],
+    queryFn: async () => {
+      const from = (currentPage - 1) * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
       const { data, error } = await supabase
         .from('dreams')
         .select('*, categories(name, slug)')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .range(from, to);
       if (error) throw error;
       return data;
     },
-    staleTime: 30000, // 30 seconds
-    gcTime: 5 * 60 * 1000, // 5 minutes (previously cacheTime)
+    staleTime: 30000,
+    gcTime: 5 * 60 * 1000,
     refetchOnWindowFocus: true,
   });
 
@@ -226,9 +245,10 @@ export function DreamManagement() {
     }
   };
 
-  const totalDreams = dreams?.length || 0;
+  const totalDreams = totalCount || 0;
   const publishedDreams = dreams?.filter(d => d.is_published).length || 0;
   const featuredDreams = dreams?.filter(d => d.is_featured).length || 0;
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE) || 1;
 
   const statsData: [{ label: string; value: number; subtext: string; icon: typeof BookOpen }, { label: string; value: number; subtext: string; icon: typeof Check }, { label: string; value: number; subtext: string; icon: typeof Star }] = [
     { label: 'Toplam Rüya', value: totalDreams, subtext: 'Veritabanındaki rüyalar', icon: BookOpen },
@@ -290,7 +310,7 @@ export function DreamManagement() {
           <div>
             <h3 className="text-lg font-bold text-slate-850 dark:text-white">Rüya Tabirleri</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
-              {filteredDreams.length} tabir ({filteredDreams.length > 0 ? `1-${filteredDreams.length}` : '0-0'} gösteriliyor)
+              {totalCount?.toLocaleString('tr-TR') || 0} toplam tabir • Sayfa {currentPage} / {totalPages} ({filteredDreams.length} gösteriliyor)
             </p>
           </div>
         </div>
@@ -408,6 +428,42 @@ export function DreamManagement() {
                 </div>
               ))}
             </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-200/40 dark:border-slate-800/40">
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                  {((currentPage - 1) * PAGE_SIZE) + 1}–{Math.min(currentPage * PAGE_SIZE, totalCount || 0)} / {(totalCount || 0).toLocaleString('tr-TR')} arası gösteriliyor
+                </p>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1 || isLoading}
+                    className="h-9 w-9 p-0 rounded-lg"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  <div className="flex items-center gap-1 px-2">
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Sayfa</span>
+                    <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded-md min-w-[24px] text-center">
+                      {currentPage}
+                    </span>
+                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400">/ {totalPages}</span>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages || isLoading}
+                    className="h-9 w-9 p-0 rounded-lg"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="bg-card border border-border/40 rounded-2xl">
