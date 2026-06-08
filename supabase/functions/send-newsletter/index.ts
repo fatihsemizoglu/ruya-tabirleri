@@ -1,0 +1,162 @@
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
+
+interface NewsletterRequest {
+  postId: string;
+  postTitle: string;
+  postExcerpt: string;
+  postSlug: string;
+  postType: 'blog' | 'dream';
+}
+
+async function sendEmail(apiKey: string, params: { from: string; to: string[]; subject: string; html: string }) {
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(params),
+  });
+  
+  if (!response.ok) {
+    const errorData = await response.text();
+    throw new Error(`Resend API error: ${response.status} - ${errorData}`);
+  }
+  
+  return response.json();
+}
+
+const handler = async (req: Request): Promise<Response> => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+    if (!RESEND_API_KEY) {
+      throw new Error("RESEND_API_KEY is not configured");
+    }
+
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      throw new Error("Supabase credentials are not configured");
+    }
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    const { postId, postTitle, postExcerpt, postSlug, postType }: NewsletterRequest = await req.json();
+
+    if (!postId || !postTitle || !postSlug) {
+      throw new Error("Missing required fields: postId, postTitle, postSlug");
+    }
+
+    // Get verified subscribers
+    const { data: subscribers, error: fetchError } = await supabase
+      .from('blog_subscribers')
+      .select('email, name')
+      .eq('is_verified', true)
+      .is('unsubscribed_at', null);
+
+    if (fetchError) {
+      throw new Error(`Failed to fetch subscribers: ${fetchError.message}`);
+    }
+
+    if (!subscribers || subscribers.length === 0) {
+      return new Response(
+        JSON.stringify({ success: true, message: "No verified subscribers to notify", sent: 0 }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const baseUrl = req.headers.get("origin") || "https://mystic-logbook.lovable.app";
+    const postUrl = postType === 'blog' 
+      ? `${baseUrl}/blog/${postSlug}`
+      : `${baseUrl}/ruya/${postSlug}`;
+
+    let successCount = 0;
+    const errors: string[] = [];
+
+    // Send emails in batches
+    for (const subscriber of subscribers) {
+      try {
+        await sendEmail(RESEND_API_KEY, {
+          from: "Rüya Tabirleri <bildirim@ruya-tabirleri.com>",
+          to: [subscriber.email],
+          subject: `Yeni İçerik: ${postTitle}`,
+          html: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            </head>
+            <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
+                <h1 style="color: white; margin: 0; font-size: 24px;">🌙 Rüya Tabirleri</h1>
+              </div>
+              
+              <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 12px 12px;">
+                <p style="margin-top: 0;">Merhaba${subscriber.name ? ` ${subscriber.name}` : ''},</p>
+                
+                <p>Sitemizde yeni bir içerik yayınlandı:</p>
+                
+                <div style="background: white; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea; margin: 20px 0;">
+                  <h2 style="margin: 0 0 10px 0; color: #1f2937; font-size: 18px;">${postTitle}</h2>
+                  ${postExcerpt ? `<p style="margin: 0; color: #6b7280; font-size: 14px;">${postExcerpt}</p>` : ''}
+                </div>
+                
+                <a href="${postUrl}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; margin: 10px 0;">
+                  İçeriği Oku →
+                </a>
+                
+                <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+                
+                <p style="font-size: 12px; color: #9ca3af; margin-bottom: 0;">
+                  Bu e-postayı almak istemiyorsanız, 
+                  <a href="${baseUrl}/abonelik-iptal?email=${encodeURIComponent(subscriber.email)}" style="color: #667eea;">aboneliğinizi iptal edebilirsiniz</a>.
+                </p>
+              </div>
+            </body>
+            </html>
+          `,
+        });
+        successCount++;
+      } catch (emailError) {
+        console.error(`Failed to send to ${subscriber.email}:`, emailError);
+        errors.push(subscriber.email);
+      }
+    }
+
+    console.log(`Newsletter sent: ${successCount}/${subscribers.length} successful`);
+
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        message: `Bildirim gönderildi`,
+        sent: successCount,
+        failed: errors.length,
+        total: subscribers.length
+      }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+
+  } catch (error: unknown) {
+    console.error("Error in send-newsletter function:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    return new Response(
+      JSON.stringify({ success: false, error: errorMessage }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+};
+
+serve(handler);
