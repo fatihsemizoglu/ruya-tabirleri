@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Navigate, Link } from 'react-router-dom';
-import { Clock, Trash2, Eye, Heart, Search, Calendar, TrendingUp, Filter, X, ArrowRight } from 'lucide-react';
+import { Clock, Trash2, Eye, Heart, Search, Calendar, TrendingUp, Filter, X, ArrowRight, History as HistoryIcon } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -282,10 +283,33 @@ export default function History() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-serif font-bold mb-1">Görüntüleme Geçmişi</h1>
-            <p className="text-muted-foreground">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-medium mb-3"
+            >
+              <HistoryIcon className="w-3 h-3" />
+              Görüntüleme Geçmişi
+            </motion.div>
+            <motion.h1
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="text-3xl sm:text-4xl md:text-5xl font-serif-dream font-bold leading-[1.1] tracking-tight mb-2"
+            >
+              <span className="bg-gradient-to-br from-amber-500 via-orange-500 to-rose-500 bg-clip-text text-transparent">
+                Görüntüleme Geçmişin
+              </span>
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.15 }}
+              className="text-base text-muted-foreground"
+            >
               Son görüntülediğiniz rüya tabirleri
-            </p>
+            </motion.p>
           </div>
           {history.length > 0 && (
             <AlertDialog>

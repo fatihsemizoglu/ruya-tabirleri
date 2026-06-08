@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Navigate, Link } from 'react-router-dom';
-import { Plus, Book, Calendar, Trash2, Edit, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Book, Calendar, Trash2, Edit, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -160,10 +161,33 @@ export default function DreamJournal() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-serif font-bold mb-2">Rüya Günlüğüm</h1>
-            <p className="text-muted-foreground">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-600 dark:text-violet-400 text-xs font-medium mb-3"
+            >
+              <BookOpen className="w-3 h-3" />
+              Rüya Günlüğüm
+            </motion.div>
+            <motion.h1
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="text-3xl sm:text-4xl md:text-5xl font-serif-dream font-bold leading-[1.1] tracking-tight mb-2"
+            >
+              <span className="bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500 bg-clip-text text-transparent">
+                Rüya Günlüğün
+              </span>
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.15 }}
+              className="text-base text-muted-foreground"
+            >
               Gördüğünüz rüyaları kaydedin ve zamanla analiz edin.
-            </p>
+            </motion.p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={(open) => {
             setIsDialogOpen(open);

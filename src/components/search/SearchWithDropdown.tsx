@@ -396,26 +396,39 @@ export function SearchWithDropdown({
           )}
         />
         {voiceSupported && (
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            onClick={handleVoiceSearch}
-            className={cn(
-              "absolute top-1/2 -translate-y-1/2 transition-all",
-              isHero
-                ? isListening
-                  ? "right-14 h-10 w-10 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500/20 animate-pulse ring-2 ring-red-500/40"
-                  : "right-14 h-10 w-10 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground"
-                : isListening
-                  ? "right-10 h-9 w-9 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 animate-pulse ring-2 ring-red-500/40"
-                  : "right-10 h-9 w-9 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground"
+          <div className="absolute top-1/2 -translate-y-1/2 right-14 z-10">
+            {/* Animasyonlu ses dalgaları (sadece dinlerken) */}
+            {isListening && (
+              <>
+                <span className="absolute inset-0 rounded-xl bg-red-500/30 animate-ping" style={{ animationDuration: '1.5s' }} />
+                <span className="absolute inset-0 rounded-xl bg-red-500/20 animate-pulse" style={{ animationDuration: '1s' }} />
+                <span
+                  className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 rounded-full border-2 border-red-500/40 animate-ping"
+                  style={{ animationDuration: '1.2s' }}
+                />
+              </>
             )}
-            aria-label={isListening ? 'Sesli aramayı durdur' : 'Sesli arama başlat'}
-            title={isListening ? 'Dinleniyor... (durdurmak için tıklayın)' : 'Sesli arama'}
-          >
-            {isListening ? <MicOff className={isHero ? "h-5 w-5" : "h-4 w-4"} /> : <Mic className={isHero ? "h-5 w-5" : "h-4 w-4"} />}
-          </Button>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              onClick={handleVoiceSearch}
+              className={cn(
+                "relative transition-all duration-300",
+                isHero
+                  ? isListening
+                    ? "h-10 w-10 rounded-xl bg-gradient-to-br from-red-500 to-rose-600 text-white hover:from-red-600 hover:to-rose-700 shadow-lg shadow-red-500/40 scale-110"
+                    : "h-10 w-10 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground hover:scale-105"
+                  : isListening
+                    ? "h-9 w-9 rounded-lg bg-gradient-to-br from-red-500 to-rose-600 text-white hover:from-red-600 hover:to-rose-700 shadow-lg shadow-red-500/40 scale-110"
+                    : "h-9 w-9 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground hover:scale-105"
+              )}
+              aria-label={isListening ? 'Sesli aramayı durdur' : 'Sesli arama başlat'}
+              title={isListening ? 'Dinleniyor... (durdurmak için tıklayın)' : 'Sesli arama'}
+            >
+              {isListening ? <MicOff className={cn(isHero ? "h-5 w-5" : "h-4 w-4", "animate-pulse")} /> : <Mic className={isHero ? "h-5 w-5" : "h-4 w-4"} />}
+            </Button>
+          </div>
         )}
         <Button 
           type="submit" 
