@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
-import { Moon, Mail, Heart, MapPin, Phone, Instagram, Twitter, Youtube, Send, Sparkles } from 'lucide-react';
+import { Moon, Mail, Heart, MapPin, Phone, Instagram, Twitter, Youtube, Linkedin, Facebook, Sparkles, Send } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 
 const exploreLinks = [
   { to: '/ruya-tabirleri', label: 'Rüya Tabirleri' },
@@ -25,25 +26,31 @@ const legalLinks = [
   { to: '/kullanim-kosullari', label: 'Kullanım Koşulları' },
 ];
 
-const socials = [
-  { icon: Instagram, href: '#', label: 'Instagram' },
-  { icon: Twitter, href: '#', label: 'Twitter' },
-  { icon: Youtube, href: '#', label: 'YouTube' },
-];
+const socialIconMap = [
+  { key: 'socialInstagram', icon: Instagram, label: 'Instagram' },
+  { key: 'socialTwitter',   icon: Twitter,   label: 'Twitter' },
+  { key: 'socialYoutube',   icon: Youtube,   label: 'YouTube' },
+  { key: 'socialFacebook',  icon: Facebook,  label: 'Facebook' },
+  { key: 'socialLinkedin',  icon: Linkedin,  label: 'LinkedIn' },
+] as const;
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
+  const { settings } = useSiteSettings();
+
+  // Dinamik sosyal medya listesi (sadece URL girilmiş olanlar)
+  const dynamicSocials = socialIconMap
+    .map((s) => ({ ...s, href: (settings as Record<string, string>)[s.key] || '' }))
+    .filter((s) => s.href.trim() !== '');
 
   return (
     <footer className="relative overflow-hidden bg-slate-950 text-slate-300">
-      {/* Decorative gradient blobs */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute -top-32 left-1/4 w-[480px] h-[480px] rounded-full bg-violet-600/15 blur-[120px]" />
         <div className="absolute -bottom-40 right-1/4 w-[520px] h-[520px] rounded-full bg-blue-600/15 blur-[140px]" />
         <div className="absolute top-1/2 left-0 w-72 h-72 rounded-full bg-fuchsia-600/10 blur-[100px]" />
       </div>
 
-      {/* Grid pattern overlay */}
       <div
         className="absolute inset-0 opacity-[0.04] pointer-events-none"
         style={{
@@ -54,11 +61,9 @@ export function Footer() {
       />
 
       <div className="relative">
-        {/* Top accent line */}
         <div className="h-px w-full bg-gradient-to-r from-transparent via-violet-500/60 to-transparent" />
 
         <div className="container py-16 md:py-20">
-          {/* Top section: brand + tagline + columns */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-10">
             {/* Brand block */}
             <div className="lg:col-span-5">
@@ -84,19 +89,32 @@ export function Footer() {
                 bilinçaltınızın sesine kulak verin. Her gece, yeni bir keşif.
               </p>
 
-              {/* Contact pills */}
+              {/* Contact pills (dinamik) */}
               <div className="flex flex-wrap gap-2.5">
-                <a
-                  href="mailto:info@ruyatabirleri.com"
-                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-white/5 border border-white/10 hover:border-violet-400/40 hover:bg-white/10 transition-colors text-sm"
-                >
-                  <Mail className="h-3.5 w-3.5 text-violet-300" />
-                  info@ruyatabirleri.com
-                </a>
-                <span className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-white/5 border border-white/10 text-sm">
-                  <MapPin className="h-3.5 w-3.5 text-blue-300" />
-                  İstanbul, Türkiye
-                </span>
+                {settings.contactEmail && (
+                  <a
+                    href={`mailto:${settings.contactEmail}`}
+                    className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-white/5 border border-white/10 hover:border-violet-400/40 hover:bg-white/10 transition-colors text-sm"
+                  >
+                    <Mail className="h-3.5 w-3.5 text-violet-300" />
+                    {settings.contactEmail}
+                  </a>
+                )}
+                {settings.contactPhone && (
+                  <a
+                    href={`tel:${settings.contactPhone.replace(/[^\d+]/g, '')}`}
+                    className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-white/5 border border-white/10 hover:border-emerald-400/40 hover:bg-white/10 transition-colors text-sm"
+                  >
+                    <Phone className="h-3.5 w-3.5 text-emerald-300" />
+                    {settings.contactPhone}
+                  </a>
+                )}
+                {settings.contactAddress && (
+                  <span className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-white/5 border border-white/10 text-sm">
+                    <MapPin className="h-3.5 w-3.5 text-blue-300" />
+                    {settings.contactAddress}
+                  </span>
+                )}
               </div>
             </div>
 
@@ -166,21 +184,25 @@ export function Footer() {
 
           {/* Socials + bottom */}
           <div className="mt-14 pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-3">
-              <span className="text-xs text-slate-500 uppercase tracking-widest">Takip Et</span>
-              <div className="flex items-center gap-2">
-                {socials.map((s) => (
-                  <a
-                    key={s.label}
-                    href={s.href}
-                    aria-label={s.label}
-                    className="group w-9 h-9 rounded-full bg-white/5 border border-white/10 hover:border-violet-400/50 hover:bg-gradient-to-br hover:from-violet-500/20 hover:to-fuchsia-500/20 flex items-center justify-center transition-all"
-                  >
-                    <s.icon className="h-4 w-4 text-slate-400 group-hover:text-white transition-colors" />
-                  </a>
-                ))}
+            {dynamicSocials.length > 0 && (
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-slate-500 uppercase tracking-widest">Takip Et</span>
+                <div className="flex items-center gap-2">
+                  {dynamicSocials.map((s) => (
+                    <a
+                      key={s.label}
+                      href={s.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={s.label}
+                      className="group w-9 h-9 rounded-full bg-white/5 border border-white/10 hover:border-violet-400/50 hover:bg-gradient-to-br hover:from-violet-500/20 hover:to-fuchsia-500/20 flex items-center justify-center transition-all"
+                    >
+                      <s.icon className="h-4 w-4 text-slate-400 group-hover:text-white transition-colors" />
+                    </a>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-6">
               <p className="text-xs text-slate-500">
