@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
@@ -389,8 +388,9 @@ export function UnifiedDashboard({ onNavigate }: UnifiedDashboardProps) {
         .not('category_id', 'is', null);
 
       const categoryMap = new Map<string, number>();
-      categoryDist.data?.forEach((d: { categories?: { name?: string } }) => {
-        const name = d.categories?.name || 'Kategorisiz';
+      categoryDist.data?.forEach((d) => {
+        const cat = d.categories as { name?: string } | null;
+        const name = cat?.name || 'Kategorisiz';
         categoryMap.set(name, (categoryMap.get(name) || 0) + 1);
       });
       const categoryData = Array.from(categoryMap.entries())
@@ -481,7 +481,7 @@ export function UnifiedDashboard({ onNavigate }: UnifiedDashboardProps) {
   const secondaryStats: SecondaryStatProps[] = [
     { label: 'Öne Çıkan Rüya', value: stats?.totals.featured || 0, icon: Star, gradient: 'from-yellow-500 to-amber-500', bgClass: 'bg-yellow-500/10' },
     { label: 'Toplam Beğeni', value: (stats?.totals.totalLikes || 0).toLocaleString('tr-TR'), icon: Heart, gradient: 'from-rose-500 to-pink-500', bgClass: 'bg-rose-500/10' },
-    { label: 'Bu Hafta Rüya', value: stats?.weekly.thisWeekDreams || 0, previousValue: stats?.weekly.lastWeekDreams || 0, icon: TrendingUp, gradient: 'from-emerald-500 to-teal-500', bgClass: 'bg-emerald-500/10' },
+    { label: 'Bu Hafta Rüya', value: stats?.weekly.thisWeekDreams || 0, icon: TrendingUp, gradient: 'from-emerald-500 to-teal-500', bgClass: 'bg-emerald-500/10' },
     { label: 'Onay Bekleyen', value: stats?.totals.pendingComments || 0, icon: Clock, gradient: 'from-amber-500 to-orange-500', bgClass: 'bg-amber-500/10' },
   ];
 

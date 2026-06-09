@@ -1,4 +1,4 @@
-// @ts-nocheck\n// Site ayarlarını Supabase'den çeken ve tüm uygulamada paylaşılan hook
+// Site ayarlarını Supabase'den çeken ve tüm uygulamada paylaşılan hook
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 

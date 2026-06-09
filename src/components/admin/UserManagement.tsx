@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
@@ -254,7 +253,7 @@ export function UserManagement() {
               icon="users"
               title="Kullanıcı bulunamadı"
               description="Arama kriterlerine uygun kullanıcı bulunamadı."
-              action={searchQuery ? { label: 'Aramayı Temizle', onClick: () => setSearchQuery('') } : undefined}
+              action={searchTerm ? { label: 'Aramayı Temizle', onClick: () => setSearchTerm('') } : undefined}
             />
           </div>
         ) : (

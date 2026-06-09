@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useEffect, useMemo } from 'react';
 import { t } from '@/constants/translations';
 import { Navigate, Link, useSearchParams } from 'react-router-dom';

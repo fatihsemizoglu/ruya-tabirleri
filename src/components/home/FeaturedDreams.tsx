@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -56,14 +55,14 @@ export function FeaturedDreams() {
         if (error) throw error;
 
         if (data) {
-          const mapped = data.map((d: any, index: number) => ({
+          const mapped = data.map((d: { id: string; title: string; slug: string; view_count: number | null; like_count: number | null; is_featured: boolean | null; categories: { name: string } | null }, index: number) => ({
             id: d.id,
             title: d.title,
             slug: d.slug,
             view_count: d.view_count || 0,
             like_count: d.like_count || 0,
-            category: (d.categories)?.name || 'Genel',
-            is_featured: d.is_featured,
+            category: d.categories?.name || 'Genel',
+            is_featured: d.is_featured ?? false,
             gradient: gradients[index % gradients.length],
           }));
           setDreams(mapped);

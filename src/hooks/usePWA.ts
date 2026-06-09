@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useEffect } from 'react';
 
 interface BeforeInstallPromptEvent extends Event {
@@ -19,7 +18,7 @@ export function usePWA() {
   useEffect(() => {
     // Check if already installed
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches 
-      || ((window.navigator as unknown) as Record<string, unknown>).standalone 
+      || !!((window.navigator as unknown as Record<string, unknown>).standalone)
       || document.referrer.includes('android-app://');
     
     setIsInstalled(isStandalone);

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { forwardRef, useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search, TrendingUp, Clock, X, Loader2, Sparkles, ChevronRight, Mic, MicOff } from 'lucide-react';

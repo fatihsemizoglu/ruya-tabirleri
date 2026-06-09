@@ -95,8 +95,6 @@ export function BlogCommentSection({ postId }: BlogCommentSectionProps) {
       data.forEach((comment) => {
         const enrichedComment = {
           ...comment,
-          guest_name: (comment as Record<string, unknown>).guest_name as string | null ?? null,
-          guest_email: (comment as Record<string, unknown>).guest_email as string | null ?? null,
           user: comment.user_id ? (profileMap.get(comment.user_id) as BlogComment['user']) : undefined,
           replies: [] as BlogComment[],
         } as BlogComment;

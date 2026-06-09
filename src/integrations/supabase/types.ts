@@ -119,35 +119,41 @@ export type Database = {
         Row: {
           content: string
           created_at: string
+          guest_email: string | null
+          guest_name: string | null
           id: string
           is_approved: boolean | null
           like_count: number | null
           parent_id: string | null
           post_id: string
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           content: string
           created_at?: string
+          guest_email?: string | null
+          guest_name?: string | null
           id?: string
           is_approved?: boolean | null
           like_count?: number | null
           parent_id?: string | null
           post_id: string
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           content?: string
           created_at?: string
+          guest_email?: string | null
+          guest_name?: string | null
           id?: string
           is_approved?: boolean | null
           like_count?: number | null
           parent_id?: string | null
           post_id?: string
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -380,31 +386,37 @@ export type Database = {
           content: string
           created_at: string
           dream_id: string
+          guest_email: string | null
+          guest_name: string | null
           id: string
           is_approved: boolean | null
           like_count: number | null
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           content: string
           created_at?: string
           dream_id: string
+          guest_email?: string | null
+          guest_name?: string | null
           id?: string
           is_approved?: boolean | null
           like_count?: number | null
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           content?: string
           created_at?: string
           dream_id?: string
+          guest_email?: string | null
+          guest_name?: string | null
           id?: string
           is_approved?: boolean | null
           like_count?: number | null
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {

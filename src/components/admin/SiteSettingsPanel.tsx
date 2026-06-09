@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
@@ -83,7 +82,7 @@ export function SiteSettings() {
         const loaded = { ...defaultSettings };
         data.forEach((item) => {
           if (item.key in loaded && item.value !== null && item.value !== undefined) {
-            (loaded as Record<string, unknown>)[item.key] = item.value as string;
+            (loaded as Record<string, unknown>)[item.key] = item.value;
           }
         });
         setSettings(loaded);

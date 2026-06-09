@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,9 +24,9 @@ interface Comment {
   is_approved: boolean | null;
   like_count: number | null;
   dream_id: string;
-  user_id: string | null;
-  guest_name: string | null;
-  guest_email: string | null;
+  user_id: string;
+  guest_name?: string | null;
+  guest_email?: string | null;
   dreams?: { title: string; slug: string } | null;
   profiles?: { username: string | null; full_name: string | null } | null;
 }

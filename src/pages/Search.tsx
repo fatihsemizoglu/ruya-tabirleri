@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Search as SearchIcon, Sparkles, Layers, TrendingUp, Grid3X3, List, Eye, Heart, X, SlidersHorizontal, ChevronDown, Star, BookOpen, ArrowUp } from 'lucide-react';

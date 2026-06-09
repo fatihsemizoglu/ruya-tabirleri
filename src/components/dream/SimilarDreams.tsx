@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Eye, Heart, Sparkles, TrendingUp, ArrowRight } from 'lucide-react';
@@ -161,7 +160,7 @@ export function SimilarDreams({ currentDream, categoryId, keywords }: SimilarDre
         </h3>
         {categoryId && (
           <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-foreground">
-            <Link to={`/kategori/${(currentDream.category as unknown as Record<string, unknown>)?.slug || ''}`}>
+            <Link to={`/kategori/${currentDream.category?.slug || ''}`}>
               Kategoride Gör
               <ArrowRight className="ml-1 h-4 w-4" />
             </Link>

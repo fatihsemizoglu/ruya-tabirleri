@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
     if (error) {
       console.error('Error publishing scheduled posts:', error);
       return new Response(
-        JSON.stringify({ error: error.message }),
+        JSON.stringify({ error: error instanceof Error ? error.message : 'Internal server error' }),
         { 
           status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
