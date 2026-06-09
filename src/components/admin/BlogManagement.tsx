@@ -482,6 +482,17 @@ export function BlogManagement() {
               className="bg-slate-50/50 dark:bg-slate-900/50 border-slate-200/60 dark:border-slate-800/40 rounded-xl"
             />
           </div>
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger className="w-[180px] bg-slate-50/50 dark:bg-slate-900/50 border-slate-200/60 dark:border-slate-800/40 rounded-xl text-slate-700 dark:text-slate-200 font-semibold text-xs md:text-sm">
+              <SelectValue placeholder="Kategori Filtrele" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tüm Kategoriler</SelectItem>
+              {categories?.map((cat) => (
+                <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-[180px] bg-slate-50/50 dark:bg-slate-900/50 border-slate-200/60 dark:border-slate-800/40 rounded-xl text-slate-700 dark:text-slate-200 font-semibold text-xs md:text-sm">
               <SelectValue placeholder="Durum Filtrele" />
@@ -633,6 +644,8 @@ export function BlogManagement() {
               action={
                 searchQuery
                   ? { label: 'Aramayı Temizle', onClick: () => setSearchQuery('') }
+                  : categoryFilter !== 'all'
+                  ? { label: 'Filtreyi Temizle', onClick: () => setCategoryFilter('all') }
                   : { label: 'Yeni Blog Yazısı Ekle', onClick: () => { setEditingPost(null); setIsOpen(true); } }
               }
             />
