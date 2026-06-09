@@ -55,7 +55,6 @@ export function VoiceSearchModal({ open, onOpenChange, onResult }: VoiceSearchMo
   const micStreamRef = useRef<MediaStream | null>(null);
   const rafRef = useRef<number | null>(null);
 
-  // Mount kontrolü (SSR uyumlu portal)
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -238,35 +237,31 @@ export function VoiceSearchModal({ open, onOpenChange, onResult }: VoiceSearchMo
   };
 
   // 32 audio bar visualization
-  const audioBars = Array.from({ length: 32 }, (_, i) => {
-    return audioLevel / 100;
-  });
+  const audioBars = Array.from({ length: 32 }, () => audioLevel / 100);
 
   if (!mounted) return null;
 
-  // React Portal kullanarak document.body'ye direkt render ediyoruz.
-  // Bu sayede parent'taki transform/filter gibi CSS özellikleri
-  // modal'ın fixed pozisyonunu bozmaz.
   return createPortal(
     <AnimatePresence>
       {open && (
-        <>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
           {/* Overlay */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => onOpenChange(false)}
-            className="fixed inset-0 z-[9998] bg-black/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
           />
 
-          {/* Modal */}
+          {/* Modal - flex parent ile ortalanmış */}
           <motion.div
             initial={{ opacity: 0, scale: 0.92, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.92, y: 20 }}
             transition={{ type: 'spring', duration: 0.4, bounce: 0.2 }}
-            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[9999] w-[calc(100%-2rem)] max-w-md"
+            className="relative w-full max-w-md max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="relative overflow-hidden rounded-3xl bg-card border border-border/60 shadow-2xl">
               {/* Background gradient */}
@@ -459,7 +454,7 @@ export function VoiceSearchModal({ open, onOpenChange, onResult }: VoiceSearchMo
               </div>
             </div>
           </motion.div>
-        </>
+        </div>
       )}
     </AnimatePresence>,
     document.body

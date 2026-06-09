@@ -482,20 +482,6 @@ export function BlogManagement() {
               className="bg-slate-50/50 dark:bg-slate-900/50 border-slate-200/60 dark:border-slate-800/40 rounded-xl"
             />
           </div>
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-[200px] bg-slate-50/50 dark:bg-slate-900/50 border-slate-200/60 dark:border-slate-800/40 rounded-xl text-slate-700 dark:text-slate-200 font-semibold text-xs md:text-sm">
-              <Filter className="h-3.5 w-3.5 mr-1.5" />
-              <SelectValue placeholder="Kategori" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tüm Kategoriler</SelectItem>
-              {categories?.map((cat) => (
-                <SelectItem key={cat.id} value={cat.id}>
-                  {cat.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-[180px] bg-slate-50/50 dark:bg-slate-900/50 border-slate-200/60 dark:border-slate-800/40 rounded-xl text-slate-700 dark:text-slate-200 font-semibold text-xs md:text-sm">
               <SelectValue placeholder="Durum Filtrele" />
@@ -507,21 +493,6 @@ export function BlogManagement() {
               <SelectItem value="scheduled">Zamanlanmış</SelectItem>
             </SelectContent>
           </Select>
-          {(categoryFilter !== 'all' || statusFilter !== 'all' || searchQuery) && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setSearchQuery('');
-                setStatusFilter('all');
-                setCategoryFilter('all');
-              }}
-              className="h-10 px-3 text-xs font-semibold text-slate-500 hover:text-slate-700"
-            >
-              <X className="h-3.5 w-3.5 mr-1" />
-              Temizle
-            </Button>
-          )}
         </div>
 
         {selectedIds.length > 0 && (
