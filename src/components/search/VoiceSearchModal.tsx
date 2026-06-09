@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mic, MicOff, X, Volume2, Search, Sparkles, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -42,6 +43,7 @@ const EXAMPLE_PHRASES = [
 ];
 
 export function VoiceSearchModal({ open, onOpenChange, onResult }: VoiceSearchModalProps) {
+  const [mounted, setMounted] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [interimTranscript, setInterimTranscript] = useState('');
@@ -52,6 +54,11 @@ export function VoiceSearchModal({ open, onOpenChange, onResult }: VoiceSearchMo
   const analyserRef = useRef<AnalyserNode | null>(null);
   const micStreamRef = useRef<MediaStream | null>(null);
   const rafRef = useRef<number | null>(null);
+
+  // Mount kontrolü (SSR uyumlu portal)
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const cleanupAudio = useCallback(() => {
     if (rafRef.current) {
@@ -235,7 +242,12 @@ export function VoiceSearchModal({ open, onOpenChange, onResult }: VoiceSearchMo
     return audioLevel / 100;
   });
 
-  return (
+  if (!mounted) return null;
+
+  // React Portal kullanarak document.body'ye direkt render ediyoruz.
+  // Bu sayede parent'taki transform/filter gibi CSS özellikleri
+  // modal'ın fixed pozisyonunu bozmaz.
+  return createPortal(
     <AnimatePresence>
       {open && (
         <>
@@ -245,7 +257,7 @@ export function VoiceSearchModal({ open, onOpenChange, onResult }: VoiceSearchMo
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => onOpenChange(false)}
-            className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 z-[9998] bg-black/60 backdrop-blur-sm"
           />
 
           {/* Modal */}
@@ -254,7 +266,7 @@ export function VoiceSearchModal({ open, onOpenChange, onResult }: VoiceSearchMo
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.92, y: 20 }}
             transition={{ type: 'spring', duration: 0.4, bounce: 0.2 }}
-            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[101] w-[calc(100%-2rem)] max-w-md"
+            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[9999] w-[calc(100%-2rem)] max-w-md"
           >
             <div className="relative overflow-hidden rounded-3xl bg-card border border-border/60 shadow-2xl">
               {/* Background gradient */}
@@ -449,6 +461,7 @@ export function VoiceSearchModal({ open, onOpenChange, onResult }: VoiceSearchMo
           </motion.div>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }
