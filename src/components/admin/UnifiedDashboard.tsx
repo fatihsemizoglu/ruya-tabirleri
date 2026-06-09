@@ -563,12 +563,59 @@ export function UnifiedDashboard({ onNavigate }: UnifiedDashboardProps) {
         ))}
       </div>
 
+      {/* Quick actions - 30 Günlük Aktivite Trendi'nin hemen üstünde */}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+        className="bg-card border border-border/50 rounded-2xl p-5 shadow-sm"
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-fuchsia-500 to-pink-500 flex items-center justify-center text-white shadow-sm">
+              <Sparkles className="h-3.5 w-3.5" />
+            </div>
+            Hızlı İşlemler
+          </h3>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <QuickAction
+            label="Yeni Rüya Ekle"
+            description="Yeni tabir oluştur"
+            icon={PlusCircle}
+            onClick={() => onNavigate?.('dreams')}
+            gradient="from-violet-500 to-purple-500"
+          />
+          <QuickAction
+            label="Yeni Blog Yaz"
+            description="Blog içeriği ekle"
+            icon={FileText}
+            onClick={() => onNavigate?.('blog')}
+            gradient="from-blue-500 to-cyan-500"
+          />
+          <QuickAction
+            label="Kategori Yönet"
+            description="Kategorileri düzenle"
+            icon={FolderOpen}
+            onClick={() => onNavigate?.('categories')}
+            gradient="from-emerald-500 to-teal-500"
+          />
+          <QuickAction
+            label="Yorumları İncele"
+            description="Bekleyen onaylar"
+            icon={MessageSquare}
+            onClick={() => onNavigate?.('comments')}
+            gradient="from-amber-500 to-orange-500"
+          />
+        </div>
+      </motion.div>
+
       {/* Charts row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.1 }}
+          transition={{ duration: 0.4, delay: 0.15 }}
           className="lg:col-span-2 bg-card border border-border/50 rounded-2xl p-5 shadow-sm"
         >
           <div className="flex items-center justify-between mb-4">
@@ -863,52 +910,6 @@ export function UnifiedDashboard({ onNavigate }: UnifiedDashboardProps) {
         </motion.div>
       </div>
 
-      {/* Quick actions */}
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.35 }}
-        className="bg-card border border-border/50 rounded-2xl p-5 shadow-sm"
-      >
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-fuchsia-500 to-pink-500 flex items-center justify-center text-white shadow-sm">
-              <Sparkles className="h-3.5 w-3.5" />
-            </div>
-            Hızlı İşlemler
-          </h3>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <QuickAction
-            label="Yeni Rüya Ekle"
-            description="Yeni tabir oluştur"
-            icon={PlusCircle}
-            onClick={() => onNavigate?.('dreams')}
-            gradient="from-violet-500 to-purple-500"
-          />
-          <QuickAction
-            label="Yeni Blog Yaz"
-            description="Blog içeriği ekle"
-            icon={FileText}
-            onClick={() => onNavigate?.('blog')}
-            gradient="from-blue-500 to-cyan-500"
-          />
-          <QuickAction
-            label="Kategori Yönet"
-            description="Kategorileri düzenle"
-            icon={FolderOpen}
-            onClick={() => onNavigate?.('categories')}
-            gradient="from-emerald-500 to-teal-500"
-          />
-          <QuickAction
-            label="Yorumları İncele"
-            description="Bekleyen onaylar"
-            icon={MessageSquare}
-            onClick={() => onNavigate?.('comments')}
-            gradient="from-amber-500 to-orange-500"
-          />
-        </div>
-      </motion.div>
     </div>
   );
 }
