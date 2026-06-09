@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Pencil, Trash2, FolderOpen, Check, Clock } from 'lucide-react';
+import { Plus, Pencil, Trash2, FolderOpen, Check, Clock, icons } from 'lucide-react';
 import { CategoryForm, type CategoryFormValues } from './CategoryForm';
 import { SkeletonAdminRow } from '@/components/ui/skeleton-card';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -16,6 +16,18 @@ import { toast } from 'sonner';
 import type { Tables } from '@/integrations/supabase/types';
 import { AdminPageHeader } from './common/AdminPageHeader';
 import { AdminStatsCards } from './common/AdminStatsCards';
+
+// Icon adını gercek Lucide icon bilesenine cevir
+// Orn: "Sun" -> Sun, "cloud-rain" -> CloudRain
+const getCategoryIcon = (iconName: string | null | undefined) => {
+  if (!iconName) return FolderOpen;
+  const formatted = iconName
+    .charAt(0)
+    .toUpperCase()
+    + iconName.slice(1)
+    .replace(/-([a-z])/g, (_: string, c: string) => c.toUpperCase());
+  return (icons as Record<string, typeof FolderOpen>)[formatted] || FolderOpen;
+};
 
 type Category = Tables<'categories'>;
 
@@ -261,9 +273,12 @@ export function CategoryManagement() {
                 className="bg-white dark:bg-slate-900/10 border border-slate-200/60 dark:border-slate-800/40 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm hover:shadow-md hover:border-slate-350 dark:hover:border-slate-700 transition-all duration-200"
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0 shadow-sm text-lg">
-                    {category.icon || '📁'}
-                  </div>
+                <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0 shadow-sm">
+                  {(() => {
+                    const IconComp = getCategoryIcon(category.icon);
+                    return <IconComp className="w-5 h-5" />;
+                  })()}
+                </div>
 
                   <div className="flex flex-col">
                     <div className="flex items-center gap-2 flex-wrap">
