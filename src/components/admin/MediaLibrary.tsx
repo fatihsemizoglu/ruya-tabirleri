@@ -68,29 +68,69 @@ export function MediaLibrary() {
   const { data: files, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['media-library'],
     queryFn: async () => {
-      const { data, error } = await supabase.storage.from('blog-images').list('', {
+      // 1) List root to find folders
+      const { data: rootItems, error: rootError } = await supabase.storage.from('blog-images').list('', {
         limit: 100,
         sortBy: { column: 'created_at', order: 'desc' },
       });
 
-      if (error) throw error;
+      if (rootError) throw rootError;
 
-      const mediaFiles: MediaFile[] = (data || [])
-        .filter(file => file.name !== '.emptyFolderPlaceholder')
-        .map(file => {
-          const { data: urlData } = supabase.storage
-            .from('blog-images')
-            .getPublicUrl(file.name);
+      // 2) Collect root-level files and discover subfolders
+      const allFiles: { name: string; id: string | null; created_at: string | null; metadata: Record<string, unknown> | null }[] = [];
+      const folders: string[] = [];
 
-          return {
-            id: file.id || file.name,
-            name: file.name,
-            size: file.metadata?.size || 0,
-            type: file.metadata?.mimetype || 'unknown',
-            url: urlData.publicUrl,
-            created_at: file.created_at || new Date().toISOString(),
-          };
+      (rootItems || []).forEach(item => {
+        if (item.name === '.emptyFolderPlaceholder') return;
+        if (item.id) {
+          // It's a file
+          allFiles.push({
+            name: item.name,
+            id: item.id,
+            created_at: item.created_at,
+            metadata: item.metadata as Record<string, unknown> | null,
+          });
+        } else {
+          // It's a folder (no id means it's a "directory" entry)
+          folders.push(item.name);
+        }
+      });
+
+      // 3) List files inside each subfolder
+      for (const folder of folders) {
+        const { data: folderItems } = await supabase.storage.from('blog-images').list(folder, {
+          limit: 100,
+          sortBy: { column: 'created_at', order: 'desc' },
         });
+
+        (folderItems || []).forEach(item => {
+          if (item.name === '.emptyFolderPlaceholder') return;
+          if (item.id) {
+            allFiles.push({
+              name: `${folder}/${item.name}`,
+              id: item.id,
+              created_at: item.created_at,
+              metadata: item.metadata as Record<string, unknown> | null,
+            });
+          }
+        });
+      }
+
+      // 4) Build MediaFile array with public URLs
+      const mediaFiles: MediaFile[] = allFiles.map(file => {
+        const { data: urlData } = supabase.storage
+          .from('blog-images')
+          .getPublicUrl(file.name);
+
+        return {
+          id: file.id || file.name,
+          name: file.name,
+          size: (file.metadata as Record<string, number> | null)?.size || 0,
+          type: (file.metadata as Record<string, string> | null)?.mimetype || 'unknown',
+          url: urlData.publicUrl,
+          created_at: file.created_at || new Date().toISOString(),
+        };
+      });
 
       return mediaFiles;
     },
@@ -404,7 +444,7 @@ export function MediaLibrary() {
 
                   {/* File name */}
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-                    <p className="text-xs text-white truncate">{file.name}</p>
+                    <p className="text-xs text-white truncate" title={file.name}>{file.name.split('/').pop()}</p>
                   </div>
                 </div>
               ))}
@@ -431,7 +471,7 @@ export function MediaLibrary() {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{file.name}</p>
+                      <p className="font-medium truncate" title={file.name}>{file.name.split('/').pop()}</p>
                       <div className="flex gap-2 text-xs text-muted-foreground">
                         <span>{formatFileSize(file.size)}</span>
                         <span>•</span>
@@ -527,7 +567,7 @@ export function MediaLibrary() {
           <DialogHeader>
             <DialogTitle>Dosyayı Sil</DialogTitle>
             <DialogDescription>
-              "{fileToDelete?.name}" dosyasını silmek istediğinize emin misiniz? Bu işlem geri alınamaz.
+              "{fileToDelete?.name.split('/').pop()}" dosyasını silmek istediğinize emin misiniz? Bu işlem geri alınamaz.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
