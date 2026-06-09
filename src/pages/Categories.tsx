@@ -61,35 +61,58 @@ export default function Categories() {
 
   const fetchCategories = async () => {
     try {
-      // Fetch categories
+      // Fetch categories first
       const { data: categoriesData, error: categoriesError } = await supabase
         .from('categories')
         .select('*')
         .order('order_index');
 
       if (categoriesError) throw categoriesError;
+      if (!categoriesData || categoriesData.length === 0) {
+        setCategories([]);
+        return;
+      }
 
-      // Fetch dream counts and total views for each category
-      const { data: dreamsData, error: dreamsError } = await supabase
-        .from('dreams')
-        .select('category_id, view_count')
-        .eq('is_published', true);
-
-      if (dreamsError) throw dreamsError;
-
-      // Calculate stats per category
+      // Sadece gerekli kolonları çek - network payload'ı küçült
+      // 8610+ rüya için pagination yerine aggregation yapıyoruz
+      const allCategoryIds = categoriesData.map(c => c.id);
       const statsMap = new Map<string, { count: number; views: number }>();
-      dreamsData?.forEach(dream => {
-        if (dream.category_id) {
-          const existing = statsMap.get(dream.category_id) || { count: 0, views: 0 };
-          statsMap.set(dream.category_id, {
-            count: existing.count + 1,
-            views: existing.views + (dream.view_count || 0)
-          });
-        }
-      });
 
-      const categoriesWithStats: CategoryWithStats[] = (categoriesData || []).map(cat => ({
+      // Batch fetch: 1000'erli sayfalarla (Supabase max ~1000 rows per request)
+      const PAGE_SIZE = 1000;
+      let offset = 0;
+      let hasMore = true;
+
+      while (hasMore) {
+        const { data: dreamsData, error: dreamsError } = await supabase
+          .from('dreams')
+          .select('category_id, view_count')
+          .eq('is_published', true)
+          .in('category_id', allCategoryIds)
+          .range(offset, offset + PAGE_SIZE - 1);
+
+        if (dreamsError) throw dreamsError;
+
+        if (!dreamsData || dreamsData.length === 0) {
+          hasMore = false;
+          break;
+        }
+
+        dreamsData.forEach(dream => {
+          if (dream.category_id) {
+            const existing = statsMap.get(dream.category_id) || { count: 0, views: 0 };
+            statsMap.set(dream.category_id, {
+              count: existing.count + 1,
+              views: existing.views + (dream.view_count || 0)
+            });
+          }
+        });
+
+        offset += PAGE_SIZE;
+        hasMore = dreamsData.length === PAGE_SIZE;
+      }
+
+      const categoriesWithStats: CategoryWithStats[] = categoriesData.map(cat => ({
         ...cat,
         dream_count: statsMap.get(cat.id)?.count || 0,
         total_views: statsMap.get(cat.id)?.views || 0

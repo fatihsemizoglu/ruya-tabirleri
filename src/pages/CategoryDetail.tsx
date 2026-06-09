@@ -678,14 +678,14 @@ function DreamCard({
     return (
       <Link
         to={`/ruya/${dream.slug}`}
-        className="group flex items-center gap-4 p-4 surface hover:shadow-lg transition-all duration-300"
+        className="group flex items-stretch gap-3 sm:gap-4 p-4 surface hover:shadow-lg hover:border-primary/30 transition-all duration-300 min-h-[88px]"
       >
-        <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shrink-0 shadow-md`}>
+        <div className={`w-14 h-14 self-center rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shrink-0 shadow-md`}>
           <Sparkles className="w-6 h-6 text-white" />
         </div>
 
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1.5">
+        <div className="flex-1 min-w-0 self-center">
+          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
             {dream.is_featured && (
               <Badge variant="secondary" className="rounded-full text-xs gap-1">
                 <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
@@ -706,7 +706,7 @@ function DreamCard({
           </p>
         </div>
 
-        <div className="flex flex-col items-end gap-1 text-xs text-muted-foreground shrink-0">
+        <div className="flex flex-col items-end gap-1 text-xs text-muted-foreground shrink-0 self-center">
           <span className="flex items-center gap-1">
             <Eye className="h-3.5 w-3.5" />
             {dream.view_count.toLocaleString('tr-TR')}
@@ -717,7 +717,7 @@ function DreamCard({
           </span>
         </div>
 
-        <ArrowUpRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all shrink-0" />
+        <ArrowUpRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all shrink-0 self-center" />
       </Link>
     );
   }
@@ -725,14 +725,14 @@ function DreamCard({
   return (
     <Link
       to={`/ruya/${dream.slug}`}
-      className="group relative surface p-5 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden"
+      className="group relative surface p-5 hover:shadow-xl hover:-translate-y-1 hover:border-primary/30 transition-all duration-300 overflow-hidden h-full flex flex-col"
     >
       <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${gradient}`} />
-      <div className={`absolute -top-12 -right-12 w-32 h-32 rounded-full bg-gradient-to-br ${gradient} opacity-0 group-hover:opacity-10 blur-2xl transition-opacity`} />
+      <div className={`absolute -top-12 -right-12 w-32 h-32 rounded-full bg-gradient-to-br ${gradient} opacity-0 group-hover:opacity-10 blur-2xl transition-opacity pointer-events-none`} />
 
-      <div className="relative">
+      <div className="relative flex flex-col h-full">
         <div className="flex items-start justify-between gap-2 mb-3">
-          <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-md`}>
+          <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-md shrink-0`}>
             <Sparkles className="w-5 h-5 text-white" />
           </div>
           {dream.is_featured && (
@@ -743,11 +743,11 @@ function DreamCard({
           )}
         </div>
 
-        <h3 className="text-lg font-serif-dream font-semibold group-hover:text-primary transition-colors line-clamp-2 mb-2">
+        <h3 className="text-lg font-serif-dream font-semibold group-hover:text-primary transition-colors line-clamp-2 mb-2 min-h-[3.5rem]">
           {dream.title}
         </h3>
 
-        <p className="text-sm text-muted-foreground line-clamp-3 mb-4 leading-relaxed">
+        <p className="text-sm text-muted-foreground line-clamp-3 mb-4 leading-relaxed flex-1">
           {dream.content}
         </p>
 
@@ -761,7 +761,7 @@ function DreamCard({
           </div>
         )}
 
-        <div className="flex items-center justify-between text-xs text-muted-foreground pt-3 border-t border-border/60">
+        <div className="flex items-center justify-between text-xs text-muted-foreground pt-3 border-t border-border/60 mt-auto">
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1">
               <Eye className="h-3.5 w-3.5" />

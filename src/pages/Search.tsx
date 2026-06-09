@@ -35,6 +35,8 @@ export default function Search() {
   const [relatedDreams, setRelatedDreams] = useState<DreamSearchResult[]>([]);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [maxStats, setMaxStats] = useState({ maxViews: 1000, maxLikes: 500 });
+  const [currentPage, setCurrentPage] = useState(1);
+  const RESULTS_PER_PAGE = 24;
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Advanced filters state
@@ -150,17 +152,32 @@ export default function Search() {
     return filtered;
   }, [results, advancedFilters]);
 
+  // Pagination
+  const paginatedResults = useMemo(() => {
+    const start = (currentPage - 1) * RESULTS_PER_PAGE;
+    return filteredResults.slice(start, start + RESULTS_PER_PAGE);
+  }, [filteredResults, currentPage]);
+
+  const totalPages = Math.ceil(filteredResults.length / RESULTS_PER_PAGE);
+
+  // Query değişince sayfa 1'e dön
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [query, advancedFilters]);
+
   const performSearch = async (searchTerm: string) => {
     setIsLoading(true);
     try {
+      // Büyük limit (8610+ rüyayı kapsayacak şekilde)
       const { data, error } = await supabase.rpc('search_dreams', {
         search_query: searchTerm,
-        limit_count: 100
+        limit_count: 10000
       });
 
       if (error) throw error;
       setResults((data as DreamSearchResult[]) || []);
-      
+      setCurrentPage(1);
+
       // Save to recent searches
       saveRecentSearch(searchTerm);
     } catch (error) {
@@ -387,7 +404,7 @@ export default function Search() {
                 <>
                   {viewMode === 'grid' ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {filteredResults.map((dream, index) => (
+                      {paginatedResults.map((dream, index) => (
                         <Link
                           key={dream.id}
                           to={`/ruya/${dream.slug}`}
@@ -427,7 +444,7 @@ export default function Search() {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {filteredResults.map((dream, index) => (
+                      {paginatedResults.map((dream, index) => (
                         <Link
                           key={dream.id}
                           to={`/ruya/${dream.slug}`}
@@ -470,8 +487,65 @@ export default function Search() {
                     </div>
                   )}
 
+                  {/* Pagination */}
+                  {totalPages > 1 && (
+                    <div className="mt-10 flex items-center justify-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={currentPage === 1}
+                        onClick={() => {
+                          setCurrentPage(p => Math.max(1, p - 1));
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        className="rounded-lg"
+                      >
+                        Önceki
+                      </Button>
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                          let page = i + 1;
+                          if (totalPages > 7) {
+                            if (currentPage > 4) page = currentPage - 3 + i;
+                            if (currentPage > totalPages - 4) page = totalPages - 6 + i;
+                          }
+                          if (page < 1 || page > totalPages) return null;
+                          return (
+                            <Button
+                              key={page}
+                              variant={page === currentPage ? 'default' : 'outline'}
+                              size="sm"
+                              onClick={() => {
+                                setCurrentPage(page);
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                              }}
+                              className="rounded-lg min-w-9"
+                            >
+                              {page}
+                            </Button>
+                          );
+                        })}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={currentPage === totalPages}
+                        onClick={() => {
+                          setCurrentPage(p => Math.min(totalPages, p + 1));
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        className="rounded-lg"
+                      >
+                        Sonraki
+                      </Button>
+                      <span className="text-xs text-muted-foreground ml-2 hidden sm:inline">
+                        Sayfa {currentPage} / {totalPages}
+                      </span>
+                    </div>
+                  )}
+
                   {/* Related Dreams Section */}
-                  {relatedDreams.length > 0 && filteredResults.length < 10 && (
+                  {relatedDreams.length > 0 && paginatedResults.length < 6 && currentPage === 1 && (
                     <div className="mt-12 pt-8 border-t">
                       <div className="flex items-center gap-2 mb-6">
                         <Star className="h-5 w-5 text-primary" />

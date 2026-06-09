@@ -40,7 +40,7 @@ export function Footer() {
 
   // Dinamik sosyal medya listesi (sadece URL girilmiş olanlar)
   const dynamicSocials = socialIconMap
-    .map((s) => ({ ...s, href: (settings as Record<string, string>)[s.key] || '' }))
+    .map((s) => ({ ...s, href: (settings as unknown as Record<string, string>)[s.key] || '' }))
     .filter((s) => s.href.trim() !== '');
 
   return (

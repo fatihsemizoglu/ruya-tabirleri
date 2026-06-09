@@ -297,6 +297,12 @@ export default function Popular() {
     year: 'Bu Yıl',
   };
 
+  // Seçili kategorinin bilgisini getir
+  const selectedCategoryData = selectedCategory !== 'all' ? categories[selectedCategory] : null;
+  const categorySelectLabel = selectedCategoryData
+    ? `${selectedCategoryData.icon || ''} ${selectedCategoryData.name}`.trim()
+    : 'Tüm Kategoriler';
+
   const DreamCard = ({ dream, index }: { dream: Dream; index: number }) => {
     const category = dream.category_id ? categories[dream.category_id] : null;
     const isTopThree = activeTab === 'trending' && index < 3;
@@ -631,15 +637,23 @@ export default function Popular() {
               </Select>
 
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="w-[170px] h-10 rounded-xl bg-muted/30 border-border/50">
-                  <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
-                  <SelectValue placeholder="Kategori" />
+                <SelectTrigger className="w-[200px] h-10 rounded-xl bg-muted/30 border-border/50">
+                  <Filter className="h-4 w-4 mr-2 text-muted-foreground shrink-0" />
+                  <SelectValue placeholder="Tüm Kategoriler">
+                    {categorySelectLabel}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tüm Kategoriler</SelectItem>
+                  <SelectItem value="all">
+                    <span className="text-base leading-none">🌙</span>
+                    <span>Tüm Kategoriler</span>
+                  </SelectItem>
                   {Object.values(categories).map((category) => (
                     <SelectItem key={category.id} value={category.id}>
-                      {category.icon} {category.name}
+                      {category.icon && (
+                        <span className="text-base leading-none">{category.icon}</span>
+                      )}
+                      <span>{category.name}</span>
                     </SelectItem>
                   ))}
                 </SelectContent>

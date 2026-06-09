@@ -26,6 +26,16 @@ export default {
       fontFamily: {
         sans: ["Inter", "Plus Jakarta Sans", "Manrope", "system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "sans-serif"],
         serif: ["Inter", "Plus Jakarta Sans", "system-ui", "sans-serif"],
+        'serif-dream': ['"Playfair Display"', '"Cormorant Garamond"', 'Georgia', '"Times New Roman"', 'serif'],
+      },
+      fontSize: {
+        '4.5': ['1.125rem', { lineHeight: '1.75rem' }],
+      },
+      width: {
+        '4.5': '1.125rem',
+      },
+      height: {
+        '4.5': '1.125rem',
       },
       spacing: {
         '4.5': '1.125rem',

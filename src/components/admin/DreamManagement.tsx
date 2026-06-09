@@ -10,7 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Pencil, Trash2, Star, BookOpen, Check, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Pencil, Trash2, Star, BookOpen, Check, ChevronLeft, ChevronRight, Filter, X } from 'lucide-react';
 import { DreamForm, type DreamFormValues } from './DreamForm';
 import { SkeletonAdminRow } from '@/components/ui/skeleton-card';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -45,32 +45,48 @@ export function DreamManagement() {
   const [editingDream, setEditingDream] = useState<Dream | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const queryClient = useQueryClient();
 
-  // Toplam rüya sayısını çek
+  // Toplam rüya sayısını çek (filtreye göre server-side)
   const { data: totalCount } = useQuery({
-    queryKey: ['admin-dreams-count'],
+    queryKey: ['admin-dreams-count', statusFilter, categoryFilter],
     queryFn: async () => {
-      const { count, error } = await supabase
+      let query = supabase
         .from('dreams')
         .select('*', { count: 'exact', head: true });
+
+      if (statusFilter === 'published') query = query.eq('is_published', true);
+      if (statusFilter === 'draft') query = query.eq('is_published', false);
+      if (statusFilter === 'featured') query = query.eq('is_featured', true);
+      if (categoryFilter !== 'all') query = query.eq('category_id', categoryFilter);
+
+      const { count, error } = await query;
       if (error) throw error;
       return count || 0;
     },
-    staleTime: 60000,
+    staleTime: 30000,
   });
 
   const { data: dreams, isLoading } = useQuery({
-    queryKey: ['admin-dreams', currentPage],
+    queryKey: ['admin-dreams', currentPage, statusFilter, categoryFilter],
     queryFn: async () => {
       const from = (currentPage - 1) * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
-      const { data, error } = await supabase
+
+      let query = supabase
         .from('dreams')
         .select('*, categories(name, slug)')
-        .order('created_at', { ascending: false })
-        .range(from, to);
+        .order('created_at', { ascending: false });
+
+      // Server-side filtreleme (daha hızlı - az veri çekilir)
+      if (statusFilter === 'published') query = query.eq('is_published', true);
+      if (statusFilter === 'draft') query = query.eq('is_published', false);
+      if (statusFilter === 'featured') query = query.eq('is_featured', true);
+      if (categoryFilter !== 'all') query = query.eq('category_id', categoryFilter);
+
+      const { data, error } = await query.range(from, to);
       if (error) throw error;
       return data;
     },
@@ -324,6 +340,20 @@ export function DreamManagement() {
               className="bg-slate-50/50 dark:bg-slate-900/50 border-slate-200/60 dark:border-slate-800/40 rounded-xl"
             />
           </div>
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger className="w-[200px] bg-slate-50/50 dark:bg-slate-900/50 border-slate-200/60 dark:border-slate-800/40 rounded-xl text-slate-700 dark:text-slate-200 font-semibold text-xs md:text-sm">
+              <Filter className="h-3.5 w-3.5 mr-1.5" />
+              <SelectValue placeholder="Kategori" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tüm Kategoriler</SelectItem>
+              {categories?.map((cat) => (
+                <SelectItem key={cat.id} value={cat.id}>
+                  {cat.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-[180px] bg-slate-50/50 dark:bg-slate-900/50 border-slate-200/60 dark:border-slate-800/40 rounded-xl text-slate-700 dark:text-slate-200 font-semibold text-xs md:text-sm">
               <SelectValue placeholder="Durum Filtrele" />
@@ -335,6 +365,22 @@ export function DreamManagement() {
               <SelectItem value="featured">Öne Çıkan</SelectItem>
             </SelectContent>
           </Select>
+          {(categoryFilter !== 'all' || statusFilter !== 'all' || searchQuery) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSearchQuery('');
+                setStatusFilter('all');
+                setCategoryFilter('all');
+                setCurrentPage(1);
+              }}
+              className="h-10 px-3 text-xs font-semibold text-slate-500 hover:text-slate-700"
+            >
+              <X className="h-3.5 w-3.5 mr-1" />
+              Temizle
+            </Button>
+          )}
         </div>
 
         {selection.selectedIds.length > 0 && (
@@ -472,12 +518,14 @@ export function DreamManagement() {
               title="Rüya tabiri bulunamadı"
               description="Aradığınız kriterlere uygun rüya tabiri bulunamadı. Filtreleri değiştirip tekrar deneyin."
               action={
-                searchQuery || statusFilter !== 'all'
+                searchQuery || statusFilter !== 'all' || categoryFilter !== 'all'
                   ? {
                       label: 'Filtreleri Temizle',
                       onClick: () => {
                         setSearchQuery('');
                         setStatusFilter('all');
+                        setCategoryFilter('all');
+                        setCurrentPage(1);
                       },
                     }
                   : { label: 'Yeni Rüya Tabiri Ekle', onClick: () => { setEditingDream(null); setIsOpen(true); } }

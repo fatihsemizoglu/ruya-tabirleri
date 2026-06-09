@@ -14,7 +14,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/comp
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Pencil, Trash2, Eye, Star, FileText, CalendarIcon, Clock, Check } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, Star, FileText, CalendarIcon, Clock, Check, Filter, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
@@ -49,6 +49,7 @@ export function BlogManagement() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState('all');
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
@@ -71,12 +72,19 @@ export function BlogManagement() {
   });
 
   const { data: posts, isLoading } = useQuery({
-    queryKey: ['admin-blog-posts'],
+    queryKey: ['admin-blog-posts', categoryFilter],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('blog_posts')
         .select('*, blog_categories(name)')
         .order('created_at', { ascending: false });
+
+      // Server-side kategori filtresi (hızlı)
+      if (categoryFilter !== 'all') {
+        query = query.eq('category_id', categoryFilter);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },
@@ -278,15 +286,18 @@ export function BlogManagement() {
   };
 
   const filteredPosts = posts?.filter((post) => {
-    const matchesSearch = 
-      post.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    const matchesSearch =
+      post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (post.excerpt && post.excerpt.toLowerCase().includes(searchQuery.toLowerCase()));
-    
-    if (statusFilter === 'all') return matchesSearch;
-    if (statusFilter === 'published') return matchesSearch && post.is_published;
-    if (statusFilter === 'draft') return matchesSearch && !post.is_published && !post.scheduled_at;
-    if (statusFilter === 'scheduled') return matchesSearch && !post.is_published && post.scheduled_at;
-    return matchesSearch;
+
+    const matchesStatus =
+      statusFilter === 'all' ? true :
+      statusFilter === 'published' ? post.is_published :
+      statusFilter === 'draft' ? (!post.is_published && !post.scheduled_at) :
+      statusFilter === 'scheduled' ? (!post.is_published && !!post.scheduled_at) :
+      true;
+
+    return matchesSearch && matchesStatus;
   }) || [];
 
   const toggleSelectAll = () => {
@@ -471,6 +482,20 @@ export function BlogManagement() {
               className="bg-slate-50/50 dark:bg-slate-900/50 border-slate-200/60 dark:border-slate-800/40 rounded-xl"
             />
           </div>
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger className="w-[200px] bg-slate-50/50 dark:bg-slate-900/50 border-slate-200/60 dark:border-slate-800/40 rounded-xl text-slate-700 dark:text-slate-200 font-semibold text-xs md:text-sm">
+              <Filter className="h-3.5 w-3.5 mr-1.5" />
+              <SelectValue placeholder="Kategori" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tüm Kategoriler</SelectItem>
+              {categories?.map((cat) => (
+                <SelectItem key={cat.id} value={cat.id}>
+                  {cat.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-[180px] bg-slate-50/50 dark:bg-slate-900/50 border-slate-200/60 dark:border-slate-800/40 rounded-xl text-slate-700 dark:text-slate-200 font-semibold text-xs md:text-sm">
               <SelectValue placeholder="Durum Filtrele" />
@@ -482,6 +507,21 @@ export function BlogManagement() {
               <SelectItem value="scheduled">Zamanlanmış</SelectItem>
             </SelectContent>
           </Select>
+          {(categoryFilter !== 'all' || statusFilter !== 'all' || searchQuery) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSearchQuery('');
+                setStatusFilter('all');
+                setCategoryFilter('all');
+              }}
+              className="h-10 px-3 text-xs font-semibold text-slate-500 hover:text-slate-700"
+            >
+              <X className="h-3.5 w-3.5 mr-1" />
+              Temizle
+            </Button>
+          )}
         </div>
 
         {selectedIds.length > 0 && (

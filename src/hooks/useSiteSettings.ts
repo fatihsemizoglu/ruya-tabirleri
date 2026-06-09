@@ -83,7 +83,7 @@ export function useSiteSettings() {
         data?.forEach((row: { key: string; value: unknown }) => {
           if (row.key in merged && row.value !== null && row.value !== undefined) {
             // value JSON'dan gelebilir, string ise direkt ata
-            (merged as Record<string, unknown>)[row.key] = row.value as string;
+            (merged as unknown as Record<string, unknown>)[row.key] = row.value as string;
           }
         });
 
