@@ -270,3 +270,5 @@ export function BlogCategoryManagement() {
     </div>
   );
 }
+
+export default BlogCategoryManagement;

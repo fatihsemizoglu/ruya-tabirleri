@@ -343,3 +343,5 @@ export function CommentManagement() {
     </div>
   );
 }
+
+export default CommentManagement;

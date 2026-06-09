@@ -425,3 +425,5 @@ export function BlogCommentManagement() {
     </div>
   );
 }
+
+export default BlogCommentManagement;

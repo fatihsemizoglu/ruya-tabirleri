@@ -220,6 +220,7 @@ export function BlogSection() {
                         src={post.featured_image}
                         alt={post.title}
                         loading="lazy"
+                        decoding="async"
                         onError={(e) => {
                           (e.currentTarget as HTMLImageElement).style.display = 'none';
                         }}
@@ -269,6 +270,7 @@ export function BlogSection() {
                             src={post.author.avatar_url}
                             alt={post.author.full_name || ''}
                             loading="lazy"
+                            decoding="async"
                             className="w-7 h-7 rounded-full object-cover ring-1 ring-border"
                           />
                         ) : (

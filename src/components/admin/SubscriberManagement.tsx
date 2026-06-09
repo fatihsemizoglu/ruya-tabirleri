@@ -305,3 +305,5 @@ export function SubscriberManagement() {
     </div>
   );
 }
+
+export default SubscriberManagement;

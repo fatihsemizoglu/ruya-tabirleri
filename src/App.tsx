@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { lazy, Suspense } from "react";
@@ -40,7 +40,7 @@ const SubscriptionVerify = lazy(() => import("./pages/SubscriptionVerify"));
 const SubscriptionCancel = lazy(() => import("./pages/SubscriptionCancel"));
 const DreamInterpret = lazy(() => import("./pages/DreamInterpret"));
 
-const queryClient = new QueryClient();
+import { queryClient } from "@/lib/query/client";
 
 // Loading fallback for lazy routes
 const PageLoader = () => (

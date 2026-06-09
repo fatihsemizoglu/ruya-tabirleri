@@ -472,6 +472,8 @@ export function Header() {
                                   <img
                                     src={p.featured_image}
                                     alt={p.title}
+                                    loading="lazy"
+                                    decoding="async"
                                     className="w-full h-full object-cover"
                                   />
                                 ) : (

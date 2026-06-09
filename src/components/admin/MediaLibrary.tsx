@@ -587,3 +587,5 @@ export function MediaLibrary() {
     </div>
   );
 }
+
+export default MediaLibrary;

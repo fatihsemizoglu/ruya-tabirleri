@@ -340,3 +340,5 @@ export function CategoryManagement() {
     </div>
   );
 }
+
+export default CategoryManagement;

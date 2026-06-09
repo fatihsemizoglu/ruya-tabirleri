@@ -407,7 +407,7 @@ export default function Search() {
                         <Link
                           key={dream.id}
                           to={`/ruya/${dream.slug}`}
-                          className="group dream-card"
+                          className="group dream-card render-optimize"
                           style={{ animationDelay: `${index * 50}ms` }}
                         >
                           <div className="flex items-start justify-between mb-3">
@@ -447,7 +447,7 @@ export default function Search() {
                         <Link
                           key={dream.id}
                           to={`/ruya/${dream.slug}`}
-                          className="group block dream-card"
+                          className="group block dream-card render-optimize"
                         >
                           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                             <div className="flex-1">

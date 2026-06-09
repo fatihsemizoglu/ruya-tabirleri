@@ -353,3 +353,5 @@ export function SiteSettings() {
     </div>
   );
 }
+
+export default SiteSettings;

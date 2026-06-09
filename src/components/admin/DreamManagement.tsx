@@ -537,3 +537,5 @@ export function DreamManagement() {
     </div>
   );
 }
+
+export default DreamManagement;

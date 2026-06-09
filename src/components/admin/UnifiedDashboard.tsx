@@ -913,3 +913,5 @@ export function UnifiedDashboard({ onNavigate }: UnifiedDashboardProps) {
     </div>
   );
 }
+
+export default UnifiedDashboard;

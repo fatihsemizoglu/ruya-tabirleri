@@ -323,3 +323,5 @@ export function SearchAnalytics() {
     </div>
   );
 }
+
+export default SearchAnalytics;

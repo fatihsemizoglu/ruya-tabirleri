@@ -72,6 +72,7 @@ export function BlogRelatedPosts({ posts, calculateReadingTime, categoryColor }:
                         alt={post.title}
                         className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
                         loading="lazy"
+                        decoding="async"
                       />
                     ) : (
                       <div className={`w-full h-full bg-gradient-to-br ${gradient} flex items-center justify-center`}>

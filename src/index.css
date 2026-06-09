@@ -221,6 +221,11 @@
     text-wrap: balance;
   }
 
+  .render-optimize {
+    content-visibility: auto;
+    contain-intrinsic-size: 280px;
+  }
+
   .animation-delay-150 {
     animation-delay: 150ms;
   }

@@ -1,20 +1,21 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { UnifiedDashboard } from '@/components/admin/UnifiedDashboard';
-import { CategoryManagement } from '@/components/admin/CategoryManagement';
-import { DreamManagement } from '@/components/admin/DreamManagement';
-import { CommentManagement } from '@/components/admin/CommentManagement';
-import { MessageManagement } from '@/components/admin/MessageManagement';
-import { UserManagement } from '@/components/admin/UserManagement';
-import { SiteSettings } from '@/components/admin/SiteSettingsPanel';
-import { SearchAnalytics } from '@/components/admin/SearchAnalytics';
-import { BlogManagement } from '@/components/admin/BlogManagement';
-import { BlogCategoryManagement } from '@/components/admin/BlogCategoryManagement';
-import { BlogCommentManagement } from '@/components/admin/BlogCommentManagement';
-import { AuditLog } from '@/components/admin/AuditLog';
-import { MediaLibrary } from '@/components/admin/MediaLibrary';
-import { SubscriberManagement } from '@/components/admin/SubscriberManagement';
-import { BulkImportExport } from '@/components/admin/BulkImportExport';
+
+const UnifiedDashboard = lazy(() => import('@/components/admin/UnifiedDashboard'));
+const CategoryManagement = lazy(() => import('@/components/admin/CategoryManagement'));
+const DreamManagement = lazy(() => import('@/components/admin/DreamManagement'));
+const CommentManagement = lazy(() => import('@/components/admin/CommentManagement'));
+const MessageManagement = lazy(() => import('@/components/admin/MessageManagement'));
+const UserManagement = lazy(() => import('@/components/admin/UserManagement'));
+const SiteSettings = lazy(() => import('@/components/admin/SiteSettingsPanel'));
+const SearchAnalytics = lazy(() => import('@/components/admin/SearchAnalytics'));
+const BlogManagement = lazy(() => import('@/components/admin/BlogManagement'));
+const BlogCategoryManagement = lazy(() => import('@/components/admin/BlogCategoryManagement'));
+const BlogCommentManagement = lazy(() => import('@/components/admin/BlogCommentManagement'));
+const AuditLog = lazy(() => import('@/components/admin/AuditLog'));
+const MediaLibrary = lazy(() => import('@/components/admin/MediaLibrary'));
+const SubscriberManagement = lazy(() => import('@/components/admin/SubscriberManagement'));
+const BulkImportExport = lazy(() => import('@/components/admin/BulkImportExport'));
 
 const tabTitles: Record<string, { title: string; description: string }> = {
   overview: { title: 'Genel Bakış', description: 'Tüm metrikler, grafikler ve son aktiviteler' },
@@ -92,7 +93,13 @@ export default function Admin() {
       description={currentTab.description}
       hideHeaderBanner={pagesWithCustomHeader.includes(activeTab)}
     >
-      {renderContent()}
+      <Suspense fallback={
+        <div className="flex items-center justify-center py-20">
+          <div className="h-10 w-10 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+        </div>
+      }>
+        {renderContent()}
+      </Suspense>
     </AdminLayout>
   );
 }

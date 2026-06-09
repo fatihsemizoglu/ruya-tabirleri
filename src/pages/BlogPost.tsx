@@ -335,6 +335,8 @@ export default function BlogPost() {
                   <img
                     src={post.featured_image}
                     alt={post.title}
+                    loading="eager"
+                    decoding="async"
                     className="w-full h-auto"
                   />
                 </div>

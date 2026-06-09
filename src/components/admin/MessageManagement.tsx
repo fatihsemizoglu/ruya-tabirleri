@@ -408,3 +408,5 @@ export function MessageManagement() {
     </div>
   );
 }
+
+export default MessageManagement;

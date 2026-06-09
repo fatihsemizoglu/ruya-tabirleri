@@ -650,3 +650,5 @@ import { useState } from 'react';
      </div>
    );
  }
+
+export default BulkImportExport;

@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Calendar, Eye, Heart, Clock, Tag, ArrowUpRight } from 'lucide-react';
@@ -11,7 +12,7 @@ interface BlogCardProps {
   variant?: 'default' | 'featured' | 'compact';
 }
 
-export function BlogCard({ post, variant = 'default' }: BlogCardProps) {
+export const BlogCard = memo(function BlogCard({ post, variant = 'default' }: BlogCardProps) {
   const formattedDate = formatDistanceToNow(new Date(post.created_at), {
     addSuffix: true,
     locale: tr,
@@ -31,6 +32,8 @@ export function BlogCard({ post, variant = 'default' }: BlogCardProps) {
               <img
                 src={post.featured_image}
                 alt={post.title}
+                loading="lazy"
+                decoding="async"
                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -77,6 +80,8 @@ export function BlogCard({ post, variant = 'default' }: BlogCardProps) {
             <img
               src={post.featured_image}
               alt={post.title}
+              loading="lazy"
+              decoding="async"
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
             />
           ) : (
@@ -122,6 +127,8 @@ export function BlogCard({ post, variant = 'default' }: BlogCardProps) {
                 <img
                   src={post.author.avatar_url}
                   alt={post.author.full_name || 'Yazar'}
+                  loading="lazy"
+                  decoding="async"
                   className="w-10 h-10 rounded-full object-cover ring-2 ring-white/30"
                 />
               ) : (
@@ -171,6 +178,8 @@ export function BlogCard({ post, variant = 'default' }: BlogCardProps) {
             <img
               src={post.featured_image}
               alt={post.title}
+              loading="lazy"
+              decoding="async"
               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
             />
           </div>
@@ -236,6 +245,8 @@ export function BlogCard({ post, variant = 'default' }: BlogCardProps) {
               <img
                 src={post.author.avatar_url}
                 alt={post.author.full_name || 'Yazar'}
+                loading="lazy"
+                decoding="async"
                 className="w-9 h-9 rounded-full object-cover ring-2 ring-slate-100 dark:ring-slate-700"
               />
             ) : (
@@ -265,4 +276,4 @@ export function BlogCard({ post, variant = 'default' }: BlogCardProps) {
       </div>
     </motion.article>
   );
-}
+});
