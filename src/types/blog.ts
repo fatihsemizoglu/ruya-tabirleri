@@ -41,11 +41,13 @@ export interface BlogPost {
 export interface BlogComment {
   id: string;
   post_id: string;
-  user_id: string;
+  user_id: string | null;
   content: string;
   parent_id: string | null;
   is_approved: boolean;
   like_count: number;
+  guest_name: string | null;
+  guest_email: string | null;
   created_at: string;
   updated_at: string;
   user?: {

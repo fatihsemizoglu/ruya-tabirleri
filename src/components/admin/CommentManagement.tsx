@@ -25,7 +25,9 @@ interface Comment {
   is_approved: boolean | null;
   like_count: number | null;
   dream_id: string;
-  user_id: string;
+  user_id: string | null;
+  guest_name: string | null;
+  guest_email: string | null;
   dreams?: { title: string; slug: string } | null;
   profiles?: { username: string | null; full_name: string | null } | null;
 }
@@ -161,7 +163,10 @@ export function CommentManagement() {
   };
 
   const getUsername = (comment: Comment) => {
-    return comment.profiles?.username || comment.profiles?.full_name || 'Anonim';
+    if (comment.profiles?.full_name) return comment.profiles.full_name;
+    if (comment.profiles?.username) return comment.profiles.username;
+    if (comment.guest_name) return `${comment.guest_name} (Misafir)`;
+    return 'Anonim Ziyaretçi';
   };
   const statsData: [{ label: string; value: number; subtext: string; icon: typeof MessageSquare }, { label: string; value: number; subtext: string; icon: typeof CheckCircle }, { label: string; value: number; subtext: string; icon: typeof Clock }] = [
     { label: 'Toplam Yorum', value: commentStats?.all || 0, subtext: 'Tüm kullanıcı yorumları', icon: MessageSquare },

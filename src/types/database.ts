@@ -84,11 +84,13 @@ export interface ViewHistory {
 
 export interface Comment {
   id: string;
-  user_id: string;
+  user_id: string | null;
   dream_id: string;
   content: string;
   is_approved: boolean;
   like_count: number;
+  guest_name: string | null;
+  guest_email: string | null;
   created_at: string;
   updated_at: string;
   profile?: Profile;

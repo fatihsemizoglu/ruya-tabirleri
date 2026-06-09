@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { Heart, Trash2, MoreHorizontal, Flag, Reply, ChevronDown, ChevronUp } from 'lucide-react';
+import { Heart, Trash2, MoreHorizontal, Flag, Reply, ChevronDown, ChevronUp, UserCircle2 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,11 +22,32 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
 import type { Comment, Profile } from '@/types/database';
 
 interface CommentWithProfile extends Comment {
   profiles?: Profile;
 }
+
+// Yazar bilgisini tek bir noktadan uretir (uye veya misafir)
+const getAuthorDisplay = (comment: CommentWithProfile) => {
+  if (comment.profiles?.full_name) {
+    return { name: comment.profiles.full_name, isGuest: false };
+  }
+  if (comment.profiles?.username) {
+    return { name: comment.profiles.username, isGuest: false };
+  }
+  if (comment.guest_name) {
+    return { name: comment.guest_name, isGuest: true };
+  }
+  return { name: 'Anonim Ziyaretçi', isGuest: true };
+};
+
+const getAuthorInitial = (name: string) => {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  return name.charAt(0).toUpperCase();
+};
 
 interface CommentListProps {
   comments: CommentWithProfile[];
@@ -164,6 +185,7 @@ export function CommentList({ comments, dreamId, onRefresh }: CommentListProps) 
     <>
       <div className="space-y-4">
         {displayedComments.map((comment) => {
+          const author = getAuthorDisplay(comment);
           const isOwner = user?.id === comment.user_id;
           const canDelete = isOwner || isAdmin;
           const isLiked = likedComments.has(comment.id);
@@ -176,12 +198,21 @@ export function CommentList({ comments, dreamId, onRefresh }: CommentListProps) 
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-sm font-semibold text-primary">
-                    {comment.profiles?.full_name?.[0] || comment.profiles?.username?.[0] || 'K'}
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 ${
+                    author.isGuest 
+                      ? 'bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-950/40 dark:to-orange-950/40 text-amber-700 dark:text-amber-300'
+                      : 'bg-primary/10 text-primary'
+                  }`}>
+                    {getAuthorInitial(author.name)}
                   </div>
                   <div>
-                    <p className="font-medium">
-                      {comment.profiles?.full_name || comment.profiles?.username || 'Anonim Kullanıcı'}
+                    <p className="font-medium flex items-center gap-1.5">
+                      {author.name}
+                      {author.isGuest && (
+                        <Badge variant="secondary" className="text-[10px] py-0 px-1.5 rounded-md font-normal">
+                          Misafir
+                        </Badge>
+                      )}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {new Date(comment.created_at).toLocaleDateString('tr-TR', {

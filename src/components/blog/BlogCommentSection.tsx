@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircle, Heart, Send, CornerDownRight, Trash2, AlertCircle } from 'lucide-react';
+import { MessageCircle, Heart, Send, CornerDownRight, Trash2, AlertCircle, Info, UserCircle2, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { BlogComment } from '@/types/blog';
@@ -16,10 +19,31 @@ interface BlogCommentSectionProps {
   postId: string;
 }
 
+const getAuthorDisplay = (comment: BlogComment) => {
+  if (comment.user?.full_name) {
+    return { name: comment.user.full_name, avatarUrl: comment.user.avatar_url || undefined, isGuest: false };
+  }
+  if (comment.user?.username) {
+    return { name: comment.user.username, avatarUrl: comment.user.avatar_url || undefined, isGuest: false };
+  }
+  if (comment.guest_name) {
+    return { name: comment.guest_name, avatarUrl: undefined, isGuest: true };
+  }
+  return { name: 'Anonim', avatarUrl: undefined, isGuest: true };
+};
+
+const getAuthorInitial = (name: string) => {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  return name.charAt(0).toUpperCase();
+};
+
 export function BlogCommentSection({ postId }: BlogCommentSectionProps) {
   const { user, profile } = useAuth();
   const [comments, setComments] = useState<BlogComment[]>([]);
   const [newComment, setNewComment] = useState('');
+  const [guestName, setGuestName] = useState('');
+  const [guestEmail, setGuestEmail] = useState('');
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -31,7 +55,6 @@ export function BlogCommentSection({ postId }: BlogCommentSectionProps) {
     if (user) {
       fetchUserLikes();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postId, user]);
 
   const fetchComments = async () => {
@@ -49,30 +72,34 @@ export function BlogCommentSection({ postId }: BlogCommentSectionProps) {
     }
 
     if (data) {
-      // Fetch user profiles for comments
-      const userIds = [...new Set(data.map((c) => c.user_id))];
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('user_id, full_name, username, avatar_url')
-        .in('user_id', userIds);
+      const memberUserIds = [...new Set(data.filter(c => c.user_id).map((c) => c.user_id!))];
+      let profileMap = new Map<string, { id: string; full_name: string | null; username: string | null; avatar_url: string | null }>();
+      
+      if (memberUserIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, full_name, username, avatar_url')
+          .in('user_id', memberUserIds);
 
-      const profileMap = new Map(profiles?.map((p) => [p.user_id, {
-        id: p.user_id,
-        full_name: p.full_name,
-        username: p.username,
-        avatar_url: p.avatar_url,
-      }]));
+        profileMap = new Map(profiles?.map((p) => [p.user_id, {
+          id: p.user_id,
+          full_name: p.full_name,
+          username: p.username,
+          avatar_url: p.avatar_url,
+        }]) || []);
+      }
 
-      // Build comment tree
       const commentMap = new Map<string, BlogComment>();
       const rootComments: BlogComment[] = [];
 
       data.forEach((comment) => {
-        const enrichedComment: BlogComment = {
+        const enrichedComment = {
           ...comment,
-          user: profileMap.get(comment.user_id) as BlogComment['user'],
-          replies: [],
-        };
+          guest_name: (comment as Record<string, unknown>).guest_name as string | null ?? null,
+          guest_email: (comment as Record<string, unknown>).guest_email as string | null ?? null,
+          user: comment.user_id ? (profileMap.get(comment.user_id) as BlogComment['user']) : undefined,
+          replies: [] as BlogComment[],
+        } as BlogComment;
         commentMap.set(comment.id, enrichedComment);
       });
 
@@ -96,23 +123,16 @@ export function BlogCommentSection({ postId }: BlogCommentSectionProps) {
 
   const fetchUserLikes = async () => {
     if (!user) return;
-
     const { data } = await supabase
       .from('blog_comment_likes')
       .select('comment_id')
       .eq('user_id', user.id);
-
     if (data) {
       setLikedComments(new Set(data.map((l) => l.comment_id)));
     }
   };
 
   const handleSubmitComment = async (parentId?: string) => {
-    if (!user) {
-      toast.error('Yorum yapmak için giriş yapmalısınız');
-      return;
-    }
-
     const content = parentId ? replyContent : newComment;
     if (!content.trim()) {
       toast.error('Yorum içeriği boş olamaz');
@@ -121,27 +141,57 @@ export function BlogCommentSection({ postId }: BlogCommentSectionProps) {
 
     setIsSubmitting(true);
 
-    const { error } = await supabase.from('blog_comments').insert({
-      post_id: postId,
-      user_id: user.id,
-      content: content.trim(),
-      parent_id: parentId || null,
-    });
-
-    if (error) {
-      toast.error('Yorum eklenirken bir hata oluştu');
-      console.error(error);
-    } else {
-      toast.success('Yorumunuz eklendi');
-      if (parentId) {
-        setReplyContent('');
-        setReplyingTo(null);
-      } else {
-        setNewComment('');
+    if (user) {
+      const { error } = await supabase.from('blog_comments').insert({
+        post_id: postId,
+        user_id: user.id,
+        content: content.trim(),
+        parent_id: parentId || null,
+      });
+      if (error) {
+        toast.error('Yorum eklenirken bir hata oluştu');
+        setIsSubmitting(false);
+        return;
       }
-      fetchComments();
+    } else {
+      if (!guestName.trim() || guestName.trim().length < 2) {
+        toast.error('Ad Soyad en az 2 karakter olmalıdır');
+        setIsSubmitting(false);
+        return;
+      }
+      if (!guestEmail.trim() || !guestEmail.includes('@')) {
+        toast.error('Geçerli bir e-posta adresi girin');
+        setIsSubmitting(false);
+        return;
+      }
+      if (content.trim().length < 10) {
+        toast.error('Yorum en az 10 karakter olmalıdır');
+        setIsSubmitting(false);
+        return;
+      }
+      const { error } = await supabase.from('blog_comments').insert({
+        post_id: postId,
+        user_id: null,
+        guest_name: guestName.trim(),
+        guest_email: guestEmail.trim().toLowerCase(),
+        content: content.trim(),
+        parent_id: parentId || null,
+      });
+      if (error) {
+        toast.error('Yorum eklenirken bir hata oluştu');
+        setIsSubmitting(false);
+        return;
+      }
     }
 
+    toast.success('Yorumunuz eklendi');
+    if (parentId) {
+      setReplyContent('');
+      setReplyingTo(null);
+    } else {
+      setNewComment('');
+    }
+    fetchComments();
     setIsSubmitting(false);
   };
 
@@ -150,41 +200,20 @@ export function BlogCommentSection({ postId }: BlogCommentSectionProps) {
       toast.error('Beğenmek için giriş yapmalısınız');
       return;
     }
-
     const isLiked = likedComments.has(commentId);
-
     if (isLiked) {
-      await supabase
-        .from('blog_comment_likes')
-        .delete()
-        .eq('comment_id', commentId)
-        .eq('user_id', user.id);
-
-      setLikedComments((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(commentId);
-        return newSet;
-      });
+      await supabase.from('blog_comment_likes').delete().eq('comment_id', commentId).eq('user_id', user.id);
+      setLikedComments((prev) => { const s = new Set(prev); s.delete(commentId); return s; });
     } else {
-      await supabase.from('blog_comment_likes').insert({
-        comment_id: commentId,
-        user_id: user.id,
-      });
-
+      await supabase.from('blog_comment_likes').insert({ comment_id: commentId, user_id: user.id });
       setLikedComments((prev) => new Set(prev).add(commentId));
     }
-
     fetchComments();
   };
 
   const handleDeleteComment = async (commentId: string) => {
     if (!confirm('Bu yorumu silmek istediğinizden emin misiniz?')) return;
-
-    const { error } = await supabase
-      .from('blog_comments')
-      .delete()
-      .eq('id', commentId);
-
+    const { error } = await supabase.from('blog_comments').delete().eq('id', commentId);
     if (error) {
       toast.error('Yorum silinirken bir hata oluştu');
     } else {
@@ -194,6 +223,7 @@ export function BlogCommentSection({ postId }: BlogCommentSectionProps) {
   };
 
   const CommentItem = ({ comment, depth = 0 }: { comment: BlogComment; depth?: number }) => {
+    const author = getAuthorDisplay(comment);
     const isOwner = user?.id === comment.user_id;
     const isLiked = likedComments.has(comment.id);
 
@@ -204,38 +234,40 @@ export function BlogCommentSection({ postId }: BlogCommentSectionProps) {
         className={`${depth > 0 ? 'ml-8 pl-4 border-l-2 border-slate-200 dark:border-slate-700' : ''}`}
       >
         <div className="flex gap-3 py-4">
-          <Avatar className="w-10 h-10 shrink-0">
-            <AvatarImage src={comment.user?.avatar_url || undefined} />
-            <AvatarFallback className="bg-gradient-to-br from-indigo-400 to-purple-500 text-white">
-              {(comment.user?.full_name || comment.user?.username || 'U').charAt(0)}
-            </AvatarFallback>
-          </Avatar>
+          {author.avatarUrl ? (
+            <Avatar className="w-10 h-10 shrink-0">
+              <AvatarImage src={author.avatarUrl} />
+              <AvatarFallback className="bg-gradient-to-br from-indigo-400 to-purple-500 text-white">
+                {getAuthorInitial(author.name)}
+              </AvatarFallback>
+            </Avatar>
+          ) : (
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-sm font-semibold ${
+              author.isGuest
+                ? 'bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-950/40 dark:to-orange-950/40 text-amber-700 dark:text-amber-300'
+                : 'bg-gradient-to-br from-indigo-400 to-purple-500 text-white'
+            }`}>
+              {getAuthorInitial(author.name)}
+            </div>
+          )}
           
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <span className="font-semibold text-slate-900 dark:text-white">
-                {comment.user?.full_name || comment.user?.username || 'Anonim'}
-              </span>
+              <span className="font-semibold text-slate-900 dark:text-white">{author.name}</span>
+              {author.isGuest && (
+                <Badge variant="secondary" className="text-[10px] py-0 px-1.5 rounded-md font-normal">Misafir</Badge>
+              )}
               <span className="text-xs text-slate-500">
-                {formatDistanceToNow(new Date(comment.created_at), {
-                  addSuffix: true,
-                  locale: tr,
-                })}
+                {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true, locale: tr })}
               </span>
             </div>
             
-            <p className="text-slate-700 dark:text-slate-300 text-sm whitespace-pre-wrap">
-              {comment.content}
-            </p>
+            <p className="text-slate-700 dark:text-slate-300 text-sm whitespace-pre-wrap">{comment.content}</p>
             
             <div className="flex items-center gap-4 mt-2">
               <button
                 onClick={() => handleLikeComment(comment.id)}
-                className={`flex items-center gap-1 text-sm transition-colors ${
-                  isLiked
-                    ? 'text-red-500'
-                    : 'text-slate-500 hover:text-red-500'
-                }`}
+                className={`flex items-center gap-1 text-sm transition-colors ${isLiked ? 'text-red-500' : 'text-slate-500 hover:text-red-500'}`}
               >
                 <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
                 {comment.like_count > 0 && comment.like_count}
@@ -252,37 +284,18 @@ export function BlogCommentSection({ postId }: BlogCommentSectionProps) {
               )}
               
               {isOwner && (
-                <button
-                  onClick={() => handleDeleteComment(comment.id)}
-                  className="flex items-center gap-1 text-sm text-slate-500 hover:text-red-500 transition-colors"
-                >
+                <button onClick={() => handleDeleteComment(comment.id)} className="flex items-center gap-1 text-sm text-slate-500 hover:text-red-500 transition-colors">
                   <Trash2 className="w-4 h-4" />
                 </button>
               )}
             </div>
 
-            {/* Reply Form */}
             <AnimatePresence>
-              {replyingTo === comment.id && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="mt-3"
-                >
+              {replyingTo === comment.id && user && (
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mt-3">
                   <div className="flex gap-2">
-                    <Textarea
-                      value={replyContent}
-                      onChange={(e) => setReplyContent(e.target.value)}
-                      placeholder="Yanıtınızı yazın..."
-                      className="min-h-[80px] resize-none"
-                    />
-                    <Button
-                      onClick={() => handleSubmitComment(comment.id)}
-                      disabled={isSubmitting || !replyContent.trim()}
-                      size="sm"
-                      className="shrink-0"
-                    >
+                    <Textarea value={replyContent} onChange={(e) => setReplyContent(e.target.value)} placeholder="Yanıtınızı yazın..." className="min-h-[80px] resize-none" />
+                    <Button onClick={() => handleSubmitComment(comment.id)} disabled={isSubmitting || !replyContent.trim()} size="sm" className="shrink-0">
                       <Send className="w-4 h-4" />
                     </Button>
                   </div>
@@ -292,7 +305,6 @@ export function BlogCommentSection({ postId }: BlogCommentSectionProps) {
           </div>
         </div>
 
-        {/* Replies */}
         {comment.replies && comment.replies.length > 0 && (
           <div className="space-y-0">
             {comment.replies.map((reply) => (
@@ -304,6 +316,8 @@ export function BlogCommentSection({ postId }: BlogCommentSectionProps) {
     );
   };
 
+  const canSubmitGuest = guestName.trim().length >= 2 && guestEmail.includes('@') && newComment.trim().length >= 10;
+
   return (
     <div className="bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-6">
       <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-6">
@@ -311,9 +325,33 @@ export function BlogCommentSection({ postId }: BlogCommentSectionProps) {
         Yorumlar ({comments.reduce((acc, c) => acc + 1 + (c.replies?.length || 0), 0)})
       </h3>
 
-      {/* Comment Form */}
-      {user ? (
-        <div className="mb-6">
+      <div className="mb-6">
+        {!user && (
+          <div className="p-3.5 rounded-xl bg-violet-500/5 border border-violet-500/20 space-y-3 mb-3">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-violet-700 dark:text-violet-300">
+              <Info className="h-3.5 w-3.5" />
+              Yorum yapmak için üye olmak zorunda değilsiniz. Sadece adınız ve e-postanız yeterli.
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="blog-guest-name" className="text-xs font-semibold mb-1.5 flex items-center gap-1.5">
+                  <UserCircle2 className="h-3.5 w-3.5" />
+                  Ad Soyad <span className="text-red-500">*</span>
+                </Label>
+                <Input id="blog-guest-name" value={guestName} onChange={(e) => setGuestName(e.target.value)} placeholder="Adınız Soyadınız" maxLength={100} className="bg-white dark:bg-slate-900" />
+              </div>
+              <div>
+                <Label htmlFor="blog-guest-email" className="text-xs font-semibold mb-1.5 flex items-center gap-1.5">
+                  <Mail className="h-3.5 w-3.5" />
+                  E-posta <span className="text-red-500">*</span>
+                </Label>
+                <Input id="blog-guest-email" type="email" value={guestEmail} onChange={(e) => setGuestEmail(e.target.value)} placeholder="ornek@email.com" maxLength={200} className="bg-white dark:bg-slate-900" />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {user ? (
           <div className="flex gap-3">
             <Avatar className="w-10 h-10 shrink-0">
               <AvatarImage src={profile?.avatar_url || undefined} />
@@ -322,41 +360,27 @@ export function BlogCommentSection({ postId }: BlogCommentSectionProps) {
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <Textarea
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                placeholder="Düşüncelerinizi paylaşın..."
-                className="min-h-[100px] resize-none mb-3"
-              />
-              <Button
-                onClick={() => handleSubmitComment()}
-                disabled={isSubmitting || !newComment.trim()}
-                className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
-              >
+              <Textarea value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="Düşüncelerinizi paylaşın..." className="min-h-[100px] resize-none mb-3" />
+              <Button onClick={() => handleSubmitComment()} disabled={isSubmitting || !newComment.trim()} className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700">
                 <Send className="w-4 h-4 mr-2" />
                 Yorum Yap
               </Button>
             </div>
           </div>
-        </div>
-      ) : (
-        <div className="mb-6 p-4 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center gap-3">
-          <AlertCircle className="w-5 h-5 text-slate-500 shrink-0" />
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            Yorum yapmak için{' '}
-            <Link to="/giris" className="text-indigo-600 hover:underline font-medium">
-              giriş yapın
-            </Link>{' '}
-            veya{' '}
-            <Link to="/kayit" className="text-indigo-600 hover:underline font-medium">
-              kayıt olun
-            </Link>
-            .
-          </p>
-        </div>
-      )}
+        ) : (
+          <div>
+            <Textarea value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="Düşüncelerinizi yazın..." className="min-h-[100px] resize-none mb-3" />
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-slate-500">{newComment.length}/1000 karakter</span>
+              <Button onClick={() => handleSubmitComment()} disabled={isSubmitting || !canSubmitGuest} className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700">
+                {isSubmitting ? <span className="animate-spin w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full" /> : <Send className="w-4 h-4 mr-2" />}
+                Misafir Olarak Yorum Yap
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
 
-      {/* Comments List */}
       {isLoading ? (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
