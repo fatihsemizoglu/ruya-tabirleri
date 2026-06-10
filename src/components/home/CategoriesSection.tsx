@@ -5,41 +5,12 @@ import {
   ArrowRight,
   Sparkles,
   Compass,
-  Cat,
-  Cloud,
-  Users,
-  Heart,
-  Briefcase,
-  Home,
-  Utensils,
-  Car,
-  Moon,
-  Star,
-  Leaf,
-  Music,
-  Book,
-  Gem,
-  Eye,
-  Zap,
-  Sun,
-  CloudRain,
-  Wind,
-  Mountain,
-  Flame,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 
-const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
-  cat: Cat, cloud: Cloud, users: Users, heart: Heart, briefcase: Briefcase,
-  home: Home, utensils: Utensils, car: Car, sparkles: Sparkles, moon: Moon,
-  star: Star, leaf: Leaf, music: Music, book: Book, gem: Gem, eye: Eye,
-  zap: Zap, sun: Sun, cloudrain: CloudRain, wind: Wind, mountain: Mountain,
-  flame: Flame,
-};
 
-const defaultIcons = [Cat, Cloud, Users, Heart, Briefcase, Home, Utensils, Car];
 
 const themeGradients = [
   { bg: 'from-orange-500 to-rose-500', soft: 'from-orange-500/15 to-rose-500/5', text: 'text-orange-600 dark:text-orange-400', border: 'border-orange-500/20' },
@@ -73,12 +44,7 @@ export function CategoriesSection() {
   const [categories, setCategories] = useState<CategoryWithCount[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const getIcon = (iconName: string | null, index: number) => {
-    if (iconName && iconMap[iconName.toLowerCase()]) {
-      return iconMap[iconName.toLowerCase()];
-    }
-    return defaultIcons[index % defaultIcons.length];
-  };
+
 
   useEffect(() => {
     async function fetchCategories() {
@@ -161,7 +127,6 @@ export function CategoriesSection() {
 
   const featured = categories[0];
   const featuredTheme = themeGradients[0];
-  const FeaturedIcon = getIcon(featured?.icon ?? null, 0);
 
   return (
     <section className="relative overflow-hidden">
@@ -270,11 +235,11 @@ export function CategoriesSection() {
                 />
 
                 <div className="relative h-full flex flex-col">
-                  <div
-                    className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${featuredTheme.bg} flex items-center justify-center mb-5 shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-500`}
-                  >
-                    <FeaturedIcon className="h-7 w-7 text-white" />
-                  </div>
+                    <div
+                      className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${featuredTheme.bg} flex items-center justify-center mb-5 shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-500`}
+                    >
+                      <span className="text-3xl">{featured.icon || '📖'}</span>
+                    </div>
 
                   <div className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-foreground/60 mb-2">
                     <Sparkles className="h-3 w-3" />
@@ -330,7 +295,6 @@ export function CategoriesSection() {
 
           {/* Other 7 categories */}
           {categories.slice(1).map((category, index) => {
-            const IconComponent = getIcon(category.icon, index + 1);
             const theme = themeGradients[(index + 1) % themeGradients.length];
 
             return (
@@ -358,7 +322,7 @@ export function CategoriesSection() {
                       <div
                         className={`w-11 h-11 rounded-xl bg-gradient-to-br ${theme.bg} flex items-center justify-center shadow-md group-hover:scale-110 group-hover:rotate-3 transition-all duration-500`}
                       >
-                        <IconComponent className="h-5 w-5 text-white" />
+                        <span className="text-xl">{category.icon || '📖'}</span>
                       </div>
                       <div className="opacity-0 group-hover:opacity-100 -translate-y-1 translate-x-1 group-hover:translate-y-0 group-hover:translate-x-0 transition-all duration-300">
                         <div

@@ -321,7 +321,7 @@ export default function Favorites() {
               <div className="flex items-center gap-2 mb-1.5">
                 {category && (
                   <Badge variant="secondary" className="text-xs">
-                    {category.icon} {category.name}
+                    {category.icon || '📖'} {category.name}
                   </Badge>
                 )}
               </div>
@@ -439,7 +439,7 @@ export default function Favorites() {
                 </div>
                 {category && (
                   <Badge variant="secondary" className="text-xs">
-                    {category.icon} {category.name}
+                    {category.icon || '📖'} {category.name}
                   </Badge>
                 )}
               </div>
@@ -632,7 +632,7 @@ export default function Favorites() {
                       <SelectItem value="all">Tüm Kategoriler</SelectItem>
                       {favoriteCategories.map((category) => (
                         <SelectItem key={category.id} value={category.id}>
-                          {category.icon} {category.name}
+                          {category.icon || '📖'} {category.name}
                         </SelectItem>
                       ))}
                     </SelectContent>

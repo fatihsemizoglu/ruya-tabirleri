@@ -250,7 +250,7 @@ export default function Search() {
   };
 
   const getCategoryIcon = (categoryId: string) => {
-    return categories.find(c => c.id === categoryId)?.icon || '';
+    return categories.find(c => c.id === categoryId)?.icon || '📖';
   };
 
   const activeFilterCount = useMemo(() => {
@@ -307,7 +307,7 @@ export default function Search() {
                     to={`/kategori/${category.slug}`}
                     className="px-4 py-2 text-sm rounded-xl bg-muted hover:bg-primary hover:text-primary-foreground transition-colors flex items-center gap-2"
                   >
-                    <span>{category.icon}</span>
+                    <span>{category.icon || '📖'}</span>
                     <span>{category.name}</span>
                   </Link>
                 ))}

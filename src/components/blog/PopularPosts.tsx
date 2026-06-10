@@ -153,7 +153,7 @@ export function PopularPosts() {
                   </span>
                   {post.category && (
                     <span className="text-primary/70 truncate">
-                      {post.category.icon} {post.category.name}
+                      {post.category.icon || '📖'} {post.category.name}
                     </span>
                   )}
                 </div>

@@ -280,7 +280,7 @@ export default function BlogPost() {
               <div className="flex flex-wrap items-center gap-3 mb-6">
                 {post.category && (
                   <Badge variant="secondary" className="bg-primary/10 text-primary border-0">
-                    {post.category.icon} {post.category.name}
+                    {post.category.icon || '📖'} {post.category.name}
                   </Badge>
                 )}
                 {post.is_featured && (

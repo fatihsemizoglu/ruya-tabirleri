@@ -319,7 +319,7 @@ export default function Popular() {
   // Seçili kategorinin bilgisini getir
   const selectedCategoryData = selectedCategory !== 'all' ? categories[selectedCategory] : null;
   const categorySelectLabel = selectedCategoryData
-    ? `${selectedCategoryData.icon || ''} ${selectedCategoryData.name}`.trim()
+    ? `${selectedCategoryData.icon || '📖'} ${selectedCategoryData.name}`.trim()
     : 'Tüm Kategoriler';
 
   const DreamCard = ({ dream, index }: { dream: Dream; index: number }) => {
@@ -352,7 +352,7 @@ export default function Popular() {
                 )}
                 {category && (
                   <Badge variant="secondary" className="text-xs">
-                    {category.icon} {category.name}
+                    {category.icon || '📖'} {category.name}
                   </Badge>
                 )}
               </div>
@@ -416,7 +416,7 @@ export default function Popular() {
               </div>
               {category && (
                 <Badge variant="secondary" className="text-xs">
-                  {category.icon} {category.name}
+                  {category.icon || '📖'} {category.name}
                 </Badge>
               )}
             </div>
@@ -656,9 +656,7 @@ export default function Popular() {
                   </SelectItem>
                   {Object.values(categories).map((category) => (
                     <SelectItem key={category.id} value={category.id}>
-                      {category.icon && (
-                        <span className="text-base leading-none">{category.icon}</span>
-                      )}
+                      <span className="text-base leading-none">{category.icon || '📖'}</span>
                       <span>{category.name}</span>
                     </SelectItem>
                   ))}
@@ -845,7 +843,7 @@ export default function Popular() {
 
                       {category && (
                         <Badge variant="secondary" className="mb-3">
-                          {category.icon} {category.name}
+                          {category.icon || '📖'} {category.name}
                         </Badge>
                       )}
 

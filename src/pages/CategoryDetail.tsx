@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Eye, Heart, Search, SlidersHorizontal, ChevronUp, TrendingUp, Clock, Star, Grid3X3, List, Filter, X, Tag, Folder, ArrowLeft, Sparkles, BookOpen, ArrowUpRight, icons } from 'lucide-react';
+import { Eye, Heart, Search, SlidersHorizontal, ChevronUp, TrendingUp, Clock, Star, Grid3X3, List, Filter, X, Tag, Folder, ArrowLeft, Sparkles, BookOpen, ArrowUpRight } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -284,13 +284,7 @@ export default function CategoryDetail() {
                 transition={{ duration: 0.5 }}
                 className={`w-24 h-24 md:w-32 md:h-32 rounded-3xl bg-gradient-to-br ${featuredGradient} flex items-center justify-center shadow-2xl shadow-primary/20`}
               >
-                {(() => {
-                  const iconName = category.icon
-                    ? category.icon.charAt(0).toUpperCase() + category.icon.slice(1).replace(/-([a-z])/g, (_: string, c: string) => c.toUpperCase())
-                    : 'Folder';
-                  const IconComp = icons[iconName as keyof typeof icons];
-                  return IconComp ? <IconComp className="w-12 h-12 md:w-16 md:h-16 text-white" /> : <Folder className="w-12 h-12 md:w-16 md:h-16 text-white" />;
-                })()}
+                <span className="text-5xl md:text-6xl">{category.icon || '📖'}</span>
               </motion.div>
 
               <div className="flex-1">

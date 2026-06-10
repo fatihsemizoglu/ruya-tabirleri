@@ -293,7 +293,7 @@ export default function Blog() {
                   <SelectItem value="all">Tüm Kategoriler</SelectItem>
                   {categories.map((category) => (
                     <SelectItem key={category.id} value={category.slug}>
-                      {category.icon} {category.name}
+                      {category.icon || '📖'} {category.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -368,7 +368,7 @@ export default function Blog() {
               animate={{ opacity: 1, y: 0 }}
               className="mb-8 flex items-center gap-3"
             >
-              <span className="text-2xl">{activeCategory.icon}</span>
+              <span className="text-2xl">{activeCategory.icon || '📖'}</span>
               <div>
                 <h2 className="text-2xl font-serif-dream font-bold">{activeCategory.name}</h2>
                 <p className="text-sm text-muted-foreground">{filteredPosts.length} yazı</p>

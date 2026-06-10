@@ -99,7 +99,7 @@ export const BlogCard = memo(function BlogCard({ post, variant = 'default' }: Bl
             )}
             {post.category && (
               <Badge variant="secondary" className="bg-white/20 backdrop-blur-sm text-white border-0">
-                {post.category.icon} {post.category.name}
+                {post.category.icon || '📖'} {post.category.name}
               </Badge>
             )}
           </div>

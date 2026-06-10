@@ -29,7 +29,6 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { BlogCategory } from '@/types/blog';
 import { useQuery } from '@tanstack/react-query';
-import { getIcon } from '@/lib/icons';
 
 interface Category {
   id: string;
@@ -308,7 +307,6 @@ export function Header() {
                       </div>
                     ) : (
                       categories.map((cat) => {
-                        const Icon = getIcon(cat.icon);
                         return (
                           <Link
                             key={cat.id}
@@ -316,11 +314,7 @@ export function Header() {
                             onClick={() => setOpenCategoryMenu(false)}
                             className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-foreground/80 hover:bg-primary/10 hover:text-primary transition-colors"
                           >
-                            {Icon ? (
-                              <Icon className="h-4 w-4 text-primary/70 shrink-0" />
-                            ) : (
-                              <Sparkles className="h-4 w-4 text-primary/70 shrink-0" />
-                            )}
+                            <span className="text-base leading-none shrink-0">{cat.icon || '📖'}</span>
                             <span className="truncate">{cat.name}</span>
                           </Link>
                         );
@@ -410,7 +404,6 @@ export function Header() {
                           </div>
                         ) : (
                           blogCategories.map((bc) => {
-                            const Icon = getIcon(bc.icon);
                             return (
                               <Link
                                 key={bc.id}
@@ -419,11 +412,7 @@ export function Header() {
                                 className="group flex items-start gap-2.5 px-3 py-2 rounded-lg hover:bg-primary/10 transition-colors"
                               >
                                 <div className="w-8 h-8 rounded-lg bg-primary/10 group-hover:bg-primary/20 flex items-center justify-center shrink-0">
-                                  {Icon ? (
-                                    <Icon className="h-4 w-4 text-primary" />
-                                  ) : (
-                                    <Book className="h-4 w-4 text-primary" />
-                                  )}
+                                  <span className="text-base leading-none">{bc.icon || '📖'}</span>
                                 </div>
                                 <div className="min-w-0 flex-1">
                                   <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors truncate">
@@ -669,7 +658,6 @@ export function Header() {
                     <div className="px-3 py-2 text-xs text-muted-foreground">Yükleniyor...</div>
                   ) : (
                     categories.map((cat) => {
-                      const Icon = getIcon(cat.icon);
                       return (
                         <Link
                           key={cat.id}
@@ -677,11 +665,7 @@ export function Header() {
                           onClick={() => setIsMenuOpen(false)}
                           className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-foreground/80 hover:bg-muted transition-colors"
                         >
-                          {Icon ? (
-                            <Icon className="h-4 w-4 text-primary/70 shrink-0" />
-                          ) : (
-                            <Sparkles className="h-4 w-4 text-primary/70 shrink-0" />
-                          )}
+                          <span className="text-base leading-none shrink-0">{cat.icon || '📖'}</span>
                           <span className="truncate">{cat.name}</span>
                         </Link>
                       );
@@ -732,7 +716,6 @@ export function Header() {
                     <div className="px-3 py-2 text-xs text-muted-foreground">Yükleniyor...</div>
                   ) : (
                     blogCategories.map((bc) => {
-                      const Icon = getIcon(bc.icon);
                       return (
                         <Link
                           key={bc.id}
@@ -740,11 +723,7 @@ export function Header() {
                           onClick={() => setIsMenuOpen(false)}
                           className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-foreground/80 hover:bg-muted transition-colors"
                         >
-                          {Icon ? (
-                            <Icon className="h-4 w-4 text-primary/70 shrink-0" />
-                          ) : (
-                            <Book className="h-4 w-4 text-primary/70 shrink-0" />
-                          )}
+                          <span className="text-base leading-none shrink-0">{bc.icon || '📖'}</span>
                           <span className="truncate">{bc.name}</span>
                         </Link>
                       );

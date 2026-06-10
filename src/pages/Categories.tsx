@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   ArrowRight, Search, Grid3X3, List, SlidersHorizontal, 
-  TrendingUp, Clock, SortAsc, Eye, BookOpen, ArrowUp, Folder, icons
+  TrendingUp, Clock, SortAsc, Eye, BookOpen, ArrowUp, Folder
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { PremiumBackground, PremiumBadge, GradientText } from '@/components/layout/PremiumBackground';
@@ -338,11 +338,7 @@ export default function Categories() {
                   <div className="relative">
                     {/* Icon */}
                     <div className="w-14 h-14 rounded-xl bg-muted flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-                      {(() => {
-                        const iconName = category.icon ? category.icon.charAt(0).toUpperCase() + category.icon.slice(1).replace(/-([a-z])/g, (_: string, c: string) => c.toUpperCase()) : '';
-                        const IconComp = iconName ? icons[iconName as keyof typeof icons] : null;
-                        return IconComp ? <IconComp className="w-6 h-6 text-primary" /> : <Folder className="w-6 h-6 text-muted-foreground" />;
-                      })()}
+                      <span className="text-2xl">{category.icon || '📖'}</span>
                     </div>
 
                     {/* Name */}
@@ -382,13 +378,9 @@ export default function Categories() {
                   style={{ animationDelay: `${index * 30}ms` }}
                 >
                   {/* Icon */}
-                  <div className="w-14 h-14 rounded-xl bg-muted flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                    {(() => {
-                      const iconName = category.icon ? category.icon.charAt(0).toUpperCase() + category.icon.slice(1).replace(/-([a-z])/g, (_: string, c: string) => c.toUpperCase()) : '';
-                      const IconComp = iconName ? icons[iconName as keyof typeof icons] : null;
-                      return IconComp ? <IconComp className="w-6 h-6 text-primary" /> : <Folder className="w-6 h-6 text-muted-foreground" />;
-                    })()}
-                  </div>
+                    <div className="w-14 h-14 rounded-xl bg-muted flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                      <span className="text-2xl">{category.icon || '📖'}</span>
+                    </div>
 
                   {/* Content */}
                   <div className="flex-1 min-w-0">
