@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, useScroll, useSpring } from 'framer-motion';
-import { Eye, Heart, Bookmark, ArrowLeft, Calendar, BookOpen, Sparkles, Clock, ChevronRight, Share2, Tag, Folder, Check, Moon } from 'lucide-react';
+import { Eye, Heart, Bookmark, ArrowLeft, Calendar, BookOpen, Sparkles, Clock, ChevronRight, Share2, Tag, Folder, Check, Moon, Star, Brain } from 'lucide-react';
+import DOMPurify from 'dompurify';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -29,6 +30,17 @@ const pickGradient = (seed: string) => {
   for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) | 0;
   return gradientPalette[Math.abs(hash) % gradientPalette.length];
 };
+
+const purifyConfig = {
+  ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'b', 'i', 'u', 's', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'blockquote', 'a', 'span', 'hr', 'pre', 'code', 'sup', 'sub', 'mark'],
+  ALLOWED_ATTR: ['href', 'target', 'rel', 'class', 'id'],
+  FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed'],
+  FORBID_ATTR: ['onerror', 'onclick', 'onload'],
+};
+
+function sanitizeHtml(html: string): string {
+  return DOMPurify.sanitize(html, purifyConfig);
+}
 
 function DreamMeta({ dream }: { dream: Dream }) {
   useEffect(() => {
@@ -326,7 +338,7 @@ export default function DreamDetail() {
     year: 'numeric',
   });
   const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
-  const wordCount = dream.content.split(/\s+/).length;
+  const wordCount = dream.content.replace(/<[^>]*>/g, ' ').split(/\s+/).filter(Boolean).length;
   const readTime = Math.max(1, Math.ceil(wordCount / 200));
 
   return (
@@ -423,20 +435,55 @@ export default function DreamDetail() {
         </div>
       </section>
 
-      {/* Content */}
+      {/* Content Sections */}
       <section className="container py-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="max-w-3xl mx-auto"
-        >
-          <ContentCard icon={BookOpen} gradient="from-blue-500 to-cyan-500" title="Genel Yorum">
-            <p className="text-lg leading-relaxed whitespace-pre-wrap text-foreground/90">
-              {dream.content}
-            </p>
-          </ContentCard>
-        </motion.div>
+        <div className="max-w-3xl mx-auto space-y-6">
+          {/* Genel Yorum */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35 }}
+          >
+            <ContentCard icon={BookOpen} gradient="from-blue-500 to-cyan-500" title="Genel Yorum">
+              <div
+                className="prose prose-lg dark:prose-invert max-w-none text-foreground/90 [&_p]:leading-relaxed [&_p]:mb-4 last:[&_p]:mb-0 [&_h2]:font-serif-dream [&_h2]:font-bold [&_h2]:mt-6 [&_h2]:mb-3 [&_h3]:font-semibold [&_h3]:mt-4 [&_h3]:mb-2 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:mb-1 [&_blockquote]:border-l-4 [&_blockquote]:border-primary/30 [&_blockquote]:pl-4 [&_blockquote]:italic [&_a]:text-primary [&_a]:underline"
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(dream.content) }}
+              />
+            </ContentCard>
+          </motion.div>
+
+          {/* İslami Rüya Tabiri */}
+          {dream.islamic_interpretation && dream.islamic_interpretation.trim() && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.45 }}
+            >
+              <ContentCard icon={Star} gradient="from-emerald-500 to-teal-500" title="İslami Rüya Tabiri">
+                <div
+                  className="prose prose-lg dark:prose-invert max-w-none text-foreground/90 [&_p]:leading-relaxed [&_p]:mb-4 last:[&_p]:mb-0 [&_h2]:font-serif-dream [&_h2]:font-bold [&_h2]:mt-6 [&_h2]:mb-3 [&_h3]:font-semibold [&_h3]:mt-4 [&_h3]:mb-2 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:mb-1 [&_blockquote]:border-l-4 [&_blockquote]:border-emerald-500/30 [&_blockquote]:pl-4 [&_blockquote]:italic [&_a]:text-emerald-600 [&_a]:underline"
+                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(dream.islamic_interpretation) }}
+                />
+              </ContentCard>
+            </motion.div>
+          )}
+
+          {/* Psikolojik Rüya Yorumu */}
+          {dream.psychological_interpretation && dream.psychological_interpretation.trim() && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.55 }}
+            >
+              <ContentCard icon={Brain} gradient="from-violet-500 to-purple-500" title="Psikolojik Rüya Yorumu">
+                <div
+                  className="prose prose-lg dark:prose-invert max-w-none text-foreground/90 [&_p]:leading-relaxed [&_p]:mb-4 last:[&_p]:mb-0 [&_h2]:font-serif-dream [&_h2]:font-bold [&_h2]:mt-6 [&_h2]:mb-3 [&_h3]:font-semibold [&_h3]:mt-4 [&_h3]:mb-2 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:mb-1 [&_blockquote]:border-l-4 [&_blockquote]:border-violet-500/30 [&_blockquote]:pl-4 [&_blockquote]:italic [&_a]:text-violet-600 [&_a]:underline"
+                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(dream.psychological_interpretation) }}
+                />
+              </ContentCard>
+            </motion.div>
+          )}
+        </div>
       </section>
 
       {/* Keywords */}
