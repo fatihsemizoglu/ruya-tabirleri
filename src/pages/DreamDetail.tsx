@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, useScroll, useSpring } from 'framer-motion';
-import { Eye, Heart, Bookmark, ArrowLeft, Calendar, BookOpen, Sparkles, Clock, ChevronRight, Share2, Tag, Folder, Check, Moon, Star, Brain } from 'lucide-react';
+import { Eye, Heart, Bookmark, ArrowLeft, Calendar, BookOpen, Sparkles, Clock, ChevronRight, Share2, Tag, Folder, Check, Moon } from 'lucide-react';
 import DOMPurify from 'dompurify';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
@@ -435,55 +435,21 @@ export default function DreamDetail() {
         </div>
       </section>
 
-      {/* Content Sections */}
+      {/* Content */}
       <section className="container py-8">
-        <div className="max-w-3xl mx-auto space-y-6">
-          {/* Genel Yorum */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35 }}
-          >
-            <ContentCard icon={BookOpen} gradient="from-blue-500 to-cyan-500" title="Genel Yorum">
-              <div
-                className="prose prose-lg dark:prose-invert max-w-none text-foreground/90 [&_p]:leading-relaxed [&_p]:mb-4 last:[&_p]:mb-0 [&_h2]:font-serif-dream [&_h2]:font-bold [&_h2]:mt-6 [&_h2]:mb-3 [&_h3]:font-semibold [&_h3]:mt-4 [&_h3]:mb-2 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:mb-1 [&_blockquote]:border-l-4 [&_blockquote]:border-primary/30 [&_blockquote]:pl-4 [&_blockquote]:italic [&_a]:text-primary [&_a]:underline"
-                dangerouslySetInnerHTML={{ __html: sanitizeHtml(dream.content) }}
-              />
-            </ContentCard>
-          </motion.div>
-
-          {/* İslami Rüya Tabiri */}
-          {dream.islamic_interpretation && dream.islamic_interpretation.trim() && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.45 }}
-            >
-              <ContentCard icon={Star} gradient="from-emerald-500 to-teal-500" title="İslami Rüya Tabiri">
-                <div
-                  className="prose prose-lg dark:prose-invert max-w-none text-foreground/90 [&_p]:leading-relaxed [&_p]:mb-4 last:[&_p]:mb-0 [&_h2]:font-serif-dream [&_h2]:font-bold [&_h2]:mt-6 [&_h2]:mb-3 [&_h3]:font-semibold [&_h3]:mt-4 [&_h3]:mb-2 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:mb-1 [&_blockquote]:border-l-4 [&_blockquote]:border-emerald-500/30 [&_blockquote]:pl-4 [&_blockquote]:italic [&_a]:text-emerald-600 [&_a]:underline"
-                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(dream.islamic_interpretation) }}
-                />
-              </ContentCard>
-            </motion.div>
-          )}
-
-          {/* Psikolojik Rüya Yorumu */}
-          {dream.psychological_interpretation && dream.psychological_interpretation.trim() && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.55 }}
-            >
-              <ContentCard icon={Brain} gradient="from-violet-500 to-purple-500" title="Psikolojik Rüya Yorumu">
-                <div
-                  className="prose prose-lg dark:prose-invert max-w-none text-foreground/90 [&_p]:leading-relaxed [&_p]:mb-4 last:[&_p]:mb-0 [&_h2]:font-serif-dream [&_h2]:font-bold [&_h2]:mt-6 [&_h2]:mb-3 [&_h3]:font-semibold [&_h3]:mt-4 [&_h3]:mb-2 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:mb-1 [&_blockquote]:border-l-4 [&_blockquote]:border-violet-500/30 [&_blockquote]:pl-4 [&_blockquote]:italic [&_a]:text-violet-600 [&_a]:underline"
-                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(dream.psychological_interpretation) }}
-                />
-              </ContentCard>
-            </motion.div>
-          )}
-        </div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35 }}
+          className="max-w-3xl mx-auto"
+        >
+          <ContentCard icon={BookOpen} gradient="from-blue-500 to-cyan-500" title="Rüya Tabiri">
+            <div
+              className="dream-content prose prose-lg dark:prose-invert max-w-none prose-headings:font-serif-dream prose-headings:font-bold prose-headings:text-foreground prose-h2:text-2xl prose-h2:mt-8 prose-h2:mb-4 prose-h2:border-b prose-h2:border-border/40 prose-h2:pb-2 prose-h3:text-xl prose-h3:mt-6 prose-h3:mb-3 prose-h3:text-primary/90 prose-p:leading-[1.8] prose-p:text-foreground/85 prose-p:mb-5 prose-li:leading-relaxed prose-blockquote:border-l-4 prose-blockquote:border-primary/30 prose-blockquote:pl-5 prose-blockquote:italic prose-blockquote:text-muted-foreground prose-a:text-primary prose-a:underline hover:prose-a:text-primary/80 prose-strong:text-foreground prose-img:rounded-xl"
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(dream.content) }}
+            />
+          </ContentCard>
+        </motion.div>
       </section>
 
       {/* Keywords */}

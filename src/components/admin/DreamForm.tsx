@@ -3,7 +3,7 @@ import { useForm, FormProvider, UseFormReturn, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
-  BookOpen, Type, FileText, Eye, Star, Check, ChevronDown, Tag, Moon, Brain,
+  BookOpen, Type, FileText, Eye, Star, Check, ChevronDown, Tag,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -18,8 +18,6 @@ const dreamSchema = z.object({
   title: z.string().min(3, 'Başlık en az 3 karakter olmalıdır').max(200),
   slug: z.string().min(3).max(200).regex(/^[a-z0-9-]+$/),
   content: z.string().min(50, 'İçerik en az 50 karakter olmalıdır'),
-  islamic_interpretation: z.string().optional(),
-  psychological_interpretation: z.string().optional(),
   category_id: z.string().optional(),
   keywords: z.string().optional(),
   meta_title: z.string().max(60).optional(),
@@ -239,8 +237,6 @@ export function DreamForm({
       title: '',
       slug: '',
       content: '',
-      islamic_interpretation: '',
-      psychological_interpretation: '',
       category_id: '',
       keywords: '',
       meta_title: '',
@@ -347,7 +343,7 @@ export function DreamForm({
 
           {/* İÇERİK */}
           <div>
-            <SectionLabel icon={FileText} label="Genel Yorum" />
+            <SectionLabel icon={FileText} label="İçerik" />
             <FormField
               control={form.control}
               name="content"
@@ -358,7 +354,7 @@ export function DreamForm({
                       <RichTextEditor
                         content={field.value || ''}
                         onChange={field.onChange}
-                        placeholder="Rüya tabirinin genel açıklamasını yazın..."
+                        placeholder="Rüya tabirinin açıklamasını yazın... Başlık (H2, H3) kullanarak bölüm bölüm yazabilirsiniz."
                       />
                     </FormControl>
                     <ContentCounter html={field.value || ''} />
@@ -367,57 +363,8 @@ export function DreamForm({
                 </PremiumField>
               )}
             />
-          </div>
-
-          {/* İSLAMİ RÜYA TABİRİ */}
-          <div>
-            <SectionLabel icon={Moon} label="İslami Rüya Tabiri (Opsiyonel)" />
-            <FormField
-              control={form.control}
-              name="islamic_interpretation"
-              render={({ field }) => (
-                <PremiumField>
-                  <FormItem>
-                    <FormControl>
-                      <RichTextEditor
-                        content={field.value || ''}
-                        onChange={field.onChange}
-                        placeholder="İslami kaynaklara göre rüya tabiri (İbn-i Sirin, İmam Nablusi vb.)..."
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                </PremiumField>
-              )}
-            />
             <p className="text-[11px] text-muted-foreground mt-1.5">
-              İslami rüya alimlerinin yorumlarını ayrı bir başlık altında gösterir
-            </p>
-          </div>
-
-          {/* PSİKOLOJİK RÜYA YORUMU */}
-          <div>
-            <SectionLabel icon={Brain} label="Psikolojik Rüya Yorumu (Opsiyonel)" />
-            <FormField
-              control={form.control}
-              name="psychological_interpretation"
-              render={({ field }) => (
-                <PremiumField>
-                  <FormItem>
-                    <FormControl>
-                      <RichTextEditor
-                        content={field.value || ''}
-                        onChange={field.onChange}
-                        placeholder="Psikolojik açıdan rüya analizi (Freud, Jung vb.)..."
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                </PremiumField>
-              )}
-            />
-            <p className="text-[11px] text-muted-foreground mt-1.5">
-              Modern psikoloji perspektifinden rüya yorumunu ayrı bir başlık altında gösterir
+              Editördeki başlık butonlarını (H2, H3) kullanarak rüya tabirini bölümlere ayırabilirsiniz
             </p>
           </div>
 
