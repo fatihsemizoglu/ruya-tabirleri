@@ -338,7 +338,8 @@ export default function Popular() {
         <div>
           <Link
             to={`/ruya/${dream.slug}`}
-            className="render-optimize group flex items-center gap-4 bg-card border border-border/50 rounded-2xl p-4 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300"
+            style={{ animationDelay: `${Math.min(index * 50, 300)}ms` }}
+            className="render-optimize group flex items-center gap-4 bg-card border border-border/50 rounded-2xl p-4 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 animate-fadeIn"
           >
             <div className="shrink-0 w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-sm font-bold text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
               #{index + 1}
@@ -387,7 +388,8 @@ export default function Popular() {
       <div className={isTopThree ? 'md:col-span-1' : ''}>
         <Link
           to={`/ruya/${dream.slug}`}
-          className={`render-optimize group relative block h-full bg-card border border-border/50 rounded-2xl p-6 overflow-hidden hover:border-primary/30 hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-1 transition-all duration-500`}
+          style={{ animationDelay: `${Math.min(index * 50, 300)}ms` }}
+          className={`render-optimize group relative block h-full bg-card border border-border/50 rounded-2xl p-6 overflow-hidden hover:border-primary/30 hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-1 transition-all duration-500 animate-fadeIn`}
         >
           {/* Top gradient bar */}
           <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${rankGradient}`} />

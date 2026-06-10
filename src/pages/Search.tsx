@@ -249,6 +249,10 @@ export default function Search() {
     return categories.find(c => c.id === categoryId)?.name || '';
   };
 
+  const getCategoryIcon = (categoryId: string) => {
+    return categories.find(c => c.id === categoryId)?.icon || '';
+  };
+
   const activeFilterCount = useMemo(() => {
     let count = 0;
     if (advancedFilters.showFeaturedOnly) count++;
@@ -415,13 +419,13 @@ export default function Search() {
                         <Link
                           key={dream.id}
                           to={`/ruya/${dream.slug}`}
-                          className="group dream-card render-optimize"
-                          style={{ animationDelay: `${index * 50}ms` }}
+                          className="group dream-card render-optimize animate-fadeIn"
+                          style={{ animationDelay: `${Math.min(index * 50, 300)}ms` }}
                         >
                           <div className="flex items-start justify-between mb-3">
                             {dream.category_id && (
                               <Badge variant="secondary">
-                                {getCategoryName(dream.category_id)}
+                                {getCategoryIcon(dream.category_id)} {getCategoryName(dream.category_id)}
                               </Badge>
                             )}
                             {index < 3 && (
@@ -430,20 +434,29 @@ export default function Search() {
                               </Badge>
                             )}
                           </div>
-                          <h3 className="text-xl font-serif font-semibold mb-3 group-hover:text-primary transition-colors">
+                          <h3 className="text-lg font-semibold mb-2 group-hover:text-primary transition-colors line-clamp-2">
                             {dream.title}
                           </h3>
-                          <p className="text-sm text-muted-foreground line-clamp-3 mb-4">
+                          <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
                             {dream.content}
                           </p>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <div className="flex items-center gap-1">
-                              <Eye className="h-4 w-4" />
-                              <span>{(dream.view_count || 0).toLocaleString('tr-TR')}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Heart className="h-4 w-4" />
-                              <span>{(dream.like_count || 0).toLocaleString('tr-TR')}</span>
+
+                          {/* Footer */}
+                          <div className="flex items-center justify-between pt-3 border-t border-border/50">
+                            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                              {dream.category_id && (
+                                <Badge variant="outline" className="text-xs">
+                                  {getCategoryIcon(dream.category_id)} {getCategoryName(dream.category_id)}
+                                </Badge>
+                              )}
+                              <span className="flex items-center gap-1">
+                                <Eye className="h-3.5 w-3.5" />
+                                {(dream.view_count || 0).toLocaleString('tr-TR')}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Heart className="h-3.5 w-3.5" />
+                                {(dream.like_count || 0).toLocaleString('tr-TR')}
+                              </span>
                             </div>
                           </div>
                         </Link>
@@ -455,7 +468,8 @@ export default function Search() {
                         <Link
                           key={dream.id}
                           to={`/ruya/${dream.slug}`}
-                          className="group block dream-card render-optimize"
+                          style={{ animationDelay: `${Math.min(index * 50, 300)}ms` }}
+                          className="group block dream-card render-optimize animate-fadeIn"
                         >
                           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                             <div className="flex-1">
@@ -467,11 +481,11 @@ export default function Search() {
                                 )}
                                 {dream.category_id && (
                                   <Badge variant="secondary">
-                                    {getCategoryName(dream.category_id)}
+                                    {getCategoryIcon(dream.category_id)} {getCategoryName(dream.category_id)}
                                   </Badge>
                                 )}
                               </div>
-                              <h3 className="text-lg font-serif font-semibold mb-2 group-hover:text-primary transition-colors">
+                              <h3 className="text-lg font-semibold mb-2 group-hover:text-primary transition-colors line-clamp-2">
                                 {dream.title}
                               </h3>
                               <p className="text-sm text-muted-foreground line-clamp-2">
