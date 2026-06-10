@@ -39,6 +39,11 @@ const pickGradient = (seed: string) => {
   return gradientPalette[Math.abs(hash) % gradientPalette.length];
 };
 
+const getMeaningfulFirstLetter = (title: string): string => {
+  const clean = title.startsWith('Rüyada ') ? title.slice(7) : title;
+  return clean.charAt(0).toUpperCase();
+};
+
 export default function AlphabetList() {
   const { letter } = useParams<{ letter?: string }>();
   const navigate = useNavigate();
@@ -67,7 +72,7 @@ export default function AlphabetList() {
         alphabet.forEach(char => counts[char] = 0);
 
         data.forEach(dream => {
-          const firstLetter = dream.title.charAt(0).toUpperCase();
+          const firstLetter = getMeaningfulFirstLetter(dream.title);
           if (counts[firstLetter] !== undefined) {
             counts[firstLetter]++;
           }
@@ -98,7 +103,7 @@ export default function AlphabetList() {
           .from('dreams')
           .select('*')
           .eq('is_published', true)
-          .ilike('title', `${selectedLetter}%`)
+          .ilike('title', `Rüyada ${selectedLetter}%`)
           .order('title');
 
         if (error) throw error;
@@ -527,13 +532,13 @@ export default function AlphabetList() {
                         className="render-optimize group flex items-center gap-4 p-4 surface hover:shadow-lg transition-all duration-300"
                       >
                         <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center text-xl font-serif-dream font-bold text-white shrink-0 shadow-md`}>
-                          {dream.title.charAt(0)}
+                          {getMeaningfulFirstLetter(dream.title)}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             {category && (
                               <Badge variant="secondary" className="rounded-full text-xs">
-                                {category.icon} {category.name}
+                                {category.icon || '📖'} {category.name}
                               </Badge>
                             )}
                             {dream.is_featured && (
@@ -581,7 +586,7 @@ export default function AlphabetList() {
                       <div className="relative">
                         <div className="flex items-start justify-between gap-2 mb-3">
                           <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center text-base font-serif-dream font-bold text-white shadow-md`}>
-                            {dream.title.charAt(0)}
+                            {getMeaningfulFirstLetter(dream.title)}
                           </div>
                           {dream.is_featured && (
                             <Badge variant="secondary" className="rounded-full text-xs gap-1">
@@ -593,7 +598,7 @@ export default function AlphabetList() {
 
                         {category && (
                           <Badge variant="outline" className="rounded-full text-xs mb-2">
-                            {category.icon} {category.name}
+                            {category.icon || '📖'} {category.name}
                           </Badge>
                         )}
 
