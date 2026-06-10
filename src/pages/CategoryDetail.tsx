@@ -3,6 +3,7 @@ import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Eye, Heart, Search, SlidersHorizontal, ChevronUp, TrendingUp, Clock, Star, Grid3X3, List, Filter, X, Tag, Folder, ArrowLeft, Sparkles, BookOpen, ArrowUpRight } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -284,7 +285,7 @@ export default function CategoryDetail() {
                 transition={{ duration: 0.5 }}
                 className={`w-24 h-24 md:w-32 md:h-32 rounded-3xl bg-gradient-to-br ${featuredGradient} flex items-center justify-center shadow-2xl shadow-primary/20`}
               >
-                <span className="text-5xl md:text-6xl">{category.icon || '📖'}</span>
+                <CategoryIcon icon={category.icon} className="text-5xl md:text-6xl" />
               </motion.div>
 
               <div className="flex-1">

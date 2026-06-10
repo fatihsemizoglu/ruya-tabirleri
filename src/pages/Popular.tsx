@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState as PremiumEmptyState } from '@/components/ui/empty-state';
 import { Layout } from '@/components/layout/Layout';
 import { PremiumBackground, PremiumBadge, GradientText } from '@/components/layout/PremiumBackground';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -318,7 +319,7 @@ export default function Popular() {
   // Seçili kategorinin bilgisini getir
   const selectedCategoryData = selectedCategory !== 'all' ? categories[selectedCategory] : null;
   const categorySelectLabel = selectedCategoryData
-    ? `${selectedCategoryData.icon || '📖'} ${selectedCategoryData.name}`.trim()
+    ? `${selectedCategoryData.name}`.trim()
     : 'Tüm Kategoriler';
 
   const DreamCard = ({ dream, index }: { dream: Dream; index: number }) => {
@@ -350,8 +351,8 @@ export default function Popular() {
                   <Star className="h-3 w-3 text-amber-500 fill-amber-500 shrink-0" />
                 )}
                 {category && (
-                  <Badge variant="secondary" className="text-xs">
-                    {category.icon || '📖'} {category.name}
+                  <Badge variant="secondary" className="text-xs gap-1">
+                    <CategoryIcon icon={category.icon} className="h-3.5 w-3.5" /> {category.name}
                   </Badge>
                 )}
               </div>
@@ -414,8 +415,8 @@ export default function Popular() {
                 )}
               </div>
               {category && (
-                <Badge variant="secondary" className="text-xs">
-                  {category.icon || '📖'} {category.name}
+                <Badge variant="secondary" className="text-xs gap-1">
+                  <CategoryIcon icon={category.icon} className="h-3.5 w-3.5" /> {category.name}
                 </Badge>
               )}
             </div>
@@ -655,7 +656,7 @@ export default function Popular() {
                   </SelectItem>
                   {Object.values(categories).map((category) => (
                     <SelectItem key={category.id} value={category.id}>
-                      <span className="text-base leading-none">{category.icon || '📖'}</span>
+                      <CategoryIcon icon={category.icon} className="h-4 w-4" />
                       <span>{category.name}</span>
                     </SelectItem>
                   ))}
@@ -841,8 +842,8 @@ export default function Popular() {
                       </div>
 
                       {category && (
-                        <Badge variant="secondary" className="mb-3">
-                          {category.icon || '📖'} {category.name}
+                        <Badge variant="secondary" className="mb-3 gap-1">
+                          <CategoryIcon icon={category.icon} className="h-3.5 w-3.5" /> {category.name}
                         </Badge>
                       )}
 

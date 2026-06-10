@@ -5,6 +5,7 @@ import {
   TrendingUp, Clock, SortAsc, Eye, BookOpen, ArrowUp, Folder
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { PremiumBackground, PremiumBadge, GradientText } from '@/components/layout/PremiumBackground';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -338,7 +339,7 @@ export default function Categories() {
                   <div className="relative">
                     {/* Icon */}
                     <div className="w-14 h-14 rounded-xl bg-muted flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-                      <span className="text-2xl">{category.icon || '📖'}</span>
+                      <CategoryIcon icon={category.icon} className="text-2xl" />
                     </div>
 
                     {/* Name */}
@@ -379,7 +380,7 @@ export default function Categories() {
                 >
                   {/* Icon */}
                     <div className="w-14 h-14 rounded-xl bg-muted flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                      <span className="text-2xl">{category.icon || '📖'}</span>
+                      <CategoryIcon icon={category.icon} className="text-2xl" />
                     </div>
 
                   {/* Content */}

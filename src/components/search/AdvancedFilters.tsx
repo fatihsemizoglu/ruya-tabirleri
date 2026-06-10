@@ -3,6 +3,7 @@ import {
   SlidersHorizontal, Star, TrendingUp, Eye, Heart, X, Check, 
   ChevronDown, Filter, Tag, Sparkles 
 } from 'lucide-react';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -139,7 +140,7 @@ export function AdvancedFilters({
                     : 'hover:bg-muted'
                 }`}
               >
-                <span>{category.icon}</span>
+                <CategoryIcon icon={category.icon} className="h-4 w-4" />
                 <span className="truncate">{category.name}</span>
                 {filters.selectedCategories.includes(category.id) && (
                   <Check className="h-4 w-4 ml-auto shrink-0" />

@@ -8,7 +8,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Pencil, Trash2, FolderOpen, Check, Clock, icons } from 'lucide-react';
+import { Plus, Pencil, Trash2, FolderOpen, Check, Clock } from 'lucide-react';
+import { getIcon } from '@/lib/icons';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { CategoryForm, type CategoryFormValues } from './CategoryForm';
 import { SkeletonAdminRow } from '@/components/ui/skeleton-card';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -21,12 +23,7 @@ import { AdminStatsCards } from './common/AdminStatsCards';
 // Orn: "Sun" -> Sun, "cloud-rain" -> CloudRain
 const getCategoryIcon = (iconName: string | null | undefined) => {
   if (!iconName) return FolderOpen;
-  const formatted = iconName
-    .charAt(0)
-    .toUpperCase()
-    + iconName.slice(1)
-    .replace(/-([a-z])/g, (_: string, c: string) => c.toUpperCase());
-  return (icons as Record<string, typeof FolderOpen>)[formatted] || FolderOpen;
+  return getIcon(iconName) || FolderOpen;
 };
 
 type Category = Tables<'categories'>;
@@ -274,7 +271,7 @@ export function CategoryManagement() {
               >
                 <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0 shadow-sm">
-                  <span className="text-lg">{category.icon || '📖'}</span>
+                  <CategoryIcon icon={category.icon} className="h-5 w-5" />
                 </div>
 
                   <div className="flex flex-col">

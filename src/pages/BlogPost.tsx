@@ -29,6 +29,7 @@ import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
 
 export default function BlogPost() {
   const { slug } = useParams<{ slug: string }>();
@@ -285,7 +286,7 @@ export default function BlogPost() {
               <div className="flex flex-wrap items-center gap-3 mb-6">
                 {post.category && (
                   <Badge variant="secondary" className="bg-primary/10 text-primary border-0">
-                    {post.category.icon || '📖'} {post.category.name}
+                    <CategoryIcon icon={post.category.icon} className="h-3.5 w-3.5" /> {post.category.name}
                   </Badge>
                 )}
                 {post.is_featured && (

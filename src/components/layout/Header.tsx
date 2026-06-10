@@ -28,6 +28,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { BlogCategory } from '@/types/blog';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { useQuery } from '@tanstack/react-query';
 
 interface Category {
@@ -314,7 +315,7 @@ export function Header() {
                             onClick={() => setOpenCategoryMenu(false)}
                             className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-foreground/80 hover:bg-primary/10 hover:text-primary transition-colors"
                           >
-                            <span className="text-base leading-none shrink-0">{cat.icon || '📖'}</span>
+                            <CategoryIcon icon={cat.icon} className="text-base leading-none shrink-0" />
                             <span className="truncate">{cat.name}</span>
                           </Link>
                         );
@@ -412,7 +413,7 @@ export function Header() {
                                 className="group flex items-start gap-2.5 px-3 py-2 rounded-lg hover:bg-primary/10 transition-colors"
                               >
                                 <div className="w-8 h-8 rounded-lg bg-primary/10 group-hover:bg-primary/20 flex items-center justify-center shrink-0">
-                                  <span className="text-base leading-none">{bc.icon || '📖'}</span>
+                                  <CategoryIcon icon={bc.icon} className="h-4 w-4" />
                                 </div>
                                 <div className="min-w-0 flex-1">
                                   <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors truncate">
@@ -665,7 +666,7 @@ export function Header() {
                           onClick={() => setIsMenuOpen(false)}
                           className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-foreground/80 hover:bg-muted transition-colors"
                         >
-                          <span className="text-base leading-none shrink-0">{cat.icon || '📖'}</span>
+                          <CategoryIcon icon={cat.icon} className="text-base leading-none shrink-0" />
                           <span className="truncate">{cat.name}</span>
                         </Link>
                       );
@@ -723,7 +724,7 @@ export function Header() {
                           onClick={() => setIsMenuOpen(false)}
                           className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-foreground/80 hover:bg-muted transition-colors"
                         >
-                          <span className="text-base leading-none shrink-0">{bc.icon || '📖'}</span>
+                          <CategoryIcon icon={bc.icon} className="text-base leading-none shrink-0" />
                           <span className="truncate">{bc.name}</span>
                         </Link>
                       );

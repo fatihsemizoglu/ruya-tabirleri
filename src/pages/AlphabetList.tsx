@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Eye, Heart, Star, ChevronUp, BookOpen, Search, Grid3X3, List, ArrowUpDown, TrendingUp, Sparkles, Filter, X, ArrowUpRight, Clock } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -537,8 +538,8 @@ export default function AlphabetList() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             {category && (
-                              <Badge variant="secondary" className="rounded-full text-xs">
-                                {category.icon || '📖'} {category.name}
+                              <Badge variant="secondary" className="rounded-full text-xs gap-1">
+                                <CategoryIcon icon={category.icon} className="h-3.5 w-3.5" /> {category.name}
                               </Badge>
                             )}
                             {dream.is_featured && (
@@ -597,8 +598,8 @@ export default function AlphabetList() {
                         </div>
 
                         {category && (
-                          <Badge variant="outline" className="rounded-full text-xs mb-2">
-                            {category.icon || '📖'} {category.name}
+                          <Badge variant="outline" className="rounded-full text-xs mb-2 gap-1">
+                            <CategoryIcon icon={category.icon} className="h-3.5 w-3.5" /> {category.name}
                           </Badge>
                         )}
 

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
@@ -207,7 +208,7 @@ export function BlogCategoryManagement() {
               >
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0 shadow-sm text-lg">
-                    {category.icon || '📁'}
+                    <CategoryIcon icon={category.icon} className="h-5 w-5" fallback="📁" />
                   </div>
 
                   <div className="flex flex-col">

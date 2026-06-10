@@ -29,6 +29,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { BlogPost, BlogCategory } from '@/types/blog';
 import { BlogCard } from '@/components/blog/BlogCard';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { TagCloud } from '@/components/blog/TagCloud';
 import { PopularPosts } from '@/components/blog/PopularPosts';
 
@@ -435,7 +436,7 @@ export default function Blog() {
                   <SelectItem value="all">Tüm Kategoriler</SelectItem>
                   {categories.map((category) => (
                     <SelectItem key={category.id} value={category.slug}>
-                      {category.icon || '📖'} {category.name}
+                      <CategoryIcon icon={category.icon} className="h-4 w-4" /> {category.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -510,7 +511,7 @@ export default function Blog() {
               animate={{ opacity: 1, y: 0 }}
               className="mb-8 flex items-center gap-3"
             >
-              <span className="text-2xl">{activeCategory.icon || '📖'}</span>
+              <CategoryIcon icon={activeCategory.icon} className="text-2xl" />
               <div>
                 <h2 className="text-2xl font-serif-dream font-bold">{activeCategory.name}</h2>
                 <p className="text-sm text-muted-foreground">{filteredPosts.length} yazı</p>

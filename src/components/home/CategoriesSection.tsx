@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { supabase } from '@/integrations/supabase/client';
 
 
@@ -322,7 +323,7 @@ export function CategoriesSection() {
                       <div
                         className={`w-11 h-11 rounded-xl bg-gradient-to-br ${theme.bg} flex items-center justify-center shadow-md group-hover:scale-110 group-hover:rotate-3 transition-all duration-500`}
                       >
-                        <span className="text-xl">{category.icon || '📖'}</span>
+                        <CategoryIcon icon={category.icon} className="text-xl" />
                       </div>
                       <div className="opacity-0 group-hover:opacity-100 -translate-y-1 translate-x-1 group-hover:translate-y-0 group-hover:translate-x-0 transition-all duration-300">
                         <div

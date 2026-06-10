@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState as PremiumEmptyState } from '@/components/ui/empty-state';
 import { Layout } from '@/components/layout/Layout';
 import { PremiumBackground, PremiumBadge, GradientText } from '@/components/layout/PremiumBackground';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -320,8 +321,8 @@ export default function Favorites() {
             >
               <div className="flex items-center gap-2 mb-1.5">
                 {category && (
-                  <Badge variant="secondary" className="text-xs">
-                    {category.icon || '📖'} {category.name}
+                  <Badge variant="secondary" className="text-xs gap-1">
+                    <CategoryIcon icon={category.icon} className="h-3.5 w-3.5" /> {category.name}
                   </Badge>
                 )}
               </div>
@@ -438,8 +439,8 @@ export default function Favorites() {
                   </div>
                 </div>
                 {category && (
-                  <Badge variant="secondary" className="text-xs">
-                    {category.icon || '📖'} {category.name}
+                  <Badge variant="secondary" className="text-xs gap-1">
+                    <CategoryIcon icon={category.icon} className="h-3.5 w-3.5" /> {category.name}
                   </Badge>
                 )}
               </div>
@@ -632,7 +633,7 @@ export default function Favorites() {
                       <SelectItem value="all">Tüm Kategoriler</SelectItem>
                       {favoriteCategories.map((category) => (
                         <SelectItem key={category.id} value={category.id}>
-                          {category.icon || '📖'} {category.name}
+                          <CategoryIcon icon={category.icon} className="h-4 w-4" /> {category.name}
                         </SelectItem>
                       ))}
                     </SelectContent>

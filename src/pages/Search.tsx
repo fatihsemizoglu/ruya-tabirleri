@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Search as SearchIcon, Sparkles, Layers, TrendingUp, Grid3X3, List, Eye, Heart, X, SlidersHorizontal, ChevronDown, Star, BookOpen, ArrowUp } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { PremiumBackground, PremiumBadge, GradientText } from '@/components/layout/PremiumBackground';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -318,7 +319,7 @@ export default function Search() {
                     to={`/kategori/${category.slug}`}
                     className="px-4 py-2 text-sm rounded-xl bg-muted hover:bg-primary hover:text-primary-foreground transition-colors flex items-center gap-2"
                   >
-                    <span>{category.icon || '📖'}</span>
+                    <CategoryIcon icon={category.icon} className="h-4 w-4" />
                     <span>{category.name}</span>
                   </Link>
                 ))}
