@@ -123,18 +123,17 @@ export default defineConfig(({ mode }) => ({
     drop: mode === 'production' ? ['console', 'debugger'] : [],
   },
   optimizeDeps: {
-    include: ['lucide-react'],
+    include: ['lucide-react', 'recharts'],
   },
   build: {
     commonjsOptions: {
-      include: [/lucide-react/, /node_modules/],
+      include: [/lucide-react/, /recharts/, /node_modules/],
     },
     rollupOptions: {
       output: {
         manualChunks: {
           'lucide-react': ['lucide-react'],
           'framer-motion': ['framer-motion'],
-          'recharts': ['recharts'],
           'tiptap': [
             '@tiptap/react',
             '@tiptap/starter-kit',
