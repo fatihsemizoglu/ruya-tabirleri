@@ -544,7 +544,7 @@ export default function DreamDetail() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.55 }}
-          className="max-w-5xl mx-auto"
+          className="max-w-3xl mx-auto"
         >
           <ShareCard
             title={dream.title}
@@ -559,7 +559,7 @@ export default function DreamDetail() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.57 }}
-          className="max-w-5xl mx-auto"
+          className="max-w-3xl mx-auto"
         >
           <SimilarDreams
             currentDream={dream}
