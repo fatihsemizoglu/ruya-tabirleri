@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { supabase } from '@/integrations/supabase/client';
 import { BlogComment } from '@/types/blog';
 import { formatDistanceToNow } from 'date-fns';
@@ -40,6 +41,8 @@ const getAuthorInitial = (name: string) => {
 
 export function BlogCommentSection({ postId }: BlogCommentSectionProps) {
   const { user, profile } = useAuth();
+  const { settings } = useSiteSettings();
+  const isApproved = !settings.requireApproval;
   const [comments, setComments] = useState<BlogComment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [guestName, setGuestName] = useState('');
@@ -145,6 +148,7 @@ export function BlogCommentSection({ postId }: BlogCommentSectionProps) {
         user_id: user.id,
         content: content.trim(),
         parent_id: parentId || null,
+        is_approved: isApproved,
       });
       if (error) {
         toast.error('Yorum eklenirken bir hata oluştu');
@@ -174,6 +178,7 @@ export function BlogCommentSection({ postId }: BlogCommentSectionProps) {
         guest_email: guestEmail.trim().toLowerCase(),
         content: content.trim(),
         parent_id: parentId || null,
+        is_approved: isApproved,
       });
       if (error) {
         toast.error('Yorum eklenirken bir hata oluştu');
@@ -182,7 +187,11 @@ export function BlogCommentSection({ postId }: BlogCommentSectionProps) {
       }
     }
 
-    toast.success('Yorumunuz eklendi');
+    toast.success(
+      settings.requireApproval
+        ? 'Yorumunuz alındı, onaylandıktan sonra yayınlanacak'
+        : 'Yorumunuz eklendi'
+    );
     if (parentId) {
       setReplyContent('');
       setReplyingTo(null);

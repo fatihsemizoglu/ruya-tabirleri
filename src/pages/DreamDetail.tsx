@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { toast } from 'sonner';
 import { SimilarDreams } from '@/components/dream/SimilarDreams';
 import { CommentSection } from '@/components/dream/CommentSection';
@@ -97,6 +98,7 @@ function ShareButton({ title, description, url }: { title: string; description: 
 
 export default function DreamDetail() {
   const { slug } = useParams<{ slug: string }>();
+  const { settings } = useSiteSettings();
   const latestSlugRef = useRef(slug);
   latestSlugRef.current = slug;
   const [dream, setDream] = useState<Dream | null>(null);
@@ -570,21 +572,23 @@ export default function DreamDetail() {
       </section>
 
       {/* Comments */}
-      <section className="container pb-20">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className="max-w-3xl mx-auto"
-        >
-          <CommentSection
-            dreamId={dream.id}
-            comments={comments}
-            isLoading={commentsLoading}
-            onRefresh={() => fetchComments(dream.id)}
-          />
-        </motion.div>
-      </section>
+      {settings.enableComments && (
+        <section className="container pb-20">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className="max-w-3xl mx-auto"
+          >
+            <CommentSection
+              dreamId={dream.id}
+              comments={comments}
+              isLoading={commentsLoading}
+              onRefresh={() => fetchComments(dream.id)}
+            />
+          </motion.div>
+        </section>
+      )}
     </Layout>
   );
 }

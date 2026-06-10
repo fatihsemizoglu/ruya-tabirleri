@@ -10,6 +10,7 @@ import { CommandPalette } from "@/components/ui/command-palette";
 import { OnboardingTour } from "@/components/onboarding/OnboardingTour";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { OfflineIndicator } from "@/components/pwa/OfflineIndicator";
+import { MaintenanceModeGuard } from "@/components/layout/MaintenanceModeGuard";
 
 // Eager load: en çok kullanılan sayfalar (initial bundle)
 import Index from "./pages/Index";
@@ -104,7 +105,9 @@ const App = () => (
           <CommandPalette />
           <OnboardingTour />
           <InstallPrompt />
-          <AnimatedRoutes />
+          <MaintenanceModeGuard>
+            <AnimatedRoutes />
+          </MaintenanceModeGuard>
         </TooltipProvider>
       </AuthProvider>
     </BrowserRouter>

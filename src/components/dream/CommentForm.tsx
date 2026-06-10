@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { toast } from 'sonner';
 import { Loader2, Send, UserCircle2, Mail, Info } from 'lucide-react';
 import { z } from 'zod';
@@ -39,7 +40,9 @@ interface CommentFormProps {
 
 export function CommentForm({ dreamId, onSuccess }: CommentFormProps) {
   const { user } = useAuth();
+  const { settings } = useSiteSettings();
   const queryClient = useQueryClient();
+  const isApproved = !settings.requireApproval;
 
   // Guest state
   const [name, setName] = useState('');
@@ -57,7 +60,7 @@ export function CommentForm({ dreamId, onSuccess }: CommentFormProps) {
           dream_id: dreamId,
           user_id: user.id,
           content: v.data.content,
-          is_approved: true,
+          is_approved: isApproved,
         });
         if (error) throw error;
       } else {
@@ -70,7 +73,7 @@ export function CommentForm({ dreamId, onSuccess }: CommentFormProps) {
           guest_name: v.data.name,
           guest_email: v.data.email,
           content: v.data.content,
-          is_approved: true,
+          is_approved: isApproved,
         });
         if (error) throw error;
       }
@@ -79,7 +82,11 @@ export function CommentForm({ dreamId, onSuccess }: CommentFormProps) {
       setContent('');
       setName('');
       setEmail('');
-      toast.success('Yorumunuz başarıyla eklendi');
+      toast.success(
+        settings.requireApproval
+          ? 'Yorumunuz alındı, onaylandıktan sonra yayınlanacak'
+          : 'Yorumunuz başarıyla eklendi'
+      );
       queryClient.invalidateQueries({ queryKey: ['dream-comments', dreamId] });
       onSuccess?.();
     },

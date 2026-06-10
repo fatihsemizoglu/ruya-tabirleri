@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import DOMPurify from 'dompurify';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -20,7 +20,7 @@ import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { BlogPost as BlogPostType } from '@/types/blog';
+import type { BlogPost as BlogPostData } from '@/types/blog';
 import { BlogCard } from '@/components/blog/BlogCard';
 import { BlogCommentSection } from '@/components/blog/BlogCommentSection';
 import { TableOfContents } from '@/components/blog/TableOfContents';
@@ -28,33 +28,37 @@ import { ReadingProgressBar } from '@/components/blog/ReadingProgressBar';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 
 export default function BlogPost() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [post, setPost] = useState<BlogPostType | null>(null);
+  const { settings } = useSiteSettings();
+  const [post, setPost] = useState<BlogPostData | null>(null);
   const [authorBio, setAuthorBio] = useState<string | null>(null);
-  const [relatedPosts, setRelatedPosts] = useState<BlogPostType[]>([]);
+  const [relatedPosts, setRelatedPosts] = useState<BlogPostData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
+  const isMountedRef = useRef(true);
 
-  useEffect(() => {
-    if (slug) {
-      fetchPost();
-    }
-  }, [slug, fetchPost]);
+  const checkIfLiked = useCallback(async () => {
+    if (!post || !user) return;
 
-  useEffect(() => {
-    if (post && user) {
-      checkIfLiked();
-    }
-  }, [post, user, checkIfLiked]);
+    const { data } = await supabase
+      .from('blog_likes')
+      .select('id')
+      .eq('post_id', post.id)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    setIsLiked(!!data);
+  }, [post, user]);
 
   const fetchPost = useCallback(async () => {
+    if (!slug) return;
     setIsLoading(true);
-    let isMounted = true;
 
     try {
       const { data, error } = await supabase
@@ -67,7 +71,7 @@ export default function BlogPost() {
         .eq('is_published', true)
         .maybeSingle();
 
-      if (!isMounted) return;
+      if (!isMountedRef.current) return;
 
       if (error || !data) {
         navigate('/blog');
@@ -81,11 +85,11 @@ export default function BlogPost() {
         .eq('user_id', data.author_id)
         .maybeSingle();
 
-      if (!isMounted) return;
+      if (!isMountedRef.current) return;
 
-      const postData: BlogPostType = {
+      const postData: BlogPostData = {
         ...data,
-        category: data.category as BlogPostType['category'],
+        category: data.category as BlogPostData['category'],
         author: authorData ? {
           id: authorData.user_id,
           full_name: authorData.full_name,
@@ -114,7 +118,7 @@ export default function BlogPost() {
           .neq('id', data.id)
           .limit(3);
 
-        if (relatedData && isMounted) {
+        if (relatedData && isMountedRef.current) {
           // Fetch author profiles for related posts
           const authorIds = [...new Set(relatedData.map((p) => p.author_id))];
           const { data: profiles } = await supabase
@@ -129,42 +133,43 @@ export default function BlogPost() {
               const author = profileMap.get(p.author_id);
               return {
                 ...p,
-                category: p.category as BlogPostType['category'],
+                category: p.category as BlogPostData['category'],
                 author: author ? {
                   id: author.user_id,
                   full_name: author.full_name,
                   username: author.username,
                   avatar_url: author.avatar_url,
                 } : undefined,
-              } as BlogPostType;
+              } as BlogPostData;
             })
           );
         }
       }
     } catch (err) {
-      if (isMounted) {
+      if (isMountedRef.current) {
         console.error('fetchPost error:', err);
         navigate('/blog');
       }
     } finally {
-      if (isMounted) setIsLoading(false);
+      if (isMountedRef.current) setIsLoading(false);
     }
-
-    return () => { isMounted = false; };
   }, [slug, navigate]);
 
-  const checkIfLiked = useCallback(async () => {
-    if (!post || !user) return;
+  useEffect(() => {
+    isMountedRef.current = true;
+    if (slug) {
+      fetchPost();
+    }
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, [slug, fetchPost]);
 
-    const { data } = await supabase
-      .from('blog_likes')
-      .select('id')
-      .eq('post_id', post.id)
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    setIsLiked(!!data);
-  }, [post, user]);
+  useEffect(() => {
+    if (post && user) {
+      checkIfLiked();
+    }
+  }, [post, user, checkIfLiked]);
 
   const handleLike = async () => {
     if (!user) {
@@ -436,7 +441,9 @@ export default function BlogPost() {
               )}
 
               {/* Comments */}
-              <BlogCommentSection postId={post.id} />
+              {settings.enableComments && (
+                <BlogCommentSection postId={post.id} />
+              )}
 
               {/* Related Posts */}
               {relatedPosts.length > 0 && (

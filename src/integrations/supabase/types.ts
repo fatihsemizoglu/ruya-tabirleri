@@ -783,8 +783,12 @@ export type Database = {
         Returns: string
       }
       publish_scheduled_posts: { Args: never; Returns: number }
+      count_search_dreams: {
+        Args: { search_query: string }
+        Returns: number
+      }
       search_dreams: {
-        Args: { limit_count?: number; search_query: string }
+        Args: { limit_count?: number; offset_count?: number; search_query: string }
         Returns: {
           category_id: string
           content: string

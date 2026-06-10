@@ -1,15 +1,13 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+import { handleOptions, jsonResponse } from "../_shared/cors.ts";
+import { requireAdmin } from "../_shared/auth.ts";
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const options = handleOptions(req);
+  if (options) return options;
+
+  const authResult = await requireAdmin(req);
+  if (authResult instanceof Response) return authResult;
 
   try {
     const { title, content, currentKeywords, type } = await req.json();
@@ -19,7 +17,7 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const systemPrompt = type === "keywords" 
+    const systemPrompt = type === "keywords"
       ? `Sen bir SEO ve içerik uzmanısın. Verilen rüya tabiri için en uygun anahtar kelimeleri öner.
          Kurallar:
          - 8-12 adet anahtar kelime öner
@@ -65,21 +63,15 @@ serve(async (req) => {
           ],
           temperature: 0.7,
         }),
-      }
+      },
     );
 
     if (!response.ok) {
       if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Rate limit aşıldı, lütfen biraz bekleyin." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return jsonResponse({ error: "Rate limit aşıldı, lütfen biraz bekleyin." }, 429);
       }
       if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "Kredi limiti doldu, lütfen hesabınızı kontrol edin." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return jsonResponse({ error: "Kredi limiti doldu, lütfen hesabınızı kontrol edin." }, 402);
       }
       const errorText = await response.text();
       console.error("AI gateway error:", response.status, errorText);
@@ -104,14 +96,12 @@ serve(async (req) => {
       result = JSON.parse(jsonMatch[0]);
     }
 
-    return new Response(JSON.stringify(result), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse(result);
   } catch (error) {
     console.error("Content suggestions error:", error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Bilinmeyen hata" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    return jsonResponse(
+      { error: error instanceof Error ? error.message : "Bilinmeyen hata" },
+      500,
     );
   }
 });

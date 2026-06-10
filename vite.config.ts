@@ -123,7 +123,7 @@ export default defineConfig(({ mode }) => ({
     drop: mode === 'production' ? ['console', 'debugger'] : [],
   },
   optimizeDeps: {
-    include: ['lucide-react', 'recharts'],
+    include: ['lucide-react'],
   },
   build: {
     commonjsOptions: {
@@ -132,10 +132,12 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
           'lucide-react': ['lucide-react'],
           'framer-motion': ['framer-motion'],
           'supabase': ['@supabase/supabase-js'],
           'date-fns': ['date-fns'],
+          'recharts': ['recharts'],
         },
       },
     },

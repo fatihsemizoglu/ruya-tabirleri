@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Mail, Loader2, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 
 interface NewsletterSubscribeFormProps {
   variant?: 'default' | 'compact' | 'footer';
@@ -11,10 +12,15 @@ interface NewsletterSubscribeFormProps {
 }
 
 export function NewsletterSubscribeForm({ variant = 'default', className = '' }: NewsletterSubscribeFormProps) {
+  const { settings } = useSiteSettings();
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+
+  if (!settings.enableNewsletter) {
+    return null;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

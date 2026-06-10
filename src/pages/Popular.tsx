@@ -55,16 +55,6 @@ export default function Popular() {
   });
 
   useEffect(() => {
-    fetchCategories();
-    fetchDreams();
-    fetchTotalStats();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    fetchDreams();
-  }, [timeFilter]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
     let ticking = false;
     const handleScroll = () => {
       if (!ticking) {
@@ -175,6 +165,15 @@ export default function Popular() {
       setIsLoading(false);
     }
   }, [getTimeFilterDate]);
+
+  useEffect(() => {
+    fetchCategories();
+    fetchTotalStats();
+  }, [fetchCategories, fetchTotalStats]);
+
+  useEffect(() => {
+    fetchDreams();
+  }, [fetchDreams]);
 
   const loadMore = async (type: 'viewed' | 'liked' | 'featured') => {
     setLoadingMore(true);

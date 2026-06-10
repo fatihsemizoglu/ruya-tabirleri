@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { Upload, X, Loader2, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
 interface ImageUploadProps {
@@ -17,11 +18,16 @@ export function ImageUpload({
   bucket = 'blog-images',
   folder = 'posts'
 }: ImageUploadProps) {
+  const { user } = useAuth();
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleUpload = async (file: File) => {
+    if (!user) {
+      toast.error('Görsel yüklemek için giriş yapmalısınız');
+      return;
+    }
     if (!file.type.startsWith('image/')) {
       toast.error('Sadece görsel dosyaları yükleyebilirsiniz');
       return;
@@ -36,7 +42,7 @@ export function ImageUpload({
 
     try {
       const fileExt = file.name.split('.').pop();
-      const fileName = `${folder}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const fileName = `${user.id}/${folder}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from(bucket)

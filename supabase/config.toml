@@ -8,18 +8,18 @@ verify_jwt = true
 
 [functions.subscribe-newsletter]
 verify_jwt = false
- 
- [functions.sitemap]
- verify_jwt = false
- 
- [functions.generate-seo]
- verify_jwt = false
+
+[functions.sitemap]
+verify_jwt = false
+
+[functions.generate-seo]
+verify_jwt = true
 
 [functions.generate-content-suggestions]
-verify_jwt = false
+verify_jwt = true
 
 [functions.generate-internal-links]
-verify_jwt = false
+verify_jwt = true
 
 [functions.interpret-dream]
 verify_jwt = false

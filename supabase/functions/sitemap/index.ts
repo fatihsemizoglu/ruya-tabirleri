@@ -15,22 +15,20 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
      const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
      const supabase = createClient(supabaseUrl, supabaseKey);
  
-     // Site base URL - production URL
-     const baseUrl = "https://mystic-logbook.lovable.app";
- 
-     // Static pages
-     const staticPages = [
-       { url: "/", priority: "1.0", changefreq: "daily" },
-       { url: "/hakkimizda", priority: "0.8", changefreq: "monthly" },
-       { url: "/iletisim", priority: "0.8", changefreq: "monthly" },
-       { url: "/blog", priority: "0.9", changefreq: "daily" },
-       { url: "/kategoriler", priority: "0.9", changefreq: "weekly" },
-       { url: "/populer", priority: "0.8", changefreq: "daily" },
-       { url: "/ara", priority: "0.7", changefreq: "weekly" },
-       { url: "/alfabe", priority: "0.8", changefreq: "weekly" },
-       { url: "/gizlilik", priority: "0.3", changefreq: "yearly" },
-       { url: "/kullanim-sartlari", priority: "0.3", changefreq: "yearly" },
-     ];
+    const baseUrl = Deno.env.get("SITE_URL") || "https://ruya-tabirleri.vercel.app";
+
+    const staticPages = [
+      { url: "/", priority: "1.0", changefreq: "daily" },
+      { url: "/hakkimizda", priority: "0.8", changefreq: "monthly" },
+      { url: "/iletisim", priority: "0.8", changefreq: "monthly" },
+      { url: "/blog", priority: "0.9", changefreq: "daily" },
+      { url: "/kategoriler", priority: "0.9", changefreq: "weekly" },
+      { url: "/populer", priority: "0.8", changefreq: "daily" },
+      { url: "/ara", priority: "0.7", changefreq: "weekly" },
+      { url: "/az", priority: "0.8", changefreq: "weekly" },
+      { url: "/gizlilik", priority: "0.3", changefreq: "yearly" },
+      { url: "/kullanim-kosullari", priority: "0.3", changefreq: "yearly" },
+    ];
  
      // Fetch published dreams
      const { data: dreams } = await supabase

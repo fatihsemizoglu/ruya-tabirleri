@@ -27,6 +27,7 @@ export default function Search() {
   const query = searchParams.get('q') || '';
   
   const [results, setResults] = useState<DreamSearchResult[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
@@ -49,9 +50,13 @@ export default function Search() {
 
   // Load recent searches from localStorage
   useEffect(() => {
-    const saved = localStorage.getItem(RECENT_SEARCHES_KEY);
-    if (saved) {
-      setRecentSearches(JSON.parse(saved));
+    try {
+      const saved = localStorage.getItem(RECENT_SEARCHES_KEY);
+      if (saved) {
+        setRecentSearches(JSON.parse(saved));
+      }
+    } catch {
+      localStorage.removeItem(RECENT_SEARCHES_KEY);
     }
   }, []);
 
@@ -109,24 +114,30 @@ export default function Search() {
     });
   }, []);
 
-  const performSearch = useCallback(async (searchTerm: string) => {
+  const fetchSearchPage = useCallback(async (searchTerm: string, page: number) => {
     setIsLoading(true);
     try {
-      // Sunucu tarafında makul limit (aşırı veri çekmeyi önler)
-      const { data, error } = await supabase.rpc('search_dreams', {
-        search_query: searchTerm,
-        limit_count: 200
-      });
+      const offset = (page - 1) * RESULTS_PER_PAGE;
+      const [searchRes, countRes] = await Promise.all([
+        supabase.rpc('search_dreams', {
+          search_query: searchTerm,
+          limit_count: RESULTS_PER_PAGE,
+          offset_count: offset,
+        }),
+        supabase.rpc('count_search_dreams', { search_query: searchTerm }),
+      ]);
 
-      if (error) throw error;
-      setResults((data as DreamSearchResult[]) || []);
-      setCurrentPage(1);
+      if (searchRes.error) throw searchRes.error;
+      setResults((searchRes.data as DreamSearchResult[]) || []);
+      setTotalCount(typeof countRes.data === 'number' ? countRes.data : 0);
 
-      // Save to recent searches
-      saveRecentSearch(searchTerm);
+      if (page === 1) {
+        saveRecentSearch(searchTerm);
+      }
     } catch (error) {
       console.error('Search error:', error);
       setResults([]);
+      setTotalCount(0);
     } finally {
       setIsLoading(false);
     }
@@ -149,16 +160,19 @@ export default function Search() {
     }
   }, []);
 
-  // Perform search when query changes
+  // Sunucu tarafı arama: sorgu veya sayfa değişince
   useEffect(() => {
     if (query) {
-      performSearch(query);
-      fetchRelatedDreams(query);
+      fetchSearchPage(query, currentPage);
+      if (currentPage === 1) {
+        fetchRelatedDreams(query);
+      }
     } else {
       setResults([]);
       setRelatedDreams([]);
+      setTotalCount(0);
     }
-  }, [query, performSearch, fetchRelatedDreams]);
+  }, [query, currentPage, fetchSearchPage, fetchRelatedDreams]);
 
   // Apply filters and sorting
   const filteredResults = useMemo(() => {
@@ -205,13 +219,8 @@ export default function Search() {
     return filtered;
   }, [results, advancedFilters]);
 
-  // Pagination
-  const paginatedResults = useMemo(() => {
-    const start = (currentPage - 1) * RESULTS_PER_PAGE;
-    return filteredResults.slice(start, start + RESULTS_PER_PAGE);
-  }, [filteredResults, currentPage]);
-
-  const totalPages = Math.ceil(filteredResults.length / RESULTS_PER_PAGE);
+  const paginatedResults = filteredResults;
+  const totalPages = Math.ceil(totalCount / RESULTS_PER_PAGE);
 
   // Query değişince sayfa 1'e dön
   useEffect(() => {
@@ -262,6 +271,8 @@ export default function Search() {
     if (advancedFilters.sortBy !== 'relevance') count++;
     return count;
   }, [advancedFilters]);
+
+  const hasActiveFilters = activeFilterCount > 0;
 
   return (
     <Layout>
@@ -362,9 +373,11 @@ export default function Search() {
                     ) : (
                       <>
                         <span className="font-medium text-foreground">"{query}"</span> için{' '}
-                        <span className="font-medium text-foreground">{filteredResults.length}</span> sonuç
-                        {activeFilterCount > 0 && (
-                          <span className="text-primary"> ({activeFilterCount} filtre aktif)</span>
+                        <span className="font-medium text-foreground">{totalCount}</span> sonuç
+                        {hasActiveFilters && (
+                          <span className="text-primary">
+                            {' '}({activeFilterCount} filtre aktif — bu sayfada {filteredResults.length} eşleşme)
+                          </span>
                         )}
                       </>
                     )}
