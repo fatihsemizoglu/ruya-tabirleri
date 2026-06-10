@@ -66,7 +66,7 @@ export function DreamManagement() {
       if (error) throw error;
       return count || 0;
     },
-    staleTime: 30000,
+    staleTime: 120000,
   });
 
   const { data: dreams, isLoading } = useQuery({
@@ -90,7 +90,7 @@ export function DreamManagement() {
       if (error) throw error;
       return data;
     },
-    staleTime: 30000,
+    staleTime: 120000,
     gcTime: 5 * 60 * 1000,
     refetchOnWindowFocus: true,
   });

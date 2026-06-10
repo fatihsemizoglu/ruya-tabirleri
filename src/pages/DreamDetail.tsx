@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, useScroll, useSpring } from 'framer-motion';
 import { Eye, Heart, Bookmark, ArrowLeft, Calendar, BookOpen, Sparkles, Clock, ChevronRight, Share2, Tag, Folder, Check, Moon } from 'lucide-react';
@@ -97,6 +97,8 @@ function ShareButton({ title, description, url }: { title: string; description: 
 
 export default function DreamDetail() {
   const { slug } = useParams<{ slug: string }>();
+  const latestSlugRef = useRef(slug);
+  latestSlugRef.current = slug;
   const [dream, setDream] = useState<Dream | null>(null);
   const [comments, setComments] = useState<(Comment & { profiles?: Profile })[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -152,6 +154,7 @@ export default function DreamDetail() {
         .maybeSingle();
 
       if (error) throw error;
+      if (slug !== latestSlugRef.current) return;
       if (!dreamData) {
         setDream(null);
         return;
@@ -160,6 +163,7 @@ export default function DreamDetail() {
       setDream(dreamData as Dream);
 
       await supabase.rpc('increment_view_count', { dream_id: dreamData.id });
+      if (slug !== latestSlugRef.current) return;
       // Optimistik view_count +1 (RPC basarili olursa DB zaten +1, UI senkron kalsin).
       setDream((prev) => (prev ? { ...prev, view_count: (prev.view_count || 0) + 1 } : prev));
 

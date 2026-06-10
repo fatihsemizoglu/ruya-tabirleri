@@ -1,6 +1,5 @@
 import { memo } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { Calendar, Eye, Heart, Clock, Tag, ArrowUpRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { BlogPost } from '@/types/blog';
@@ -20,11 +19,8 @@ export const BlogCard = memo(function BlogCard({ post, variant = 'default' }: Bl
 
   if (variant === 'compact') {
     return (
-      <motion.article
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        whileHover={{ x: 4 }}
-        className="group relative flex gap-4 p-4 rounded-2xl bg-white/70 dark:bg-slate-800/50 backdrop-blur-sm border border-slate-200/50 dark:border-slate-700/50 hover:border-indigo-300 dark:hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/10 transition-all duration-300"
+      <article
+        className="group relative flex gap-4 p-4 rounded-2xl bg-white/70 dark:bg-slate-800/50 md:backdrop-blur-sm border border-slate-200/50 dark:border-slate-700/50 hover:border-indigo-300 dark:hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/10 hover:translate-x-1 transition-all duration-300"
       >
         {post.featured_image && (
           <Link to={`/blog/${post.slug}`} className="shrink-0">
@@ -62,17 +58,14 @@ export const BlogCard = memo(function BlogCard({ post, variant = 'default' }: Bl
           </div>
         </div>
         <ArrowUpRight className="w-4 h-4 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity self-center" />
-      </motion.article>
+      </article>
     );
   }
 
   if (variant === 'featured') {
     return (
-      <motion.article
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        whileHover={{ y: -4 }}
-        className="relative group h-full min-h-[400px] overflow-hidden rounded-3xl"
+      <article
+        className="relative group h-full min-h-[400px] overflow-hidden rounded-3xl hover:-translate-y-1 transition-transform duration-500"
       >
         {/* Background Image */}
         <div className="absolute inset-0">
@@ -159,17 +152,14 @@ export const BlogCard = memo(function BlogCard({ post, variant = 'default' }: Bl
             </div>
           </div>
         </div>
-      </motion.article>
+      </article>
     );
   }
 
   // Default variant
   return (
-    <motion.article
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -6 }}
-      className="group relative bg-white dark:bg-slate-800/50 rounded-3xl border border-slate-200/50 dark:border-slate-700/50 overflow-hidden hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-500"
+    <article
+      className="group relative bg-white dark:bg-slate-800/50 rounded-3xl border border-slate-200/50 dark:border-slate-700/50 overflow-hidden hover:shadow-2xl hover:shadow-indigo-500/10 hover:-translate-y-1.5 transition-all duration-500"
     >
       {/* Featured Image */}
       {post.featured_image && (
@@ -274,6 +264,6 @@ export const BlogCard = memo(function BlogCard({ post, variant = 'default' }: Bl
           </div>
         </div>
       </div>
-    </motion.article>
+    </article>
   );
 });

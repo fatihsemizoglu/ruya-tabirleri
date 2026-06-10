@@ -115,10 +115,17 @@ export default function AlphabetList() {
   }, [selectedLetter]);
 
   useEffect(() => {
+    let ticking = false;
     const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 400);
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          setShowScrollTop(window.scrollY > 400);
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -289,15 +296,14 @@ export default function AlphabetList() {
                 const intensity = count > 0 ? Math.max(0.1, count / maxCount) : 0;
 
                 return (
-                  <motion.button
+                  <button
                     key={char}
-                    whileHover={!isEmpty ? { scale: 1.1 } : {}}
-                    whileTap={!isEmpty ? { scale: 0.95 } : {}}
                     onClick={() => handleLetterClick(char)}
                     disabled={isEmpty}
                     className={`
                       relative w-9 h-9 md:w-10 md:h-10 rounded-lg flex items-center justify-center
                       font-semibold text-sm transition-all duration-200
+                      ${!isEmpty ? 'hover:scale-110 active:scale-95' : ''}
                       ${isActive
                         ? 'bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white shadow-lg shadow-violet-500/30'
                         : isEmpty
@@ -316,7 +322,7 @@ export default function AlphabetList() {
                         {count > 9 ? '9+' : count}
                       </span>
                     )}
-                  </motion.button>
+                  </button>
                 );
               })}
             </div>
@@ -518,7 +524,7 @@ export default function AlphabetList() {
                     >
                       <Link
                         to={`/ruya/${dream.slug}`}
-                        className="group flex items-center gap-4 p-4 surface hover:shadow-lg transition-all duration-300"
+                        className="render-optimize group flex items-center gap-4 p-4 surface hover:shadow-lg transition-all duration-300"
                       >
                         <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center text-xl font-serif-dream font-bold text-white shrink-0 shadow-md`}>
                           {dream.title.charAt(0)}
@@ -704,13 +710,13 @@ export default function AlphabetList() {
                 const intensity = count > 0 ? Math.max(0.15, count / maxCount) : 0;
 
                 return (
-                  <motion.button
+                  <button
                     key={char}
-                    whileHover={count > 0 ? { scale: 1.05 } : {}}
                     onClick={() => count > 0 && handleLetterClick(char)}
                     disabled={count === 0}
                     className={`
                       relative p-3 rounded-xl text-center transition-all duration-200
+                      ${count > 0 ? 'hover:scale-105' : ''}
                       ${isActive
                         ? 'bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white shadow-lg shadow-violet-500/30'
                         : count === 0
@@ -732,7 +738,7 @@ export default function AlphabetList() {
                     }`}>
                       {count}
                     </span>
-                  </motion.button>
+                  </button>
                 );
               })}
             </div>

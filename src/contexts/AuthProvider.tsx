@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, ReactNode } from 'react';
+import { useState, useEffect, useRef, useCallback, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { Profile, AppRole } from '@/types/database';
 import { AuthContext, type AuthContextType } from './auth-context';
@@ -14,11 +14,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const currentUserIdRef = useRef<string | null>(null);
   const initializedRef = useRef(false);
 
-  const loadUserData = async (userId: string) => {
+  const fetchProfile = useCallback(async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (error) throw error;
+      setProfile(data);
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+    }
+  }, []);
+
+  const fetchRoles = useCallback(async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId);
+
+      if (error) throw error;
+      setRoles(data?.map((r) => r.role) || []);
+    } catch (error) {
+      console.error('Error fetching roles:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const loadUserData = useCallback(async (userId: string) => {
     if (currentUserIdRef.current === userId) return;
     currentUserIdRef.current = userId;
     await Promise.all([fetchProfile(userId), fetchRoles(userId)]);
-  };
+  }, [fetchProfile, fetchRoles]);
 
   useEffect(() => {
     // ADIM 1: Önce listener kur (Supabase önerisi)
@@ -51,38 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
-
-  const fetchProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', userId)
-        .maybeSingle();
-
-      if (error) throw error;
-      setProfile(data);
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-    }
-  };
-
-  const fetchRoles = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId);
-
-      if (error) throw error;
-      setRoles(data?.map((r) => r.role) || []);
-    } catch (error) {
-      console.error('Error fetching roles:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [loadUserData]);
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });

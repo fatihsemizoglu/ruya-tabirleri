@@ -91,12 +91,16 @@ Kurallar:
       throw new Error("AI yanıtı alınamadı");
     }
 
-    const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error("Geçerli JSON yanıtı alınamadı");
+    let result: Record<string, unknown>;
+    try {
+      result = JSON.parse(aiResponse);
+    } catch {
+      const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error("Geçerli JSON yanıtı alınamadı");
+      }
+      result = JSON.parse(jsonMatch[0]);
     }
-
-    const result = JSON.parse(jsonMatch[0]);
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

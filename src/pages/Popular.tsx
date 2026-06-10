@@ -58,17 +58,26 @@ export default function Popular() {
     fetchCategories();
     fetchDreams();
     fetchTotalStats();
-
-    const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 400);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [fetchCategories, fetchDreams, fetchTotalStats]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     fetchDreams();
-  }, [timeFilter, fetchDreams]);
+  }, [timeFilter]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    let ticking = false;
+    const handleScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          setShowScrollTop(window.scrollY > 400);
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const getTimeFilterDate = useCallback(() => {
     const now = new Date();
@@ -326,15 +335,10 @@ export default function Popular() {
 
     if (viewMode === 'list') {
       return (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-50px' }}
-          transition={{ duration: 0.3, delay: (index % ITEMS_PER_PAGE) * 0.02 }}
-        >
+        <div>
           <Link
             to={`/ruya/${dream.slug}`}
-            className="group flex items-center gap-4 bg-card border border-border/50 rounded-2xl p-4 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300"
+            className="render-optimize group flex items-center gap-4 bg-card border border-border/50 rounded-2xl p-4 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300"
           >
             <div className="shrink-0 w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-sm font-bold text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
               #{index + 1}
@@ -375,21 +379,15 @@ export default function Popular() {
               <ArrowUpRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
             </div>
           </Link>
-        </motion.div>
+        </div>
       );
     }
 
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: '-50px' }}
-        transition={{ duration: 0.4, delay: (index % ITEMS_PER_PAGE) * 0.03 }}
-        className={isTopThree ? 'md:col-span-1' : ''}
-      >
+      <div className={isTopThree ? 'md:col-span-1' : ''}>
         <Link
           to={`/ruya/${dream.slug}`}
-          className={`group relative block h-full bg-card border border-border/50 rounded-2xl p-6 overflow-hidden hover:border-primary/30 hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-1 transition-all duration-500`}
+          className={`render-optimize group relative block h-full bg-card border border-border/50 rounded-2xl p-6 overflow-hidden hover:border-primary/30 hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-1 transition-all duration-500`}
         >
           {/* Top gradient bar */}
           <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${rankGradient}`} />
@@ -463,7 +461,7 @@ export default function Popular() {
             </div>
           </div>
         </Link>
-      </motion.div>
+      </div>
     );
   };
 
@@ -595,12 +593,8 @@ export default function Popular() {
             {stats.map((stat, idx) => {
               const Icon = stat.icon;
               return (
-                <motion.div
+                <div
                   key={stat.label}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.4, delay: idx * 0.05 }}
                   className="group bg-card border border-border/50 rounded-2xl p-4 sm:p-5 hover:border-primary/30 hover:shadow-lg transition-all duration-300"
                 >
                   <div className={`w-9 h-9 rounded-xl ${stat.bg} flex items-center justify-center mb-3`}>
@@ -612,7 +606,7 @@ export default function Popular() {
                   <div className="text-xs sm:text-sm text-muted-foreground mt-0.5 font-medium">
                     {stat.label}
                   </div>
-                </motion.div>
+                </div>
               );
             })}
           </div>
@@ -697,11 +691,7 @@ export default function Popular() {
 
         {/* Active filters */}
         {(searchQuery || timeFilter !== 'all' || selectedCategory !== 'all') && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex items-center gap-2 mb-6 text-sm text-muted-foreground flex-wrap"
-          >
+          <div className="flex items-center gap-2 mb-6 text-sm text-muted-foreground flex-wrap animate-in fade-in slide-in-from-top-1 duration-200">
             <span>Filtreler:</span>
             {timeFilter !== 'all' && (
               <Badge variant="secondary" className="rounded-full">
@@ -730,7 +720,7 @@ export default function Popular() {
             >
               Temizle
             </Button>
-          </motion.div>
+          </div>
         )}
 
         {/* Tabs */}
@@ -842,13 +832,7 @@ export default function Popular() {
                 const category = dream.category_id ? categories[dream.category_id] : null;
 
                 return (
-                  <motion.div
-                    key={dream.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.4, delay: index * 0.1 }}
-                  >
+                  <div key={dream.id}>
                     <Link
                       to={`/ruya/${dream.slug}`}
                       className={`group relative block overflow-hidden rounded-2xl bg-card p-6 border ${gradients[index]} hover:shadow-xl hover:-translate-y-1 transition-all duration-500`}
@@ -882,7 +866,7 @@ export default function Popular() {
                         </span>
                       </div>
                     </Link>
-                  </motion.div>
+                  </div>
                 );
               })}
             </div>
@@ -891,11 +875,7 @@ export default function Popular() {
 
         {/* Scroll to Top */}
         {showScrollTop && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="fixed bottom-6 right-6 z-50"
-          >
+          <div className="fixed bottom-6 right-6 z-50 animate-in fade-in zoom-in duration-200">
             <Button
               size="icon"
               onClick={scrollToTop}
@@ -903,7 +883,7 @@ export default function Popular() {
             >
               <ChevronUp className="h-5 w-5" />
             </Button>
-          </motion.div>
+          </div>
         )}
       </div>
     </Layout>

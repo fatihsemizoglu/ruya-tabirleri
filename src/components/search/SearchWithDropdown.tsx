@@ -47,6 +47,13 @@ export function SearchWithDropdown({
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
+
   // Detect SpeechRecognition support
   useEffect(() => {
     if (typeof window !== 'undefined') {

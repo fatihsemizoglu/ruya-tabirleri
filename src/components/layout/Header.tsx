@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import * as LucideIcons from 'lucide-react';
 import {
   Moon,
   Sun,
@@ -30,8 +29,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { BlogCategory } from '@/types/blog';
 import { useQuery } from '@tanstack/react-query';
-
-const icons = LucideIcons as unknown as Record<string, React.ComponentType<{ className?: string }>>;
+import { getIcon } from '@/lib/icons';
 
 interface Category {
   id: string;
@@ -47,16 +45,6 @@ interface BlogPostPreview {
   featured_image: string | null;
   category: BlogCategory | null;
 }
-
-const getIcon = (iconName: string | null | undefined) => {
-  if (!iconName) return null;
-  const normalized = iconName
-    .charAt(0)
-    .toUpperCase()
-    .concat(iconName.slice(1))
-    .replace(/-([a-z])/g, (_, c: string) => c.toUpperCase());
-  return icons[normalized] || null;
-};
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -138,14 +126,6 @@ export function Header() {
     }
   }, []);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
   // Sayfa değiştiğinde menüleri kapat
   useEffect(() => {
     setOpenCategoryMenu(false);
@@ -206,21 +186,34 @@ export function Header() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
+  // Scroll throttle for isScrolled
+  useEffect(() => {
+    let ticking = false;
+    const handleScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          setIsScrolled(window.scrollY > 10);
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
     <header
       className={cn(
         'sticky top-0 z-50 w-full transition-all duration-300',
-        'bg-white/55 dark:bg-slate-950/55',
-        'backdrop-blur-2xl backdrop-saturate-150',
+        'bg-white/80 dark:bg-slate-950/80',
+        'md:bg-white/55 md:dark:bg-slate-950/55',
+        'md:backdrop-blur-2xl md:backdrop-saturate-150',
         'border-b border-white/30 dark:border-white/10',
         'shadow-[0_1px_0_0_rgba(255,255,255,0.4)_inset,0_-1px_0_0_rgba(0,0,0,0.04)_inset,0_2px_20px_-10px_rgba(0,0,0,0.08)]',
         isScrolled &&
-          'bg-white/70 dark:bg-slate-950/70 shadow-[0_1px_0_0_rgba(255,255,255,0.4)_inset,0_-1px_0_0_rgba(0,0,0,0.04)_inset,0_4px_24px_-12px_rgba(0,0,0,0.12)]'
+          'bg-white/85 dark:bg-slate-950/85 md:bg-white/70 md:dark:bg-slate-950/70 shadow-[0_1px_0_0_rgba(255,255,255,0.4)_inset,0_-1px_0_0_rgba(0,0,0,0.04)_inset,0_4px_24px_-12px_rgba(0,0,0,0.12)]'
       )}
-      style={{
-        WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-        backdropFilter: 'blur(24px) saturate(180%)',
-      }}
     >
       <div className="container flex h-16 items-center justify-between gap-4">
         {/* Logo */}
@@ -294,7 +287,7 @@ export function Header() {
                 onMouseEnter={cancelClose}
                 onMouseLeave={scheduleClose}
               >
-                <div className="w-[420px] max-w-[90vw] rounded-2xl border border-white/40 dark:border-white/10 bg-white/95 dark:bg-slate-950/95 backdrop-blur-2xl shadow-2xl shadow-black/10 p-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="w-[420px] max-w-[90vw] rounded-2xl border border-white/40 dark:border-white/10 bg-white/95 dark:bg-slate-950/95 md:backdrop-blur-2xl shadow-2xl shadow-black/10 p-3 animate-in fade-in slide-in-from-top-2 duration-200">
                   <div className="px-3 py-2 mb-1 flex items-center justify-between">
                     <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                       Rüya Kategorileri
@@ -392,7 +385,7 @@ export function Header() {
                 onMouseEnter={cancelClose}
                 onMouseLeave={scheduleClose}
               >
-                <div className="w-[760px] max-w-[95vw] rounded-2xl border border-white/40 dark:border-white/10 bg-white/95 dark:bg-slate-950/95 backdrop-blur-2xl shadow-2xl shadow-black/10 p-5 animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="w-[760px] max-w-[95vw] rounded-2xl border border-white/40 dark:border-white/10 bg-white/95 dark:bg-slate-950/95 md:backdrop-blur-2xl shadow-2xl shadow-black/10 p-5 animate-in fade-in slide-in-from-top-2 duration-200">
                   <div className="grid grid-cols-12 gap-5">
                     {/* Blog Kategorileri */}
                     <div className="col-span-12 md:col-span-5">
@@ -635,14 +628,11 @@ export function Header() {
       <div
         className={cn(
           'lg:hidden overflow-hidden transition-all duration-300',
-          'bg-white/70 dark:bg-slate-950/70 backdrop-blur-2xl backdrop-saturate-150',
+          'bg-white/85 dark:bg-slate-950/85',
+          'md:bg-white/70 md:dark:bg-slate-950/70 md:backdrop-blur-2xl md:backdrop-saturate-150',
           'border-t border-white/30 dark:border-white/10',
           isMenuOpen ? 'max-h-[80vh]' : 'max-h-0'
         )}
-        style={{
-          WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-          backdropFilter: 'blur(24px) saturate(180%)',
-        }}
       >
         <div className="container py-4 space-y-2 max-h-[80vh] overflow-y-auto">
           <nav className="flex flex-col gap-1">

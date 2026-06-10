@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageCircle, Heart, Send, CornerDownRight, Trash2, AlertCircle, Info, UserCircle2, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -50,14 +50,7 @@ export function BlogCommentSection({ postId }: BlogCommentSectionProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [likedComments, setLikedComments] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    fetchComments();
-    if (user) {
-      fetchUserLikes();
-    }
-  }, [postId, user]);
-
-  const fetchComments = async () => {
+  const fetchComments = useCallback(async () => {
     setIsLoading(true);
     const { data, error } = await supabase
       .from('blog_comments')
@@ -117,9 +110,9 @@ export function BlogCommentSection({ postId }: BlogCommentSectionProps) {
       setComments(rootComments);
     }
     setIsLoading(false);
-  };
+  }, [postId]);
 
-  const fetchUserLikes = async () => {
+  const fetchUserLikes = useCallback(async () => {
     if (!user) return;
     const { data } = await supabase
       .from('blog_comment_likes')
@@ -128,7 +121,14 @@ export function BlogCommentSection({ postId }: BlogCommentSectionProps) {
     if (data) {
       setLikedComments(new Set(data.map((l) => l.comment_id)));
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    fetchComments();
+    if (user) {
+      fetchUserLikes();
+    }
+  }, [fetchComments, fetchUserLikes, user]);
 
   const handleSubmitComment = async (parentId?: string) => {
     const content = parentId ? replyContent : newComment;

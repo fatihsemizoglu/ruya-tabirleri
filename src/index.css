@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Manrope:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -144,7 +144,6 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'Inter', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1, "cv11" 1;
     letter-spacing: -0.011em;
   }
@@ -194,11 +193,6 @@
       radial-gradient(ellipse 40% 30% at 10% 80%, hsl(220 60% 60% / 0.04), transparent);
   }
 
-  .font-serif-dream {
-    font-family: 'Inter', 'Plus Jakarta Sans', system-ui, sans-serif;
-    font-weight: 700;
-    letter-spacing: -0.03em;
-  }
 }
 
 @keyframes fadeIn {
@@ -244,5 +238,26 @@
 
   .line-height-snug {
     line-height: 1.3;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .hover\:scale-105:hover,
+  .hover\:scale-110:hover,
+  .group:hover .group-hover\:translate-x-full,
+  .group:hover .group-hover\:opacity-100 {
+    transform: none !important;
+    opacity: 1 !important;
   }
 }

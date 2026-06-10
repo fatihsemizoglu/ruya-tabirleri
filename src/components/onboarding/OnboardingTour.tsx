@@ -182,11 +182,6 @@ export function OnboardingTour() {
           </motion.div>
         </>
       )}
-    </AnimatePresence>
+</AnimatePresence>
   );
-}
-
-// Reset tour for testing
-export function resetOnboardingTour() {
-  localStorage.removeItem('hasSeenOnboardingTour');
 }

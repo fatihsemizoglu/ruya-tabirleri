@@ -82,57 +82,65 @@ const handler = async (req: Request): Promise<Response> => {
       ? `${baseUrl}/blog/${postSlug}`
       : `${baseUrl}/ruya/${postSlug}`;
 
+    const emailHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 24px;">\u{1F319} R\u00FCya Tabirleri</h1>
+        </div>
+        <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 12px 12px;">
+          <p style="margin-top: 0;">Merhaba,</p>
+          <p>Sitemizde yeni bir i\u00E7erik yay\u0131nland\u0131:</p>
+          <div style="background: white; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea; margin: 20px 0;">
+            <h2 style="margin: 0 0 10px 0; color: #1f2937; font-size: 18px;">${postTitle}</h2>
+            ${postExcerpt ? `<p style="margin: 0; color: #6b7280; font-size: 14px;">${postExcerpt}</p>` : ''}
+          </div>
+          <a href="${postUrl}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; margin: 10px 0;">
+            \u0130\u00E7eri\u011Fi Oku \u2192
+          </a>
+          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+          <p style="font-size: 12px; color: #9ca3af; margin-bottom: 0;">
+            Bu e-postay\u0131 almak istemiyorsan\u0131z, 
+            <a href="${baseUrl}/abonelik-iptal?email=%EMAIL%" style="color: #667eea;">aboneli\u011Finizi iptal edebilirsiniz</a>.
+          </p>
+        </div>
+      </body>
+      </html>`;
+
+    const BATCH_SIZE = 50;
     let successCount = 0;
     const errors: string[] = [];
 
-    // Send emails in batches
-    for (const subscriber of subscribers) {
+    for (let i = 0; i < subscribers.length; i += BATCH_SIZE) {
+      const batch = subscribers.slice(i, i + BATCH_SIZE);
       try {
         await sendEmail(RESEND_API_KEY, {
           from: "Rüya Tabirleri <bildirim@ruya-tabirleri.com>",
-          to: [subscriber.email],
+          to: batch.map((s: { email: string; name?: string | null }) => s.email),
           subject: `Yeni İçerik: ${postTitle}`,
-          html: `
-            <!DOCTYPE html>
-            <html>
-            <head>
-              <meta charset="utf-8">
-              <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            </head>
-            <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-              <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
-                <h1 style="color: white; margin: 0; font-size: 24px;">🌙 Rüya Tabirleri</h1>
-              </div>
-              
-              <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 12px 12px;">
-                <p style="margin-top: 0;">Merhaba${subscriber.name ? ` ${subscriber.name}` : ''},</p>
-                
-                <p>Sitemizde yeni bir içerik yayınlandı:</p>
-                
-                <div style="background: white; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea; margin: 20px 0;">
-                  <h2 style="margin: 0 0 10px 0; color: #1f2937; font-size: 18px;">${postTitle}</h2>
-                  ${postExcerpt ? `<p style="margin: 0; color: #6b7280; font-size: 14px;">${postExcerpt}</p>` : ''}
-                </div>
-                
-                <a href="${postUrl}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; margin: 10px 0;">
-                  İçeriği Oku →
-                </a>
-                
-                <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
-                
-                <p style="font-size: 12px; color: #9ca3af; margin-bottom: 0;">
-                  Bu e-postayı almak istemiyorsanız, 
-                  <a href="${baseUrl}/abonelik-iptal?email=${encodeURIComponent(subscriber.email)}" style="color: #667eea;">aboneliğinizi iptal edebilirsiniz</a>.
-                </p>
-              </div>
-            </body>
-            </html>
-          `,
+          html: emailHtml,
         });
-        successCount++;
+        successCount += batch.length;
       } catch (emailError) {
-        console.error(`Failed to send to ${subscriber.email}:`, emailError);
-        errors.push(subscriber.email);
+        console.error(`Batch ${Math.floor(i / BATCH_SIZE) + 1} failed, falling back to individual:`, emailError);
+        for (const sub of batch) {
+          try {
+            await sendEmail(RESEND_API_KEY, {
+              from: "Rüya Tabirleri <bildirim@ruya-tabirleri.com>",
+              to: [sub.email],
+              subject: `Yeni İçerik: ${postTitle}`,
+              html: emailHtml.replace('%EMAIL%', encodeURIComponent(sub.email)),
+            });
+            successCount++;
+          } catch (e) {
+            errors.push(sub.email);
+          }
+        }
       }
     }
 
