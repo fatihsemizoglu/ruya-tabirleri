@@ -98,8 +98,7 @@ export function VoiceSearchModal({ open, onOpenChange, onResult }: VoiceSearchMo
     return () => {
       stopRecognition();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  }, [open, stopRecognition]);
 
   const startAudioAnalysis = useCallback(async () => {
     try {

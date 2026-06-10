@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Search as SearchIcon, Sparkles, Layers, TrendingUp, Grid3X3, List, Eye, Heart, X, SlidersHorizontal, ChevronDown, Star, BookOpen, ArrowUp } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
@@ -94,6 +94,54 @@ export default function Search() {
     fetchMaxStats();
   }, []);
 
+  const saveRecentSearch = useCallback((term: string) => {
+    setRecentSearches(prev => {
+      const updated = [term, ...prev.filter(s => s !== term)].slice(0, MAX_RECENT_SEARCHES);
+      localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
+  const performSearch = useCallback(async (searchTerm: string) => {
+    setIsLoading(true);
+    try {
+      // Sunucu tarafında makul limit (aşırı veri çekmeyi önler)
+      const { data, error } = await supabase.rpc('search_dreams', {
+        search_query: searchTerm,
+        limit_count: 200
+      });
+
+      if (error) throw error;
+      setResults((data as DreamSearchResult[]) || []);
+      setCurrentPage(1);
+
+      // Save to recent searches
+      saveRecentSearch(searchTerm);
+    } catch (error) {
+      console.error('Search error:', error);
+      setResults([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [saveRecentSearch]);
+
+  const fetchRelatedDreams = useCallback(async (_searchTerm: string) => {
+    try {
+      const { data } = await supabase
+        .from('dreams')
+        .select('id, title, slug, content, category_id, view_count, like_count')
+        .eq('is_published', true)
+        .order('view_count', { ascending: false })
+        .limit(6);
+      
+      if (data) {
+        setRelatedDreams(data.map(d => ({ ...d, rank: 0 })) as DreamSearchResult[]);
+      }
+    } catch (error) {
+      console.error('Related dreams error:', error);
+    }
+  }, []);
+
   // Perform search when query changes
   useEffect(() => {
     if (query) {
@@ -103,8 +151,7 @@ export default function Search() {
       setResults([]);
       setRelatedDreams([]);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query]);
+  }, [query, performSearch, fetchRelatedDreams]);
 
   // Apply filters and sorting
   const filteredResults = useMemo(() => {
@@ -163,52 +210,6 @@ export default function Search() {
   useEffect(() => {
     setCurrentPage(1);
   }, [query, advancedFilters]);
-
-  const performSearch = async (searchTerm: string) => {
-    setIsLoading(true);
-    try {
-      // Büyük limit (8610+ rüyayı kapsayacak şekilde)
-      const { data, error } = await supabase.rpc('search_dreams', {
-        search_query: searchTerm,
-        limit_count: 10000
-      });
-
-      if (error) throw error;
-      setResults((data as DreamSearchResult[]) || []);
-      setCurrentPage(1);
-
-      // Save to recent searches
-      saveRecentSearch(searchTerm);
-    } catch (error) {
-      console.error('Search error:', error);
-      setResults([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const fetchRelatedDreams = async (searchTerm: string) => {
-    try {
-      const { data } = await supabase
-        .from('dreams')
-        .select('id, title, slug, content, category_id, view_count, like_count')
-        .eq('is_published', true)
-        .order('view_count', { ascending: false })
-        .limit(6);
-      
-      if (data) {
-        setRelatedDreams(data.map(d => ({ ...d, rank: 0 })) as DreamSearchResult[]);
-      }
-    } catch (error) {
-      console.error('Related dreams error:', error);
-    }
-  };
-
-  const saveRecentSearch = (term: string) => {
-    const updated = [term, ...recentSearches.filter(s => s !== term)].slice(0, MAX_RECENT_SEARCHES);
-    setRecentSearches(updated);
-    localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updated));
-  };
 
   const clearRecentSearches = () => {
     setRecentSearches([]);

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { TrendingUp, Eye, Heart, Star, ChevronUp, Loader2, Flame, Award, Sparkles, Search, Grid3X3, List, Clock, Filter, ArrowUpRight } from 'lucide-react';
@@ -64,15 +64,13 @@ export default function Popular() {
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [fetchCategories, fetchDreams, fetchTotalStats]);
 
   useEffect(() => {
     fetchDreams();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timeFilter]);
+  }, [timeFilter, fetchDreams]);
 
-  const getTimeFilterDate = () => {
+  const getTimeFilterDate = useCallback(() => {
     const now = new Date();
     switch (timeFilter) {
       case 'today':
@@ -86,9 +84,9 @@ export default function Popular() {
       default:
         return null;
     }
-  };
+  }, [timeFilter]);
 
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     const { data } = await supabase.from('categories').select('*');
     if (data) {
       const categoryMap: Record<string, Category> = {};
@@ -97,9 +95,9 @@ export default function Popular() {
       });
       setCategories(categoryMap);
     }
-  };
+  }, []);
 
-  const fetchTotalStats = async () => {
+  const fetchTotalStats = useCallback(async () => {
     const { data } = await supabase
       .from('dreams')
       .select('view_count, like_count')
@@ -112,9 +110,9 @@ export default function Popular() {
         totalLikes: data.reduce((sum, d) => sum + (d.like_count || 0), 0),
       });
     }
-  };
+  }, []);
 
-  const fetchDreams = async () => {
+  const fetchDreams = useCallback(async () => {
     setIsLoading(true);
     try {
       const timeFilterDate = getTimeFilterDate();
@@ -167,7 +165,7 @@ export default function Popular() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [getTimeFilterDate]);
 
   const loadMore = async (type: 'viewed' | 'liked' | 'featured') => {
     setLoadingMore(true);
@@ -226,33 +224,45 @@ export default function Popular() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const filterDreams = (dreams: Dream[]) => {
-    let result = [...dreams];
-
+  const filteredTrending = useMemo(() => {
+    let result = [...trending];
     if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(dream =>
-        dream.title.toLowerCase().includes(query) ||
-        dream.content.toLowerCase().includes(query) ||
-        dream.keywords?.some(k => k.toLowerCase().includes(query))
-      );
+      const q = searchQuery.toLowerCase();
+      result = result.filter(d => d.title.toLowerCase().includes(q) || d.content.toLowerCase().includes(q) || d.keywords?.some(k => k.toLowerCase().includes(q)));
     }
-
-    if (selectedCategory !== 'all') {
-      result = result.filter(dream => dream.category_id === selectedCategory);
-    }
-
+    if (selectedCategory !== 'all') result = result.filter(d => d.category_id === selectedCategory);
     return result;
-  };
+  }, [trending, searchQuery, selectedCategory]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const filteredTrending = useMemo(() => filterDreams(trending), [trending, searchQuery, selectedCategory]);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const filteredViewed = useMemo(() => filterDreams(mostViewed), [mostViewed, searchQuery, selectedCategory]);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const filteredLiked = useMemo(() => filterDreams(mostLiked), [mostLiked, searchQuery, selectedCategory]);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const filteredFeatured = useMemo(() => filterDreams(featured), [featured, searchQuery, selectedCategory]);
+  const filteredViewed = useMemo(() => {
+    let result = [...mostViewed];
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(d => d.title.toLowerCase().includes(q) || d.content.toLowerCase().includes(q) || d.keywords?.some(k => k.toLowerCase().includes(q)));
+    }
+    if (selectedCategory !== 'all') result = result.filter(d => d.category_id === selectedCategory);
+    return result;
+  }, [mostViewed, searchQuery, selectedCategory]);
+
+  const filteredLiked = useMemo(() => {
+    let result = [...mostLiked];
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(d => d.title.toLowerCase().includes(q) || d.content.toLowerCase().includes(q) || d.keywords?.some(k => k.toLowerCase().includes(q)));
+    }
+    if (selectedCategory !== 'all') result = result.filter(d => d.category_id === selectedCategory);
+    return result;
+  }, [mostLiked, searchQuery, selectedCategory]);
+
+  const filteredFeatured = useMemo(() => {
+    let result = [...featured];
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(d => d.title.toLowerCase().includes(q) || d.content.toLowerCase().includes(q) || d.keywords?.some(k => k.toLowerCase().includes(q)));
+    }
+    if (selectedCategory !== 'all') result = result.filter(d => d.category_id === selectedCategory);
+    return result;
+  }, [featured, searchQuery, selectedCategory]);
 
   const stats = [
     {

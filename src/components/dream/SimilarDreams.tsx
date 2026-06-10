@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Eye, Heart, Sparkles, TrendingUp, ArrowRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,12 +23,7 @@ export function SimilarDreams({ currentDream, categoryId, keywords }: SimilarDre
   const [isLoading, setIsLoading] = useState(true);
   const [showAll, setShowAll] = useState(false);
 
-  useEffect(() => {
-    fetchSimilarDreams();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentDream.id, categoryId, keywords]);
-
-  const fetchSimilarDreams = async () => {
+  const fetchSimilarDreams = useCallback(async () => {
     setIsLoading(true);
     try {
       // Fetch dreams from same category
@@ -120,7 +115,11 @@ export function SimilarDreams({ currentDream, categoryId, keywords }: SimilarDre
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentDream.id, categoryId, keywords]);
+
+  useEffect(() => {
+    fetchSimilarDreams();
+  }, [fetchSimilarDreams]);
 
   if (isLoading) {
     return (

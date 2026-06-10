@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Eye, Heart, Search, SlidersHorizontal, ChevronUp, TrendingUp, Clock, Star, Grid3X3, List, Filter, X, Tag, Folder, ArrowLeft, Sparkles, BookOpen, ArrowUpRight, icons } from 'lucide-react';
@@ -49,22 +49,7 @@ export default function CategoryDetail() {
   const [showFeaturedOnly, setShowFeaturedOnly] = useState(false);
   const [selectedKeywords, setSelectedKeywords] = useState<string[]>([]);
 
-  useEffect(() => {
-    if (slug) {
-      fetchCategoryAndDreams();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slug]);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 400);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const fetchCategoryAndDreams = async () => {
+  const fetchCategoryAndDreams = useCallback(async () => {
     setIsLoading(true);
     try {
       const { data: categoryData, error: categoryError } = await supabase
@@ -94,7 +79,21 @@ export default function CategoryDetail() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [slug]);
+
+  useEffect(() => {
+    if (slug) {
+      fetchCategoryAndDreams();
+    }
+  }, [slug, fetchCategoryAndDreams]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 400);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const allKeywords = useMemo(() => {
     const keywordSet = new Set<string>();

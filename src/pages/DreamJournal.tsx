@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Navigate, Link } from 'react-router-dom';
 import { Plus, Book, Calendar, Trash2, Edit, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -40,14 +40,7 @@ export default function DreamJournal() {
     tags: '',
   });
 
-  useEffect(() => {
-    if (user) {
-      fetchEntries();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
-
-  const fetchEntries = async () => {
+  const fetchEntries = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('dream_journal')
@@ -62,7 +55,13 @@ export default function DreamJournal() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      fetchEntries();
+    }
+  }, [user, fetchEntries]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

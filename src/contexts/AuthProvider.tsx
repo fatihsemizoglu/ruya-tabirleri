@@ -1,4 +1,4 @@
-import { useState, useEffect, ReactNode } from 'react';
+import { useState, useEffect, useRef, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { Profile, AppRole } from '@/types/database';
 import { AuthContext, type AuthContextType } from './auth-context';
@@ -10,27 +10,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
-        fetchRoles(session.user.id);
-      } else {
-        setIsLoading(false);
-      }
-    });
+  // Race condition önleme: aynı userId için duplicate fetch engelle
+  const currentUserIdRef = useRef<string | null>(null);
+  const initializedRef = useRef(false);
 
+  const loadUserData = async (userId: string) => {
+    if (currentUserIdRef.current === userId) return;
+    currentUserIdRef.current = userId;
+    await Promise.all([fetchProfile(userId), fetchRoles(userId)]);
+  };
+
+  useEffect(() => {
+    // ADIM 1: Önce listener kur (Supabase önerisi)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchProfile(session.user.id);
-        fetchRoles(session.user.id);
+        // Sadece getSession tamamlandıktan sonra listener üzerinden fetch yap
+        if (initializedRef.current) {
+          loadUserData(session.user.id);
+        }
       } else {
+        currentUserIdRef.current = null;
         setProfile(null);
         setRoles([]);
+        setIsLoading(false);
+      }
+    });
+
+    // ADIM 2: Sonra mevcut session'ı kontrol et
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      initializedRef.current = true;
+      if (session?.user) {
+        loadUserData(session.user.id);
+      } else {
         setIsLoading(false);
       }
     });

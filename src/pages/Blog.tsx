@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { BookOpen, Grid3X3, List, Search, Sparkles, ArrowRight, FileText, X, Filter, Clock } from 'lucide-react';
@@ -42,16 +42,7 @@ export default function Blog() {
 
   const selectedCategory = searchParams.get('kategori');
 
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  useEffect(() => {
-    fetchPosts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCategory, categories]);
-
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     const { data } = await supabase
       .from('blog_categories')
       .select('*')
@@ -60,9 +51,9 @@ export default function Blog() {
     if (data) {
       setCategories(data as BlogCategory[]);
     }
-  };
+  }, []);
 
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async () => {
     setIsLoading(true);
 
     let query = supabase
@@ -113,27 +104,26 @@ export default function Blog() {
 
     setPosts(enrichedPosts);
     setIsLoading(false);
-  };
+  }, [selectedCategory, categories]);
 
-  const getTimeFilterDate = () => {
-    const now = new Date();
-    switch (timeFilter) {
-      case 'today':
-        return new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-      case 'week':
-        return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
-      case 'month':
-        return new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-      case 'year':
-        return new Date(now.getFullYear(), 0, 1).toISOString();
-      default:
-        return null;
-    }
-  };
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
+  useEffect(() => {
+    fetchPosts();
+  }, [fetchPosts]);
 
   const filteredPosts = useMemo(() => {
     let result = posts;
-    const timeFilterDate = getTimeFilterDate();
+    const now = new Date();
+    let timeFilterDate: string | null = null;
+    switch (timeFilter) {
+      case 'today': timeFilterDate = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString(); break;
+      case 'week': timeFilterDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString(); break;
+      case 'month': timeFilterDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString(); break;
+      case 'year': timeFilterDate = new Date(now.getFullYear(), 0, 1).toISOString(); break;
+    }
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -146,11 +136,10 @@ export default function Blog() {
     }
 
     if (timeFilterDate) {
-      result = result.filter((post) => new Date(post.created_at) >= new Date(timeFilterDate));
+      result = result.filter((post) => new Date(post.created_at) >= new Date(timeFilterDate!));
     }
 
     return result;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [posts, searchQuery, timeFilter]);
 
   const handleCategoryClick = (slug: string | null) => {

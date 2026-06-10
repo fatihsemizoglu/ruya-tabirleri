@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { lazy, Suspense } from "react";
 import { AuthProvider } from "@/contexts/AuthProvider";
@@ -65,7 +65,7 @@ function AnimatedRoutes() {
           <Route path="/kayit" element={<Auth mode="register" />} />
           <Route path="/ara" element={<Search />} />
           <Route path="/ruya/:slug" element={<DreamDetail />} />
-          <Route path="/ruya-tabirleri" element={<Popular />} />
+          <Route path="/ruya-tabirleri" element={<Navigate replace to="/populer" />} />
           <Route path="/kategoriler" element={<Categories />} />
           <Route path="/kategori/:slug" element={<CategoryDetail />} />
           <Route path="/populer" element={<Popular />} />
@@ -95,19 +95,19 @@ function AnimatedRoutes() {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
           <OfflineIndicator />
           <CommandPalette />
           <OnboardingTour />
           <InstallPrompt />
           <AnimatedRoutes />
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
+        </TooltipProvider>
+      </AuthProvider>
+    </BrowserRouter>
   </QueryClientProvider>
 );
 

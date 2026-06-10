@@ -20,38 +20,37 @@ export function TagCloud({ className, maxTags = 20 }: TagCloudProps) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetchTags();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    const fetchTags = async () => {
+      const { data: posts } = await supabase
+        .from('blog_posts')
+        .select('tags')
+        .eq('is_published', true);
 
-  const fetchTags = async () => {
-    const { data: posts } = await supabase
-      .from('blog_posts')
-      .select('tags')
-      .eq('is_published', true);
-
-    if (!posts) {
-      setIsLoading(false);
-      return;
-    }
-
-    const tagCounts = new Map<string, number>();
-    posts.forEach((post) => {
-      if (post.tags) {
-        post.tags.forEach((tag: string) => {
-          tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
-        });
+      if (!posts) {
+        setIsLoading(false);
+        return;
       }
-    });
 
-    const sortedTags = Array.from(tagCounts.entries())
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, maxTags);
+      const tagCounts = new Map<string, number>();
+      posts.forEach((post) => {
+        if (post.tags) {
+          post.tags.forEach((tag: string) => {
+            tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
+          });
+        }
+      });
 
-    setTags(sortedTags);
-    setIsLoading(false);
-  };
+      const sortedTags = Array.from(tagCounts.entries())
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, maxTags);
+
+      setTags(sortedTags);
+      setIsLoading(false);
+    };
+
+    fetchTags();
+  }, [maxTags]);
 
   const getTagSize = (count: number) => {
     const maxCount = Math.max(...tags.map((t) => t.count), 1);

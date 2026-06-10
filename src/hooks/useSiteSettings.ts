@@ -1,5 +1,5 @@
 // Site ayarlarını Supabase'den çeken ve tüm uygulamada paylaşılan hook
-import { useEffect, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface SiteSettings {
@@ -52,58 +52,40 @@ const defaults: SiteSettings = {
   metaKeywords: 'rüya tabiri, rüya yorumu',
 };
 
-// In-memory cache for all consumers
-let cache: { data: SiteSettings | null; ts: number } | null = null;
-const CACHE_TTL = 60_000; // 60s
+const SITE_SETTINGS_QUERY_KEY = ['site-settings'] as const;
+const STALE_60_SEC = 60_000;
 
 export function useSiteSettings() {
-  const [settings, setSettings] = useState<SiteSettings>(cache?.data || defaults);
-  const [loading, setLoading] = useState(!cache?.data);
+  const { data: settings = defaults, isLoading: loading } = useQuery({
+    queryKey: SITE_SETTINGS_QUERY_KEY,
+    queryFn: async (): Promise<SiteSettings> => {
+      const { data, error } = await supabase
+        .from('site_settings')
+        .select('key, value');
 
-  useEffect(() => {
-    let cancelled = false;
+      if (error) throw error;
 
-    const load = async () => {
-      // Use cache if fresh
-      if (cache && Date.now() - cache.ts < CACHE_TTL) {
-        setSettings(cache.data!);
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const { data, error } = await supabase
-          .from('site_settings')
-          .select('key, value');
-
-        if (error) throw error;
-        if (cancelled) return;
-
-        const merged: SiteSettings = { ...defaults };
-        data?.forEach((row: { key: string; value: unknown }) => {
-          if (row.key in merged && row.value !== null && row.value !== undefined) {
-            // value JSON'dan gelebilir, string ise direkt ata
-            (merged as unknown as Record<string, unknown>)[row.key] = row.value as string;
-          }
-        });
-
-        cache = { data: merged, ts: Date.now() };
-        setSettings(merged);
-      } catch (err) {
-        console.error('useSiteSettings load error:', err);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-
-    load();
-    return () => { cancelled = true; };
-  }, []);
+      const merged: SiteSettings = { ...defaults };
+      data?.forEach((row: { key: string; value: unknown }) => {
+        if (row.key in merged && row.value !== null && row.value !== undefined) {
+          (merged as unknown as Record<string, unknown>)[row.key] = row.value as string;
+        }
+      });
+      return merged;
+    },
+    staleTime: STALE_60_SEC,
+  });
 
   return { settings, loading };
 }
 
 // Admin panelde değişiklik sonrası cache'i invalidate etmek için
+export function useInvalidateSiteSettings() {
+  const queryClient = useQueryClient();
+  return () => queryClient.invalidateQueries({ queryKey: SITE_SETTINGS_QUERY_KEY });
+}
+
+// Eski API uyumluluğu için (deprecated)
 export function invalidateSiteSettingsCache() {
-  cache = null;
+  console.warn('invalidateSiteSettingsCache deprecated — use useInvalidateSiteSettings()');
 }

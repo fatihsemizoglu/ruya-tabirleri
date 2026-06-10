@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { TrendingUp, Eye, Heart, Clock, ArrowRight } from 'lucide-react';
@@ -29,12 +29,7 @@ export function PopularPosts() {
   const [sortBy, setSortBy] = useState<SortType>('trending');
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    fetchPopularPosts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sortBy]);
-
-  const fetchPopularPosts = async () => {
+  const fetchPopularPosts = useCallback(async () => {
     setIsLoading(true);
     
     let query = supabase
@@ -76,7 +71,11 @@ export function PopularPosts() {
     }
     
     setIsLoading(false);
-  };
+  }, [sortBy]);
+
+  useEffect(() => {
+    fetchPopularPosts();
+  }, [fetchPopularPosts]);
 
   if (isLoading) {
     return (

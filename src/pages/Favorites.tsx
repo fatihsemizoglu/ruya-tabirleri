@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Navigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Heart, Trash2, Eye, Search, SortAsc, Grid3X3, List, Calendar, TrendingUp, Filter, ArrowUpDown, Check, X, ArrowUpRight, Star } from 'lucide-react';
@@ -60,15 +60,7 @@ export default function Favorites() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (user) {
-      fetchFavorites();
-      fetchCategories();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
-
-  const fetchFavorites = async () => {
+  const fetchFavorites = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('favorites')
@@ -83,16 +75,23 @@ export default function Favorites() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user]);
 
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     const { data } = await supabase
       .from('categories')
       .select('*')
       .order('name');
 
     if (data) setCategories(data as Category[]);
-  };
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      fetchFavorites();
+      fetchCategories();
+    }
+  }, [user, fetchFavorites, fetchCategories]);
 
   const removeFavorite = async (id: string) => {
     try {

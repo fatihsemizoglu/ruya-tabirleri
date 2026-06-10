@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Navigate, Link } from 'react-router-dom';
 import { Clock, Trash2, Eye, Heart, Search, Calendar, TrendingUp, Filter, X, ArrowRight, History as HistoryIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -67,23 +67,15 @@ export default function History() {
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
-  useEffect(() => {
-    if (user) {
-      fetchHistory();
-      fetchCategories();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
-
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     const { data } = await supabase
       .from('categories')
       .select('id, name, slug')
       .order('name');
     if (data) setCategories(data);
-  };
+  }, []);
 
-  const fetchHistory = async () => {
+  const fetchHistory = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('view_history')
@@ -137,7 +129,14 @@ export default function History() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      fetchHistory();
+      fetchCategories();
+    }
+  }, [user, fetchHistory, fetchCategories]);
 
   const clearHistory = async () => {
     try {

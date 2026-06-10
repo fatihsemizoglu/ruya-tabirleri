@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import DOMPurify from 'dompurify';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -43,104 +44,116 @@ export default function BlogPost() {
     if (slug) {
       fetchPost();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slug]);
+  }, [slug, fetchPost]);
 
   useEffect(() => {
     if (post && user) {
       checkIfLiked();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [post, user]);
+  }, [post, user, checkIfLiked]);
 
-  const fetchPost = async () => {
+  const fetchPost = useCallback(async () => {
     setIsLoading(true);
+    let isMounted = true;
 
-    const { data, error } = await supabase
-      .from('blog_posts')
-      .select(`
+    try {
+      const { data, error } = await supabase
+        .from('blog_posts')
+        .select(`
         *,
         category:blog_categories(id, name, slug, icon)
       `)
-      .eq('slug', slug)
-      .eq('is_published', true)
-      .maybeSingle();
+        .eq('slug', slug)
+        .eq('is_published', true)
+        .maybeSingle();
 
-    if (error || !data) {
-      navigate('/blog');
-      return;
-    }
+      if (!isMounted) return;
 
-    // Fetch author profile separately
-    const { data: authorData } = await supabase
-      .from('profiles')
-      .select('user_id, full_name, username, avatar_url, bio')
-      .eq('user_id', data.author_id)
-      .maybeSingle();
+      if (error || !data) {
+        navigate('/blog');
+        return;
+      }
 
-    const postData: BlogPostType = {
-      ...data,
-      category: data.category as BlogPostType['category'],
-      author: authorData ? {
-        id: authorData.user_id,
-        full_name: authorData.full_name,
-        username: authorData.username,
-        avatar_url: authorData.avatar_url,
-      } : undefined,
-    };
+      // Fetch author profile separately
+      const { data: authorData } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, username, avatar_url, bio')
+        .eq('user_id', data.author_id)
+        .maybeSingle();
 
-    setPost(postData);
-    setAuthorBio(authorData?.bio || null);
-    setLikeCount(postData.like_count);
+      if (!isMounted) return;
 
-    // Increment view count
-    await supabase.rpc('increment_blog_view_count', { post_id: data.id });
+      const postData: BlogPostType = {
+        ...data,
+        category: data.category as BlogPostType['category'],
+        author: authorData ? {
+          id: authorData.user_id,
+          full_name: authorData.full_name,
+          username: authorData.username,
+          avatar_url: authorData.avatar_url,
+        } : undefined,
+      };
 
-    // Fetch related posts
-    if (data.category_id) {
-      const { data: relatedData } = await supabase
-        .from('blog_posts')
-        .select(`
+      setPost(postData);
+      setAuthorBio(authorData?.bio || null);
+      setLikeCount(postData.like_count);
+
+      // Increment view count
+      await supabase.rpc('increment_blog_view_count', { post_id: data.id });
+
+      // Fetch related posts
+      if (data.category_id) {
+        const { data: relatedData } = await supabase
+          .from('blog_posts')
+          .select(`
           *,
           category:blog_categories(id, name, slug, icon)
         `)
-        .eq('is_published', true)
-        .eq('category_id', data.category_id)
-        .neq('id', data.id)
-        .limit(3);
+          .eq('is_published', true)
+          .eq('category_id', data.category_id)
+          .neq('id', data.id)
+          .limit(3);
 
-      if (relatedData) {
-        // Fetch author profiles for related posts
-        const authorIds = [...new Set(relatedData.map((p) => p.author_id))];
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('user_id, full_name, username, avatar_url')
-          .in('user_id', authorIds);
+        if (relatedData && isMounted) {
+          // Fetch author profiles for related posts
+          const authorIds = [...new Set(relatedData.map((p) => p.author_id))];
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('user_id, full_name, username, avatar_url')
+            .in('user_id', authorIds);
 
-        const profileMap = new Map(profiles?.map((p) => [p.user_id, p]));
+          const profileMap = new Map(profiles?.map((p) => [p.user_id, p]));
 
-        setRelatedPosts(
-          relatedData.map((p) => {
-            const author = profileMap.get(p.author_id);
-            return {
-              ...p,
-              category: p.category as BlogPostType['category'],
-              author: author ? {
-                id: author.user_id,
-                full_name: author.full_name,
-                username: author.username,
-                avatar_url: author.avatar_url,
-              } : undefined,
-            } as BlogPostType;
-          })
-        );
+          setRelatedPosts(
+            relatedData.map((p) => {
+              const author = profileMap.get(p.author_id);
+              return {
+                ...p,
+                category: p.category as BlogPostType['category'],
+                author: author ? {
+                  id: author.user_id,
+                  full_name: author.full_name,
+                  username: author.username,
+                  avatar_url: author.avatar_url,
+                } : undefined,
+              } as BlogPostType;
+            })
+          );
+        }
       }
+    } catch (err) {
+      if (isMounted) {
+        console.error('fetchPost error:', err);
+        navigate('/blog');
+      }
+    } finally {
+      if (isMounted) setIsLoading(false);
     }
 
-    setIsLoading(false);
-  };
+    return () => { isMounted = false; };
+  }, [slug, navigate]);
 
-  const checkIfLiked = async () => {
+  const checkIfLiked = useCallback(async () => {
     if (!post || !user) return;
 
     const { data } = await supabase
@@ -151,7 +164,7 @@ export default function BlogPost() {
       .maybeSingle();
 
     setIsLiked(!!data);
-  };
+  }, [post, user]);
 
   const handleLike = async () => {
     if (!user) {
@@ -355,7 +368,14 @@ export default function BlogPost() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
                 className="prose prose-lg dark:prose-invert max-w-none mb-12 prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground"
-                dangerouslySetInnerHTML={{ __html: post.content }}
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content, {
+                  ALLOWED_TAGS: ['p','br','strong','em','u','s','h1','h2','h3','h4','h5','h6',
+                    'ul','ol','li','blockquote','code','pre','a','img',
+                    'table','thead','tbody','tr','th','td','hr','figure','figcaption'],
+                  ALLOWED_ATTR: ['href','src','alt','class','target','rel','loading'],
+                  FORBID_TAGS: ['script','style','iframe'],
+                  FORBID_ATTR: ['onerror','onload','onclick','onmouseover'],
+                }) }}
               />
 
               {/* Tags */}

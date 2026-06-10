@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Tag, ChevronRight, BookOpen } from 'lucide-react';
@@ -18,14 +18,7 @@ export default function BlogTag() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    if (decodedTag) {
-      fetchPostsByTag();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [decodedTag]);
-
-  const fetchPostsByTag = async () => {
+  const fetchPostsByTag = useCallback(async () => {
     setIsLoading(true);
 
     const { data: postsData } = await supabase
@@ -69,7 +62,13 @@ export default function BlogTag() {
 
     setPosts(enrichedPosts);
     setIsLoading(false);
-  };
+  }, [decodedTag]);
+
+  useEffect(() => {
+    if (decodedTag) {
+      fetchPostsByTag();
+    }
+  }, [decodedTag, fetchPostsByTag]);
 
   return (
     <Layout>

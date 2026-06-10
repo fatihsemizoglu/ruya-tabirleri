@@ -232,6 +232,7 @@ export default function Auth({ mode }: AuthProps) {
                   size="icon"
                   className="absolute right-0 top-0 h-full px-3"
                   onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>

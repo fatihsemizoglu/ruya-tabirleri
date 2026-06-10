@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import * as LucideIcons from 'lucide-react';
 import {
@@ -29,6 +29,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { BlogCategory } from '@/types/blog';
+import { useQuery } from '@tanstack/react-query';
 
 const icons = LucideIcons as unknown as Record<string, React.ComponentType<{ className?: string }>>;
 
@@ -61,9 +62,53 @@ export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
   const [isScrolled, setIsScrolled] = useState(false);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [blogCategories, setBlogCategories] = useState<BlogCategory[]>([]);
-  const [recentPosts, setRecentPosts] = useState<BlogPostPreview[]>([]);
+
+  const STALE_5_MIN = 5 * 60 * 1000;
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ['header-dream-categories'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('id, name, slug, icon')
+        .limit(50);
+      if (error) throw error;
+      return [...(data || [])].sort((a, b) =>
+        a.name.localeCompare(b.name, 'tr', { sensitivity: 'base' })
+      );
+    },
+    staleTime: STALE_5_MIN,
+  });
+
+  const { data: blogCategories = [] } = useQuery({
+    queryKey: ['header-blog-categories'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('blog_categories')
+        .select('id, name, slug, description, icon, order_index, created_at, updated_at')
+        .order('order_index', { ascending: true })
+        .order('name', { ascending: true })
+        .limit(20);
+      if (error) throw error;
+      return (data || []) as BlogCategory[];
+    },
+    staleTime: STALE_5_MIN,
+  });
+
+  const { data: recentPosts = [] } = useQuery({
+    queryKey: ['header-recent-posts'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('blog_posts')
+        .select('id, title, slug, featured_image, category:blog_categories(id, name, slug, description, icon, order_index, created_at, updated_at)')
+        .eq('is_published', true)
+        .order('created_at', { ascending: false })
+        .limit(4);
+      if (error) throw error;
+      return (data || []) as unknown as BlogPostPreview[];
+    },
+    staleTime: STALE_5_MIN,
+  });
 
   // Açık dropdown'lar
   const [openCategoryMenu, setOpenCategoryMenu] = useState(false);
@@ -91,52 +136,6 @@ export function Header() {
       document.documentElement.classList.remove('dark');
       setIsDark(false);
     }
-  }, []);
-
-  useEffect(() => {
-    const fetchAll = async () => {
-      try {
-        const [{ data: dreamCats, error: dreamCatsError }, { data: blogCatsData, error: blogCatsError }, { data: postsData, error: postsError }] = await Promise.all([
-          supabase.from('categories').select('id, name, slug, icon').limit(50),
-          supabase
-            .from('blog_categories')
-            .select('id, name, slug, description, icon, order_index, created_at, updated_at')
-            .order('order_index', { ascending: true })
-            .order('name', { ascending: true })
-            .limit(20),
-          supabase
-            .from('blog_posts')
-            .select(
-              'id, title, slug, featured_image, category:blog_categories(id, name, slug, description, icon, order_index, created_at, updated_at)'
-            )
-            .eq('is_published', true)
-            .order('created_at', { ascending: false })
-            .limit(4),
-        ]);
-
-        if (dreamCatsError) {
-          console.error('Error fetching dream categories:', dreamCatsError);
-        } else if (dreamCats) {
-          const sorted = [...dreamCats].sort((a, b) =>
-            a.name.localeCompare(b.name, 'tr', { sensitivity: 'base' })
-          );
-          setCategories(sorted);
-        }
-        if (blogCatsError) {
-          console.error('Error fetching blog categories:', blogCatsError);
-        } else if (blogCatsData) {
-          setBlogCategories(blogCatsData as BlogCategory[]);
-        }
-        if (postsError) {
-          console.error('Error fetching recent posts:', postsError);
-        } else if (postsData) {
-          setRecentPosts(postsData as unknown as BlogPostPreview[]);
-        }
-      } catch (err) {
-        console.error('Error in Header fetchAll:', err);
-      }
-    };
-    fetchAll();
   }, []);
 
   useEffect(() => {
@@ -244,6 +243,7 @@ export function Header() {
           <Link
             to="/"
             onMouseEnter={cancelClose}
+            aria-current={isActiveLink('/') ? 'page' : undefined}
             className={cn(
               'px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 shrink-0',
               isActiveLink('/')
@@ -343,6 +343,7 @@ export function Header() {
           <Link
             to="/populer"
             onMouseEnter={cancelClose}
+            aria-current={isActiveLink('/populer') ? 'page' : undefined}
             className={cn(
               'px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 shrink-0',
               isActiveLink('/populer')
@@ -515,6 +516,7 @@ export function Header() {
           <Link
             to="/iletisim"
             onMouseEnter={cancelClose}
+            aria-current={isActiveLink('/iletisim') ? 'page' : undefined}
             className={cn(
               'px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 shrink-0',
               isActiveLink('/iletisim')
@@ -817,6 +819,7 @@ function MobileNavLink({
     <Link
       to={to}
       onClick={onClose}
+      aria-current={isActive ? 'page' : undefined}
       className={cn(
         'px-4 py-3 rounded-lg font-medium transition-colors text-sm flex items-center gap-2',
         isActive ? 'bg-primary/5 text-primary' : 'text-muted-foreground hover:bg-muted hover:text-foreground'

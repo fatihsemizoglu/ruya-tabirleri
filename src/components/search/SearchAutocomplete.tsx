@@ -355,7 +355,7 @@ export const SearchAutocomplete = forwardRef<HTMLInputElement, SearchAutocomplet
 
         {/* Dropdown */}
         {showDropdownContent && (
-          <div className="absolute top-full left-0 right-0 mt-2 bg-background border rounded-xl shadow-lg z-50 overflow-hidden max-h-[70vh] overflow-y-auto">
+          <div className="absolute top-full left-0 right-0 mt-2 bg-background border rounded-xl shadow-lg z-50 overflow-hidden max-h-[70vh] overflow-y-auto" role="listbox" aria-label="Arama önerileri">
             {/* Loading State */}
             {isLoading && query.length >= MIN_CHARS && (
               <div className="p-4 flex items-center justify-center text-muted-foreground">
@@ -375,6 +375,8 @@ export const SearchAutocomplete = forwardRef<HTMLInputElement, SearchAutocomplet
                   <button
                     key={suggestion.id}
                     onClick={() => handleSelectSuggestion(suggestion)}
+                    role="option"
+                    aria-selected={selectedIndex === index}
                     className={`w-full text-left px-3 py-3 rounded-lg transition-colors flex items-center justify-between group ${
                       selectedIndex === index ? 'bg-accent' : 'hover:bg-muted'
                     }`}

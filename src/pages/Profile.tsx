@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { t } from '@/constants/translations';
 import { Navigate, Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -104,22 +104,7 @@ export default function Profile() {
     }
   }, [profile]);
 
-  useEffect(() => {
-    if (!user) return;
-
-    if (activeTab === 'stats') {
-      fetchStats();
-    } else if (activeTab === 'favorites' && favorites.length === 0) {
-      fetchFavorites();
-    } else if (activeTab === 'history' && history.length === 0) {
-      fetchHistory();
-    } else if (activeTab === 'journal' && entries.length === 0) {
-      fetchEntries();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, user]);
-
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     setStatsLoading(true);
     try {
       const { count: favCount } = await supabase
@@ -197,9 +182,9 @@ export default function Profile() {
     } finally {
       setStatsLoading(false);
     }
-  };
+  }, [user, profile]);
 
-  const fetchFavorites = async () => {
+  const fetchFavorites = useCallback(async () => {
     setFavoritesLoading(true);
     try {
       const { data, error } = await supabase
@@ -215,9 +200,9 @@ export default function Profile() {
     } finally {
       setFavoritesLoading(false);
     }
-  };
+  }, [user]);
 
-  const fetchHistory = async () => {
+  const fetchHistory = useCallback(async () => {
     setHistoryLoading(true);
     try {
       const { data, error } = await supabase
@@ -241,9 +226,9 @@ export default function Profile() {
     } finally {
       setHistoryLoading(false);
     }
-  };
+  }, [user]);
 
-  const fetchEntries = async () => {
+  const fetchEntries = useCallback(async () => {
     setEntriesLoading(true);
     try {
       const { data, error } = await supabase
@@ -259,7 +244,21 @@ export default function Profile() {
     } finally {
       setEntriesLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    if (activeTab === 'stats') {
+      fetchStats();
+    } else if (activeTab === 'favorites' && favorites.length === 0) {
+      fetchFavorites();
+    } else if (activeTab === 'history' && history.length === 0) {
+      fetchHistory();
+    } else if (activeTab === 'journal' && entries.length === 0) {
+      fetchEntries();
+    }
+  }, [activeTab, user, fetchStats, fetchFavorites, fetchHistory, fetchEntries, favorites.length, history.length, entries.length]);
 
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

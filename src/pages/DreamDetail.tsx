@@ -129,14 +129,7 @@ export default function DreamDetail() {
     }
   }, []);
 
-  useEffect(() => {
-    if (slug) {
-      fetchDream();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slug]);
-
-  const fetchDream = async () => {
+  const fetchDream = useCallback(async () => {
     setIsLoading(true);
     try {
       const { data: dreamData, error } = await supabase
@@ -188,7 +181,13 @@ export default function DreamDetail() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [slug, user, fetchComments]);
+
+  useEffect(() => {
+    if (slug) {
+      fetchDream();
+    }
+  }, [slug, fetchDream]);
 
   const toggleFavorite = async () => {
     if (!user) {
