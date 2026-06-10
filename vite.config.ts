@@ -134,17 +134,6 @@ export default defineConfig(({ mode }) => ({
         manualChunks: {
           'lucide-react': ['lucide-react'],
           'framer-motion': ['framer-motion'],
-          'tiptap': [
-            '@tiptap/react',
-            '@tiptap/starter-kit',
-            '@tiptap/extension-link',
-            '@tiptap/extension-image',
-            '@tiptap/extension-placeholder',
-            '@tiptap/extension-text-align',
-            '@tiptap/extension-underline',
-            '@tiptap/extension-bubble-menu',
-          ],
-
           'supabase': ['@supabase/supabase-js'],
           'date-fns': ['date-fns'],
         },
