@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { Search as SearchIcon, Sparkles, Layers, TrendingUp, Grid3X3, List, Eye, Heart, X, SlidersHorizontal, ChevronDown, Star, BookOpen, ArrowUp } from 'lucide-react';
+import { Search as SearchIcon, Sparkles, Layers, TrendingUp, Grid3X3, List, Eye, Heart, X, SlidersHorizontal, ChevronDown, Star, BookOpen, ArrowUp, RotateCw } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { PremiumBackground, PremiumBadge, GradientText } from '@/components/layout/PremiumBackground';
@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
 import { SearchAutocomplete } from '@/components/search/SearchAutocomplete';
 import { AdvancedFilters, type AdvancedFilterState } from '@/components/search/AdvancedFilters';
@@ -37,8 +38,11 @@ export default function Search() {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [maxStats, setMaxStats] = useState({ maxViews: 1000, maxLikes: 500 });
   const [currentPage, setCurrentPage] = useState(1);
+  const [infiniteScroll, setInfiniteScroll] = useState(false);
+  const [loadMoreLoading, setLoadMoreLoading] = useState(false);
   const RESULTS_PER_PAGE = 24;
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
 
   // Advanced filters state
   const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilterState>({
@@ -115,8 +119,12 @@ export default function Search() {
     });
   }, []);
 
-  const fetchSearchPage = useCallback(async (searchTerm: string, page: number) => {
-    setIsLoading(true);
+  const fetchSearchPage = useCallback(async (searchTerm: string, page: number, append = false) => {
+    if (append) {
+      setLoadMoreLoading(true);
+    } else {
+      setIsLoading(true);
+    }
     try {
       const offset = (page - 1) * RESULTS_PER_PAGE;
       const [searchRes, countRes] = await Promise.all([
@@ -129,7 +137,13 @@ export default function Search() {
       ]);
 
       if (searchRes.error) throw searchRes.error;
-      setResults((searchRes.data as DreamSearchResult[]) || []);
+      const newResults = (searchRes.data as DreamSearchResult[]) || [];
+      
+      if (append) {
+        setResults(prev => [...prev, ...newResults]);
+      } else {
+        setResults(newResults);
+      }
       setTotalCount(typeof countRes.data === 'number' ? countRes.data : 0);
 
       if (page === 1) {
@@ -137,10 +151,13 @@ export default function Search() {
       }
     } catch (error) {
       console.error('Search error:', error);
-      setResults([]);
-      setTotalCount(0);
+      if (!append) {
+        setResults([]);
+        setTotalCount(0);
+      }
     } finally {
       setIsLoading(false);
+      setLoadMoreLoading(false);
     }
   }, [saveRecentSearch]);
 
@@ -161,10 +178,35 @@ export default function Search() {
     }
   }, []);
 
+  // Infinite scroll: observe load more element
+  useEffect(() => {
+    if (!infiniteScroll || !query || loadMoreLoading || isLoading) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const target = entries[0];
+        if (target.isIntersecting) {
+          const nextPage = currentPage + 1;
+          const totalPages = Math.ceil(totalCount / RESULTS_PER_PAGE);
+          if (nextPage <= totalPages) {
+            setCurrentPage(nextPage);
+          }
+        }
+      },
+      { rootMargin: '200px', threshold: 0.1 }
+    );
+
+    if (loadMoreRef.current) {
+      observer.observe(loadMoreRef.current);
+    }
+    return () => observer.disconnect();
+  }, [infiniteScroll, query, currentPage, totalCount, loadMoreLoading, isLoading]);
+
   // Sunucu tarafı arama: sorgu veya sayfa değişince
   useEffect(() => {
     if (query) {
-      fetchSearchPage(query, currentPage);
+      const append = infiniteScroll && currentPage > 1;
+      fetchSearchPage(query, currentPage, append);
       if (currentPage === 1) {
         fetchRelatedDreams(query);
       }
@@ -173,7 +215,7 @@ export default function Search() {
       setRelatedDreams([]);
       setTotalCount(0);
     }
-  }, [query, currentPage, fetchSearchPage, fetchRelatedDreams]);
+  }, [query, currentPage, fetchSearchPage, fetchRelatedDreams, infiniteScroll]);
 
   // Apply filters and sorting
   const filteredResults = useMemo(() => {
@@ -386,6 +428,26 @@ export default function Search() {
                 </div>
 
                 <div className="flex items-center gap-2">
+                  {/* Infinite Scroll Toggle */}
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant={infiniteScroll ? 'secondary' : 'ghost'}
+                          size="icon"
+                          className="rounded-lg h-9 w-9"
+                          onClick={() => setInfiniteScroll(!infiniteScroll)}
+                          aria-label={infiniteScroll ? 'Sayfalama moduna geç' : 'Sonsuz kaydırmayı etkinleştir'}
+                        >
+                          <RotateCw className={`h-4 w-4 ${infiniteScroll ? 'text-primary' : ''}`} />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" align="center">
+                        {infiniteScroll ? 'Sayfalama modu' : 'Sonsuz kaydırma'}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+
                   {/* View Mode Toggle */}
                   <div className="hidden sm:flex border rounded-lg overflow-hidden">
                     <Button
@@ -519,6 +581,21 @@ export default function Search() {
                           </div>
                         </Link>
                       ))}
+                    </div>
+                  )}
+
+                  {/* Infinite Scroll Load More Trigger */}
+                  {infiniteScroll && totalPages > 1 && currentPage < totalPages && (
+                    <div
+                      ref={loadMoreRef}
+                      className="mt-10 flex items-center justify-center gap-3"
+                    >
+                      {loadMoreLoading && (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <RotateCw className="h-5 w-5 animate-spin" />
+                          <span>Daha fazla yükleniyor...</span>
+                        </div>
+                      )}
                     </div>
                   )}
 
