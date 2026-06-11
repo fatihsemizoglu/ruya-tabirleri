@@ -175,6 +175,7 @@ import {
   Pill,
   Scissors,
   HeartCrack,
+  Croissant,
 } from 'lucide-react';
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -415,7 +416,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Altın: Gem,
   Elmas: Gem,
   Meyve: Apple,
-  Ekmek: Bread,
+  Ekmek: Croissant,
   Sut: Coffee,
   Süt: Coffee,
   Cay: Coffee,
