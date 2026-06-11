@@ -2,6 +2,10 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { handleOptions, jsonResponse } from "../_shared/cors.ts";
 import { requireAdmin } from "../_shared/auth.ts";
 
+const AI_API_URL = Deno.env.get("AI_API_URL") || "https://api.openai.com/v1/chat/completions";
+const AI_API_KEY = Deno.env.get("AI_API_KEY");
+const AI_MODEL = Deno.env.get("AI_MODEL") || "gpt-4o-mini";
+
 serve(async (req) => {
   const options = handleOptions(req);
   if (options) return options;
@@ -10,9 +14,8 @@ serve(async (req) => {
   if (authResult instanceof Response) return authResult;
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    if (!AI_API_KEY) {
+      throw new Error("AI_API_KEY is not configured");
     }
 
     const { title, content, type } = await req.json();
@@ -45,33 +48,19 @@ JSON formatında yanıt ver:
   "meta_description": "..."
 }`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch(AI_API_URL, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${AI_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: AI_MODEL,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
-        response_format: {
-          type: "json_schema",
-          json_schema: {
-            name: "seo_metadata",
-            schema: {
-              type: "object",
-              properties: {
-                meta_title: { type: "string" },
-                meta_description: { type: "string" },
-              },
-              required: ["meta_title", "meta_description"],
-              additionalProperties: false,
-            },
-          },
-        },
+        response_format: { type: "json_object" },
       }),
     });
 
@@ -83,8 +72,8 @@ JSON formatında yanıt ver:
         return jsonResponse({ error: "Payment required. Please add credits." }, 402);
       }
       const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
-      throw new Error(`AI gateway error: ${response.status}`);
+      console.error("AI API error:", response.status, errorText);
+      throw new Error(`AI API error: ${response.status}`);
     }
 
     const data = await response.json();

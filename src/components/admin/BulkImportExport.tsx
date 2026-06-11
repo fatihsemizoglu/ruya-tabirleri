@@ -24,10 +24,68 @@ import { useState } from 'react';
  import { toast } from 'sonner';
  import type { Tables } from '@/integrations/supabase/types';
  
- type Dream = Tables<'dreams'>;
- type BlogPost = Tables<'blog_posts'>;
- type Category = Tables<'categories'>;
- type BlogCategory = Tables<'blog_categories'>;
+ type DreamRow = Tables<'dreams'>['Row'];
+ type BlogPostRow = Tables<'blog_posts'>['Row'];
+ type CategoryRow = Tables<'categories'>['Row'];
+ type BlogCategoryRow = Tables<'blog_categories'>['Row'];
+ 
+ interface DreamExport {
+   title: string;
+   slug: string;
+   content: string;
+   islamic_interpretation: string | null;
+   psychological_interpretation: string | null;
+   category_id: string | null;
+   keywords: string[] | null;
+   meta_title: string | null;
+   meta_description: string | null;
+   is_published: boolean | null;
+   is_featured: boolean | null;
+   category_name?: string;
+ }
+ 
+ interface BlogPostExport {
+   title: string;
+   slug: string;
+   content: string;
+   excerpt: string | null;
+   category_id: string | null;
+   tags: string[] | null;
+   meta_title: string | null;
+   meta_description: string | null;
+   is_published: boolean | null;
+   is_featured: boolean | null;
+   category_name?: string;
+ }
+ 
+ interface ImportDreamRecord {
+   title?: string;
+   slug?: string;
+   content?: string;
+   islamic_interpretation?: string;
+   psychological_interpretation?: string;
+   category_name?: string;
+   category?: string;
+   keywords?: string | string[];
+   meta_title?: string;
+   meta_description?: string;
+   is_published?: string | boolean;
+   is_featured?: string | boolean;
+ }
+ 
+ interface ImportBlogPostRecord {
+   title?: string;
+   slug?: string;
+   content?: string;
+   excerpt?: string;
+   category_name?: string;
+   category?: string;
+   tags?: string | string[];
+   meta_title?: string;
+   meta_description?: string;
+   is_published?: string | boolean;
+   is_featured?: string | boolean;
+ }
  
  interface ImportResult {
    success: number;
@@ -98,48 +156,54 @@ import { useState } from 'react';
      },
    });
  
-   // Export functions
+// Export functions
    const exportToJSON = () => {
      const data = contentType === 'dreams' ? dreams : blogPosts;
      if (!data || data.length === 0) {
        toast.error('Dışa aktarılacak veri bulunamadı');
        return;
      }
- 
-      const exportData = data.map((item: Record<string, unknown>) => {
-       const { id, created_at, updated_at, search_vector, view_count, like_count, ...rest } = item;
-       return rest;
+
+     const exportData = data.map((item) => {
+       const { id, created_at, updated_at, search_vector, view_count, like_count, categories, blog_categories, ...rest } = item;
+       const exportItem = { ...rest };
+       if (contentType === 'dreams' && categories) {
+         (exportItem as DreamExport).category_name = categories.name;
+       } else if (contentType === 'blog' && blog_categories) {
+         (exportItem as BlogPostExport).category_name = blog_categories.name;
+       }
+       return exportItem;
      });
- 
+
      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
      downloadFile(blob, `${contentType}-export-${new Date().toISOString().split('T')[0]}.json`);
      toast.success(`${data.length} kayıt JSON olarak dışa aktarıldı`);
    };
- 
+
    const exportToCSV = () => {
      const data = contentType === 'dreams' ? dreams : blogPosts;
      if (!data || data.length === 0) {
        toast.error('Dışa aktarılacak veri bulunamadı');
        return;
      }
- 
-       const headers = contentType === 'dreams' 
-         ? ['title', 'slug', 'content', 'islamic_interpretation', 'psychological_interpretation', 'category_name', 'keywords', 'meta_title', 'meta_description', 'is_published', 'is_featured'] as const
-         : ['title', 'slug', 'content', 'excerpt', 'category_name', 'tags', 'meta_title', 'meta_description', 'is_published', 'is_featured'] as const;
- 
+
+     const headers = contentType === 'dreams' 
+       ? ['title', 'slug', 'content', 'islamic_interpretation', 'psychological_interpretation', 'category_name', 'keywords', 'meta_title', 'meta_description', 'is_published', 'is_featured'] as const
+       : ['title', 'slug', 'content', 'excerpt', 'category_name', 'tags', 'meta_title', 'meta_description', 'is_published', 'is_featured'] as const;
+
      const csvRows = [headers.join(',')];
- 
-      data.forEach((item: Record<string, unknown>) => {
-         const row = headers.map((header: string) => {
+
+     data.forEach((item) => {
+       const row = headers.map((header: string) => {
          let value = '';
          if (header === 'category_name') {
            value = item.categories?.name || item.blog_categories?.name || '';
-           } else if (header === 'keywords') {
-             value = item.keywords?.join(';') || '';
-           } else if (header === 'tags') {
-             value = item.tags?.join(';') || '';
+         } else if (header === 'keywords') {
+           value = item.keywords?.join(';') || '';
+         } else if (header === 'tags') {
+           value = item.tags?.join(';') || '';
          } else {
-           value = item[header] ?? '';
+           value = (item as Record<string, unknown>)[header] ?? '';
          }
          // Escape CSV special characters
          if (typeof value === 'string' && (value.includes(',') || value.includes('"') || value.includes('\n'))) {
@@ -149,7 +213,7 @@ import { useState } from 'react';
        });
        csvRows.push(row.join(','));
      });
- 
+
      const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
      downloadFile(blob, `${contentType}-export-${new Date().toISOString().split('T')[0]}.csv`);
      toast.success(`${data.length} kayıt CSV olarak dışa aktarıldı`);
@@ -166,19 +230,19 @@ import { useState } from 'react';
      URL.revokeObjectURL(url);
    };
  
-   // Import functions
-    const parseCSV = (text: string): Record<string, string>[] => {
+// Import functions
+    const parseCSV = (text: string): (ImportDreamRecord | ImportBlogPostRecord)[] => {
      const lines = text.split('\n').filter(line => line.trim());
      if (lines.length < 2) return [];
- 
+
      const headers = lines[0].split(',').map(h => h.trim());
-      const records: Record<string, string>[] = [];
- 
+     const records: (ImportDreamRecord | ImportBlogPostRecord)[] = [];
+
      for (let i = 1; i < lines.length; i++) {
        const values: string[] = [];
        let current = '';
        let inQuotes = false;
- 
+
        for (const char of lines[i]) {
          if (char === '"') {
            inQuotes = !inQuotes;
@@ -190,18 +254,18 @@ import { useState } from 'react';
          }
        }
        values.push(current.trim());
- 
-        const record: Record<string, string> = {};
+
+       const record: ImportDreamRecord | ImportBlogPostRecord = {};
        headers.forEach((header, index) => {
-         record[header] = values[index] || '';
+         record[header as keyof (ImportDreamRecord | ImportBlogPostRecord)] = values[index] || '';
        });
        records.push(record);
      }
- 
+
      return records;
    };
- 
-    const parseJSON = (text: string): Record<string, string>[] => {
+
+   const parseJSON = (text: string): (ImportDreamRecord | ImportBlogPostRecord)[] => {
      try {
        const data = JSON.parse(text);
        return Array.isArray(data) ? data : [data];
@@ -288,13 +352,13 @@ import { useState } from 'react';
      }
    };
  
-    const importDream = async (record: Record<string, unknown>) => {
+const importDream = async (record: ImportDreamRecord) => {
      const title = record.title?.trim();
      if (!title) throw new Error('Başlık gerekli');
- 
+
      const content = record.content?.trim();
      if (!content || content.length < 50) throw new Error('İçerik en az 50 karakter olmalı');
- 
+
      const slug = record.slug?.trim() || generateSlug(title);
      
      // Check for duplicate slug
@@ -304,13 +368,13 @@ import { useState } from 'react';
        .eq('slug', slug)
        .maybeSingle();
      
-      if (existing) throw new Error(`"${slug}" slug'ı zaten mevcut`);
+     if (existing) throw new Error(`"${slug}" slug'ı zaten mevcut`);
 
-      const categoryId = findCategoryId(record.category_name || record.category, 'dreams');
+     const categoryId = findCategoryId(record.category_name || record.category, 'dreams');
      const keywords = record.keywords 
        ? (typeof record.keywords === 'string' ? record.keywords.split(';').map((k: string) => k.trim()).filter(Boolean) : record.keywords)
        : [];
- 
+
      const { error } = await supabase.from('dreams').insert({
        title,
        slug,
@@ -324,11 +388,11 @@ import { useState } from 'react';
        is_published: record.is_published === 'true' || record.is_published === true,
        is_featured: record.is_featured === 'true' || record.is_featured === true,
      });
- 
+
      if (error) throw error;
    };
- 
-    const importBlogPost = async (record: Record<string, unknown>) => {
+
+   const importBlogPost = async (record: ImportBlogPostRecord) => {
      const title = record.title?.trim();
      if (!title) throw new Error('Başlık gerekli');
  
@@ -472,34 +536,34 @@ import { useState } from 'react';
            </div>
  
            {/* Export Preview */}
-           {currentData && currentData.length > 0 && (
-             <Card className="mt-6 p-6">
-               <h3 className="font-semibold mb-4">Dışa Aktarılacak Veriler Önizlemesi</h3>
-               <div className="max-h-[300px] overflow-auto">
-                 <table className="w-full text-sm">
-                   <thead className="bg-muted/50 sticky top-0">
-                     <tr>
-                       <th className="text-left p-2">Başlık</th>
-                       <th className="text-left p-2">Slug</th>
-                       <th className="text-left p-2">Kategori</th>
-                       <th className="text-left p-2">Durum</th>
-                     </tr>
-                   </thead>
-                   <tbody>
-                      {currentData.slice(0, 10).map((item: Record<string, unknown>) => (
-                       <tr key={item.id} className="border-b">
-                         <td className="p-2 truncate max-w-[200px]">{item.title}</td>
-                         <td className="p-2 text-muted-foreground">{item.slug}</td>
-                         <td className="p-2">{item.categories?.name || item.blog_categories?.name || '-'}</td>
-                         <td className="p-2">
-                           <Badge variant={item.is_published ? 'default' : 'secondary'}>
-                             {item.is_published ? 'Yayında' : 'Taslak'}
-                           </Badge>
-                         </td>
-                       </tr>
-                     ))}
-                   </tbody>
-                 </table>
+{currentData && currentData.length > 0 && (
+              <Card className="mt-6 p-6">
+                <h3 className="font-semibold mb-4">Dışa Aktarılacak Veriler Önizlemesi</h3>
+                <div className="max-h-[300px] overflow-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50 sticky top-0">
+                      <tr>
+                        <th className="text-left p-2">Başlık</th>
+                        <th className="text-left p-2">Slug</th>
+                        <th className="text-left p-2">Kategori</th>
+                        <th className="text-left p-2">Durum</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                       {currentData.slice(0, 10).map((item) => (
+                        <tr key={item.id} className="border-b">
+                          <td className="p-2 truncate max-w-[200px]">{item.title}</td>
+                          <td className="p-2 text-muted-foreground">{item.slug}</td>
+                          <td className="p-2">{item.categories?.name || item.blog_categories?.name || '-'}</td>
+                          <td className="p-2">
+                            <Badge variant={item.is_published ? 'default' : 'secondary'}>
+                              {item.is_published ? 'Yayında' : 'Taslak'}
+                            </Badge>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                  {currentData.length > 10 && (
                    <p className="text-sm text-muted-foreground mt-2 text-center">
                      ... ve {currentData.length - 10} kayıt daha

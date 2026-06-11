@@ -1,21 +1,28 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
- 
- const corsHeaders = {
-   "Access-Control-Allow-Origin": "*",
-   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
- };
- 
- Deno.serve(async (req) => {
-   if (req.method === "OPTIONS") {
-     return new Response(null, { headers: corsHeaders });
-   }
- 
-   try {
-     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-     const supabase = createClient(supabaseUrl, supabaseKey);
- 
-    const baseUrl = Deno.env.get("SITE_URL") || "https://ruya-tabirleri.vercel.app";
+import { handleOptions, jsonResponse } from "../_shared/cors.ts";
+import { requireCronSecret } from "../_shared/auth.ts";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-cron-secret",
+};
+
+Deno.serve(async (req) => {
+  const options = handleOptions(req);
+  if (options) return options;
+
+  const cronError = requireCronSecret(req);
+  if (cronError) return cronError;
+
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const baseUrl = Deno.env.get("SITE_URL");
+    if (!baseUrl) {
+      return jsonResponse({ error: "SITE_URL environment variable is required" }, 500);
+    }
 
     const staticPages = [
       { url: "/", priority: "1.0", changefreq: "daily" },
@@ -136,14 +143,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
          "Cache-Control": "public, max-age=3600", // Cache for 1 hour
        },
      });
-   } catch (error) {
-     console.error("Sitemap generation error:", error);
-     return new Response(
-       JSON.stringify({ error: "Failed to generate sitemap" }),
-       {
-         status: 500,
-         headers: { ...corsHeaders, "Content-Type": "application/json" },
-       }
-     );
-   }
- });
+} catch (error) {
+      console.error("Sitemap generation error:", error);
+      return jsonResponse({ error: "Failed to generate sitemap" }, 500);
+    }
+  });

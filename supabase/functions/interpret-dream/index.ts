@@ -6,6 +6,10 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const AI_API_URL = Deno.env.get("AI_API_URL") || "https://api.openai.com/v1/chat/completions";
+const AI_API_KEY = Deno.env.get("AI_API_KEY");
+const AI_MODEL = Deno.env.get("AI_MODEL") || "gpt-4o-mini";
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -13,10 +17,9 @@ serve(async (req) => {
 
   try {
     const { dream } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    if (!AI_API_KEY) {
+      throw new Error("AI_API_KEY is not configured");
     }
 
     if (!dream || typeof dream !== "string" || dream.trim().length < 10) {
@@ -47,24 +50,22 @@ Kurallar:
 - En az 3, en fazla 8 sembol belirle
 - Yanıtı SADECE JSON formatında ver, başka bir şey ekleme`;
 
-    const response = await fetch(
-      "https://ai.gateway.lovable.dev/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: `Rüyam: ${dream}` },
-          ],
-          temperature: 0.7,
-        }),
-      }
-    );
+    const response = await fetch(AI_API_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${AI_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: AI_MODEL,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: `Rüyam: ${dream}` },
+        ],
+        temperature: 0.7,
+        response_format: { type: "json_object" },
+      }),
+    });
 
     if (!response.ok) {
       if (response.status === 429) {
@@ -80,8 +81,8 @@ Kurallar:
         );
       }
       const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
-      throw new Error("AI servisi hatası");
+      console.error("AI API error:", response.status, errorText);
+      throw new Error(`AI servisi hatası: ${response.status}`);
     }
 
     const data = await response.json();

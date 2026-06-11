@@ -23,3 +23,11 @@ verify_jwt = true
 
 [functions.interpret-dream]
 verify_jwt = false
+
+# Required Environment Variables (set in Supabase Dashboard > Edge Functions > Secrets):
+# AI_API_KEY=your_openai_compatible_api_key
+# AI_API_URL=https://api.openai.com/v1/chat/completions (optional, defaults to OpenAI)
+# AI_MODEL=gpt-4o-mini (optional, defaults to gpt-4o-mini)
+# RESEND_API_KEY=your_resend_api_key (for newsletter emails)
+# CRON_SECRET=your_secure_random_string (for publish-scheduled-posts cron)
+# SITE_URL=https://your-domain.com (for sitemap generation)
