@@ -4,7 +4,7 @@ import { HeroSection } from '@/components/home/HeroSection';
 import { FeaturedDreams } from '@/components/home/FeaturedDreams';
 import { CategoriesSection } from '@/components/home/CategoriesSection';
 import { BlogSection } from '@/components/home/BlogSection';
-import { CTASection } from '@/components/home/CTASection';
+import { ContactCTASection } from '@/components/home/ContactCTASection';
 import { Seo } from '@/components/Seo';
 
 const Index = () => {
@@ -29,7 +29,7 @@ const Index = () => {
       <HeroSection />
       <FeaturedDreams />
       <CategoriesSection />
-      <CTASection />
+      <ContactCTASection />
       <BlogSection />
     </Layout>
   );

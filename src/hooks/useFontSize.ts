@@ -13,6 +13,7 @@ const SIZES: Record<FontSize, string> = {
 };
 
 const VALID = new Set<FontSize>(['sm', 'md', 'lg', 'xl']);
+const ORDER: FontSize[] = ['sm', 'md', 'lg', 'xl'];
 
 function applyFontSize(size: FontSize) {
   document.documentElement.style.setProperty('--app-font-size', SIZES[size]);
@@ -47,17 +48,16 @@ export function useFontSize(): UseFontSizeResult {
     localStorage.setItem(STORAGE_KEY, size);
   }, []);
 
-  const order: FontSize[] = ['sm', 'md', 'lg', 'xl'];
   const cycleUp = useCallback(() => {
     setFontSizeState((prev) => {
-      const next = order[Math.min(order.indexOf(prev) + 1, order.length - 1)];
+      const next = ORDER[Math.min(ORDER.indexOf(prev) + 1, ORDER.length - 1)];
       localStorage.setItem(STORAGE_KEY, next);
       return next;
     });
   }, []);
   const cycleDown = useCallback(() => {
     setFontSizeState((prev) => {
-      const next = order[Math.max(order.indexOf(prev) - 1, 0)];
+      const next = ORDER[Math.max(ORDER.indexOf(prev) - 1, 0)];
       localStorage.setItem(STORAGE_KEY, next);
       return next;
     });

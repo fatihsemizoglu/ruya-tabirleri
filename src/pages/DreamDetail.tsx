@@ -213,7 +213,7 @@ export default function DreamDetail() {
     }
   }, [slug, fetchDream]);
 
-  const toggleFavorite = async () => {
+  const toggleFavorite = useCallback(async () => {
     if (!user) {
       toast.error('Giriş yapmalısınız');
       return;
@@ -233,7 +233,7 @@ export default function DreamDetail() {
     } catch {
       toast.error('Bir hata oluştu');
     }
-  };
+  }, [user, dream, isFavorite]);
 
   // Swipe gesture: right swipe to favorite, left swipe to share (touch only)
   useEffect(() => {
@@ -274,7 +274,7 @@ export default function DreamDetail() {
       document.removeEventListener('touchstart', onStart);
       document.removeEventListener('touchend', onEnd);
     };
-  }, [user, isFavorite, dream]);
+  }, [user, isFavorite, dream, toggleFavorite]);
 
   const toggleLike = async () => {
     if (!user) {

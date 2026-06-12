@@ -148,8 +148,8 @@ export function RichTextEditor({ content, onChange, placeholder = 'İçerik yaz�
   return (
     <>
       <div className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
-        {/* Toolbar */}
-        <div className="flex flex-wrap items-center gap-0.5 p-2 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
+        {/* Toolbar — sticky so it stays visible while scrolling long content */}
+        <div className="sticky top-0 z-10 flex flex-wrap items-center gap-0.5 p-2 bg-slate-50 dark:bg-slate-800/95 backdrop-blur-sm border-b border-slate-200 dark:border-slate-700">
           {/* History */}
           <ToolbarButton
             onClick={() => editor.chain().focus().undo().run()}

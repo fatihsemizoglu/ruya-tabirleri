@@ -1,0 +1,63 @@
+{
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/api/(.*)",
+      "destination": "https://srpuegfijtujagpuksgs.supabase.co/functions/v1/$1"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/sw.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        },
+        {
+          "key": "Service-Worker-Allowed",
+          "value": "/"
+        }
+      ]
+    },
+    {
+      "source": "/manifest.webmanifest",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/(.*).png",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/publish-scheduled-posts",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/sitemap",
+      "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/seo-audit",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/zero-results",
+      "schedule": "0 4 * * *"
+    }
+  ]
+}
