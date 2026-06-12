@@ -25,3 +25,14 @@ dist-ssr
 .vercel
 .vercel-tmp
 .env*
+
+# Supabase CLI local state
+supabase/.temp/
+
+# IDE / tooling
+.kiro/
+
+# Audit reports and screenshots
+*DENETIM_RAPORU*.md
+screenshot-*.png
+search-results-screenshot.png
