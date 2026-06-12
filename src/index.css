@@ -5,6 +5,7 @@
 @layer base {
   body {
     font-family: 'Inter', 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-size: var(--app-font-size, 16px);
   }
 
   ::selection {
@@ -29,6 +30,29 @@
   .cv-auto {
     content-visibility: auto;
     contain-intrinsic-size: 1px 600px;
+  }
+
+  /* WCAG 2.5.5: minimum 44x44 CSS pixel target size for touch */
+  .touch-target {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* Reading mode: hide chrome, increase font size, warm sepia background */
+  .reading-mode header,
+  .reading-mode footer,
+  .reading-mode nav[aria-label="Alt navigasyon"] {
+    display: none !important;
+  }
+  .reading-mode main {
+    padding-bottom: 1rem !important;
+  }
+  .reading-mode .reading-content {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 2rem 1.25rem 4rem;
+    line-height: 1.8;
+    font-size: 1.125rem;
   }
 
   .dream-gradient {

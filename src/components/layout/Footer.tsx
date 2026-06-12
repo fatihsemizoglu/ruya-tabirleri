@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Moon, Mail, Heart, MapPin, Phone, Instagram, Twitter, Youtube, Linkedin, Facebook, Sparkles, Send } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
+import { FontSizeControl } from '@/components/ui/FontSizeControl';
 
 const exploreLinks = [
   { to: '/ruya-tabirleri', label: 'Rüya Tabirleri' },
@@ -212,6 +213,9 @@ export function Footer() {
                 <Heart className="h-3 w-3 text-rose-400/80 fill-rose-400/80" />
                 Türkiye'de sevgiyle yapıldı
               </p>
+              <div className="text-slate-300">
+                <FontSizeControl variant="inline" />
+              </div>
             </div>
           </div>
 
