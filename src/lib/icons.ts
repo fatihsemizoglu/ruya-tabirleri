@@ -176,6 +176,9 @@ import {
   Scissors,
   HeartCrack,
   Croissant,
+  CloudRain,
+  CloudSnow,
+  CloudFog,
 } from 'lucide-react';
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
