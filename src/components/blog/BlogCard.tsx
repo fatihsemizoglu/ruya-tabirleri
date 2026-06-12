@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, Eye, Heart, Clock, Tag, ArrowUpRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { ResponsiveImage } from '@/components/ui/ResponsiveImage';
 import { BlogPost } from '@/types/blog';
 import { formatDistanceToNow } from 'date-fns';
 import { tr } from 'date-fns/locale';
@@ -25,11 +26,11 @@ export const BlogCard = memo(function BlogCard({ post, variant = 'default' }: Bl
         {post.featured_image && (
           <Link to={`/blog/${post.slug}`} className="shrink-0">
             <div className="relative w-20 h-20 rounded-xl overflow-hidden">
-              <img
+              <ResponsiveImage
                 src={post.featured_image}
                 alt={post.title}
-                loading="lazy"
-                decoding="async"
+                fallbackWidth={160}
+                sizes="80px"
                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -70,11 +71,11 @@ export const BlogCard = memo(function BlogCard({ post, variant = 'default' }: Bl
         {/* Background Image */}
         <div className="absolute inset-0">
           {post.featured_image ? (
-            <img
+            <ResponsiveImage
               src={post.featured_image}
               alt={post.title}
-              loading="lazy"
-              decoding="async"
+              fallbackWidth={1024}
+              sizes="(max-width: 768px) 100vw, 50vw"
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
             />
           ) : (
@@ -117,11 +118,11 @@ export const BlogCard = memo(function BlogCard({ post, variant = 'default' }: Bl
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               {post.author?.avatar_url ? (
-                <img
+                <ResponsiveImage
                   src={post.author.avatar_url}
                   alt={post.author.full_name || 'Yazar'}
-                  loading="lazy"
-                  decoding="async"
+                  fallbackWidth={80}
+                  sizes="40px"
                   className="w-10 h-10 rounded-full object-cover ring-2 ring-white/30"
                 />
               ) : (

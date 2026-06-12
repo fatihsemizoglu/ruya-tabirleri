@@ -44,7 +44,7 @@ export function Footer() {
     .filter((s) => s.href.trim() !== '');
 
   return (
-    <footer className="relative overflow-hidden bg-slate-950 text-slate-300">
+    <footer className="relative overflow-hidden bg-slate-950 text-slate-300 cv-auto">
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute -top-32 left-1/4 w-[480px] h-[480px] rounded-full bg-violet-600/15 blur-[120px]" />
         <div className="absolute -bottom-40 right-1/4 w-[520px] h-[520px] rounded-full bg-blue-600/15 blur-[140px]" />
