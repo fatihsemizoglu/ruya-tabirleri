@@ -3,6 +3,8 @@ import { Share2, Copy, Check, Facebook, Twitter, Send, Linkedin, Mail, X } from 
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { nativeShare } from '@/lib/share';
+import { haptic } from '@/lib/haptics';
 
 interface SocialShareBarProps {
   title: string;
@@ -46,21 +48,24 @@ export function SocialShareBar({
   const encodedDescription = encodeURIComponent(description || title);
 
   const handleCopyLink = async () => {
-    await navigator.clipboard.writeText(url);
-    setCopied(true);
-    toast.success('Link kopyalandı');
-    setTimeout(() => setCopied(false), 2000);
+    const ok = await nativeShare({ title, text: description || title, url });
+    if (ok === 'copied') {
+      setCopied(true);
+      toast.success('Link kopyalandı');
+      haptic('light');
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const handleNativeShare = async () => {
-    if ('share' in navigator) {
-      try {
-        await navigator.share({ title, text: description || title, url });
-      } catch {
-        handleCopyLink();
-      }
-    } else {
-      handleCopyLink();
+    const result = await nativeShare({ title, text: description || title, url });
+    if (result === 'copied') {
+      setCopied(true);
+      toast.success('Link kopyalandı');
+      haptic('light');
+      setTimeout(() => setCopied(false), 2000);
+    } else if (result === 'unsupported') {
+      toast.error('Paylaşım desteklenmiyor');
     }
   };
 

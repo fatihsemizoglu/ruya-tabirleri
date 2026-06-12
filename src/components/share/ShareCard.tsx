@@ -20,6 +20,8 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { nativeShare } from '@/lib/share';
+import { haptic } from '@/lib/haptics';
 
 interface ShareCardProps {
   title: string;
@@ -51,31 +53,23 @@ export function ShareCard({ title, description, onFeedback, className = '', chil
   const url = typeof window !== 'undefined' ? window.location.href : '';
 
   const handleNativeShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: title,
-          text: description || title,
-          url: url,
-        });
-        toast({ title: 'Paylaşıldı', description: 'İçerik başarıyla paylaşıldı.' });
-      } catch (error: unknown) {
-        if (error instanceof Error && error.name !== 'AbortError') {
-          toast({ title: 'Hata', description: 'Paylaşımda hata oluştu.', variant: 'destructive' });
-        }
-      }
-    } else {
+    const result = await nativeShare({ title, text: description || title, url });
+    if (result === 'shared') {
+      toast({ title: 'Paylaşıldı', description: 'İçerik başarıyla paylaşıldı.' });
+      haptic('success');
+    } else if (result === 'copied') {
       handleCopy();
     }
   };
 
   const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(url);
+    const result = await nativeShare({ title, text: description || title, url });
+    if (result === 'copied') {
       setCopied(true);
       toast({ title: 'Link Kopyalandı', description: 'Link panoya kopyalandı.' });
+      haptic('light');
       setTimeout(() => setCopied(false), 3000);
-    } catch {
+    } else if (result === 'unsupported') {
       toast({ title: 'Hata', description: 'Link kopyalanırken hata oluştu.', variant: 'destructive' });
     }
   };

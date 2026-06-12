@@ -16,6 +16,8 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { cn } from '@/lib/utils';
+import { copyToClipboard } from '@/lib/share';
+import { haptic } from '@/lib/haptics';
 
 const contactReasons = [
   { value: 'genel', label: 'Genel Bilgi', icon: MessageSquare, color: 'from-blue-500 to-cyan-500' },
@@ -154,10 +156,11 @@ export default function Contact() {
   };
 
   const handleCopyCoords = async () => {
-    try {
-      await navigator.clipboard.writeText(`${lat}, ${lng}`);
+    const ok = await copyToClipboard(`${lat}, ${lng}`);
+    if (ok) {
       toast({ title: 'Kopyalandı ✓', description: 'Koordinatlar panoya kopyalandı.' });
-    } catch {
+      haptic('light');
+    } else {
       toast({ title: 'Hata', description: 'Kopyalanamadı.', variant: 'destructive' });
     }
   };

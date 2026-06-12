@@ -22,6 +22,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { useAuditLog } from '@/hooks/useAuditLog';
+import { copyToClipboard as copyTextToClipboard } from '@/lib/share';
+import { haptic } from '@/lib/haptics';
 import {
   Image as ImageIcon,
   Search,
@@ -204,15 +206,16 @@ export function MediaLibrary() {
   };
 
   const copyToClipboard = async (url: string) => {
-    try {
-      await navigator.clipboard.writeText(url);
+    const ok = await copyTextToClipboard(url);
+    if (ok) {
       setCopiedUrl(url);
       toast({
         title: 'Kopyalandı',
         description: 'URL panoya kopyalandı.',
       });
+      haptic('light');
       setTimeout(() => setCopiedUrl(null), 2000);
-    } catch (err) {
+    } else {
       toast({
         title: 'Hata',
         description: 'URL kopyalanamadı.',

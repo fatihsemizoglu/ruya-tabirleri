@@ -3,12 +3,14 @@ import { Header } from './Header';
 import { Footer } from './Footer';
 import { PremiumBackground } from './PremiumBackground';
 import { MobileBottomNav } from './MobileBottomNav';
+import { BackToTop } from './BackToTop';
 
 interface LayoutProps {
   children: ReactNode;
   hideFooter?: boolean;
   hideHeader?: boolean;
   hideBottomNav?: boolean;
+  hideBackToTop?: boolean;
   backgroundVariant?: 'default' | 'soft' | 'strong' | 'none';
 }
 
@@ -17,6 +19,7 @@ export function Layout({
   hideFooter = false,
   hideHeader = false,
   hideBottomNav = false,
+  hideBackToTop = false,
   backgroundVariant = 'default',
 }: LayoutProps) {
   return (
@@ -33,6 +36,7 @@ export function Layout({
       </main>
       {!hideFooter && <Footer />}
       {!hideBottomNav && <MobileBottomNav />}
+      {!hideBackToTop && <BackToTop />}
     </div>
   );
 }

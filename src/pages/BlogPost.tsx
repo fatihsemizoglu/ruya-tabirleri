@@ -31,6 +31,8 @@ import { toast } from 'sonner';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { Seo } from '@/components/Seo';
+import { nativeShare } from '@/lib/share';
+import { haptic } from '@/lib/haptics';
 
 export default function BlogPost() {
   const { slug } = useParams<{ slug: string }>();
@@ -195,6 +197,7 @@ export default function BlogPost() {
 
       setIsLiked(false);
       setLikeCount((prev) => prev - 1);
+      haptic('light');
     } else {
       await supabase.from('blog_likes').insert({
         post_id: post.id,
@@ -203,23 +206,22 @@ export default function BlogPost() {
 
       setIsLiked(true);
       setLikeCount((prev) => prev + 1);
+      haptic('success');
     }
   };
 
   const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: post?.title,
-          text: post?.excerpt || '',
-          url: window.location.href,
-        });
-      } catch (error) {
-        // User cancelled
-      }
-    } else {
-      await navigator.clipboard.writeText(window.location.href);
+    if (!post) return;
+    const result = await nativeShare({
+      title: post.title,
+      text: post.excerpt || '',
+      url: window.location.href,
+    });
+    if (result === 'copied') {
       toast.success('Link kopyalandı!');
+      haptic('light');
+    } else if (result === 'shared') {
+      haptic('success');
     }
   };
 

@@ -15,6 +15,8 @@ import { CommentSection } from '@/components/dream/CommentSection';
 import { ShareCard } from '@/components/share/ShareCard';
 import type { Dream, Comment, Profile, Category } from '@/types/database';
 import { Seo } from '@/components/Seo';
+import { nativeShare } from '@/lib/share';
+import { haptic } from '@/lib/haptics';
 
 const gradientPalette = [
   'from-violet-500 to-fuchsia-500',
@@ -77,10 +79,13 @@ function ShareButton({ title, description, url }: { title: string; description: 
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(url);
-    setCopied(true);
-    toast.success('Link kopyalandı');
-    setTimeout(() => setCopied(false), 2000);
+    const result = await nativeShare({ title, text: description, url });
+    if (result === 'copied' || result === 'shared') {
+      setCopied(true);
+      toast.success('Link kopyalandı');
+      haptic('light');
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   return (
