@@ -36,3 +36,7 @@ supabase/.temp/
 *DENETIM_RAPORU*.md
 screenshot-*.png
 search-results-screenshot.png
+vercel-homepage-check.png
+
+# Playwright MCP browser cache
+.playwright-mcp/
