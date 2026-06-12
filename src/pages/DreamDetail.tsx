@@ -235,6 +235,47 @@ export default function DreamDetail() {
     }
   };
 
+  // Swipe gesture: right swipe to favorite, left swipe to share (touch only)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const isTouch = window.matchMedia('(pointer: coarse)').matches;
+    if (!isTouch) return;
+
+    let startX = 0;
+    let startY = 0;
+    let tracking = false;
+
+    const onStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      tracking = true;
+    };
+
+    const onEnd = (e: TouchEvent) => {
+      if (!tracking) return;
+      tracking = false;
+      const t = e.changedTouches[0];
+      const dx = t.clientX - startX;
+      const dy = t.clientY - startY;
+      if (Math.abs(dy) > 60) return; // mostly vertical
+      if (dx > 80) {
+        toggleFavorite();
+      } else if (dx < -80) {
+        navigator.clipboard?.writeText(window.location.href).then(() => {
+          toast.success('Link kopyalandı');
+        }).catch(() => {});
+      }
+    };
+
+    document.addEventListener('touchstart', onStart, { passive: true });
+    document.addEventListener('touchend', onEnd, { passive: true });
+    return () => {
+      document.removeEventListener('touchstart', onStart);
+      document.removeEventListener('touchend', onEnd);
+    };
+  }, [user, isFavorite, dream]);
+
   const toggleLike = async () => {
     if (!user) {
       toast.error('Giriş yapmalısınız');
