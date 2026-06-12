@@ -14,6 +14,7 @@ import { SearchAutocomplete } from '@/components/search/SearchAutocomplete';
 import { AdvancedFilters, type AdvancedFilterState } from '@/components/search/AdvancedFilters';
 import type { DreamSearchResult, Category } from '@/types/database';
 import { Seo } from '@/components/Seo';
+import { useRecentSearches } from '@/hooks/useRecentSearches';
 
 type ViewMode = 'grid' | 'list';
 
@@ -22,7 +23,6 @@ const popularSearches = [
   'bebek', 'ev', 'araba', 'para', 'diş', 'saç', 'kan'
 ];
 
-const RECENT_SEARCHES_KEY = 'dream_recent_searches';
 const MAX_RECENT_SEARCHES = 10;
 
 export default function Search() {
@@ -34,7 +34,12 @@ export default function Search() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
-  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const {
+    recent: recentSearches,
+    addSearch: addRecentSearch,
+    removeSearch: removeRecentSearch,
+    clear: clearRecentSearches,
+  } = useRecentSearches();
   const [relatedDreams, setRelatedDreams] = useState<DreamSearchResult[]>([]);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [maxStats, setMaxStats] = useState({ maxViews: 1000, maxLikes: 500 });
@@ -53,18 +58,6 @@ export default function Search() {
     minLikes: 0,
     sortBy: 'relevance'
   });
-
-  // Load recent searches from localStorage
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(RECENT_SEARCHES_KEY);
-      if (saved) {
-        setRecentSearches(JSON.parse(saved));
-      }
-    } catch {
-      localStorage.removeItem(RECENT_SEARCHES_KEY);
-    }
-  }, []);
 
 // Scroll listener for scroll-to-top button (throttled with requestAnimationFrame)
   useEffect(() => {
@@ -112,14 +105,6 @@ export default function Search() {
     fetchMaxStats();
   }, []);
 
-  const saveRecentSearch = useCallback((term: string) => {
-    setRecentSearches(prev => {
-      const updated = [term, ...prev.filter(s => s !== term)].slice(0, MAX_RECENT_SEARCHES);
-      localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updated));
-      return updated;
-    });
-  }, []);
-
   const fetchSearchPage = useCallback(async (searchTerm: string, page: number, append = false) => {
     if (append) {
       setLoadMoreLoading(true);
@@ -148,7 +133,7 @@ export default function Search() {
       setTotalCount(typeof countRes.data === 'number' ? countRes.data : 0);
 
       if (page === 1) {
-        saveRecentSearch(searchTerm);
+        addRecentSearch(searchTerm);
       }
     } catch (error) {
       console.error('Search error:', error);
@@ -160,7 +145,7 @@ export default function Search() {
       setIsLoading(false);
       setLoadMoreLoading(false);
     }
-  }, [saveRecentSearch]);
+  }, [addRecentSearch]);
 
   const fetchRelatedDreams = useCallback(async (_searchTerm: string) => {
     try {
@@ -270,17 +255,6 @@ export default function Search() {
   useEffect(() => {
     setCurrentPage(1);
   }, [query, advancedFilters]);
-
-  const clearRecentSearches = () => {
-    setRecentSearches([]);
-    localStorage.removeItem(RECENT_SEARCHES_KEY);
-  };
-
-  const removeRecentSearch = (term: string) => {
-    const updated = recentSearches.filter(s => s !== term);
-    setRecentSearches(updated);
-    localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updated));
-  };
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
