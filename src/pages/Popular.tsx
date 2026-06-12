@@ -319,9 +319,6 @@ export default function Popular() {
 
   // Seçili kategorinin bilgisini getir
   const selectedCategoryData = selectedCategory !== 'all' ? categories[selectedCategory] : null;
-  const categorySelectLabel = selectedCategoryData
-    ? `${selectedCategoryData.name}`.trim()
-    : 'Tüm Kategoriler';
 
   const DreamCard = ({ dream, index }: { dream: Dream; index: number }) => {
     const category = dream.category_id ? categories[dream.category_id] : null;
@@ -649,20 +646,28 @@ export default function Popular() {
               </Select>
 
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="w-[200px] h-10 rounded-xl bg-muted/30 border-border/50">
+                <SelectTrigger className="w-[240px] h-10 rounded-xl bg-muted/30 border-border/50">
                   <Filter className="h-4 w-4 mr-2 text-muted-foreground shrink-0" />
-                  <SelectValue placeholder="Tüm Kategoriler">
-                    {categorySelectLabel}
-                  </SelectValue>
+                  {selectedCategoryData ? (
+                    <>
+                      <CategoryIcon icon={selectedCategoryData.icon} className="h-4 w-4 text-foreground mr-1.5 shrink-0" />
+                      <span className="truncate">{selectedCategoryData.name}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-base leading-none mr-1.5">🌙</span>
+                      <SelectValue placeholder="Tüm Kategoriler" />
+                    </>
+                  )}
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">
-                    <span className="text-base leading-none">🌙</span>
+                    <span className="text-base leading-none mr-2">🌙</span>
                     <span>Tüm Kategoriler</span>
                   </SelectItem>
                   {Object.values(categories).map((category) => (
                     <SelectItem key={category.id} value={category.id}>
-                      <CategoryIcon icon={category.icon} className="h-4 w-4" />
+                      <CategoryIcon icon={category.icon} className="h-4 w-4 text-foreground" />
                       <span>{category.name}</span>
                     </SelectItem>
                   ))}

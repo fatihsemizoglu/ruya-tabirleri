@@ -233,10 +233,10 @@ export default function Contact() {
         path="/iletisim"
       />
       <div className="relative">
-        <PremiumBackground variant="soft" className="h-[420px]" />
-        <div className="container py-12 md:py-16 relative">
+        <PremiumBackground variant="soft" className="h-[460px]" />
+        <div className="container py-12 md:py-20 relative">
           {/* Hero */}
-          <div className="max-w-3xl mx-auto text-center mb-14 relative">
+          <div className="max-w-3xl mx-auto text-center mb-16 relative">
             <div className="mb-6 flex justify-center">
               <PremiumBadge><MessageSquare className="h-3.5 w-3.5" /> İletişim</PremiumBadge>
             </div>

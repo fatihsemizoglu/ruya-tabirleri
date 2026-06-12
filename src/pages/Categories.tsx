@@ -337,15 +337,15 @@ export default function Categories() {
                 <Link
                   key={category.id}
                   to={`/kategori/${category.slug}`}
-                  className="group relative overflow-hidden rounded-2xl p-6 bg-card border hover:border-primary/50 transition-all duration-300 hover:shadow-lg animate-fade-in"
+                  className="group relative overflow-hidden rounded-2xl p-6 bg-card border border-border hover:border-primary/50 transition-all duration-300 hover:shadow-lg animate-fade-in"
                   style={{ animationDelay: `${index * 30}ms` }}
                 >
                   <div className={`absolute inset-0 bg-gradient-to-br ${colors.bg} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
-                  
+
                   <div className="relative">
                     {/* Icon */}
                     <div className="w-14 h-14 rounded-xl bg-muted flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-                      <CategoryIcon icon={category.icon} className="text-2xl" />
+                      <CategoryIcon icon={category.icon} className="h-7 w-7 text-foreground" />
                     </div>
 
                     {/* Name */}
@@ -386,7 +386,7 @@ export default function Categories() {
                 >
                   {/* Icon */}
                     <div className="w-14 h-14 rounded-xl bg-muted flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                      <CategoryIcon icon={category.icon} className="text-2xl" />
+                      <CategoryIcon icon={category.icon} className="h-6 w-6 text-foreground" />
                     </div>
 
                   {/* Content */}

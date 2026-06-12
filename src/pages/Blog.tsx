@@ -1,19 +1,8 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { BookOpen, Grid3X3, List, Search, Sparkles, ArrowRight, FileText, X, Filter, Clock, BarChart3, TrendingUp, Eye, Heart } from 'lucide-react';
+import { BookOpen, Grid3X3, List, Search, Sparkles, ArrowRight, FileText, X, Filter, Clock } from 'lucide-react';
 import { Seo } from '@/components/Seo';
-import {
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip as RechartsTooltip,
-} from 'recharts';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -273,137 +262,6 @@ export default function Blog() {
             </motion.div>
           </div>
         </section>
-
-        {/* Blog Statistics with Recharts */}
-        {posts.length > 0 && categories.length > 0 && (
-          <section className="container pb-6">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.5 }}
-              className="bg-card/80 backdrop-blur-xl border border-border/50 rounded-3xl p-6 md:p-8 shadow-lg"
-            >
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 rounded-xl bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20">
-                  <BarChart3 className="w-5 h-5 text-violet-600 dark:text-violet-400" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-foreground">Blog İstatistikleri</h2>
-                  <p className="text-sm text-muted-foreground">Kategori dağılımı ve en çok okunan yazılar</p>
-                </div>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-8">
-                {/* Category Distribution Pie Chart */}
-                <div>
-                  <h3 className="text-sm font-semibold text-muted-foreground mb-4 flex items-center gap-2">
-                    <Sparkles className="w-4 h-4" /> Kategori Dağılımı
-                  </h3>
-                  <div className="h-[220px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={categories.map((cat) => ({
-                            name: cat.name,
-                            value: posts.filter((p) => p.category_id === cat.id).length,
-                            icon: cat.icon || '📖',
-                          })).filter((d) => d.value > 0)}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={50}
-                          outerRadius={85}
-                          paddingAngle={3}
-                          dataKey="value"
-                          label={({ name, value }) => `${name} (${value})`}
-                          labelLine={false}
-                        >
-                          {categories.map((_, index) => (
-                            <Cell key={`cell-${index}`} fill={['#8b5cf6', '#a855f7', '#d946ef', '#ec4899', '#f43f5e', '#6366f1', '#14b8a6', '#f59e0b'][index % 8]} />
-                          ))}
-                        </Pie>
-                        <RechartsTooltip
-                          formatter={(value: number, name: string) => [`${value} yazı`, name]}
-                          contentStyle={{ borderRadius: '12px', border: '1px solid hsl(var(--border))', backgroundColor: 'hsl(var(--card))' }}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-
-                {/* Top Posts Bar Chart */}
-                <div>
-                  <h3 className="text-sm font-semibold text-muted-foreground mb-4 flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4" /> En Çok Okunan Yazılar
-                  </h3>
-                  <div className="h-[220px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
-                        data={[...posts]
-                          .sort((a, b) => b.view_count - a.view_count)
-                          .slice(0, 5)
-                          .map((p) => ({
-                            name: p.title.length > 25 ? p.title.slice(0, 25) + '...' : p.title,
-                            views: p.view_count,
-                            likes: p.like_count,
-                          }))}
-                        layout="vertical"
-                        margin={{ left: 10, right: 10 }}
-                      >
-                        <XAxis type="number" tick={{ fontSize: 11 }} />
-                        <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 11 }} />
-                        <RechartsTooltip
-                          formatter={(value: number, name: string) => [value, name === 'views' ? 'Görüntüleme' : 'Beğeni']}
-                          contentStyle={{ borderRadius: '12px', border: '1px solid hsl(var(--border))', backgroundColor: 'hsl(var(--card))' }}
-                        />
-                        <Bar dataKey="views" fill="#8b5cf6" radius={[0, 6, 6, 0]} barSize={18} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-              </div>
-
-              {/* Summary Stats Row */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-border/50">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-violet-500/10">
-                    <Eye className="w-4 h-4 text-violet-600" />
-                  </div>
-                  <div>
-                    <p className="text-lg font-bold text-foreground">{posts.reduce((s, p) => s + p.view_count, 0).toLocaleString('tr-TR')}</p>
-                    <p className="text-xs text-muted-foreground">Toplam Görüntüleme</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-pink-500/10">
-                    <Heart className="w-4 h-4 text-pink-600" />
-                  </div>
-                  <div>
-                    <p className="text-lg font-bold text-foreground">{posts.reduce((s, p) => s + p.like_count, 0).toLocaleString('tr-TR')}</p>
-                    <p className="text-xs text-muted-foreground">Toplam Beğeni</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-indigo-500/10">
-                    <FileText className="w-4 h-4 text-indigo-600" />
-                  </div>
-                  <div>
-                    <p className="text-lg font-bold text-foreground">{posts.length}</p>
-                    <p className="text-xs text-muted-foreground">Toplam Yazı</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-fuchsia-500/10">
-                    <BookOpen className="w-4 h-4 text-fuchsia-600" />
-                  </div>
-                  <div>
-                    <p className="text-lg font-bold text-foreground">{categories.length}</p>
-                    <p className="text-xs text-muted-foreground">Kategori</p>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </section>
-        )}
 
         {/* Sticky Filter Bar */}
         <div className="sticky top-16 z-30 bg-background/80 backdrop-blur-xl border border-border/50 rounded-2xl p-3 mb-6 shadow-sm -mx-4 px-4 sm:mx-0 sm:px-0">

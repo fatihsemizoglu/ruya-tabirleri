@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Eye, Heart, Star, ChevronUp, BookOpen, Search, Grid3X3, List, ArrowUpDown, TrendingUp, Sparkles, Filter, X, ArrowUpRight, Clock } from 'lucide-react';
+import { Eye, Heart, Star, ChevronUp, BookOpen, Search, Grid3X3, List, ArrowUpDown, Filter, X, ArrowUpRight, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { Badge } from '@/components/ui/badge';
@@ -19,6 +19,9 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Dream, Category } from '@/types/database';
 
 const alphabet = 'ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ'.split('');
+
+const PAGE_SIZE = 25;
+const MAX_FETCH = 500;
 
 type SortOption = 'title' | 'views' | 'likes' | 'newest';
 type ViewMode = 'grid' | 'list';
@@ -50,9 +53,9 @@ export default function AlphabetList() {
   const navigate = useNavigate();
   const [dreams, setDreams] = useState<Dream[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [letterCounts, setLetterCounts] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('title');
@@ -60,31 +63,6 @@ export default function AlphabetList() {
   const [showOnlyFeatured, setShowOnlyFeatured] = useState(false);
 
   const selectedLetter = letter?.toUpperCase() || 'A';
-
-  useEffect(() => {
-    const fetchLetterCounts = async () => {
-      const { data } = await supabase
-        .from('dreams')
-        .select('title')
-        .eq('is_published', true);
-
-      if (data) {
-        const counts: Record<string, number> = {};
-        alphabet.forEach(char => counts[char] = 0);
-
-        data.forEach(dream => {
-          const firstLetter = getMeaningfulFirstLetter(dream.title);
-          if (counts[firstLetter] !== undefined) {
-            counts[firstLetter]++;
-          }
-        });
-
-        setLetterCounts(counts);
-      }
-    };
-
-    fetchLetterCounts();
-  }, []);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -105,10 +83,12 @@ export default function AlphabetList() {
           .select('*')
           .eq('is_published', true)
           .ilike('title', `Rüyada ${selectedLetter}%`)
-          .order('title');
+          .order('title')
+          .limit(MAX_FETCH);
 
         if (error) throw error;
         setDreams((data as Dream[]) || []);
+        setCurrentPage(1);
       } catch (error) {
         console.error('Error fetching dreams:', error);
       } finally {
@@ -174,18 +154,15 @@ export default function AlphabetList() {
     return result;
   }, [dreams, searchQuery, sortBy, showOnlyFeatured]);
 
-  const stats = useMemo(() => {
-    const totalDreams = Object.values(letterCounts).reduce((a, b) => a + b, 0);
-    const lettersWithDreams = Object.values(letterCounts).filter(c => c > 0).length;
-    const mostPopularLetter = Object.entries(letterCounts).sort((a, b) => b[1] - a[1])[0];
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, sortBy, showOnlyFeatured]);
 
-    return {
-      totalDreams,
-      lettersWithDreams,
-      mostPopularLetter: mostPopularLetter ? { letter: mostPopularLetter[0], count: mostPopularLetter[1] } : null,
-      currentLetterCount: letterCounts[selectedLetter] || 0,
-    };
-  }, [letterCounts, selectedLetter]);
+  const totalPages = Math.max(1, Math.ceil(filteredDreams.length / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const startIdx = (safePage - 1) * PAGE_SIZE;
+  const paginatedDreams = filteredDreams.slice(startIdx, startIdx + PAGE_SIZE);
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -196,7 +173,19 @@ export default function AlphabetList() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const maxCount = Math.max(...Object.values(letterCounts), 1);
+  const getPageNumbers = (): (number | 'ellipsis')[] => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    const pages: (number | 'ellipsis')[] = [1];
+    const start = Math.max(2, safePage - 1);
+    const end = Math.min(totalPages - 1, safePage + 1);
+    if (start > 2) pages.push('ellipsis');
+    for (let i = start; i <= end; i++) pages.push(i);
+    if (end < totalPages - 1) pages.push('ellipsis');
+    pages.push(totalPages);
+    return pages;
+  };
   const activeFilterCount = (showOnlyFeatured ? 1 : 0) + (searchQuery.trim() ? 1 : 0);
 
   return (
@@ -244,49 +233,6 @@ export default function AlphabetList() {
               >
                 Tüm rüya tabirlerine alfabetik sırayla göz atın. Aradığınız rüyayı bulmak için bir harf seçin.
               </motion.p>
-
-              {/* Quick Stats */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3, duration: 0.5 }}
-                className="grid grid-cols-2 md:grid-cols-3 gap-3 max-w-2xl mx-auto mt-8"
-              >
-                <div className="surface p-4 text-left">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center">
-                      <BookOpen className="w-4 h-4 text-violet-600" />
-                    </div>
-                    <p className="text-xs text-muted-foreground">Toplam Rüya</p>
-                  </div>
-                  <p className="text-2xl font-bold">{stats.totalDreams.toLocaleString('tr-TR')}</p>
-                </div>
-                <div className="surface p-4 text-left">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <div className="w-8 h-8 rounded-lg bg-fuchsia-500/10 flex items-center justify-center">
-                      <Sparkles className="w-4 h-4 text-fuchsia-600" />
-                    </div>
-                    <p className="text-xs text-muted-foreground">Aktif Harf</p>
-                  </div>
-                  <p className="text-2xl font-bold">{stats.lettersWithDreams}</p>
-                </div>
-                {stats.mostPopularLetter && (
-                  <div className="surface p-4 text-left col-span-2 md:col-span-1">
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <div className="w-8 h-8 rounded-lg bg-pink-500/10 flex items-center justify-center">
-                        <TrendingUp className="w-4 h-4 text-pink-600" />
-                      </div>
-                      <p className="text-xs text-muted-foreground">En Popüler Harf</p>
-                    </div>
-                    <p className="text-2xl font-bold">
-                      {stats.mostPopularLetter.letter}
-                      <span className="text-sm text-muted-foreground font-normal ml-2">
-                        ({stats.mostPopularLetter.count})
-                      </span>
-                    </p>
-                  </div>
-                )}
-              </motion.div>
             </motion.div>
           </div>
         </section>
@@ -296,38 +242,24 @@ export default function AlphabetList() {
           <div className="container py-3">
             <div className="flex flex-wrap justify-center gap-1.5 max-w-4xl mx-auto">
               {alphabet.map((char) => {
-                const count = letterCounts[char] || 0;
                 const isActive = selectedLetter === char;
-                const isEmpty = count === 0;
-                const intensity = count > 0 ? Math.max(0.1, count / maxCount) : 0;
 
                 return (
                   <button
                     key={char}
                     onClick={() => handleLetterClick(char)}
-                    disabled={isEmpty}
                     className={`
                       relative w-9 h-9 md:w-10 md:h-10 rounded-lg flex items-center justify-center
                       font-semibold text-sm transition-all duration-200
-                      ${!isEmpty ? 'hover:scale-110 active:scale-95' : ''}
+                      hover:scale-110 active:scale-95
                       ${isActive
                         ? 'bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white shadow-lg shadow-violet-500/30'
-                        : isEmpty
-                          ? 'bg-muted/30 text-muted-foreground/30 cursor-not-allowed'
-                          : 'bg-muted/50 hover:bg-muted text-foreground'
+                        : 'bg-muted/50 hover:bg-muted text-foreground'
                       }
                     `}
-                    title={`${char} - ${count} rüya`}
+                    title={char}
                   >
                     {char}
-                    {count > 0 && !isActive && (
-                      <span
-                        className="absolute -bottom-1 -right-1 min-w-4 h-4 px-1 rounded-full text-[10px] flex items-center justify-center font-bold bg-background border border-border"
-                        style={{ color: `hsl(${280 - intensity * 80} 70% ${30 + intensity * 20}%)` }}
-                      >
-                        {count > 9 ? '9+' : count}
-                      </span>
-                    )}
                   </button>
                 );
               })}
@@ -515,7 +447,7 @@ export default function AlphabetList() {
                 : "flex flex-col gap-3"
               }
             >
-              {filteredDreams.map((dream) => {
+              {paginatedDreams.map((dream) => {
                 const category = getCategoryName(dream.category_id);
                 const gradient = pickGradient(dream.id);
 
@@ -697,59 +629,68 @@ export default function AlphabetList() {
           )}
         </section>
 
-        {/* Letter Statistics - Heatmap */}
-        <section className="container pb-12">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="surface p-6 md:p-8"
+        {/* Pagination */}
+        {filteredDreams.length > 0 && totalPages > 1 && (
+          <nav
+            className="container pb-6"
+            aria-label="Sayfalama"
           >
-            <h3 className="text-xl font-serif-dream font-bold mb-1 text-center">Harf Dağılımı</h3>
-            <p className="text-sm text-muted-foreground text-center mb-6">
-              Her harfe tıklayarak o harfle başlayan rüya tabirlerine ulaşabilirsiniz
-            </p>
-            <div className="grid grid-cols-5 sm:grid-cols-7 md:grid-cols-9 lg:grid-cols-11 gap-2">
-              {alphabet.map(char => {
-                const count = letterCounts[char] || 0;
-                const isActive = selectedLetter === char;
-                const intensity = count > 0 ? Math.max(0.15, count / maxCount) : 0;
-
-                return (
-                  <button
-                    key={char}
-                    onClick={() => count > 0 && handleLetterClick(char)}
-                    disabled={count === 0}
-                    className={`
-                      relative p-3 rounded-xl text-center transition-all duration-200
-                      ${count > 0 ? 'hover:scale-105' : ''}
-                      ${isActive
-                        ? 'bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white shadow-lg shadow-violet-500/30'
-                        : count === 0
-                          ? 'bg-muted/30 text-muted-foreground/30 cursor-not-allowed'
-                          : 'cursor-pointer'
-                      }
-                    `}
-                    style={!isActive && count > 0 ? {
-                      backgroundColor: `hsl(280 70% 96% / ${intensity})`,
-                    } : {}}
-                  >
-                    <span className="text-lg font-serif-dream font-bold block">{char}</span>
-                    <span className={`block text-[10px] mt-0.5 font-medium ${
-                      isActive
-                        ? 'text-white/80'
-                        : intensity > 0.5
-                          ? 'text-violet-900'
-                          : 'text-muted-foreground'
-                    }`}>
-                      {count}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+              <p className="text-sm text-muted-foreground">
+                <span className="font-semibold text-foreground">{filteredDreams.length}</span> sonuç
+                {' · '}
+                Sayfa <span className="font-semibold text-foreground">{safePage}</span> / {totalPages}
+              </p>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => { setCurrentPage((p) => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                  disabled={safePage === 1}
+                  aria-label="Önceki sayfa"
+                  className="h-9 w-9 rounded-lg"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                {getPageNumbers().map((page, idx) =>
+                  page === 'ellipsis' ? (
+                    <span
+                      key={`ellipsis-${idx}`}
+                      className="h-9 w-9 flex items-center justify-center text-muted-foreground text-sm"
+                      aria-hidden
+                    >
+                      …
                     </span>
-                  </button>
-                );
-              })}
+                  ) : (
+                    <button
+                      key={page}
+                      onClick={() => { setCurrentPage(page); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                      aria-current={safePage === page ? 'page' : undefined}
+                      aria-label={`Sayfa ${page}`}
+                      className={`h-9 min-w-9 px-2 rounded-lg text-sm font-semibold transition-colors ${
+                        safePage === page
+                          ? 'bg-primary text-primary-foreground shadow-sm'
+                          : 'hover:bg-muted text-foreground'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  )
+                )}
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => { setCurrentPage((p) => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                  disabled={safePage === totalPages}
+                  aria-label="Sonraki sayfa"
+                  className="h-9 w-9 rounded-lg"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
-          </motion.div>
-        </section>
+          </nav>
+        )}
 
         {/* Scroll to Top */}
         {showScrollTop && (
