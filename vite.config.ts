@@ -118,6 +118,22 @@ export default defineConfig(({ mode }) => ({
                 statuses: [0, 200]
               }
             }
+          },
+          {
+            // Supabase storage images: CacheFirst with 7-day expiration
+            // Saves bandwidth on repeat visits; srcset URL params are honored
+            urlPattern: /^https:\/\/srpuegfijtujagpuksgs\.supabase\.co\/storage\/v1\/object\//i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "supabase-images",
+              expiration: {
+                maxEntries: 500,
+                maxAgeSeconds: 60 * 60 * 24 * 7
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
           }
         ]
       }

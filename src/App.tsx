@@ -12,6 +12,7 @@ import { OnboardingTour } from "@/components/onboarding/OnboardingTour";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { OfflineIndicator } from "@/components/pwa/OfflineIndicator";
 import { MaintenanceModeGuard } from "@/components/layout/MaintenanceModeGuard";
+import { WebVitals } from "@/components/perf/WebVitals";
 
 // Eager load: en çok kullanılan sayfalar (initial bundle)
 import Index from "./pages/Index";
@@ -98,6 +99,7 @@ function AnimatedRoutes() {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <HelmetProvider>
+      <WebVitals />
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <AuthProvider>
           <TooltipProvider>
