@@ -1,31 +1,70 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+// Supabase Edge Function: AI rüya yorumlama
+// Güvenlik iyileştirmeleri:
+//   - Shared CORS helper kullanımı
+//   - Input length limit (max 5000 karakter)
+//   - In-memory rate limit (IP başına dakikada max 5 istek)
+//   - Daha açıklayıcı hata mesajları
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { handleOptions, jsonResponse } from "../_shared/cors.ts";
+import { getAiApiKey } from "../_shared/ai.ts";
 
 const AI_API_URL = Deno.env.get("AI_API_URL") || "https://api.openai.com/v1/chat/completions";
-const AI_API_KEY = Deno.env.get("AI_API_KEY");
 const AI_MODEL = Deno.env.get("AI_MODEL") || "gpt-4o-mini";
+const MAX_DREAM_LENGTH = 5000;
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX = 5;
+
+const rateLimitMap = new Map<string, number[]>();
+
+function checkRateLimit(key: string): boolean {
+  const now = Date.now();
+  const hits = (rateLimitMap.get(key) ?? []).filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
+  if (hits.length >= RATE_LIMIT_MAX) return false;
+  hits.push(now);
+  rateLimitMap.set(key, hits);
+  return true;
+}
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+  const options = handleOptions(req);
+  if (options) return options;
+
+  const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+    ?? req.headers.get("cf-connecting-ip")
+    ?? "unknown";
+
+  if (!checkRateLimit(`ip:${clientIp}`)) {
+    return jsonResponse(
+      { error: "Çok fazla istek gönderildi. Lütfen 1 dakika sonra tekrar deneyin." },
+      429,
+    );
   }
 
   try {
-    const { dream } = await req.json();
-
+    const AI_API_KEY = getAiApiKey();
     if (!AI_API_KEY) {
-      throw new Error("AI_API_KEY is not configured");
+      return jsonResponse({ error: "AI_API_KEY yapılandırılmamış" }, 500);
     }
 
-    if (!dream || typeof dream !== "string" || dream.trim().length < 10) {
-      return new Response(
-        JSON.stringify({ error: "Lütfen en az 10 karakter uzunluğunda bir rüya açıklaması girin." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    const body = await req.json().catch(() => null);
+    if (!body || typeof body !== "object") {
+      return jsonResponse({ error: "Geçersiz istek gövdesi" }, 400);
+    }
+
+    const { dream } = body as { dream?: unknown };
+
+    if (typeof dream !== "string" || dream.trim().length < 10) {
+      return jsonResponse(
+        { error: "Lütfen en az 10 karakter uzunluğunda bir rüya açıklaması girin." },
+        400,
+      );
+    }
+
+    if (dream.length > MAX_DREAM_LENGTH) {
+      return jsonResponse(
+        { error: `Rüya açıklaması en fazla ${MAX_DREAM_LENGTH} karakter olabilir.` },
+        400,
       );
     }
 
@@ -69,27 +108,27 @@ Kurallar:
 
     if (!response.ok) {
       if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Çok fazla istek gönderildi, lütfen biraz bekleyin." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        return jsonResponse(
+          { error: "Çok fazla istek gönderildi, lütfen biraz bekleyin." },
+          429,
         );
       }
       if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "Kredi limiti doldu, lütfen daha sonra tekrar deneyin." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        return jsonResponse(
+          { error: "Kredi limiti doldu, lütfen daha sonra tekrar deneyin." },
+          402,
         );
       }
       const errorText = await response.text();
       console.error("AI API error:", response.status, errorText);
-      throw new Error(`AI servisi hatası: ${response.status}`);
+      return jsonResponse({ error: `AI servisi hatası: ${response.status}` }, 502);
     }
 
     const data = await response.json();
     const aiResponse = data.choices?.[0]?.message?.content;
 
     if (!aiResponse) {
-      throw new Error("AI yanıtı alınamadı");
+      return jsonResponse({ error: "AI yanıtı alınamadı" }, 502);
     }
 
     let result: Record<string, unknown>;
@@ -98,19 +137,17 @@ Kurallar:
     } catch {
       const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
-        throw new Error("Geçerli JSON yanıtı alınamadı");
+        return jsonResponse({ error: "Geçerli JSON yanıtı alınamadı" }, 502);
       }
       result = JSON.parse(jsonMatch[0]);
     }
 
-    return new Response(JSON.stringify(result), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse(result);
   } catch (error) {
     console.error("Dream interpretation error:", error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Bilinmeyen hata oluştu" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    return jsonResponse(
+      { error: error instanceof Error ? error.message : "Bilinmeyen hata oluştu" },
+      500,
     );
   }
 });

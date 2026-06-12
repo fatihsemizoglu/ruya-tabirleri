@@ -14,6 +14,7 @@ import { SimilarDreams } from '@/components/dream/SimilarDreams';
 import { CommentSection } from '@/components/dream/CommentSection';
 import { ShareCard } from '@/components/share/ShareCard';
 import type { Dream, Comment, Profile, Category } from '@/types/database';
+import { Seo } from '@/components/Seo';
 
 const gradientPalette = [
   'from-violet-500 to-fuchsia-500',
@@ -349,6 +350,12 @@ export default function DreamDetail() {
 
   return (
     <Layout>
+      <Seo
+        title={dream.title}
+        description={dream.excerpt || `${dream.title} rüya tabiri ve yorumu`}
+        path={`/ruya/${dream.slug}`}
+        type="article"
+      />
       <DreamMeta dream={dream} />
       <ReadingProgress />
 

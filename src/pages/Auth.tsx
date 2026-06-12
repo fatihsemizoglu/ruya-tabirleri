@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { Seo } from '@/components/Seo';
 import { PremiumBackground, PremiumBadge, GradientText } from '@/components/layout/PremiumBackground';
 import { z } from 'zod';
 
@@ -121,6 +122,12 @@ export default function Auth({ mode }: AuthProps) {
 
   return (
     <div className="min-h-screen flex relative">
+      <Seo
+        title={mode === 'login' ? 'Giriş Yap' : 'Kayıt Ol'}
+        description="Rüya Tabirleri hesabınıza giriş yapın veya yeni hesap oluşturun."
+        path={mode === 'login' ? '/giris' : '/kayit'}
+        noindex
+      />
       {/* Background blobs for the form panel */}
       <PremiumBackground variant="soft" className="lg:hidden" />
 

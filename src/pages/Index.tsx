@@ -5,6 +5,7 @@ import { FeaturedDreams } from '@/components/home/FeaturedDreams';
 import { CategoriesSection } from '@/components/home/CategoriesSection';
 import { BlogSection } from '@/components/home/BlogSection';
 import { CTASection } from '@/components/home/CTASection';
+import { Seo } from '@/components/Seo';
 
 const Index = () => {
   useEffect(() => {
@@ -24,6 +25,7 @@ const Index = () => {
 
   return (
     <Layout>
+      <Seo path="/" />
       <HeroSection />
       <FeaturedDreams />
       <CategoriesSection />

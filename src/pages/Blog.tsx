@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { BookOpen, Grid3X3, List, Search, Sparkles, ArrowRight, FileText, X, Filter, Clock, BarChart3, TrendingUp, Eye, Heart } from 'lucide-react';
+import { Seo } from '@/components/Seo';
 import {
   PieChart,
   Pie,
@@ -174,6 +175,11 @@ export default function Blog() {
 
   return (
     <Layout>
+      <Seo
+        title="Blog"
+        description="Rüya tabirleri, İslami rüya yorumları ve rüya psikolojisi hakkında güncel yazılar."
+        path="/blog"
+      />
       <div className="min-h-screen bg-mesh relative overflow-hidden">
         {/* Decorative orbs */}
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-br from-violet-500/10 to-fuchsia-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />

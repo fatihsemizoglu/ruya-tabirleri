@@ -76,7 +76,7 @@ const handler = async (req: Request): Promise<Response> => {
       // Re-subscribe or resend verification
       const { data: updated, error: updateError } = await supabase
         .from('blog_subscribers')
-        .update({ 
+        .update({
           unsubscribed_at: null,
           is_verified: false,
           verification_token: crypto.randomUUID(),
@@ -100,7 +100,9 @@ const handler = async (req: Request): Promise<Response> => {
       verificationToken = newSub.verification_token;
     }
 
-    const baseUrl = req.headers.get("origin") || "https://mystic-logbook.lovable.app";
+    const baseUrl = req.headers.get("origin")
+      || Deno.env.get("SITE_URL")
+      || "https://ruya-tabirleri.vercel.app";
     const verifyUrl = `${baseUrl}/abonelik-dogrula?token=${verificationToken}&email=${encodeURIComponent(email)}`;
 
     // Send verification email

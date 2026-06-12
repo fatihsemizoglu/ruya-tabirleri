@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { SearchAutocomplete } from '@/components/search/SearchAutocomplete';
 import { AdvancedFilters, type AdvancedFilterState } from '@/components/search/AdvancedFilters';
 import type { DreamSearchResult, Category } from '@/types/database';
+import { Seo } from '@/components/Seo';
 
 type ViewMode = 'grid' | 'list';
 
@@ -319,6 +320,11 @@ export default function Search() {
 
   return (
     <Layout>
+      <Seo
+        title={query ? `"${query}" için arama` : 'Rüya Ara'}
+        description="Binlerce rüya tabiri arasında arama yapın. Gelişmiş filtrelerle rüyalarınızın anlamını keşfedin."
+        path="/ara"
+      />
       <div className="container py-8 md:py-12 relative">
         {/* Search Header */}
         <div className="max-w-3xl mx-auto mb-10">

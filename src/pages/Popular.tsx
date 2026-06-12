@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import type { Dream, Category } from '@/types/database';
+import { Seo } from '@/components/Seo';
 
 const ITEMS_PER_PAGE = 12;
 
@@ -555,6 +556,11 @@ export default function Popular() {
 
   return (
     <Layout>
+      <Seo
+        title="Popüler Rüya Tabirleri"
+        description="En çok okunan ve aranan popüler rüya tabirleri. Trend rüya yorumlarını keşfedin."
+        path="/populer"
+      />
       <PremiumBackground variant="soft" className="absolute -top-20" />
       <div className="container py-8 md:py-12 relative">
         {/* Header */}

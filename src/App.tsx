@@ -5,6 +5,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { lazy, Suspense } from "react";
+import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "@/contexts/AuthProvider";
 import { CommandPalette } from "@/components/ui/command-palette";
 import { OnboardingTour } from "@/components/onboarding/OnboardingTour";
@@ -96,21 +97,23 @@ function AnimatedRoutes() {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <OfflineIndicator />
-          <CommandPalette />
-          <OnboardingTour />
-          <InstallPrompt />
-          <MaintenanceModeGuard>
-            <AnimatedRoutes />
-          </MaintenanceModeGuard>
-        </TooltipProvider>
-      </AuthProvider>
-    </BrowserRouter>
+    <HelmetProvider>
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <OfflineIndicator />
+            <CommandPalette />
+            <OnboardingTour />
+            <InstallPrompt />
+            <MaintenanceModeGuard>
+              <AnimatedRoutes />
+            </MaintenanceModeGuard>
+          </TooltipProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </HelmetProvider>
   </QueryClientProvider>
 );
 

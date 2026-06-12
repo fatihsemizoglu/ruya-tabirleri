@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Sparkles, BookOpen, Brain, Loader2, Star, MessageCircle, RefreshCw, AlertCircle } from 'lucide-react';
+import { Seo } from '@/components/Seo';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -71,6 +72,11 @@ export default function DreamInterpret() {
 
   return (
     <Layout>
+      <Seo
+        title="Rüya Yorumlat"
+        description="Rüyanızı yapay zeka ile yorumlatın. Detaylı rüya tabiri ve analiz alın."
+        path="/ruya-yorumlat"
+      />
       <PageTransition>
         <div className="container max-w-4xl py-8 md:py-12">
           {/* Header */}

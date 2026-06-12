@@ -17,6 +17,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { supabase } from '@/integrations/supabase/client';
 import type { Category } from '@/types/database';
+import { Seo } from '@/components/Seo';
 
 type SortOption = 'default' | 'alphabetical' | 'most-dreams' | 'newest';
 type ViewMode = 'grid' | 'list';
@@ -177,6 +178,11 @@ export default function Categories() {
 
   return (
     <Layout>
+      <Seo
+        title="Rüya Tabirleri Kategorileri"
+        description="A'dan Z'ye tüm rüya tabirleri kategorileri. İlgilendiğiniz kategoriye tıklayarak rüya tabirlerini keşfedin."
+        path="/kategoriler"
+      />
       <div className="container py-8 md:py-12 relative">
         {/* Header */}
         <div className="text-center mb-10">

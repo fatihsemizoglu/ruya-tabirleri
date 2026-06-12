@@ -2,10 +2,16 @@ import { Layout } from '@/components/layout/Layout';
 import { PremiumBackground, PremiumBadge, GradientText } from '@/components/layout/PremiumBackground';
 import { Shield } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Seo } from '@/components/Seo';
 
 export default function Privacy() {
   return (
     <Layout>
+      <Seo
+        title="Gizlilik Politikası"
+        description="Rüya Tabirleri gizlilik politikası. Kişisel verilerinizin nasıl korunduğunu öğrenin."
+        path="/gizlilik"
+      />
       <div className="container py-12 md:py-16 relative">
         {/* Hero Section */}
         <div className="max-w-3xl mx-auto text-center mb-12">

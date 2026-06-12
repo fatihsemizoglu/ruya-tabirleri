@@ -4,16 +4,28 @@ export const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-cron-secret, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-export function jsonResponse(body: unknown, status = 200): Response {
+export function getCorsHeaders(origin: string | null = null): Record<string, string> {
+  const allowed = Deno.env.get("ALLOWED_ORIGINS")?.split(",").map((o) => o.trim()) ?? [];
+  const allowOrigin = origin && allowed.length > 0 && allowed.includes(origin)
+    ? origin
+    : (allowed[0] ?? "*");
+  return {
+    "Access-Control-Allow-Origin": allowOrigin,
+    "Access-Control-Allow-Headers": corsHeaders["Access-Control-Allow-Headers"],
+    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  };
+}
+
+export function jsonResponse(body: unknown, status = 200, origin: string | null = null): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...getCorsHeaders(origin), "Content-Type": "application/json" },
   });
 }
 
 export function handleOptions(req: Request): Response | null {
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: getCorsHeaders(req.headers.get("origin")) });
   }
   return null;
 }

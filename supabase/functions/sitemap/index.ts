@@ -2,11 +2,6 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { handleOptions, jsonResponse } from "../_shared/cors.ts";
 import { requireCronSecret } from "../_shared/auth.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-cron-secret",
-};
-
 Deno.serve(async (req) => {
   const options = handleOptions(req);
   if (options) return options;
@@ -36,115 +31,110 @@ Deno.serve(async (req) => {
       { url: "/gizlilik", priority: "0.3", changefreq: "yearly" },
       { url: "/kullanim-kosullari", priority: "0.3", changefreq: "yearly" },
     ];
- 
-     // Fetch published dreams
-     const { data: dreams } = await supabase
-       .from("dreams")
-       .select("slug, updated_at")
-       .eq("is_published", true)
-       .order("updated_at", { ascending: false });
- 
-     // Fetch published blog posts
-     const { data: blogPosts } = await supabase
-       .from("blog_posts")
-       .select("slug, updated_at")
-       .eq("is_published", true)
-       .order("updated_at", { ascending: false });
- 
-     // Fetch categories
-     const { data: categories } = await supabase
-       .from("categories")
-       .select("slug, updated_at")
-       .order("updated_at", { ascending: false });
- 
-     // Fetch blog categories
-     const { data: blogCategories } = await supabase
-       .from("blog_categories")
-       .select("slug, updated_at")
-       .order("updated_at", { ascending: false });
- 
-     // Build XML
-     let xml = `<?xml version="1.0" encoding="UTF-8"?>
- <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
- `;
- 
-     // Add static pages
-     for (const page of staticPages) {
-       xml += `  <url>
-     <loc>${baseUrl}${page.url}</loc>
-     <changefreq>${page.changefreq}</changefreq>
-     <priority>${page.priority}</priority>
-   </url>
- `;
-     }
- 
-     // Add dream pages
-     if (dreams) {
-       for (const dream of dreams) {
-         const lastmod = new Date(dream.updated_at).toISOString().split("T")[0];
-         xml += `  <url>
-     <loc>${baseUrl}/ruya/${dream.slug}</loc>
-     <lastmod>${lastmod}</lastmod>
-     <changefreq>weekly</changefreq>
-     <priority>0.8</priority>
-   </url>
- `;
-       }
-     }
- 
-     // Add blog post pages
-     if (blogPosts) {
-       for (const post of blogPosts) {
-         const lastmod = new Date(post.updated_at).toISOString().split("T")[0];
-         xml += `  <url>
-     <loc>${baseUrl}/blog/${post.slug}</loc>
-     <lastmod>${lastmod}</lastmod>
-     <changefreq>weekly</changefreq>
-     <priority>0.7</priority>
-   </url>
- `;
-       }
-     }
- 
-     // Add category pages
-     if (categories) {
-       for (const category of categories) {
-         const lastmod = new Date(category.updated_at).toISOString().split("T")[0];
-         xml += `  <url>
-     <loc>${baseUrl}/kategori/${category.slug}</loc>
-     <lastmod>${lastmod}</lastmod>
-     <changefreq>weekly</changefreq>
-     <priority>0.7</priority>
-   </url>
- `;
-       }
-     }
- 
-     // Add blog category pages
-     if (blogCategories) {
-       for (const category of blogCategories) {
-         const lastmod = new Date(category.updated_at).toISOString().split("T")[0];
-         xml += `  <url>
-     <loc>${baseUrl}/blog/etiket/${category.slug}</loc>
-     <lastmod>${lastmod}</lastmod>
-     <changefreq>weekly</changefreq>
-     <priority>0.6</priority>
-   </url>
- `;
-       }
-     }
- 
-     xml += `</urlset>`;
- 
-     return new Response(xml, {
-       headers: {
-         ...corsHeaders,
-         "Content-Type": "application/xml; charset=utf-8",
-         "Cache-Control": "public, max-age=3600", // Cache for 1 hour
-       },
-     });
-} catch (error) {
-      console.error("Sitemap generation error:", error);
-      return jsonResponse({ error: "Failed to generate sitemap" }, 500);
+
+    // Fetch published dreams
+    const { data: dreams } = await supabase
+      .from("dreams")
+      .select("slug, updated_at")
+      .eq("is_published", true)
+      .order("updated_at", { ascending: false });
+
+    // Fetch published blog posts
+    const { data: blogPosts } = await supabase
+      .from("blog_posts")
+      .select("slug, updated_at")
+      .eq("is_published", true)
+      .order("updated_at", { ascending: false });
+
+    // Fetch categories
+    const { data: categories } = await supabase
+      .from("categories")
+      .select("slug, updated_at")
+      .order("updated_at", { ascending: false });
+
+    // Fetch blog categories
+    const { data: blogCategories } = await supabase
+      .from("blog_categories")
+      .select("slug, updated_at")
+      .order("updated_at", { ascending: false });
+
+    // Build XML
+    let xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+`;
+
+    for (const page of staticPages) {
+      xml += `  <url>
+    <loc>${baseUrl}${page.url}</loc>
+    <changefreq>${page.changefreq}</changefreq>
+    <priority>${page.priority}</priority>
+  </url>
+`;
     }
-  });
+
+    if (dreams) {
+      for (const dream of dreams) {
+        const lastmod = new Date(dream.updated_at).toISOString().split("T")[0];
+        xml += `  <url>
+    <loc>${baseUrl}/ruya/${dream.slug}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+`;
+      }
+    }
+
+    if (blogPosts) {
+      for (const post of blogPosts) {
+        const lastmod = new Date(post.updated_at).toISOString().split("T")[0];
+        xml += `  <url>
+    <loc>${baseUrl}/blog/${post.slug}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+`;
+      }
+    }
+
+    if (categories) {
+      for (const category of categories) {
+        const lastmod = new Date(category.updated_at).toISOString().split("T")[0];
+        xml += `  <url>
+    <loc>${baseUrl}/kategori/${category.slug}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+`;
+      }
+    }
+
+    if (blogCategories) {
+      for (const category of blogCategories) {
+        const lastmod = new Date(category.updated_at).toISOString().split("T")[0];
+        xml += `  <url>
+    <loc>${baseUrl}/blog/etiket/${category.slug}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+`;
+      }
+    }
+
+    xml += `</urlset>`;
+
+    return new Response(xml, {
+      headers: {
+        ...corsHeaders(),
+        "Content-Type": "application/xml; charset=utf-8",
+        "Cache-Control": "public, max-age=3600",
+      },
+    });
+  } catch (error) {
+    console.error("Sitemap generation error:", error);
+    return jsonResponse({ error: "Failed to generate sitemap" }, 500);
+  }
+});

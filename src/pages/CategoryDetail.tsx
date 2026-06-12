@@ -13,6 +13,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { supabase } from '@/integrations/supabase/client';
 import type { Category, Dream } from '@/types/database';
+import { Seo } from '@/components/Seo';
 
 type SortOption = 'popular' | 'newest' | 'oldest' | 'most-liked' | 'alphabetical';
 type ViewMode = 'grid' | 'list';
@@ -229,6 +230,7 @@ export default function CategoryDetail() {
   if (!category) {
     return (
       <Layout>
+        <Seo title="Kategori Bulunamadı" path="/kategoriler" noindex />
         <div className="min-h-screen bg-mesh">
           <div className="container py-20">
             <motion.div
@@ -258,6 +260,11 @@ export default function CategoryDetail() {
 
   return (
     <Layout>
+      <Seo
+        title={`${category.name} Rüya Tabirleri`}
+        description={category.description || `${category.name} kategorisindeki rüya tabirleri ve yorumları.`}
+        path={`/kategori/${category.slug}`}
+      />
       <div className="min-h-screen bg-mesh">
         {/* Hero Header */}
         <section className="relative overflow-hidden">

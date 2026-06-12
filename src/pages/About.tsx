@@ -2,10 +2,16 @@ import { Layout } from '@/components/layout/Layout';
 import { PremiumBackground, PremiumBadge, GradientText } from '@/components/layout/PremiumBackground';
 import { Moon, Users, BookOpen, Heart, Shield } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Seo } from '@/components/Seo';
 
 export default function About() {
   return (
     <Layout>
+      <Seo
+        title="Hakkımızda"
+        description="Rüya Tabirleri, Türkiye'nin en kapsamlı rüya tabirleri sitesidir. İslami ve psikolojik yorumlarla rüyalarınızın anlamını keşfedin."
+        path="/hakkimizda"
+      />
       <div className="container py-12 md:py-16 relative">
         {/* Hero Section */}
         <div className="max-w-3xl mx-auto text-center mb-12">

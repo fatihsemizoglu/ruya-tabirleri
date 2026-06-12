@@ -16,6 +16,21 @@ interface NewsletterRequest {
   postType: 'blog' | 'dream';
 }
 
+function escapeHtml(input: string): string {
+  return input
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function resolveBaseUrl(req: Request): string {
+  return req.headers.get("origin")
+    || Deno.env.get("SITE_URL")
+    || "https://ruya-tabirleri.vercel.app";
+}
+
 async function sendEmail(apiKey: string, params: { from: string; to: string[]; subject: string; html: string }) {
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -81,10 +96,13 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const baseUrl = req.headers.get("origin") || "https://mystic-logbook.lovable.app";
-    const postUrl = postType === 'blog' 
+    const baseUrl = resolveBaseUrl(req);
+    const postUrl = postType === 'blog'
       ? `${baseUrl}/blog/${postSlug}`
       : `${baseUrl}/ruya/${postSlug}`;
+
+    const safeTitle = escapeHtml(postTitle);
+    const safeExcerpt = escapeHtml(postExcerpt);
 
     const emailHtml = `
       <!DOCTYPE html>
@@ -101,15 +119,15 @@ const handler = async (req: Request): Promise<Response> => {
           <p style="margin-top: 0;">Merhaba,</p>
           <p>Sitemizde yeni bir i\u00E7erik yay\u0131nland\u0131:</p>
           <div style="background: white; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea; margin: 20px 0;">
-            <h2 style="margin: 0 0 10px 0; color: #1f2937; font-size: 18px;">${postTitle}</h2>
-            ${postExcerpt ? `<p style="margin: 0; color: #6b7280; font-size: 14px;">${postExcerpt}</p>` : ''}
+            <h2 style="margin: 0 0 10px 0; color: #1f2937; font-size: 18px;">${safeTitle}</h2>
+            ${postExcerpt ? `<p style="margin: 0; color: #6b7280; font-size: 14px;">${safeExcerpt}</p>` : ''}
           </div>
           <a href="${postUrl}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; margin: 10px 0;">
             \u0130\u00E7eri\u011Fi Oku \u2192
           </a>
           <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
           <p style="font-size: 12px; color: #9ca3af; margin-bottom: 0;">
-            Bu e-postay\u0131 almak istemiyorsan\u0131z, 
+            Bu e-postay\u0131 almak istemiyorsan\u0131z,
             <a href="${baseUrl}/abonelik-iptal?email=%EMAIL%" style="color: #667eea;">aboneli\u011Finizi iptal edebilirsiniz</a>.
           </p>
         </div>

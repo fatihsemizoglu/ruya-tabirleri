@@ -2,10 +2,16 @@ import { Layout } from '@/components/layout/Layout';
 import { PremiumBackground, PremiumBadge, GradientText } from '@/components/layout/PremiumBackground';
 import { FileText } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Seo } from '@/components/Seo';
 
 export default function Terms() {
   return (
     <Layout>
+      <Seo
+        title="Kullanım Koşulları"
+        description="Rüya Tabirleri kullanım koşulları. Siteyi kullanırken uyulması gereken kurallar."
+        path="/kullanim-kosullari"
+      />
       <div className="container py-12 md:py-16 relative">
         {/* Hero Section */}
         <div className="max-w-3xl mx-auto text-center mb-12">

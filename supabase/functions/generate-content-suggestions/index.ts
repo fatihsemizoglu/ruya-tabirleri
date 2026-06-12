@@ -1,9 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { handleOptions, jsonResponse } from "../_shared/cors.ts";
 import { requireAdmin } from "../_shared/auth.ts";
+import { getAiApiKey } from "../_shared/ai.ts";
 
 const AI_API_URL = Deno.env.get("AI_API_URL") || "https://api.openai.com/v1/chat/completions";
-const AI_API_KEY = Deno.env.get("AI_API_KEY");
 const AI_MODEL = Deno.env.get("AI_MODEL") || "gpt-4o-mini";
 
 serve(async (req) => {

@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Seo } from '@/components/Seo';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -223,6 +224,11 @@ export default function Contact() {
 
   return (
     <Layout>
+      <Seo
+        title="İletişim"
+        description="Rüya Tabirleri ile iletişime geçin. Sorularınız, önerileriniz ve geri bildirimleriniz için bize ulaşın."
+        path="/iletisim"
+      />
       <div className="relative">
         <PremiumBackground variant="soft" className="h-[420px]" />
         <div className="container py-12 md:py-16 relative">

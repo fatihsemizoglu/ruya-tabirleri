@@ -30,6 +30,7 @@ import { tr } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
+import { Seo } from '@/components/Seo';
 
 export default function BlogPost() {
   const { slug } = useParams<{ slug: string }>();
@@ -172,6 +173,11 @@ export default function BlogPost() {
     }
   }, [post, user, checkIfLiked]);
 
+  const seoTitle = post?.seo_title || post?.title;
+  const seoDescription = post?.seo_description || post?.excerpt || undefined;
+  const seoImage = post?.featured_image || undefined;
+  const seoPath = post ? `/blog/${post.slug}` : '/blog';
+
   const handleLike = async () => {
     if (!user) {
       toast.error('Beğenmek için giriş yapmalısınız');
@@ -224,6 +230,7 @@ export default function BlogPost() {
   if (isLoading) {
     return (
       <Layout>
+        <Seo title="Yükleniyor..." path="/blog" noindex />
         <PageTransition>
           <div className="container py-16">
             <div className="max-w-4xl mx-auto animate-pulse space-y-8">
@@ -244,6 +251,13 @@ export default function BlogPost() {
 
   return (
     <Layout>
+      <Seo
+        title={seoTitle}
+        description={seoDescription}
+        path={seoPath}
+        image={seoImage}
+        type="article"
+      />
       <PageTransition>
         <article className="min-h-screen bg-gradient-to-b from-background to-muted/30">
           <ReadingProgressBar />
