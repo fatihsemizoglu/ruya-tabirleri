@@ -8,14 +8,14 @@ interface TourStep {
   title: string;
   description: string;
   icon: React.ReactNode;
-  target?: string; // CSS selector for highlighting
+  target?: string;
 }
 
 const tourSteps: TourStep[] = [
   {
     id: 'welcome',
-    title: 'Rüya Tabirleri\'ne Hoş Geldiniz!',
-    description: 'Türkiye\'nin en kapsamlı rüya yorumları sitesine hoş geldiniz. Size kısa bir tur sunalım.',
+    title: "Rüya Tabirleri'ne Hoş Geldiniz!",
+    description: "Türkiye'nin en kapsamlı rüya yorumları sitesine hoş geldiniz. Size kısa bir tur sunalım.",
     icon: <Moon className="h-8 w-8" />,
   },
   {
@@ -44,10 +44,8 @@ export function OnboardingTour() {
   const [currentStep, setCurrentStep] = useState(0);
 
   useEffect(() => {
-    // Check if user has seen the tour
     const hasSeenTour = localStorage.getItem('hasSeenOnboardingTour');
     if (!hasSeenTour) {
-      // Delay showing the tour to allow page to load
       const timer = setTimeout(() => {
         setIsOpen(true);
       }, 1500);
@@ -80,7 +78,6 @@ export function OnboardingTour() {
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -89,73 +86,81 @@ export function OnboardingTour() {
             onClick={handleClose}
           />
 
-          {/* Tour Card */}
+          {/* Mobile: bottom sheet | Desktop: centered modal */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            transition={{ type: 'spring', duration: 0.5 }}
-            className="fixed left-1/2 top-1/2 z-[101] w-full max-w-md -translate-x-1/2 -translate-y-1/2 px-4"
+            key="tour-card"
+            initial={{ opacity: 0, y: 60 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 60 }}
+            transition={{ type: 'spring', damping: 26, stiffness: 280 }}
+            className="fixed z-[101] inset-x-0 bottom-0 sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 w-full sm:w-[calc(100%-2rem)] sm:max-w-md sm:px-0"
+            style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
           >
-            <div className="relative overflow-hidden rounded-3xl bg-card shadow-2xl">
+            <div className="relative flex max-h-[92dvh] sm:max-h-[calc(100dvh-2rem)] flex-col overflow-hidden rounded-t-3xl sm:rounded-3xl bg-card shadow-2xl">
+              {/* Drag handle (mobile only) */}
+              <div className="flex justify-center pt-3 pb-1 sm:hidden">
+                <div className="h-1.5 w-10 rounded-full bg-muted-foreground/30" />
+              </div>
+
               {/* Gradient Header */}
-              <div className="relative bg-gradient-to-br from-primary via-purple-600 to-pink-600 px-6 py-8 text-white">
+              <div className="relative bg-gradient-to-br from-primary via-purple-600 to-pink-600 px-5 sm:px-6 py-6 sm:py-8 text-white shrink-0">
                 <button
                   onClick={handleClose}
-                  className="absolute right-4 top-4 rounded-full p-1.5 hover:bg-white/20 transition-colors"
+                  aria-label="Kapat"
+                  className="absolute right-3 top-3 sm:right-4 sm:top-4 rounded-full p-1.5 hover:bg-white/20 transition-colors"
                 >
                   <X className="h-5 w-5" />
                 </button>
-                
+
                 <motion.div
                   key={step.id}
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
-                  className="flex items-center gap-4"
+                  className="flex items-center gap-3 sm:gap-4 pr-10"
                 >
-                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm">
+                  <div className="flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-xl sm:rounded-2xl bg-white/20 backdrop-blur-sm shrink-0">
                     {step.icon}
                   </div>
-                  <div>
-                    <h2 className="text-xl font-bold">{step.title}</h2>
-                    <p className="text-sm text-white/80">
+                  <div className="min-w-0">
+                    <h2 className="text-lg sm:text-xl font-bold leading-tight">{step.title}</h2>
+                    <p className="text-xs sm:text-sm text-white/80">
                       Adım {currentStep + 1} / {tourSteps.length}
                     </p>
                   </div>
                 </motion.div>
               </div>
 
-              {/* Content */}
-              <div className="p-6">
+              {/* Content (scrollable if overflows) */}
+              <div className="p-5 sm:p-6 overflow-y-auto overscroll-contain">
                 <motion.p
                   key={`desc-${step.id}`}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="text-muted-foreground leading-relaxed"
+                  className="text-sm sm:text-base text-muted-foreground leading-relaxed"
                 >
                   {step.description}
                 </motion.p>
 
-                {/* Progress Dots */}
-                <div className="mt-6 flex justify-center gap-2">
+                <div className="mt-5 sm:mt-6 flex justify-center gap-2">
                   {tourSteps.map((_, idx) => (
                     <button
                       key={idx}
                       onClick={() => setCurrentStep(idx)}
+                      aria-label={`${idx + 1}. adıma git`}
                       className={`h-2 rounded-full transition-all duration-300 ${
-                        idx === currentStep 
-                          ? 'w-6 bg-primary' 
+                        idx === currentStep
+                          ? 'w-6 bg-primary'
                           : 'w-2 bg-muted hover:bg-muted-foreground/50'
                       }`}
                     />
                   ))}
                 </div>
 
-                {/* Navigation */}
-                <div className="mt-6 flex items-center justify-between">
+                <div className="mt-5 sm:mt-6 flex items-center justify-between gap-2">
                   <Button
                     variant="ghost"
+                    size="sm"
                     onClick={handlePrev}
                     disabled={currentStep === 0}
                     className="gap-1"
@@ -166,13 +171,14 @@ export function OnboardingTour() {
 
                   <Button
                     variant="ghost"
+                    size="sm"
                     onClick={handleClose}
                     className="text-muted-foreground"
                   >
                     Geç
                   </Button>
 
-                  <Button onClick={handleNext} className="gap-1">
+                  <Button size="sm" onClick={handleNext} className="gap-1">
                     {currentStep === tourSteps.length - 1 ? 'Başla' : 'İleri'}
                     <ChevronRight className="h-4 w-4" />
                   </Button>
@@ -182,6 +188,6 @@ export function OnboardingTour() {
           </motion.div>
         </>
       )}
-</AnimatePresence>
+    </AnimatePresence>
   );
 }
