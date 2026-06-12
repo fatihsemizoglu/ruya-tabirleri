@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+    <meta name="theme-color" content="#6366f1" />
+    <title>Çevrimdışı - Rüya Tabirleri</title>
+    <style>
+      :root { color-scheme: light dark; }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(ellipse at top, #312e81 0%, #0f172a 60%);
+        color: #e2e8f0;
+        font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+        padding: 24px;
+      }
+      .card {
+        max-width: 420px;
+        text-align: center;
+      }
+      .icon {
+        width: 96px;
+        height: 96px;
+        margin: 0 auto 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 28px;
+        background: linear-gradient(135deg, #6366f1, #a855f7);
+        box-shadow: 0 20px 60px -20px rgba(99, 102, 241, 0.6);
+      }
+      h1 { font-size: 24px; margin: 0 0 12px; font-weight: 700; }
+      p { color: #94a3b8; line-height: 1.6; margin: 0 0 24px; }
+      .actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+      a, button {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 20px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 15px;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        font-family: inherit;
+        transition: transform 0.15s;
+      }
+      a:active, button:active { transform: scale(0.97); }
+      .primary {
+        background: linear-gradient(135deg, #6366f1, #a855f7);
+        color: white;
+      }
+      .secondary {
+        background: rgba(148, 163, 184, 0.1);
+        color: #e2e8f0;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="icon">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 8.82a15 15 0 0 1 20 0"/>
+          <path d="M5 12.86a10 10 0 0 1 14 0"/>
+          <path d="M8.5 16.43a5 5 0 0 1 7 0"/>
+          <line x1="12" y1="20" x2="12.01" y2="20"/>
+        </svg>
+      </div>
+      <h1>İnternet Bağlantısı Yok</h1>
+      <p>
+        Şu anda çevrimdışısınız. Bağlantıyı kontrol edip tekrar deneyin;
+        daha önce ziyaret ettiğiniz sayfalar önbellekten açılabilir.
+      </p>
+      <div class="actions">
+        <button class="primary" onclick="location.reload()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"/>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+          </svg>
+          Tekrar Dene
+        </button>
+        <a href="/" class="secondary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+          Anasayfa
+        </a>
+      </div>
+    </div>
+  </body>
+</html>

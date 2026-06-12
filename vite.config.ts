@@ -22,7 +22,7 @@ export default defineConfig(({ mode }) => ({
     }),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.ico", "robots.txt", "placeholder.svg"],
+      includeAssets: ["favicon.ico", "robots.txt", "placeholder.svg", "offline.html"],
       manifest: {
         name: "Rüya Tabirleri - Mistik Günlük",
         short_name: "Rüya Tabirleri",
@@ -71,6 +71,8 @@ export default defineConfig(({ mode }) => ({
         ]
       },
       workbox: {
+        navigateFallback: "/offline.html",
+        navigateFallbackDenylist: [/^\/admin/, /^\/api/],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB limit
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
         runtimeCaching: [

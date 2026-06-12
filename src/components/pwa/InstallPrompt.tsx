@@ -4,30 +4,64 @@ import { X, Download, Smartphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePWA } from '@/hooks/usePWA';
 
+const DISMISS_KEY = 'pwa-install-dismissed';
+const DISMISS_DAYS = 7;
+const VISIT_KEY = 'pwa-visit-count';
+const SCROLL_THRESHOLD = 500;
+const MIN_DELAY_MS = 15_000;
+const MAX_DELAY_MS = 45_000;
+
 export function InstallPrompt() {
   const { isInstallable, isInstalled, installApp } = usePWA();
   const [isVisible, setIsVisible] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
 
   useEffect(() => {
-    // Check if user has dismissed before
-    const dismissed = localStorage.getItem('pwa-install-dismissed');
-    if (dismissed) {
-      const dismissedTime = parseInt(dismissed);
-      // Show again after 7 days
-      if (Date.now() - dismissedTime < 7 * 24 * 60 * 60 * 1000) {
+    // Cooldown: re-show after 7 days
+    const dismissedAt = localStorage.getItem(DISMISS_KEY);
+    if (dismissedAt) {
+      const ts = parseInt(dismissedAt, 10);
+      if (Date.now() - ts < DISMISS_DAYS * 24 * 60 * 60 * 1000) {
         setIsDismissed(true);
       }
     }
 
-    // Show prompt after 30 seconds if installable
-    const timer = setTimeout(() => {
-      if (isInstallable && !isInstalled && !isDismissed) {
-        setIsVisible(true);
-      }
-    }, 30000);
+    // Increment visit counter (used to defer the prompt until at least the 2nd visit)
+    const visits = parseInt(localStorage.getItem(VISIT_KEY) ?? '0', 10) + 1;
+    localStorage.setItem(VISIT_KEY, String(visits));
 
-    return () => clearTimeout(timer);
+    if (visits < 2) return;
+  }, []);
+
+  useEffect(() => {
+    if (isDismissed || !isInstallable || isInstalled) return;
+    if (typeof window === 'undefined') return;
+
+    let scrolled = false;
+    let timer: number | null = null;
+
+    const onScroll = () => {
+      if (scrolled) return;
+      if (window.scrollY > SCROLL_THRESHOLD) {
+        scrolled = true;
+        // User has scrolled — show sooner
+        if (timer) window.clearTimeout(timer);
+        timer = window.setTimeout(show, MIN_DELAY_MS);
+      }
+    };
+
+    const show = () => setIsVisible(true);
+
+    // Default timer (in case user never scrolls): show after MAX_DELAY_MS
+    const fallback = window.setTimeout(show, MAX_DELAY_MS);
+    // If scrolled before the fallback fires, we'll cancel it
+    timer = fallback;
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (timer) window.clearTimeout(timer);
+    };
   }, [isInstallable, isInstalled, isDismissed]);
 
   const handleInstall = async () => {
@@ -40,7 +74,7 @@ export function InstallPrompt() {
   const handleDismiss = () => {
     setIsVisible(false);
     setIsDismissed(true);
-    localStorage.setItem('pwa-install-dismissed', Date.now().toString());
+    localStorage.setItem(DISMISS_KEY, String(Date.now()));
   };
 
   if (!isInstallable || isInstalled || isDismissed) {
@@ -54,11 +88,13 @@ export function InstallPrompt() {
           initial={{ opacity: 0, y: 100 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 100 }}
-          className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 z-50"
+          className="fixed bottom-24 md:bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 z-30"
+          style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
         >
-          <div className="bg-card border border-border rounded-2xl shadow-2xl p-4 backdrop-blur-xl">
+          <div className="relative bg-card border border-border rounded-2xl shadow-2xl p-4 backdrop-blur-xl">
             <button
               onClick={handleDismiss}
+              aria-label="Kapat"
               className="absolute top-2 right-2 p-1 rounded-full hover:bg-muted transition-colors"
             >
               <X className="w-4 h-4 text-muted-foreground" />
