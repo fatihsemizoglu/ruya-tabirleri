@@ -5,6 +5,13 @@ import { ArrowRight, BookOpen, Sparkles, Clock, Calendar } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Button } from '@/components/ui/button';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselPrevious,
+  CarouselNext,
+} from '@/components/ui/carousel';
 import { supabase } from '@/integrations/supabase/client';
 import { BlogPost } from '@/types/blog';
 
@@ -39,7 +46,7 @@ export function BlogSection() {
         `)
         .eq('is_published', true)
         .order('created_at', { ascending: false })
-        .limit(6);
+        .limit(8);
 
       if (postsError) {
         console.error('Error fetching blog posts:', postsError);
@@ -193,108 +200,107 @@ export function BlogSection() {
             ))}
           </div>
         ) : (
-          <motion.div
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, margin: '-50px' }}
-            variants={{
-              hidden: {},
-              show: { transition: { staggerChildren: 0.06 } },
+          <Carousel
+            opts={{
+              align: 'start',
+              loop: false,
             }}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
+            className="w-full"
           >
-            {posts.map((post) => {
-              const excerpt = stripHtml(post.content || '').slice(0, 160);
-              return (
-                <motion.article
-                  key={post.id}
-                  variants={{
-                    hidden: { opacity: 0, y: 20 },
-                    show: { opacity: 1, y: 0, transition: { duration: 0.5 } },
-                  }}
-                  className="group bg-card border border-border/50 rounded-2xl overflow-hidden hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/5 transition-all duration-300 flex flex-col"
-                >
-                  <Link to={`/blog/${post.slug}`} className="block relative aspect-[16/9] overflow-hidden bg-gradient-to-br from-violet-500/20 via-fuchsia-500/15 to-pink-500/20">
-                    {post.featured_image ? (
-                      <img
-                        src={post.featured_image}
-                        alt={post.title}
-                        loading="lazy"
-                        decoding="async"
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).style.display = 'none';
-                        }}
-                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                      />
-                    ) : null}
-                    <div className={`absolute inset-0 flex items-center justify-center ${post.featured_image ? 'opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-black/20' : ''}`}>
-                      <BookOpen className="w-10 h-10 text-primary/40" />
-                    </div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/0 to-black/0" />
-                    {post.category && (
-                      <div className="absolute top-3 left-3">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/95 dark:bg-slate-900/90 backdrop-blur-sm text-[11px] font-semibold text-foreground shadow-sm">
-                          {post.category.name}
-                        </span>
-                      </div>
-                    )}
-                  </Link>
-
-                  <div className="p-5 flex flex-col flex-1">
-                    <div className="flex items-center gap-3 text-[11px] text-muted-foreground mb-2">
-                      <span className="inline-flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        {formatDate(post.created_at)}
-                      </span>
-                      {post.read_time && (
-                        <>
-                          <span className="text-muted-foreground/40">·</span>
-                          <span className="inline-flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            {post.read_time} dk
-                          </span>
-                        </>
-                      )}
-                    </div>
-                    <h3 className="text-base sm:text-lg font-semibold text-foreground leading-snug line-clamp-2 group-hover:text-primary transition-colors mb-2">
-                      <Link to={`/blog/${post.slug}`}>{post.title}</Link>
-                    </h3>
-                    <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
-                      {excerpt}
-                    </p>
-
-                    <div className="mt-auto flex items-center justify-between pt-3 border-t border-border/40">
-                      <div className="flex items-center gap-2 min-w-0">
-                        {post.author?.avatar_url ? (
+            <CarouselContent className="-ml-4">
+              {posts.map((post) => {
+                const excerpt = stripHtml(post.content || '').slice(0, 120);
+                return (
+                  <CarouselItem
+                    key={post.id}
+                    className="pl-4 basis-full md:basis-1/2 lg:basis-1/3"
+                  >
+                    <article className="group bg-card border border-border/50 rounded-2xl overflow-hidden hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/5 transition-all duration-300 flex flex-col h-full">
+                      <Link to={`/blog/${post.slug}`} className="block relative aspect-[16/9] overflow-hidden bg-gradient-to-br from-violet-500/20 via-fuchsia-500/15 to-pink-500/20">
+                        {post.featured_image ? (
                           <img
-                            src={post.author.avatar_url}
-                            alt={post.author.full_name || ''}
+                            src={post.featured_image}
+                            alt={post.title}
                             loading="lazy"
                             decoding="async"
-                            className="w-7 h-7 rounded-full object-cover ring-1 ring-border"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).style.display = 'none';
+                            }}
+                            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                           />
-                        ) : (
-                          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary/30 to-purple-500/30 flex items-center justify-center text-[10px] font-bold text-foreground">
-                            {(post.author?.full_name || 'M').charAt(0).toUpperCase()}
+                        ) : null}
+                        <div className={`absolute inset-0 flex items-center justify-center ${post.featured_image ? 'opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-black/20' : ''}`}>
+                          <BookOpen className="w-10 h-10 text-primary/40" />
+                        </div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/0 to-black/0" />
+                        {post.category && (
+                          <div className="absolute top-3 left-3">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/95 dark:bg-slate-900/90 backdrop-blur-sm text-[11px] font-semibold text-foreground shadow-sm">
+                              {post.category.name}
+                            </span>
                           </div>
                         )}
-                        <span className="text-xs font-medium text-foreground truncate max-w-[140px]">
-                          {post.author?.full_name || 'MysticLog Ekibi'}
-                        </span>
-                      </div>
-                      <Link
-                        to={`/blog/${post.slug}`}
-                        className="text-xs font-semibold text-primary inline-flex items-center gap-1 hover:gap-1.5 transition-all"
-                      >
-                        Oku
-                        <ArrowRight className="w-3 h-3" />
                       </Link>
-                    </div>
-                  </div>
-                </motion.article>
-              );
-            })}
-          </motion.div>
+
+                      <div className="p-5 flex flex-col flex-1">
+                        <div className="flex items-center gap-3 text-[11px] text-muted-foreground mb-2">
+                          <span className="inline-flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            {formatDate(post.created_at)}
+                          </span>
+                          {post.read_time && (
+                            <>
+                              <span className="text-muted-foreground/40">·</span>
+                              <span className="inline-flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                {post.read_time} dk
+                              </span>
+                            </>
+                          )}
+                        </div>
+                        <h3 className="text-base sm:text-lg font-semibold text-foreground leading-snug line-clamp-2 group-hover:text-primary transition-colors mb-2">
+                          <Link to={`/blog/${post.slug}`}>{post.title}</Link>
+                        </h3>
+                        <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+                          {excerpt}
+                        </p>
+
+                        <div className="mt-auto flex items-center justify-between pt-3 border-t border-border/40">
+                          <div className="flex items-center gap-2 min-w-0">
+                            {post.author?.avatar_url ? (
+                              <img
+                                src={post.author.avatar_url}
+                                alt={post.author.full_name || ''}
+                                loading="lazy"
+                                decoding="async"
+                                className="w-7 h-7 rounded-full object-cover ring-1 ring-border"
+                              />
+                            ) : (
+                              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary/30 to-purple-500/30 flex items-center justify-center text-[10px] font-bold text-foreground">
+                                {(post.author?.full_name || 'M').charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                            <span className="text-xs font-medium text-foreground truncate max-w-[140px]">
+                              {post.author?.full_name || 'MysticLog Ekibi'}
+                            </span>
+                          </div>
+                          <Link
+                            to={`/blog/${post.slug}`}
+                            className="text-xs font-semibold text-primary inline-flex items-center gap-1 hover:gap-1.5 transition-all"
+                          >
+                            Oku
+                            <ArrowRight className="w-3 h-3" />
+                          </Link>
+                        </div>
+                      </div>
+                    </article>
+                  </CarouselItem>
+                );
+              })}
+            </CarouselContent>
+            <CarouselPrevious className="hidden md:flex -left-4 lg:-left-12" />
+            <CarouselNext className="hidden md:flex -right-4 lg:-right-12" />
+          </Carousel>
         )}
       </div>
     </section>
