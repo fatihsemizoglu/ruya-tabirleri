@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -50,13 +50,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { toast } from 'sonner';
 import { subDays, format, formatDistanceToNow } from 'date-fns';
 import { tr } from 'date-fns/locale';
@@ -71,52 +64,19 @@ export const XP_RULES = {
   interpretation: 8,
 };
 
-const DEFAULT_BADGES = [
-  {
-    id: 'b-first-comment',
-    name: 'İlk Yorum',
-    description: 'İlk yorumunu yaptı',
-    icon: 'MessageCircle',
-    color: 'from-blue-500 to-cyan-500',
-    condition: 'comment_count >= 1',
-    auto: true,
-    category: 'engagement' as const,
-    rarity: 'common' as const,
-  },
-  {
-    id: 'b-night-owl',
-    name: 'Gece Kuşu',
-    description: '00:00 - 06:00 arası 5 kez giriş',
-    icon: 'Moon',
-    color: 'from-indigo-500 to-purple-500',
-    condition: 'night_logins >= 5',
-    auto: true,
-    category: 'special' as const,
-    rarity: 'rare' as const,
-  },
-  {
-    id: 'b-dream-expert',
-    name: 'Rüya Uzmanı',
-    description: '100+ yorum yaptı',
-    icon: 'Trophy',
-    color: 'from-amber-500 to-orange-500',
-    condition: 'comment_count >= 100',
-    auto: true,
-    category: 'achievement' as const,
-    rarity: 'epic' as const,
-  },
-  {
-    id: 'b-social',
-    name: 'Sosyal Paylaşımcı',
-    description: '10+ kez paylaşım',
-    icon: 'Share2',
-    color: 'from-pink-500 to-rose-500',
-    condition: 'share_count >= 10',
-    auto: true,
-    category: 'engagement' as const,
-    rarity: 'rare' as const,
-  },
-];
+interface DbBadge {
+  id: string;
+  name: string;
+  description: string | null;
+  icon: string;
+  color: string;
+  category: Badge['category'];
+  rarity: Badge['rarity'];
+  condition: string | null;
+  auto: boolean;
+  is_active: boolean;
+  created_at: string;
+}
 
 interface Badge {
   id: string;
@@ -153,28 +113,7 @@ interface ChurnRisk {
   email: string;
 }
 
-const STORAGE_KEY_BADGES = 'admin_gamification_badges';
 const STORAGE_KEY_CAMPAIGNS = 'admin_gamification_campaigns';
-
-function loadBadges(): Badge[] {
-  if (typeof window === 'undefined') return DEFAULT_BADGES;
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY_BADGES);
-    if (!raw) return DEFAULT_BADGES;
-    return JSON.parse(raw);
-  } catch {
-    return DEFAULT_BADGES;
-  }
-}
-
-function saveBadges(badges: Badge[]) {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(STORAGE_KEY_BADGES, JSON.stringify(badges));
-  } catch (e) {
-    console.error(e);
-  }
-}
 
 const ICON_MAP: Record<string, typeof Trophy> = {
   Trophy,
@@ -209,14 +148,34 @@ const CATEGORY_LABELS: Record<Badge['category'], string> = {
 
 export function GamificationPanel() {
   const queryClient = useQueryClient();
-  const [badges, setBadges] = useState<Badge[]>(loadBadges);
   const [editingBadge, setEditingBadge] = useState<Badge | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
-  useEffect(() => {
-    saveBadges(badges);
-  }, [badges]);
+  // --- Badges from Supabase ---
+  const { data: badgesRaw, isLoading: badgesLoading } = useQuery({
+    queryKey: ['admin-gamification-badges'],
+    queryFn: async (): Promise<Badge[]> => {
+      const { data, error } = await supabase
+        .from('badges')
+        .select('*')
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      return ((data as DbBadge[]) || []).map(d => ({
+        id: d.id,
+        name: d.name,
+        description: d.description || '',
+        icon: d.icon,
+        color: d.color,
+        category: d.category,
+        rarity: d.rarity,
+        condition: d.condition || '',
+        auto: d.auto,
+        createdAt: d.created_at,
+      }));
+    },
+  });
+  const badges: Badge[] = useMemo(() => badgesRaw || [], [badgesRaw]);
 
   // --- Leaderboard from real data ---
   const { data: leaderboard, isLoading: leaderboardLoading } = useQuery({
@@ -337,30 +296,43 @@ export function GamificationPanel() {
 
   const saveBadgeMutation = useMutation({
     mutationFn: async (badge: Badge) => {
-      await new Promise(r => setTimeout(r, 200));
+      const { error } = await supabase
+        .from('badges')
+        .upsert({
+          id: badge.id,
+          name: badge.name,
+          description: badge.description,
+          icon: badge.icon,
+          color: badge.color,
+          category: badge.category,
+          rarity: badge.rarity,
+          condition: badge.condition,
+          auto: badge.auto,
+          is_active: true,
+        });
+      if (error) throw error;
       return badge;
     },
-    onSuccess: (badge) => {
-      setBadges(prev => {
-        const exists = prev.find(b => b.id === badge.id);
-        if (exists) return prev.map(b => (b.id === badge.id ? badge : b));
-        return [...prev, badge];
-      });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-gamification-badges'] });
       setIsDialogOpen(false);
       setEditingBadge(null);
       toast.success('Rozet kaydedildi');
     },
+    onError: (err: Error) => toast.error(err.message),
   });
 
   const deleteBadgeMutation = useMutation({
     mutationFn: async (id: string) => {
-      await new Promise(r => setTimeout(r, 150));
+      const { error } = await supabase.from('badges').delete().eq('id', id);
+      if (error) throw error;
       return id;
     },
-    onSuccess: (id) => {
-      setBadges(prev => prev.filter(b => b.id !== id));
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-gamification-badges'] });
       toast.success('Rozet silindi');
     },
+    onError: (err: Error) => toast.error(err.message),
   });
 
   const handleNewBadge = () => {
@@ -508,8 +480,23 @@ export function GamificationPanel() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredBadges.map(badge => {
+          {badgesLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-48" />)}
+            </div>
+          ) : filteredBadges.length === 0 ? (
+            <Card className="p-12 text-center">
+              <Award className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
+              <p className="font-semibold mb-1">Henüz rozet yok</p>
+              <p className="text-sm text-muted-foreground mb-4">İlk rozeti oluşturarak başlayın</p>
+              <Button onClick={handleNewBadge}>
+                <Plus className="w-4 h-4 mr-2" />
+                Yeni Rozet
+              </Button>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredBadges.map(badge => {
               const Icon = ICON_MAP[badge.icon] || Trophy;
               return (
                 <motion.div
@@ -561,7 +548,8 @@ export function GamificationPanel() {
                 </motion.div>
               );
             })}
-          </div>
+            </div>
+          )}
         </TabsContent>
 
         {/* === LEADERBOARD === */}

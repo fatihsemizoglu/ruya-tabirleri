@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   Mail,
@@ -57,67 +57,6 @@ import {
   Pie,
 } from 'recharts';
 
-const STORAGE_KEY_CAMPAIGNS = 'admin_drip_campaigns';
-
-interface DripStep {
-  id: string;
-  dayOffset: number;
-  subject: string;
-  body: string;
-}
-
-interface DripCampaign {
-  id: string;
-  name: string;
-  description: string;
-  segment: 'all' | 'new' | 'active' | 'inactive' | 'vip';
-  trigger: 'signup' | 'inactive_7d' | 'inactive_30d' | 'manual';
-  active: boolean;
-  steps: DripStep[];
-  enrolledCount: number;
-  openRate: number;
-  clickRate: number;
-  createdAt: string;
-}
-
-const DEFAULT_CAMPAIGNS: DripCampaign[] = [
-  {
-    id: 'c-welcome',
-    name: 'Hoş Geldin Serisi',
-    description: 'Yeni aboneler için 5 adımlı tanıtım serisi',
-    segment: 'new',
-    trigger: 'signup',
-    active: true,
-    enrolledCount: 142,
-    openRate: 68.4,
-    clickRate: 22.1,
-    createdAt: new Date().toISOString(),
-    steps: [
-      { id: 's1', dayOffset: 0, subject: 'Hoş geldin! 🌙 Rüya dünyasına adım at', body: 'İlk rüyanı kaydet...' },
-      { id: 's2', dayOffset: 3, subject: 'En popüler 10 rüya tabiri', body: 'Bu rüyaları görenler...' },
-      { id: 's3', dayOffset: 7, subject: 'Rüya günlüğü nasıl tutulur?', body: 'İpuçları ve püf noktaları...' },
-      { id: 's4', dayOffset: 14, subject: 'Rüya sembolleri sözlüğü', body: 'Semboller ve anlamları...' },
-      { id: 's5', dayOffset: 30, subject: 'Seni özledik 💫', body: 'Yeni rüya tabirleri...' },
-    ],
-  },
-  {
-    id: 'c-reengagement',
-    name: 'Geri Kazanım',
-    description: '7 gündür aktif olmayan kullanıcıları geri kazan',
-    segment: 'inactive',
-    trigger: 'inactive_7d',
-    active: true,
-    enrolledCount: 89,
-    openRate: 41.2,
-    clickRate: 12.8,
-    createdAt: new Date().toISOString(),
-    steps: [
-      { id: 's1', dayOffset: 0, subject: 'Seni özledik 🌙', body: 'Yeni rüya tabirleri seni bekliyor' },
-      { id: 's2', dayOffset: 3, subject: 'Özel: sadece senin için', body: 'Kişiselleştirilmiş öneriler' },
-    ],
-  },
-];
-
 const LIFECYCLE_STAGES = [
   { id: 'visitor', name: 'Ziyaretçi', color: '#94a3b8', icon: '👁️' },
   { id: 'signup', name: 'Üye', color: '#3b82f6', icon: '✨' },
@@ -127,32 +66,66 @@ const LIFECYCLE_STAGES = [
   { id: 'churned', name: 'Churned', color: '#ef4444', icon: '💔' },
 ];
 
-function loadCampaigns(): DripCampaign[] {
-  if (typeof window === 'undefined') return DEFAULT_CAMPAIGNS;
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY_CAMPAIGNS);
-    if (!raw) return DEFAULT_CAMPAIGNS;
-    return JSON.parse(raw);
-  } catch {
-    return DEFAULT_CAMPAIGNS;
-  }
+interface DbCampaign {
+  id: string;
+  name: string;
+  description: string | null;
+  segment: DripCampaign['segment'];
+  trigger: DripCampaign['trigger'];
+  active: boolean;
+  enrolled_count: number;
+  open_rate: number;
+  click_rate: number;
+  created_at: string;
+  drip_steps?: DbStep[];
 }
 
-function saveCampaigns(c: DripCampaign[]) {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(STORAGE_KEY_CAMPAIGNS, JSON.stringify(c));
-  } catch {}
+interface DbStep {
+  id: string;
+  campaign_id: string;
+  step_index: number;
+  day_offset: number;
+  subject: string;
+  body: string | null;
 }
 
 export function SubscriberAdvanced() {
-  const [campaigns, setCampaigns] = useState<DripCampaign[]>(loadCampaigns);
+  const queryClient = useQueryClient();
   const [editing, setEditing] = useState<DripCampaign | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  useEffect(() => {
-    saveCampaigns(campaigns);
-  }, [campaigns]);
+  // --- Campaigns from Supabase ---
+  const { data: campaignsRaw } = useQuery({
+    queryKey: ['admin-drip-campaigns'],
+    queryFn: async (): Promise<DripCampaign[]> => {
+      const { data, error } = await supabase
+        .from('drip_campaigns')
+        .select('*, drip_steps(*)')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return ((data as DbCampaign[]) || []).map(c => ({
+        id: c.id,
+        name: c.name,
+        description: c.description || '',
+        segment: c.segment,
+        trigger: c.trigger,
+        active: c.active,
+        enrolledCount: c.enrolled_count,
+        openRate: Number(c.open_rate),
+        clickRate: Number(c.click_rate),
+        createdAt: c.created_at,
+        steps: (c.drip_steps || [])
+          .sort((a, b) => a.step_index - b.step_index)
+          .map(s => ({
+            id: s.id,
+            dayOffset: s.day_offset,
+            subject: s.subject,
+            body: s.body || '',
+          })),
+      }));
+    },
+  });
+  const campaigns: DripCampaign[] = campaignsRaw || [];
 
   const { data: subscribers, isLoading: subsLoading } = useQuery({
     queryKey: ['admin-subscribers-advanced'],
@@ -211,30 +184,91 @@ export function SubscriberAdvanced() {
     setDialogOpen(true);
   };
 
+  const saveMutation = useMutation({
+    mutationFn: async (c: DripCampaign) => {
+      const isUpdate = /^[0-9a-f-]{36}$/i.test(c.id);
+      const campaignPayload = {
+        name: c.name,
+        description: c.description,
+        segment: c.segment,
+        trigger: c.trigger,
+        active: c.active,
+      };
+      let campaignId: string;
+      if (isUpdate) {
+        const { error } = await supabase.from('drip_campaigns').update(campaignPayload).eq('id', c.id);
+        if (error) throw error;
+        campaignId = c.id;
+        await supabase.from('drip_steps').delete().eq('campaign_id', campaignId);
+      } else {
+        const { data, error } = await supabase
+          .from('drip_campaigns')
+          .insert(campaignPayload)
+          .select('id')
+          .single();
+        if (error) throw error;
+        campaignId = data!.id;
+      }
+      if (c.steps.length > 0) {
+        const steps = c.steps.map((s, idx) => ({
+          campaign_id: campaignId,
+          step_index: idx,
+          day_offset: s.dayOffset,
+          subject: s.subject,
+          body: s.body,
+        }));
+        const { error: stepsError } = await supabase.from('drip_steps').insert(steps);
+        if (stepsError) throw stepsError;
+      }
+      return campaignId;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-drip-campaigns'] });
+      setDialogOpen(false);
+      setEditing(null);
+      toast.success('Kampanya kaydedildi');
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
   const handleSave = () => {
     if (!editing) return;
     if (!editing.name) {
       toast.error('Kampanya adı zorunlu');
       return;
     }
-    setCampaigns(prev => {
-      const exists = prev.find(c => c.id === editing.id);
-      if (exists) return prev.map(c => (c.id === editing.id ? editing : c));
-      return [...prev, editing];
-    });
-    setDialogOpen(false);
-    setEditing(null);
-    toast.success('Kampanya kaydedildi');
+    saveMutation.mutate(editing);
   };
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('drip_campaigns').delete().eq('id', id);
+      if (error) throw error;
+      return id;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-drip-campaigns'] });
+      toast.success('Kampanya silindi');
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
 
   const handleDelete = (id: string) => {
     if (!confirm('Bu kampanyayı silmek istediğinize emin misiniz?')) return;
-    setCampaigns(prev => prev.filter(c => c.id !== id));
-    toast.success('Kampanya silindi');
+    deleteMutation.mutate(id);
   };
 
-  const handleToggleActive = (id: string) => {
-    setCampaigns(prev => prev.map(c => (c.id === id ? { ...c, active: !c.active } : c)));
+  const toggleMutation = useMutation({
+    mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
+      const { error } = await supabase.from('drip_campaigns').update({ active }).eq('id', id);
+      if (error) throw error;
+      return id;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-drip-campaigns'] }),
+  });
+
+  const handleToggleActive = (id: string, currentActive: boolean) => {
+    toggleMutation.mutate({ id, active: !currentActive });
   };
 
   const handleSendNow = (campaign: DripCampaign) => {
@@ -361,7 +395,7 @@ export function SubscriberAdvanced() {
                     <Button variant="ghost" size="icon" onClick={() => { setEditing(c); setDialogOpen(true); }}>
                       <Edit className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleToggleActive(c.id)}>
+                    <Button variant="ghost" size="icon" onClick={() => handleToggleActive(c.id, c.active)}>
                       {c.active ? <PauseCircle className="w-4 h-4 text-amber-500" /> : <PlayCircle className="w-4 h-4 text-emerald-500" />}
                     </Button>
                     <Button variant="ghost" size="icon" onClick={() => handleDelete(c.id)}>
