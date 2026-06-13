@@ -66,10 +66,5 @@
       ]
     }
   ],
-  "crons": [
-    { "path": "/api/cron/publish-scheduled-posts", "schedule": "*/5 * * * *" },
-    { "path": "/api/cron/sitemap",                "schedule": "0 2 * * *" },
-    { "path": "/api/cron/seo-audit",              "schedule": "0 3 * * *" },
-    { "path": "/api/cron/zero-results",           "schedule": "0 4 * * *" }
-  ]
+  "crons": []
 }
