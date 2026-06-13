@@ -17,6 +17,8 @@ const MediaLibrary = lazy(() => import('@/components/admin/MediaLibrary'));
 const SubscriberManagement = lazy(() => import('@/components/admin/SubscriberManagement'));
 const BulkImportExport = lazy(() => import('@/components/admin/BulkImportExport'));
 const AnalyticsDashboard = lazy(() => import('@/components/admin/AnalyticsDashboard'));
+const GamificationPanel = lazy(() => import('@/components/admin/GamificationPanel'));
+const SubscriberAdvanced = lazy(() => import('@/components/admin/SubscriberAdvanced'));
 
 const tabTitles: Record<string, { title: string; description: string }> = {
   overview: { title: 'Genel Bakış', description: 'Tüm metrikler, grafikler ve son aktiviteler' },
@@ -35,6 +37,8 @@ const tabTitles: Record<string, { title: string; description: string }> = {
   'import-export': { title: 'İçe/Dışa Aktar', description: 'Toplu içerik aktarımı' },
   'audit-log': { title: 'Aktivite Geçmişi', description: 'Tüm admin işlemlerinin kaydı' },
   'analytics-dashboard': { title: 'Gelişmiş Analitik', description: 'İçerik ROI, arama niyeti ve segmentasyon' },
+  'gamification': { title: 'Gamification', description: 'Rozetler, seviyeler, liderlik ve churn tahmini' },
+  'subscribers-advanced': { title: 'Gelişmiş Abone Yönetimi', description: 'Drip kampanyalar ve abone yaşam döngüsü' },
   settings: { title: 'Ayarlar', description: 'Site ayarlarını yapılandırın' },
 };
 
@@ -76,6 +80,10 @@ export default function Admin() {
         return <AuditLog />;
       case 'analytics-dashboard':
         return <AnalyticsDashboard />;
+      case 'gamification':
+        return <GamificationPanel />;
+      case 'subscribers-advanced':
+        return <SubscriberAdvanced />;
       case 'settings':
         return <SiteSettings />;
       default:

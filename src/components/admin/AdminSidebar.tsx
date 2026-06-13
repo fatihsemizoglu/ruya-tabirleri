@@ -21,6 +21,7 @@ import {
   UserPlus,
   ArrowUpDown,
   BarChart3,
+  Trophy,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -136,6 +137,22 @@ const secondaryNavItems: NavItem[] = [
     tab: 'analytics-dashboard',
     colorClass: 'text-violet-500 dark:text-violet-400',
     bgClass: 'bg-violet-500/10 dark:bg-violet-500/15'
+  },
+  { 
+    title: 'Gamification', 
+    subtitle: 'Rozet, seviye, churn', 
+    icon: Trophy, 
+    tab: 'gamification',
+    colorClass: 'text-amber-500 dark:text-amber-400',
+    bgClass: 'bg-amber-500/10 dark:bg-amber-500/15'
+  },
+  {
+    title: 'Abone Yönetimi+',
+    subtitle: 'Drip kampanyalar',
+    icon: Mail,
+    tab: 'subscribers-advanced',
+    colorClass: 'text-emerald-500 dark:text-emerald-400',
+    bgClass: 'bg-emerald-500/10 dark:bg-emerald-500/15'
   },
   { 
     title: 'Medya', 
