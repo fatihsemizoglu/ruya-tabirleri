@@ -66,7 +66,9 @@ async function checkSupabase(): Promise<CheckResult> {
   }
   const start = Date.now();
   try {
-    const res = await fetchWithTimeout(`${SUPABASE_URL}/rest/v1/`, {
+    // Probe /auth/v1/settings which is the most reliable health check —
+    // returns 200 with the auth config (works with both anon and service_role keys)
+    const res = await fetchWithTimeout(`${SUPABASE_URL}/auth/v1/settings`, {
       headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
     });
     const latency = Date.now() - start;
