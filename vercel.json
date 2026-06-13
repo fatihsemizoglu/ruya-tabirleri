@@ -14,7 +14,7 @@
     },
     {
       "source": "/api/(.*)",
-      "destination": "https://srpuegfijtujagpuksgs.supabase.co/functions/v1/$1"
+      "destination": "https://dagjpitlouekbnwdcpbz.supabase.co/functions/v1/$1"
     },
     {
       "source": "/(.*)",
