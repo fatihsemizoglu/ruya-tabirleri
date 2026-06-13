@@ -27,6 +27,7 @@ const Popular = lazy(() => import("./pages/Popular"));
 const AlphabetList = lazy(() => import("./pages/AlphabetList"));
 const Profile = lazy(() => import("./pages/Profile"));
 const DreamJournal = lazy(() => import("./pages/DreamJournal"));
+const DreamJournalVoice = lazy(() => import("./pages/DreamJournalVoice"));
 const Favorites = lazy(() => import("./pages/Favorites"));
 const History = lazy(() => import("./pages/History"));
 const Admin = lazy(() => import("./pages/Admin"));
@@ -76,6 +77,7 @@ function AnimatedRoutes() {
           <Route path="/az/:letter" element={<AlphabetList />} />
           <Route path="/profil" element={<Profile />} />
           <Route path="/ruya-gunlugum" element={<DreamJournal />} />
+          <Route path="/ruya-gunlugum/sesli" element={<DreamJournalVoice />} />
           <Route path="/favorilerim" element={<Favorites />} />
           <Route path="/gecmis" element={<History />} />
           <Route path="/admin/*" element={<Admin />} />
