@@ -105,11 +105,22 @@ async function checkSupabase(): Promise<CheckResult> {
 }
 
 function envDebug(): Record<string, unknown> {
+  let decoded: Record<string, unknown> | null = null;
+  if (SUPABASE_ANON_KEY) {
+    try {
+      const parts = SUPABASE_ANON_KEY.split('.');
+      if (parts.length === 3) {
+        decoded = JSON.parse(Buffer.from(parts[1], 'base64').toString());
+      }
+    } catch {}
+  }
   return {
     url_set: !!SUPABASE_URL,
     url: SUPABASE_URL ? SUPABASE_URL.replace(/\/\/.+@/, '//***@') : null,
     key_set: !!SUPABASE_ANON_KEY,
-    key_prefix: SUPABASE_ANON_KEY ? SUPABASE_ANON_KEY.slice(0, 12) + '...' : null,
+    key_prefix: SUPABASE_ANON_KEY ? SUPABASE_ANON_KEY.slice(0, 20) + '...' : null,
+    key_role: decoded ? (decoded as { role?: string }).role : null,
+    key_ref: decoded ? (decoded as { ref?: string }).ref : null,
   };
 }
 
