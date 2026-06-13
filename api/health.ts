@@ -10,6 +10,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 const SUPABASE_URL =
+  process.env.HEALTHCHECK_SUPABASE_URL ||
   process.env.SUPABASE_URL ||
   process.env.SUPABASE_PROJECT_URL ||
   process.env.VITE_SUPABASE_URL ||
@@ -17,8 +18,10 @@ const SUPABASE_URL =
 // NOTE: NEVER fall back to SERVICE_ROLE — it's for server-side admin only and
 // will be rejected by the public REST API ("Secret API key required").
 // Vercel serverless functions do NOT see VITE_ prefixed vars at runtime
-// (those are build-time client-bundle only), so we prefer non-VITE_ names.
+// (those are build-time client-bundle only), and Vercel's Supabase
+// integration auto-injects SUPABASE_URL which we want to override.
 const SUPABASE_ANON_KEY =
+  process.env.HEALTHCHECK_SUPABASE_ANON_KEY ||
   process.env.SUPABASE_ANON_KEY ||
   process.env.SUPABASE_PUBLISHABLE_KEY ||
   '';
