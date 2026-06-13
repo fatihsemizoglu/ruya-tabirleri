@@ -174,35 +174,12 @@ export default defineConfig(({ mode }) => ({
     },
     rollupOptions: {
       output: {
+        // Single vendor chunk to avoid circular chunk dependencies
+        // (react-vendor -> vendor -> react-vendor loops caused
+        // "Cannot read properties of undefined (reading 'createContext')"
+        // at runtime because React was loaded after code that needed it).
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            if (id.includes('react-dom') || id.includes('react-router') || id.includes('/react/')) {
-              return 'react-vendor';
-            }
-            if (id.includes('recharts') || id.includes('d3-')) {
-              return 'recharts';
-            }
-            if (id.includes('@tiptap')) {
-              return 'tiptap';
-            }
-            if (id.includes('@supabase')) {
-              return 'supabase';
-            }
-            if (id.includes('framer-motion')) {
-              return 'framer-motion';
-            }
-            if (id.includes('lucide-react')) {
-              return 'lucide-react';
-            }
-            if (id.includes('date-fns')) {
-              return 'date-fns';
-            }
-            if (id.includes('@radix-ui')) {
-              return 'radix-ui';
-            }
-            if (id.includes('dompurify')) {
-              return 'sanitize';
-            }
             return 'vendor';
           }
         },
