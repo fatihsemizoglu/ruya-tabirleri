@@ -124,17 +124,54 @@ supabase functions deploy ab-test-manager
 - [ ] Vercel Analytics etkin (Web Vitals)
 - [ ] Real User Monitoring (Speed Insights)
 
-### 5.2 Sentry (opsiyonel)
-```bash
-npm install @sentry/react
-```
-- [ ] `Sentry.init({ dsn, tracesSampleRate: 0.1 })` `main.tsx`'te
-- [ ] Source maps Vercel'e yükleniyor
+### 5.2 Sentry (Error Tracking) — Kurulum hazır
 
-### 5.3 Uptime Monitoring
-- [ ] [Better Uptime](https://betteruptime.com) veya UptimeRobot
-- [ ] Her 60 saniyede `https://ruya-tabirleri.com` ping
-- [ ] SMS/email alert yapılandırıldı
+Kod tarafı tamamen hazır. Yapman gereken tek şey:
+
+1. https://sentry.io adresinden **ücretsiz hesap** aç (veya mevcut hesabı kullan)
+2. **Create Project** → Platform: `React` / `Vite` → Proje adı: `ruya-tabirleri`
+3. **Settings > Projects > [proje] > Client Keys (DSN)**'den DSN'i kopyala
+4. Vercel Dashboard > Project > Settings > Environment Variables:
+   - `VITE_SENTRY_DSN` = kopyaladığın DSN (Production)
+   - `VITE_SENTRY_TUNNEL` = `/api/sentry-tunnel` (ad-blocker bypass)
+   - `VITE_APP_VERSION` = `1.0.0` (her release'te güncelle)
+5. (Opsiyonel — source maps yüklemek için):
+   - Sentry > Settings > Auth Tokens > **Create New Token** (`project:releases`, `project:debug_files` scope'ları)
+   - Vercel > Settings > Environment Variables:
+     - `SENTRY_AUTH_TOKEN` = token
+     - `SENTRY_ORG` = org slug'ın
+     - `SENTRY_PROJECT` = `ruya-tabirleri`
+
+Source maps otomatik yüklenir, hata stack trace'leri readable olur.
+
+**Kontrol:** Bir hata fırlat (`throw new Error("test")` console'a) → Sentry > Issues'da 1-2 sn içinde görünmeli.
+
+### 5.3 Uptime Monitoring — Kurulum hazır
+
+**Health endpoint hazır:** `https://ruya-tabirleri.com/api/health`
+- 200 + `{ status: "ok" }` → sağlıklı
+- 503 + `{ status: "down", checks: [...] }` → sorunlu (Supabase veya Edge Functions)
+
+**Better Uptime** (önerilir — 5 dk kurulum):
+
+1. https://betteruptime.com → ücretsiz hesap
+2. **Monitors > Create Monitor > HTTP(s)**
+3. Ayarlar:
+   - Name: `Ruya Tabirleri - Production`
+   - URL: `https://ruya-tabirleri.com/api/health`
+   - Check interval: `1 minute`
+   - Request timeout: `10 seconds`
+   - Expected status code: `200`
+   - Keyword: `"status":"ok"` (opsiyonel, body doğrulaması)
+4. **Alerting > Integrations**:
+   - E-posta (kendin)
+   - SMS (opsiyonel — Pro)
+   - Slack/Discord webhook (varsa)
+5. **Status Page** (opsiyonel): Public status sayfası oluştur → embed et
+
+**Alternatif: UptimeRobot** (daha basit, daha az özellik):
+- https://uptimerobot.com → 50 monitor ücretsiz
+- HTTPS monitor → URL: `/api/health` → 1 dk interval
 
 ### 5.4 Database Monitoring
 - [ ] Supabase Dashboard > Database > Query Performance

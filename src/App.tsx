@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-route
 import { AnimatePresence } from "framer-motion";
 import { lazy, Suspense } from "react";
 import { HelmetProvider } from "react-helmet-async";
+import * as Sentry from "@sentry/react";
 import { AuthProvider } from "@/contexts/AuthProvider";
 import { CommandPalette } from "@/components/ui/command-palette";
 import { OnboardingTour } from "@/components/onboarding/OnboardingTour";
@@ -98,27 +99,61 @@ function AnimatedRoutes() {
   );
 }
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <HelmetProvider>
-      <WebVitals />
-      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-        <AuthProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <OfflineIndicator />
-            <CommandPalette />
-            <OnboardingTour />
-            <InstallPrompt />
-            <MaintenanceModeGuard>
-              <AnimatedRoutes />
-            </MaintenanceModeGuard>
-          </TooltipProvider>
-        </AuthProvider>
-      </BrowserRouter>
-    </HelmetProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  const content = (
+    <QueryClientProvider client={queryClient}>
+      <HelmetProvider>
+        <WebVitals />
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <AuthProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <OfflineIndicator />
+              <CommandPalette />
+              <OnboardingTour />
+              <InstallPrompt />
+              <MaintenanceModeGuard>
+                <AnimatedRoutes />
+              </MaintenanceModeGuard>
+            </TooltipProvider>
+          </AuthProvider>
+        </BrowserRouter>
+      </HelmetProvider>
+    </QueryClientProvider>
+  );
+
+  if (!import.meta.env.VITE_SENTRY_DSN) return content;
+
+  return (
+    <Sentry.ErrorBoundary fallback={ErrorFallback} showDialog>
+      {content}
+    </Sentry.ErrorBoundary>
+  );
+};
+
+function ErrorFallback({ error }: { error: unknown }) {
+  const message = error instanceof Error ? error.message : "Bilinmeyen hata";
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background p-6">
+      <div className="max-w-md w-full bg-card border rounded-2xl p-8 text-center shadow-lg">
+        <div className="text-5xl mb-4">🌙</div>
+        <h1 className="text-2xl font-bold mb-2">Bir sorun oluştu</h1>
+        <p className="text-muted-foreground mb-4 text-sm">
+          Rüya dünyasında geçici bir sis var. Sayfayı yenilemeyi deneyin.
+        </p>
+        <pre className="text-xs bg-muted p-3 rounded text-left overflow-auto max-h-32 mb-4">
+          {message}
+        </pre>
+        <button
+          onClick={() => window.location.reload()}
+          className="w-full bg-primary text-primary-foreground rounded-lg py-2 font-medium hover:bg-primary/90"
+        >
+          Sayfayı Yenile
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default App;

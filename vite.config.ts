@@ -4,6 +4,11 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
 import { visualizer } from "rollup-plugin-visualizer";
+import { sentryVitePlugin } from "@sentry/vite-plugin";
+
+const SENTRY_AUTH_TOKEN = process.env.SENTRY_AUTH_TOKEN;
+const SENTRY_ORG = process.env.SENTRY_ORG;
+const SENTRY_PROJECT = process.env.SENTRY_PROJECT;
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -19,6 +24,14 @@ export default defineConfig(({ mode }) => ({
       open: false,
       gzipSize: true,
       brotliSize: true,
+    }),
+    mode === "production" && SENTRY_AUTH_TOKEN && sentryVitePlugin({
+      org: SENTRY_ORG,
+      project: SENTRY_PROJECT,
+      authToken: SENTRY_AUTH_TOKEN,
+      sourcemaps: { assets: "./dist/**/*.{js,css,map}" },
+      release: { name: process.env.VITE_APP_VERSION || `ruya-tabirleri@${Date.now()}` },
+      telemetry: false,
     }),
     VitePWA({
       registerType: "autoUpdate",
@@ -154,7 +167,8 @@ export default defineConfig(({ mode }) => ({
     target: 'es2020',
     cssCodeSplit: true,
     minify: 'esbuild',
-    sourcemap: false,
+    sourcemap: !!SENTRY_AUTH_TOKEN, // only emit maps when uploading to Sentry
+    cssSourcemap: !!SENTRY_AUTH_TOKEN,
     commonjsOptions: {
       include: [/lucide-react/, /recharts/, /node_modules/],
     },
