@@ -151,20 +151,56 @@ export default defineConfig(({ mode }) => ({
     include: ['lucide-react'],
   },
   build: {
+    target: 'es2020',
+    cssCodeSplit: true,
+    minify: 'esbuild',
+    sourcemap: false,
     commonjsOptions: {
       include: [/lucide-react/, /recharts/, /node_modules/],
     },
     rollupOptions: {
       output: {
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'lucide-react': ['lucide-react'],
-          'framer-motion': ['framer-motion'],
-          'supabase': ['@supabase/supabase-js'],
-          'date-fns': ['date-fns'],
-          'recharts': ['recharts'],
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react-dom') || id.includes('react-router') || id.includes('/react/')) {
+              return 'react-vendor';
+            }
+            if (id.includes('recharts') || id.includes('d3-')) {
+              return 'recharts';
+            }
+            if (id.includes('@tiptap')) {
+              return 'tiptap';
+            }
+            if (id.includes('@supabase')) {
+              return 'supabase';
+            }
+            if (id.includes('framer-motion')) {
+              return 'framer-motion';
+            }
+            if (id.includes('lucide-react')) {
+              return 'lucide-react';
+            }
+            if (id.includes('date-fns')) {
+              return 'date-fns';
+            }
+            if (id.includes('@radix-ui')) {
+              return 'radix-ui';
+            }
+            if (id.includes('dompurify')) {
+              return 'sanitize';
+            }
+            return 'vendor';
+          }
         },
+        chunkFileNames: 'assets/[name]-[hash].js',
+        entryFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash][extname]',
       },
     },
+    reportCompressedSize: true,
+    chunkSizeWarningLimit: 800,
+  },
+  legacy: {
+    skipWebSocketTokenCheck: true,
   },
 }));
