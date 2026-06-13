@@ -16,6 +16,7 @@ const AuditLog = lazy(() => import('@/components/admin/AuditLog'));
 const MediaLibrary = lazy(() => import('@/components/admin/MediaLibrary'));
 const SubscriberManagement = lazy(() => import('@/components/admin/SubscriberManagement'));
 const BulkImportExport = lazy(() => import('@/components/admin/BulkImportExport'));
+const AnalyticsDashboard = lazy(() => import('@/components/admin/AnalyticsDashboard'));
 
 const tabTitles: Record<string, { title: string; description: string }> = {
   overview: { title: 'Genel Bakış', description: 'Tüm metrikler, grafikler ve son aktiviteler' },
@@ -33,6 +34,7 @@ const tabTitles: Record<string, { title: string; description: string }> = {
   media: { title: 'Medya Kütüphanesi', description: 'Görsel ve dosya yönetimi' },
   'import-export': { title: 'İçe/Dışa Aktar', description: 'Toplu içerik aktarımı' },
   'audit-log': { title: 'Aktivite Geçmişi', description: 'Tüm admin işlemlerinin kaydı' },
+  'analytics-dashboard': { title: 'Gelişmiş Analitik', description: 'İçerik ROI, arama niyeti ve segmentasyon' },
   settings: { title: 'Ayarlar', description: 'Site ayarlarını yapılandırın' },
 };
 
@@ -72,6 +74,8 @@ export default function Admin() {
         return <BulkImportExport />;
       case 'audit-log':
         return <AuditLog />;
+      case 'analytics-dashboard':
+        return <AnalyticsDashboard />;
       case 'settings':
         return <SiteSettings />;
       default:

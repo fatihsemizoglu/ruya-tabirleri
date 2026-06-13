@@ -20,6 +20,7 @@ import {
   Image,
   UserPlus,
   ArrowUpDown,
+  BarChart3,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -127,6 +128,14 @@ const secondaryNavItems: NavItem[] = [
     tab: 'analytics',
     colorClass: 'text-yellow-500 dark:text-yellow-400',
     bgClass: 'bg-yellow-500/10 dark:bg-yellow-500/15'
+  },
+  {
+    title: 'Gelişmiş Analitik',
+    subtitle: 'ROI, Niyet, Segment',
+    icon: BarChart3,
+    tab: 'analytics-dashboard',
+    colorClass: 'text-violet-500 dark:text-violet-400',
+    bgClass: 'bg-violet-500/10 dark:bg-violet-500/15'
   },
   { 
     title: 'Medya', 
