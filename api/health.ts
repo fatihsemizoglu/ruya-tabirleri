@@ -59,8 +59,30 @@ async function fetchWithTimeout(url: string, init: RequestInit = {}, timeoutMs =
 
 async function checkSupabase(): Promise<CheckResult> {
   if (!SUPABASE_URL) {
-    return { name: 'supabase_rest', status: 'fail', detail: 'URL not set', response_body: envDebug() };
+    return { name: 'supabase_rest', status: 'fail', detail: 'URL not set', response_body: JSON.stringify(envDebug()) };
   }
+  if (!SUPABASE_ANON_KEY) {
+    return { name: 'supabase_rest', status: 'fail', detail: 'Key not set', response_body: JSON.stringify(envDebug()) };
+  }
+  const start = Date.now();
+  try {
+    // Probe /auth/v1/health which works with anon keys (no service_role required).
+    // Returns 200 with project config; 401 only on truly invalid keys.
+    const res = await fetchWithTimeout(`${SUPABASE_URL}/auth/v1/health`, {
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
+    });
+    const latency = Date.now() - start;
+    if (res.status === 401) {
+      return { name: 'supabase_rest', status: 'fail', latency_ms: latency, detail: 'Invalid API key' };
+    }
+    if (!res.ok) {
+      return { name: 'supabase_rest', status: 'fail', latency_ms: latency, detail: `HTTP ${res.status}` };
+    }
+    return { name: 'supabase_rest', status: latency < 2000 ? 'ok' : 'warn', latency_ms: latency };
+  } catch (err) {
+    return { name: 'supabase_rest', status: 'fail', detail: (err as Error).message };
+  }
+}
   if (!SUPABASE_ANON_KEY) {
     return { name: 'supabase_rest', status: 'fail', detail: 'Key not set', response_body: envDebug() };
   }
