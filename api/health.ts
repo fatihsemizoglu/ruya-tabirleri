@@ -29,6 +29,7 @@ interface CheckResult {
   status: CheckStatus;
   latency_ms?: number;
   detail?: string;
+  response_body?: string;
 }
 
 interface HealthPayload {
@@ -53,7 +54,10 @@ async function fetchWithTimeout(url: string, init: RequestInit = {}, timeoutMs =
 
 async function checkSupabase(): Promise<CheckResult> {
   if (!SUPABASE_URL) {
-    return { name: 'supabase_rest', status: 'fail', detail: 'VITE_SUPABASE_URL not set' };
+    return { name: 'supabase_rest', status: 'fail', detail: 'URL not set', response_body: envDebug() };
+  }
+  if (!SUPABASE_ANON_KEY) {
+    return { name: 'supabase_rest', status: 'fail', detail: 'Key not set', response_body: envDebug() };
   }
   const start = Date.now();
   try {
@@ -61,13 +65,23 @@ async function checkSupabase(): Promise<CheckResult> {
       headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
     });
     const latency = Date.now() - start;
+    const body = await res.text().catch(() => '');
     if (!res.ok) {
-      return { name: 'supabase_rest', status: 'fail', latency_ms: latency, detail: `HTTP ${res.status}` };
+      return { name: 'supabase_rest', status: 'fail', latency_ms: latency, detail: `HTTP ${res.status}`, response_body: body.slice(0, 200) };
     }
     return { name: 'supabase_rest', status: latency < 2000 ? 'ok' : 'warn', latency_ms: latency };
   } catch (err) {
     return { name: 'supabase_rest', status: 'fail', detail: (err as Error).message };
   }
+}
+
+function envDebug(): Record<string, unknown> {
+  return {
+    url_set: !!SUPABASE_URL,
+    url: SUPABASE_URL ? SUPABASE_URL.replace(/\/\/.+@/, '//***@') : null,
+    key_set: !!SUPABASE_ANON_KEY,
+    key_prefix: SUPABASE_ANON_KEY ? SUPABASE_ANON_KEY.slice(0, 12) + '...' : null,
+  };
 }
 
 async function checkEdgeFunctions(): Promise<CheckResult> {
