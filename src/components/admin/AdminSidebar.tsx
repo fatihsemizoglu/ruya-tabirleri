@@ -22,6 +22,7 @@ import {
   ArrowUpDown,
   BarChart3,
   Trophy,
+  FlaskConical,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -153,6 +154,14 @@ const secondaryNavItems: NavItem[] = [
     tab: 'subscribers-advanced',
     colorClass: 'text-emerald-500 dark:text-emerald-400',
     bgClass: 'bg-emerald-500/10 dark:bg-emerald-500/15'
+  },
+  {
+    title: 'A/B Testler',
+    subtitle: 'Test & analiz',
+    icon: FlaskConical,
+    tab: 'ab-tests',
+    colorClass: 'text-pink-500 dark:text-pink-400',
+    bgClass: 'bg-pink-500/10 dark:bg-pink-500/15'
   },
   { 
     title: 'Medya', 

@@ -19,6 +19,7 @@ const BulkImportExport = lazy(() => import('@/components/admin/BulkImportExport'
 const AnalyticsDashboard = lazy(() => import('@/components/admin/AnalyticsDashboard'));
 const GamificationPanel = lazy(() => import('@/components/admin/GamificationPanel'));
 const SubscriberAdvanced = lazy(() => import('@/components/admin/SubscriberAdvanced'));
+const ABTestManager = lazy(() => import('@/components/admin/ABTestManager'));
 
 const tabTitles: Record<string, { title: string; description: string }> = {
   overview: { title: 'Genel Bakış', description: 'Tüm metrikler, grafikler ve son aktiviteler' },
@@ -39,6 +40,7 @@ const tabTitles: Record<string, { title: string; description: string }> = {
   'analytics-dashboard': { title: 'Gelişmiş Analitik', description: 'İçerik ROI, arama niyeti ve segmentasyon' },
   'gamification': { title: 'Gamification', description: 'Rozetler, seviyeler, liderlik ve churn tahmini' },
   'subscribers-advanced': { title: 'Gelişmiş Abone Yönetimi', description: 'Drip kampanyalar ve abone yaşam döngüsü' },
+  'ab-tests': { title: 'A/B Testler', description: 'A/B test oluşturma, izleme ve analiz' },
   settings: { title: 'Ayarlar', description: 'Site ayarlarını yapılandırın' },
 };
 
@@ -84,6 +86,8 @@ export default function Admin() {
         return <GamificationPanel />;
       case 'subscribers-advanced':
         return <SubscriberAdvanced />;
+      case 'ab-tests':
+        return <ABTestManager />;
       case 'settings':
         return <SiteSettings />;
       default:
