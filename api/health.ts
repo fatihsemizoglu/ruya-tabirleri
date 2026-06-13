@@ -43,6 +43,7 @@ interface HealthPayload {
   timestamp: string;
   uptime_s: number;
   checks: CheckResult[];
+  env_debug?: Record<string, unknown>;
 }
 
 const startTime = Date.now();
@@ -59,12 +60,12 @@ async function fetchWithTimeout(url: string, init: RequestInit = {}, timeoutMs =
 
 async function checkSupabase(): Promise<CheckResult> {
   if (!SUPABASE_URL) {
-    return { name: 'supabase_rest', status: 'fail', detail: 'URL not set', response_body: JSON.stringify(envDebug()) };
+    return { name: 'supabase_rest', status: 'fail', detail: 'URL not set' };
   }
   const start = Date.now();
   try {
-    // Probe the Supabase URL itself — should always return 200 (HTML)
-    // or 401/400 (any 2xx/4xx is fine, the project is alive).
+    // Probe the Supabase URL root — returns 200 (HTML) or 401 (needs key).
+    // Either way, if we get a response, the project is alive.
     // This doesn't require any API key.
     const res = await fetchWithTimeout(`${SUPABASE_URL}/`, { method: 'HEAD' });
     const latency = Date.now() - start;
@@ -76,29 +77,9 @@ async function checkSupabase(): Promise<CheckResult> {
     return { name: 'supabase_rest', status: 'fail', detail: (err as Error).message };
   }
 }
-  if (!SUPABASE_ANON_KEY) {
-    return { name: 'supabase_rest', status: 'fail', detail: 'Key not set', response_body: envDebug() };
-  }
-  const start = Date.now();
-  try {
-    // Probe /auth/v1/settings which is the most reliable health check —
-    // returns 200 with the auth config (works with both anon and service_role keys)
-    const res = await fetchWithTimeout(`${SUPABASE_URL}/auth/v1/settings`, {
-      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
-    });
-    const latency = Date.now() - start;
-    const body = await res.text().catch(() => '');
-    if (!res.ok) {
-      return { name: 'supabase_rest', status: 'fail', latency_ms: latency, detail: `HTTP ${res.status}`, response_body: body.slice(0, 200) };
-    }
-    return { name: 'supabase_rest', status: latency < 2000 ? 'ok' : 'warn', latency_ms: latency };
-  } catch (err) {
-    return { name: 'supabase_rest', status: 'fail', detail: (err as Error).message };
-  }
-}
 
 function envDebug(): Record<string, unknown> {
-  let decoded: Record<string, unknown> | null = null;
+  let decoded: { role?: string; ref?: string } | null = null;
   if (SUPABASE_ANON_KEY) {
     try {
       const parts = SUPABASE_ANON_KEY.split('.');
@@ -112,14 +93,14 @@ function envDebug(): Record<string, unknown> {
     url: SUPABASE_URL ? SUPABASE_URL.replace(/\/\/.+@/, '//***@') : null,
     key_set: !!SUPABASE_ANON_KEY,
     key_prefix: SUPABASE_ANON_KEY ? SUPABASE_ANON_KEY.slice(0, 20) + '...' : null,
-    key_role: decoded ? (decoded as { role?: string }).role : null,
-    key_ref: decoded ? (decoded as { ref?: string }).ref : null,
+    key_role: decoded?.role ?? null,
+    key_ref: decoded?.ref ?? null,
   };
 }
 
 async function checkEdgeFunctions(): Promise<CheckResult> {
   if (!SUPABASE_URL) {
-    return { name: 'edge_functions', status: 'fail', detail: 'VITE_SUPABASE_URL not set' };
+    return { name: 'edge_functions', status: 'fail', detail: 'URL not set' };
   }
   const start = Date.now();
   try {
