@@ -10,15 +10,17 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 const SUPABASE_URL =
-  process.env.VITE_SUPABASE_URL ||
   process.env.SUPABASE_URL ||
+  process.env.SUPABASE_PROJECT_URL ||
+  process.env.VITE_SUPABASE_URL ||
   '';
+// NOTE: NEVER fall back to SERVICE_ROLE — it's for server-side admin only and
+// will be rejected by the public REST API ("Secret API key required").
+// Vercel serverless functions do NOT see VITE_ prefixed vars at runtime
+// (those are build-time client-bundle only), so we prefer non-VITE_ names.
 const SUPABASE_ANON_KEY =
-  process.env.VITE_SUPABASE_ANON_KEY ||
-  process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
   process.env.SUPABASE_ANON_KEY ||
   process.env.SUPABASE_PUBLISHABLE_KEY ||
-  process.env.SUPABASE_SERVICE_ROLE_KEY ||
   '';
 const TIMEOUT_MS = 5000;
 
@@ -113,11 +115,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Debug: list available env var names (no values)
-  const allEnvKeys = Object.keys(process.env).filter(k =>
-    k.toLowerCase().includes('supabase') || k.toLowerCase().includes('vite_')
-  );
-
   const [supabase, edge] = await Promise.all([checkSupabase(), checkEdgeFunctions()]);
 
   const checks = [supabase, edge];
@@ -132,8 +129,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     version: process.env.VITE_APP_VERSION || 'dev',
     timestamp: new Date().toISOString(),
     uptime_s: Math.floor((Date.now() - startTime) / 1000),
-    ...(supabase.detail?.includes('not set') ? { env_debug: { available_keys: allEnvKeys, ...envDebug() } } : {}),
-    ...(edge.detail?.includes('not set') ? { edge_env_debug: allEnvKeys } : {}),
+    ...(supabase.status === 'fail' ? { env_debug: envDebug() } : {}),
     checks,
   };
 
