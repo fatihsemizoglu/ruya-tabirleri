@@ -149,7 +149,7 @@ export function UserManagement() {
       case 'moderator':
         return <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-400 border-none font-bold py-0.5 px-2 rounded-md"><ShieldCheck className="h-3 w-3 mr-1" />Moderatör</Badge>;
       default:
-        return <Badge className="bg-slate-100 text-slate-650 dark:bg-slate-800 dark:text-slate-400 border-none font-bold py-0.5 px-2 rounded-md"><User className="h-3 w-3 mr-1" />Kullanıcı</Badge>;
+        return <Badge className="bg-muted text-muted-foreground border-none font-bold py-0.5 px-2 rounded-md"><User className="h-3 w-3 mr-1" />Kullanıcı</Badge>;
     }
   };
 
@@ -211,7 +211,7 @@ export function UserManagement() {
       <AdminStatsCards stats={statsData} />
 
       {/* List Container */}
-      <div className="bg-white dark:bg-[#0b0f19]/60 rounded-2xl p-6 border border-slate-200/50 dark:border-slate-800/40 shadow-xl space-y-6">
+      <div className="admin-panel-surface p-6 space-y-6">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
             <Users className="w-5 h-5" />
@@ -230,12 +230,12 @@ export function UserManagement() {
               placeholder="İsim veya kullanıcı adı ara..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="bg-slate-50/50 dark:bg-slate-900/50 border-slate-200/60 dark:border-slate-800/40 rounded-xl pl-10"
+              className="admin-filter-surface pl-10"
             />
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           </div>
           <Select value={roleFilter} onValueChange={(v) => setRoleFilter(v as 'all' | AppRole)}>
-            <SelectTrigger className="w-[180px] bg-slate-50/50 dark:bg-slate-900/50 border-slate-200/60 dark:border-slate-800/40 rounded-xl text-slate-700 dark:text-slate-200 font-semibold text-xs md:text-sm">
+            <SelectTrigger className="admin-filter-surface w-[180px] font-semibold text-xs md:text-sm">
               <SelectValue placeholder="Rol Filtrele" />
             </SelectTrigger>
             <SelectContent>
@@ -261,10 +261,10 @@ export function UserManagement() {
             {filteredUsers.map((user) => (
               <div
                 key={user.id}
-                className="bg-white dark:bg-slate-900/10 border border-slate-200/60 dark:border-slate-800/40 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm hover:shadow-md hover:border-slate-350 dark:hover:border-slate-700 transition-all duration-200"
+                className="admin-list-surface p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-650 flex items-center justify-center text-white font-bold shadow-sm flex-shrink-0 text-sm">
+                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold shadow-sm flex-shrink-0 text-sm">
                     {user.full_name?.charAt(0).toUpperCase() || user.username?.charAt(0).toUpperCase() || 'U'}
                   </div>
 
@@ -333,7 +333,7 @@ export function UserManagement() {
           {selectedUser && (
             <div className="space-y-6 pt-4">
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-650 flex items-center justify-center text-white text-2xl font-bold shadow-md">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold shadow-md">
                   {selectedUser.full_name?.charAt(0).toUpperCase() || selectedUser.username?.charAt(0).toUpperCase() || 'U'}
                 </div>
                 <div>
@@ -348,11 +348,11 @@ export function UserManagement() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 bg-slate-50 dark:bg-slate-900/50 border border-slate-200/40 dark:border-slate-800/20 rounded-xl">
-                  <p className="text-xs text-slate-450 mb-1.5 font-semibold uppercase tracking-wider">Rol</p>
+                  <p className="text-xs text-muted-foreground mb-1.5 font-semibold uppercase tracking-wider">Rol</p>
                   {getRoleBadge(selectedUser.role)}
                 </div>
                 <div className="p-4 bg-slate-50 dark:bg-slate-900/50 border border-slate-200/40 dark:border-slate-800/20 rounded-xl">
-                  <p className="text-xs text-slate-450 mb-1.5 font-semibold uppercase tracking-wider">Kayıt Tarihi</p>
+                  <p className="text-xs text-muted-foreground mb-1.5 font-semibold uppercase tracking-wider">Kayıt Tarihi</p>
                   <p className="font-semibold text-sm text-slate-800 dark:text-white">
                     {format(new Date(selectedUser.created_at), 'd MMMM yyyy', { locale: tr })}
                   </p>
@@ -361,7 +361,7 @@ export function UserManagement() {
 
               {selectedUser.bio && (
                 <div className="p-4 bg-slate-50 dark:bg-slate-900/50 border border-slate-200/40 dark:border-slate-800/20 rounded-xl">
-                  <p className="text-xs text-slate-450 mb-2 font-semibold uppercase tracking-wider">Biyografi</p>
+                  <p className="text-xs text-muted-foreground mb-2 font-semibold uppercase tracking-wider">Biyografi</p>
                   <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">{selectedUser.bio}</p>
                 </div>
               )}
@@ -399,7 +399,7 @@ export function UserManagement() {
           {selectedUser && (
             <div className="space-y-6 pt-4">
               <div className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-900/50 border border-slate-200/40 dark:border-slate-800/20 rounded-xl">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-650 flex items-center justify-center text-white font-semibold">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold">
                   {selectedUser.full_name?.charAt(0).toUpperCase() || selectedUser.username?.charAt(0).toUpperCase() || 'U'}
                 </div>
                 <div>

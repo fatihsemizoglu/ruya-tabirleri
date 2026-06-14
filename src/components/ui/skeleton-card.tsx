@@ -168,7 +168,7 @@ export function SkeletonAdminRow({ count = 6 }: { count?: number }) {
       {Array.from({ length: count }).map((_, i) => (
         <div
           key={i}
-          className="bg-white dark:bg-slate-900/10 border border-slate-200/60 dark:border-slate-800/40 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm"
+          className="admin-list-surface p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
         >
           <div className="flex items-center gap-4 flex-1">
             <Skeleton className="h-4 w-4 rounded" />

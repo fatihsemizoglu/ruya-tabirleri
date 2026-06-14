@@ -40,7 +40,7 @@ export function AdminStatsCards({ stats, className }: AdminStatsCardsProps) {
         return (
           <Card
             key={stat.label}
-            className="relative overflow-hidden p-5 bg-white/70 dark:bg-slate-950/40 backdrop-blur-md border border-slate-200/50 dark:border-slate-800/40 rounded-2xl shadow-lg hover:shadow-xl transition-shadow"
+            className="relative overflow-hidden p-5 bg-card/80 backdrop-blur-md border border-border/70 rounded-2xl shadow-lg hover:shadow-xl transition-shadow"
           >
             <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full bg-gradient-to-br from-violet-500/5 to-fuchsia-500/5 blur-2xl pointer-events-none" />
             <div className="flex items-center justify-between gap-3 relative">

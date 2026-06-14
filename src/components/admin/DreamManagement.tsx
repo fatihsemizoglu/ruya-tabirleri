@@ -318,7 +318,7 @@ export function DreamManagement() {
 
       <AdminStatsCards stats={statsData} />
 
-      <div className="bg-white dark:bg-[#0b0f19]/60 rounded-2xl p-6 border border-slate-200/50 dark:border-slate-800/40 shadow-xl space-y-6">
+      <div className="admin-panel-surface p-6 space-y-6">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
             <BookOpen className="w-5 h-5" />
@@ -337,11 +337,11 @@ export function DreamManagement() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Başlık veya içerik ile ara..."
-              className="bg-slate-50/50 dark:bg-slate-900/50 border-slate-200/60 dark:border-slate-800/40 rounded-xl"
+              className="admin-filter-surface"
             />
           </div>
           <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-[200px] bg-slate-50/50 dark:bg-slate-900/50 border-slate-200/60 dark:border-slate-800/40 rounded-xl text-slate-700 dark:text-slate-200 font-semibold text-xs md:text-sm">
+            <SelectTrigger className="admin-filter-surface w-[200px] font-semibold text-xs md:text-sm">
               <Filter className="h-3.5 w-3.5 mr-1.5" />
               <SelectValue placeholder="Kategori" />
             </SelectTrigger>
@@ -355,7 +355,7 @@ export function DreamManagement() {
             </SelectContent>
           </Select>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[180px] bg-slate-50/50 dark:bg-slate-900/50 border-slate-200/60 dark:border-slate-800/40 rounded-xl text-slate-700 dark:text-slate-200 font-semibold text-xs md:text-sm">
+            <SelectTrigger className="admin-filter-surface w-[180px] font-semibold text-xs md:text-sm">
               <SelectValue placeholder="Durum Filtrele" />
             </SelectTrigger>
             <SelectContent>
@@ -395,7 +395,7 @@ export function DreamManagement() {
           <SkeletonAdminRow count={6} />
         ) : filteredDreams.length > 0 ? (
           <div className="space-y-4">
-            <div className="bg-slate-50 dark:bg-slate-900/40 border border-slate-200/40 dark:border-slate-800/20 rounded-xl px-4 py-2 flex items-center gap-3 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase select-none">
+            <div className="admin-muted-row px-4 py-2 flex items-center gap-3 select-none">
               <Checkbox
                 checked={selection.isAllSelected}
                 onCheckedChange={selection.toggleAll}
@@ -408,7 +408,7 @@ export function DreamManagement() {
               {filteredDreams.map((dream) => (
                 <div
                   key={dream.id}
-                  className={`bg-white dark:bg-slate-900/10 border border-slate-200/60 dark:border-slate-800/40 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm hover:shadow-md hover:border-slate-350 dark:hover:border-slate-700 transition-all duration-200 ${selection.isSelected(dream.id) ? 'bg-primary/5 border-primary/20' : ''}`}
+                  className={`admin-list-surface p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${selection.isSelected(dream.id) ? 'bg-primary/10 border-primary/40' : ''}`}
                 >
                   <div className="flex items-center gap-4">
                     <Checkbox
@@ -444,8 +444,8 @@ export function DreamManagement() {
                         </span>
                         {(dream as DreamWithCategory).categories?.name && (
                           <>
-                            <span className="text-slate-300 dark:text-slate-800">•</span>
-                            <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-[10px] font-medium text-slate-600 dark:text-slate-300">
+                            <span className="text-muted-foreground/50">•</span>
+                            <span className="bg-muted px-2 py-0.5 rounded text-[10px] font-medium text-muted-foreground">
                               {(dream as DreamWithCategory).categories!.name}
                             </span>
                           </>
@@ -457,7 +457,7 @@ export function DreamManagement() {
                   <div className="flex items-center gap-4 self-end sm:self-auto">
                     <button
                       onClick={() => handleEdit(dream)}
-                      className="flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-slate-700 dark:text-slate-450 dark:hover:text-slate-300 transition-colors"
+                      className="flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
                     >
                       <Pencil className="w-4 h-4" />
                       Düzenle
@@ -477,7 +477,7 @@ export function DreamManagement() {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-200/40 dark:border-slate-800/40">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-border/60">
                 <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                   {((currentPage - 1) * PAGE_SIZE) + 1}–{Math.min(currentPage * PAGE_SIZE, totalCount || 0)} / {(totalCount || 0).toLocaleString('tr-TR')} arası gösteriliyor
                 </p>

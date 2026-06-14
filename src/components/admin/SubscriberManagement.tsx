@@ -152,7 +152,7 @@ export function SubscriberManagement() {
       <AdminStatsCards stats={statsData} />
 
       {/* List Container */}
-      <div className="bg-white dark:bg-[#0b0f19]/60 rounded-2xl p-6 border border-slate-200/50 dark:border-slate-800/40 shadow-xl space-y-6">
+      <div className="admin-panel-surface p-6 space-y-6">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
             <Mail className="w-5 h-5" />
@@ -171,7 +171,7 @@ export function SubscriberManagement() {
               placeholder="E-posta veya isim ara..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="bg-slate-50/50 dark:bg-slate-900/50 border-slate-200/60 dark:border-slate-800/40 rounded-xl pl-10"
+              className="admin-filter-surface pl-10"
             />
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           </div>
@@ -211,7 +211,7 @@ export function SubscriberManagement() {
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="bg-slate-50 dark:bg-slate-900/40 border border-slate-200/40 dark:border-slate-800/20 rounded-xl px-4 py-2 flex items-center gap-3 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase select-none">
+            <div className="admin-muted-row px-4 py-2 flex items-center gap-3 select-none">
               <Checkbox
                 checked={filteredSubscribers.length > 0 && selectedIds.length === filteredSubscribers.length}
                 onCheckedChange={toggleSelectAll}
@@ -224,7 +224,7 @@ export function SubscriberManagement() {
               {filteredSubscribers.map((subscriber) => (
                 <div
                   key={subscriber.id}
-                  className="bg-white dark:bg-slate-900/10 border border-slate-200/60 dark:border-slate-800/40 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm hover:shadow-md hover:border-slate-350 dark:hover:border-slate-700 transition-all duration-200"
+                  className="admin-list-surface p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                 >
                   <div className="flex items-center gap-4">
                     <Checkbox
@@ -235,7 +235,7 @@ export function SubscriberManagement() {
 
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm ${
                       subscriber.unsubscribed_at
-                        ? 'bg-red-105 text-red-600 dark:bg-red-950/40 dark:text-red-400'
+                        ? 'bg-red-100 text-red-600 dark:bg-red-950/40 dark:text-red-400'
                         : subscriber.is_verified
                         ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400'
                         : 'bg-amber-100 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400'
@@ -267,7 +267,7 @@ export function SubscriberManagement() {
                         {subscriber.name && (
                           <>
                             <span className="font-medium">{subscriber.name}</span>
-                            <span className="text-slate-300 dark:text-slate-800">•</span>
+                             <span className="text-muted-foreground/50">•</span>
                           </>
                         )}
                         <span className="flex items-center gap-1">
@@ -276,7 +276,7 @@ export function SubscriberManagement() {
                         </span>
                         {subscriber.unsubscribed_at && (
                           <>
-                            <span className="text-slate-300 dark:text-slate-800">•</span>
+                             <span className="text-muted-foreground/50">•</span>
                             <span className="text-red-500 font-medium">
                               İptal: {format(new Date(subscriber.unsubscribed_at), 'd MMM yyyy', { locale: tr })}
                             </span>
@@ -289,7 +289,7 @@ export function SubscriberManagement() {
                   <div className="flex items-center gap-4 self-end sm:self-auto">
                     <button
                       onClick={() => handleDelete(subscriber)}
-                      className="flex items-center gap-1 text-xs font-semibold text-red-650 hover:text-red-750 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                      className="flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
                       disabled={deleteMutation.isPending}
                     >
                       <Trash2 className="w-4 h-4" />

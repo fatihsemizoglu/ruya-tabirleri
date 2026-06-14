@@ -116,7 +116,7 @@ export function AdminLayout({ children, activeTab, onTabChange, title, descripti
         )}
       >
         {/* Top Header - Glassmorphism */}
-        <header className="sticky top-0 z-20 bg-white/70 dark:bg-[#070b13]/70 backdrop-blur-md border-b border-slate-200/60 dark:border-slate-800/40 px-4 lg:px-8 h-16 flex items-center justify-between transition-all">
+        <header className="sticky top-0 z-20 bg-white/70 dark:bg-[#070b13]/70 backdrop-blur-md border-b border-border/60 px-4 lg:px-8 h-16 flex items-center justify-between transition-all">
           <div className="flex items-center gap-4">
             {/* Mobile Menu Toggle */}
             <Button 
@@ -129,7 +129,7 @@ export function AdminLayout({ children, activeTab, onTabChange, title, descripti
             </Button>
             
             {/* Breadcrumbs */}
-            <div className="flex items-center gap-2 text-xs md:text-sm text-slate-500 dark:text-slate-450 select-none">
+            <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground select-none">
               <span className="font-semibold text-slate-400 dark:text-slate-500">Yönetim Paneli</span>
               <span className="text-slate-300 dark:text-slate-700">/</span>
               <span className="font-bold text-slate-800 dark:text-slate-200">{title}</span>

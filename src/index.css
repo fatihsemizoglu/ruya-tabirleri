@@ -126,6 +126,22 @@
     box-shadow: var(--shadow-md);
   }
 
+  .admin-panel-surface {
+    @apply rounded-2xl border border-border/70 bg-card text-card-foreground shadow-xl;
+  }
+
+  .admin-list-surface {
+    @apply rounded-2xl border border-border/70 bg-card text-card-foreground shadow-sm transition-all duration-200 hover:border-primary/35 hover:shadow-md;
+  }
+
+  .admin-filter-surface {
+    @apply rounded-xl border border-border/70 bg-muted/45 text-foreground;
+  }
+
+  .admin-muted-row {
+    @apply rounded-xl border border-border/60 bg-muted/45 text-xs font-bold uppercase text-muted-foreground;
+  }
+
   /* Off-screen performance: skip rendering work for content far below the fold.
      contain-intrinsic-size reserves layout space to avoid CLS when the section
      becomes visible. Do NOT use on sections with whileInView framer-motion that

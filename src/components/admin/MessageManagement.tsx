@@ -199,7 +199,7 @@ export function MessageManagement() {
       <AdminStatsCards stats={statsData} />
 
       {/* Messages List Wrapper */}
-      <div className="bg-white dark:bg-[#0b0f19]/60 rounded-2xl p-6 border border-slate-200/50 dark:border-slate-800/40 shadow-xl space-y-6">
+      <div className="admin-panel-surface p-6 space-y-6">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
             <Mail className="w-5 h-5" />
@@ -218,7 +218,7 @@ export function MessageManagement() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="İsim, email veya konu ara..."
-              className="bg-slate-50/50 dark:bg-slate-900/50 border-slate-200/60 dark:border-slate-800/40 rounded-xl"
+              className="admin-filter-surface"
             />
           </div>
           <div className="flex gap-2">
@@ -270,8 +270,8 @@ export function MessageManagement() {
             {filteredMessages.map((message) => (
               <div
                 key={message.id}
-                className={`bg-white dark:bg-slate-900/10 border border-slate-200/60 dark:border-slate-800/40 rounded-2xl p-5 flex flex-col sm:flex-row justify-between gap-4 shadow-sm hover:shadow-md hover:border-slate-350 dark:hover:border-slate-700 transition-all duration-200 cursor-pointer ${
-                  !message.is_read ? 'bg-blue-50/50 dark:bg-blue-950/10 border-blue-200/60 dark:border-blue-800/30' : ''
+                className={`admin-list-surface p-5 flex flex-col sm:flex-row justify-between gap-4 cursor-pointer ${
+                  !message.is_read ? 'bg-blue-500/10 border-blue-500/35' : ''
                 }`}
                 onClick={() => openMessage(message)}
               >
@@ -294,15 +294,15 @@ export function MessageManagement() {
                         </Badge>
                       )}
                     </div>
-                    <p className="text-xs text-slate-555 dark:text-slate-400 font-medium mb-1.5">{message.email}</p>
+                    <p className="text-xs text-muted-foreground font-medium mb-1.5">{message.email}</p>
                     <p className={`font-semibold text-sm mb-1 line-clamp-1 ${!message.is_read ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300'}`}>
                       {message.subject}
                     </p>
-                    <p className="text-xs text-slate-500 dark:text-slate-450 line-clamp-2 leading-relaxed">{message.message}</p>
+                    <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">{message.message}</p>
                   </div>
                 </div>
 
-                <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-3 mt-2 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-slate-800/40">
+                <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-3 mt-2 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-border/60">
                   <span className="text-xs text-slate-400 flex items-center gap-1">
                     <Clock className="h-3.5 w-3.5" />
                     {format(new Date(message.created_at), 'dd MMM yyyy', { locale: tr })}
@@ -323,7 +323,7 @@ export function MessageManagement() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 rounded-lg text-red-500 hover:text-red-650 hover:bg-red-50 dark:hover:bg-red-950/20"
+                      className="h-8 w-8 rounded-lg text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30"
                       onClick={(e) => {
                         e.stopPropagation();
                         setMessageToDelete(message);
@@ -364,7 +364,7 @@ export function MessageManagement() {
               <div className="p-4 bg-slate-50/50 dark:bg-slate-900/20 border border-slate-200/40 dark:border-slate-850/20 rounded-xl min-h-[150px] leading-relaxed">
                 <p className="whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-300">{selectedMessage.message}</p>
               </div>
-              <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800/40">
+              <div className="flex justify-end gap-2 pt-4 border-t border-border/60">
                 <Button variant="outline" asChild className="rounded-xl text-xs font-semibold">
                   <a href={`mailto:${selectedMessage.email}?subject=Re: ${selectedMessage.subject}`}>
                     <Mail className="h-4 w-4 mr-2" />
@@ -399,7 +399,7 @@ export function MessageManagement() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className="rounded-xl">İptal</AlertDialogCancel>
-            <AlertDialogAction onClick={deleteMessage} className="bg-red-650 hover:bg-red-750 text-white rounded-xl">
+            <AlertDialogAction onClick={deleteMessage} className="bg-red-600 hover:bg-red-700 text-white rounded-xl">
               Sil
             </AlertDialogAction>
           </AlertDialogFooter>

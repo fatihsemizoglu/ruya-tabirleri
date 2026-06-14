@@ -236,7 +236,7 @@ export function CategoryManagement() {
 
       <AdminStatsCards stats={statsData} />
 
-      <div className="bg-white dark:bg-[#0b0f19]/60 rounded-2xl p-6 border border-slate-200/50 dark:border-slate-800/40 shadow-xl space-y-6">
+      <div className="admin-panel-surface p-6 space-y-6">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
             <FolderOpen className="w-5 h-5" />
@@ -255,7 +255,7 @@ export function CategoryManagement() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Kategori adı veya açıklama ile ara..."
-              className="bg-slate-50/50 dark:bg-slate-900/50 border-slate-200/60 dark:border-slate-800/40 rounded-xl"
+              className="admin-filter-surface"
             />
           </div>
         </div>
@@ -267,7 +267,7 @@ export function CategoryManagement() {
             {filteredCategories.map((category) => (
               <div
                 key={category.id}
-                className="bg-white dark:bg-slate-900/10 border border-slate-200/60 dark:border-slate-800/40 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm hover:shadow-md hover:border-slate-350 dark:hover:border-slate-700 transition-all duration-200"
+                className="admin-list-surface p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
               >
                 <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0 shadow-sm">
@@ -279,16 +279,16 @@ export function CategoryManagement() {
                       <span className="font-semibold text-sm text-slate-800 dark:text-white line-clamp-1">
                         {category.name}
                       </span>
-                      <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-[10px] font-medium text-slate-500 dark:text-slate-400">
+                      <span className="bg-muted px-2 py-0.5 rounded text-[10px] font-medium text-muted-foreground">
                         Sıra: {category.order_index}
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-450 mt-1 flex-wrap">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1 flex-wrap">
                       <span>Slug: {category.slug}</span>
                       {category.description && (
                         <>
-                          <span className="text-slate-350 dark:text-slate-800">•</span>
+                          <span className="text-muted-foreground/50">•</span>
                           <span className="line-clamp-1">{category.description}</span>
                         </>
                       )}
@@ -299,7 +299,7 @@ export function CategoryManagement() {
                 <div className="flex items-center gap-4 self-end sm:self-auto">
                   <button
                     onClick={() => handleEdit(category)}
-                    className="flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-slate-700 dark:text-slate-450 dark:hover:text-slate-300 transition-colors"
+                    className="flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
                   >
                     <Pencil className="w-4 h-4" />
                     Düzenle
