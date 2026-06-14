@@ -5,7 +5,10 @@ export const corsHeaders = {
 };
 
 export function getCorsHeaders(origin: string | null = null): Record<string, string> {
-  const allowed = Deno.env.get("ALLOWED_ORIGINS")?.split(",").map((o) => o.trim()) ?? [];
+  const allowed = Deno.env.get("ALLOWED_ORIGINS")
+    ?.split(/[\s,]+/)
+    .map((o) => o.trim())
+    .filter(Boolean) ?? [];
   const allowOrigin = origin && allowed.length > 0 && allowed.includes(origin)
     ? origin
     : (allowed[0] ?? "*");

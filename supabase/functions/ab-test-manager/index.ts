@@ -13,6 +13,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { handleOptions, jsonResponse } from "../_shared/cors.ts";
+import { requireAdmin } from "../_shared/auth.ts";
 
 interface Variant {
   id: string;
@@ -58,6 +59,7 @@ async function getKv() {
 // In-memory fallback
 const memTests = new Map<string, ABTest>();
 const memEvents = new Map<string, Event[]>();
+const ADMIN_ACTIONS = new Set(["create", "update", "delete", "list", "stats"]);
 
 async function listTests(kv: Deno.Kv | null): Promise<ABTest[]> {
   if (kv) {
@@ -231,6 +233,11 @@ serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const action = body.action as string;
     const kv = await getKv();
+
+    if (ADMIN_ACTIONS.has(action)) {
+      const authResult = await requireAdmin(req);
+      if (authResult instanceof Response) return authResult;
+    }
 
     switch (action) {
       case "list": {

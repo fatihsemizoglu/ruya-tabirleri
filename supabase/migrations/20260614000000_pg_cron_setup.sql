@@ -160,7 +160,7 @@ BEGIN
     'publish-scheduled-posts',
     '*/5 * * * *',
     $job$ SELECT public.invoke_supabase_function(
-      'https://srpuegfijtujagpuksgs.supabase.co/functions/v1/publish-scheduled-posts',
+      'https://dagjpitlouekbnwdcpbz.supabase.co/functions/v1/publish-scheduled-posts',
     '{}'::jsonb); $job$
   );
 
@@ -169,7 +169,7 @@ BEGIN
     'generate-sitemap',
     '0 2 * * *',
     $job$ SELECT public.invoke_supabase_function(
-      'https://srpuegfijtujagpuksgs.supabase.co/functions/v1/sitemap',
+      'https://dagjpitlouekbnwdcpbz.supabase.co/functions/v1/sitemap',
     '{}'::jsonb); $job$
   );
 
@@ -178,7 +178,7 @@ BEGIN
     'seo-audit',
     '0 3 * * *',
     $job$ SELECT public.invoke_supabase_function(
-      'https://srpuegfijtujagpuksgs.supabase.co/functions/v1/seo-audit',
+      'https://dagjpitlouekbnwdcpbz.supabase.co/functions/v1/seo-audit',
     '{"action": "full"}'::jsonb); $job$
   );
 
@@ -187,7 +187,7 @@ BEGIN
     'zero-results-analysis',
     '0 4 * * *',
     $job$ SELECT public.invoke_supabase_function(
-      'https://srpuegfijtujagpuksgs.supabase.co/functions/v1/zero-results',
+      'https://dagjpitlouekbnwdcpbz.supabase.co/functions/v1/zero-results',
     '{}'::jsonb); $job$
   );
 END$jobs$;

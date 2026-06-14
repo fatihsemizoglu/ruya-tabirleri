@@ -86,7 +86,9 @@ function envDebug(): Record<string, unknown> {
       if (parts.length === 3) {
         decoded = JSON.parse(Buffer.from(parts[1], 'base64').toString());
       }
-    } catch {}
+    } catch (_error) {
+      decoded = null;
+    }
   }
   return {
     url_set: !!SUPABASE_URL,

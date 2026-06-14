@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { handleOptions, jsonResponse } from "../_shared/cors.ts";
+import { getCorsHeaders, handleOptions, jsonResponse } from "../_shared/cors.ts";
 import { requireCronSecret } from "../_shared/auth.ts";
 
 Deno.serve(async (req) => {
@@ -128,7 +128,7 @@ Deno.serve(async (req) => {
 
     return new Response(xml, {
       headers: {
-        ...corsHeaders(),
+        ...getCorsHeaders(req.headers.get("origin")),
         "Content-Type": "application/xml; charset=utf-8",
         "Cache-Control": "public, max-age=3600",
       },

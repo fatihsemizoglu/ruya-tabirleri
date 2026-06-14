@@ -87,7 +87,7 @@ supabase functions deploy ab-test-manager
 ### 3.2 Environment Variables (Production)
 | Değişken | Değer |
 |----------|-------|
-| `VITE_SUPABASE_URL` | `https://srpuegfijtujagpuksgs.supabase.co` |
+| `VITE_SUPABASE_URL` | `https://dagjpitlouekbnwdcpbz.supabase.co` |
 | `VITE_SUPABASE_ANON_KEY` | Supabase Dashboard > Settings > API > `anon` `public` |
 | `VITE_SITE_URL` | `https://ruya-tabirleri.com` |
 | `SENTRY_DSN` | (opsiyonel) Sentry projesinden |
@@ -109,7 +109,7 @@ supabase functions deploy ab-test-manager
 
 ## 4. Build Optimizasyonları (tamamlandı)
 
-- [x] Manuel chunk splitting (react-vendor, recharts, framer-motion, vs.)
+- [x] Stabil vendor chunk (React load-order circular dependency riskini önler)
 - [x] ES2020 target
 - [x] `esbuild` minify
 - [x] `cssCodeSplit: true`
@@ -133,7 +133,6 @@ Kod tarafı tamamen hazır. Yapman gereken tek şey:
 3. **Settings > Projects > [proje] > Client Keys (DSN)**'den DSN'i kopyala
 4. Vercel Dashboard > Project > Settings > Environment Variables:
    - `VITE_SENTRY_DSN` = kopyaladığın DSN (Production)
-   - `VITE_SENTRY_TUNNEL` = `/api/sentry-tunnel` (ad-blocker bypass)
    - `VITE_APP_VERSION` = `1.0.0` (her release'te güncelle)
 5. (Opsiyonel — source maps yüklemek için):
    - Sentry > Settings > Auth Tokens > **Create New Token** (`project:releases`, `project:debug_files` scope'ları)

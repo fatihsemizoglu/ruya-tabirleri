@@ -11,11 +11,6 @@ if (SENTRY_DSN) {
     dsn: SENTRY_DSN,
     release: `ruya-tabirleri@${APP_VERSION}`,
     environment: import.meta.env.MODE,
-    // Tunnel through our own domain to bypass ad-blockers and reduce
-    // third-party DNS lookups. Requires vercel.json rewrite.
-    ...(import.meta.env.VITE_SENTRY_TUNNEL ? {
-      tunnel: import.meta.env.VITE_SENTRY_TUNNEL as string,
-    } : {}),
     integrations: [
       Sentry.browserTracingIntegration(),
       Sentry.replayIntegration({

@@ -35,55 +35,10 @@ export default defineConfig(({ mode }) => ({
     }),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.ico", "robots.txt", "placeholder.svg", "offline.html"],
-      manifest: {
-        name: "Rüya Tabirleri - Mistik Günlük",
-        short_name: "Rüya Tabirleri",
-        description: "Binlerce rüya tabiri arasında arama yapın. İslami ve psikolojik yorumlarla rüyalarınızın anlamını keşfedin.",
-        theme_color: "#6366f1",
-        background_color: "#0f172a",
-        display: "standalone",
-        orientation: "portrait",
-        scope: "/",
-        start_url: "/",
-        categories: ["lifestyle", "education"],
-        lang: "tr",
-        icons: [
-          {
-            src: "/pwa-192x192.png",
-            sizes: "192x192",
-            type: "image/png",
-            purpose: "any"
-          },
-          {
-            src: "/pwa-512x512.png",
-            sizes: "512x512",
-            type: "image/png",
-            purpose: "any"
-          },
-          {
-            src: "/pwa-maskable-512x512.png",
-            sizes: "512x512",
-            type: "image/png",
-            purpose: "maskable"
-          }
-        ],
-        screenshots: [
-          {
-            src: "/screenshot-wide.png",
-            sizes: "1280x720",
-            type: "image/png",
-            form_factor: "wide"
-          },
-          {
-            src: "/screenshot-mobile.png",
-            sizes: "390x844",
-            type: "image/png",
-            form_factor: "narrow"
-          }
-        ]
-      },
       workbox: {
+        cleanupOutdatedCaches: true,
+        skipWaiting: true,
+        clientsClaim: true,
         navigateFallback: "/offline.html",
         navigateFallbackDenylist: [/^\/admin/, /^\/api/],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB limit
@@ -135,7 +90,7 @@ export default defineConfig(({ mode }) => ({
           {
             // Supabase storage images: CacheFirst with 7-day expiration
             // Saves bandwidth on repeat visits; srcset URL params are honored
-            urlPattern: /^https:\/\/srpuegfijtujagpuksgs\.supabase\.co\/storage\/v1\/object\//i,
+            urlPattern: /^https:\/\/dagjpitlouekbnwdcpbz\.supabase\.co\/storage\/v1\/object\//i,
             handler: "CacheFirst",
             options: {
               cacheName: "supabase-images",
@@ -149,7 +104,55 @@ export default defineConfig(({ mode }) => ({
             }
           }
         ]
-      }
+      },
+      includeAssets: ["favicon.ico", "robots.txt", "placeholder.svg", "offline.html"],
+      manifest: {
+        name: "Rüya Tabirleri - Mistik Günlük",
+        short_name: "Rüya Tabirleri",
+        description: "Binlerce rüya tabiri arasında arama yapın. İslami ve psikolojik yorumlarla rüyalarınızın anlamını keşfedin.",
+        theme_color: "#6366f1",
+        background_color: "#0f172a",
+        display: "standalone",
+        orientation: "portrait",
+        scope: "/",
+        start_url: "/",
+        categories: ["lifestyle", "education"],
+        lang: "tr",
+        icons: [
+          {
+            src: "/pwa-192x192.png",
+            sizes: "192x192",
+            type: "image/png",
+            purpose: "any"
+          },
+          {
+            src: "/pwa-512x512.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "any"
+          },
+          {
+            src: "/pwa-maskable-512x512.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "maskable"
+          }
+        ],
+        screenshots: [
+          {
+            src: "/screenshot-wide.png",
+            sizes: "1280x720",
+            type: "image/png",
+            form_factor: "wide"
+          },
+          {
+            src: "/screenshot-mobile.png",
+            sizes: "390x844",
+            type: "image/png",
+            form_factor: "narrow"
+          }
+        ]
+      },
     })
   ].filter(Boolean),
   resolve: {

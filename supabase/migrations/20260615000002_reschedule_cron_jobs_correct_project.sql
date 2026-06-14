@@ -1,6 +1,6 @@
 -- =====================================================================
--- Idempotent cron job scheduler
--- Runs the job scheduling section of pg_cron_setup migration.
+-- Re-schedule cron jobs against the current Supabase project.
+-- Previous migrations may have scheduled jobs against an old project ref.
 -- Safe to re-run: unschedules first.
 -- =====================================================================
 
@@ -11,7 +11,7 @@ DECLARE
   v_job RECORD;
 BEGIN
   SELECT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_cron') INTO v_has_cron;
-  SELECT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'http')     INTO v_has_http;
+  SELECT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'http') INTO v_has_http;
 
   IF NOT v_has_cron THEN
     RAISE NOTICE 'pg_cron not installed; skipping.';
@@ -22,7 +22,6 @@ BEGIN
     RETURN;
   END IF;
 
-  -- Defensive unschedule
   FOR v_job IN
     SELECT unnest(ARRAY[
       'publish-scheduled-posts',
@@ -46,7 +45,6 @@ BEGIN
       'https://dagjpitlouekbnwdcpbz.supabase.co/functions/v1/publish-scheduled-posts',
     '{}'::jsonb); $job$
   );
-  RAISE NOTICE 'scheduled publish-scheduled-posts (*/5 * * * *)';
 
   PERFORM cron.schedule(
     'generate-sitemap',
@@ -55,7 +53,6 @@ BEGIN
       'https://dagjpitlouekbnwdcpbz.supabase.co/functions/v1/sitemap',
     '{}'::jsonb); $job$
   );
-  RAISE NOTICE 'scheduled generate-sitemap (0 2 * * *)';
 
   PERFORM cron.schedule(
     'seo-audit',
@@ -64,7 +61,6 @@ BEGIN
       'https://dagjpitlouekbnwdcpbz.supabase.co/functions/v1/seo-audit',
     '{"action": "full"}'::jsonb); $job$
   );
-  RAISE NOTICE 'scheduled seo-audit (0 3 * * *)';
 
   PERFORM cron.schedule(
     'zero-results-analysis',
@@ -73,5 +69,4 @@ BEGIN
       'https://dagjpitlouekbnwdcpbz.supabase.co/functions/v1/zero-results',
     '{}'::jsonb); $job$
   );
-  RAISE NOTICE 'scheduled zero-results-analysis (0 4 * * *)';
 END$jobs$;
