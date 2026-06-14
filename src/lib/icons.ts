@@ -522,5 +522,5 @@ export function getIcon(iconName: string | null | undefined) {
     .toUpperCase()
     .concat(iconName.slice(1))
     .replace(/-([a-z])/g, (_, c: string) => c.toUpperCase());
-  return iconMap[normalized] || null;
+  return iconMap[iconName] || iconMap[normalized] || null;
 }
