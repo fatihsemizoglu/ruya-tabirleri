@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Navigate, Link } from 'react-router-dom';
-import { Plus, Book, Calendar, Trash2, Edit, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
+import { Navigate } from 'react-router-dom';
+import { Plus, Book, Calendar, Trash2, Edit, BookOpen, Mic, MicOff, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
@@ -10,8 +10,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
+import { useVoiceSearch } from '@/hooks/useVoiceSearch';
 import { supabase } from '@/integrations/supabase/client';
+import { getErrorMessage, notify } from '@/lib/notify';
 import type { DreamJournalEntry, DreamMood } from '@/types/database';
 
 const moodOptions: { value: DreamMood; label: string; emoji: string }[] = [
@@ -27,7 +28,6 @@ const moodOptions: { value: DreamMood; label: string; emoji: string }[] = [
 
 export default function DreamJournal() {
   const { user, isLoading: authLoading } = useAuth();
-  const { toast } = useToast();
   const [entries, setEntries] = useState<DreamJournalEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -38,6 +38,39 @@ export default function DreamJournal() {
     dream_date: new Date().toISOString().split('T')[0],
     mood: '' as DreamMood | '',
     tags: '',
+  });
+  const [voiceDraft, setVoiceDraft] = useState('');
+
+  const appendVoiceText = useCallback((text: string) => {
+    const cleanText = text.trim();
+    if (!cleanText) return;
+    setVoiceDraft(cleanText);
+    setFormData((current) => {
+      const content = current.content.trim();
+      if (content.endsWith(cleanText)) return current;
+      const suggestedTitle = cleanText.split(/\s+/).slice(0, 6).join(' ') || 'Sesli Rüya';
+      return {
+        ...current,
+        title: current.title.trim() ? current.title : suggestedTitle,
+        content: `${content ? `${content}\n\n` : ''}${cleanText}`,
+      };
+    });
+  }, []);
+
+  const voice = useVoiceSearch({
+    continuous: true,
+    onResult: (text, isFinal) => {
+      setVoiceDraft(text);
+      if (isFinal) appendVoiceText(text);
+    },
+    onError: (error) => {
+      const message = error === 'not-allowed' || error === 'service-not-allowed'
+        ? 'Mikrofon erişimi reddedildi. Tarayıcı izinlerini kontrol edin.'
+        : error === 'no-speech'
+        ? 'Ses algılanmadı. Mikrofona yakın konuşup tekrar deneyin.'
+        : 'Sesli dikte başlatılamadı.';
+      notify.error(message);
+    },
   });
 
   const fetchEntries = useCallback(async () => {
@@ -83,23 +116,25 @@ export default function DreamJournal() {
           .eq('id', selectedEntry.id);
 
         if (error) throw error;
-        toast({ title: 'Rüya güncellendi' });
+        notify.success('Rüya güncellendi');
       } else {
         const { error } = await supabase
           .from('dream_journal')
           .insert(entryData);
 
         if (error) throw error;
-        toast({ title: 'Rüya eklendi' });
+        notify.success('Rüya eklendi');
       }
 
       setIsDialogOpen(false);
+      voice.stop();
+      voice.reset();
+      setVoiceDraft('');
       setSelectedEntry(null);
       setFormData({ title: '', content: '', dream_date: new Date().toISOString().split('T')[0], mood: '', tags: '' });
       fetchEntries();
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Bir hata oluştu';
-      toast({ variant: 'destructive', title: 'Hata', description: message });
+      notify.error('Hata', { description: getErrorMessage(error) });
     }
   };
 
@@ -113,11 +148,10 @@ export default function DreamJournal() {
         .eq('id', id);
 
       if (error) throw error;
-      toast({ title: 'Rüya silindi' });
+      notify.success('Rüya silindi');
       fetchEntries();
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Bir hata oluştu';
-      toast({ variant: 'destructive', title: 'Hata', description: message });
+      notify.error('Hata', { description: getErrorMessage(error) });
     }
   };
 
@@ -131,6 +165,28 @@ export default function DreamJournal() {
       tags: entry.tags?.join(', ') || '',
     });
     setIsDialogOpen(true);
+  };
+
+  const resetJournalForm = () => {
+    voice.stop();
+    voice.reset();
+    setVoiceDraft('');
+    setSelectedEntry(null);
+    setFormData({ title: '', content: '', dream_date: new Date().toISOString().split('T')[0], mood: '', tags: '' });
+  };
+
+  const toggleVoiceDictation = () => {
+    if (!voice.isSupported) {
+      notify.error('Tarayıcınız sesli dikteyi desteklemiyor', {
+        description: 'Chrome, Edge veya Web Speech API destekleyen bir tarayıcı deneyin.',
+      });
+      return;
+    }
+    if (voice.isListening) {
+      voice.stop();
+      return;
+    }
+    voice.start();
   };
 
   if (authLoading) {
@@ -191,8 +247,7 @@ export default function DreamJournal() {
           <Dialog open={isDialogOpen} onOpenChange={(open) => {
             setIsDialogOpen(open);
             if (!open) {
-              setSelectedEntry(null);
-              setFormData({ title: '', content: '', dream_date: new Date().toISOString().split('T')[0], mood: '', tags: '' });
+              resetJournalForm();
             }
           }}>
             <DialogTrigger asChild>
@@ -251,7 +306,19 @@ export default function DreamJournal() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="content">Rüya İçeriği</Label>
+                  <div className="flex items-center justify-between gap-3">
+                    <Label htmlFor="content">Rüya İçeriği</Label>
+                    <Button
+                      type="button"
+                      variant={voice.isListening ? 'destructive' : 'outline'}
+                      size="sm"
+                      onClick={toggleVoiceDictation}
+                      className="rounded-xl"
+                    >
+                      {voice.isListening ? <MicOff className="h-4 w-4 mr-1" /> : <Mic className="h-4 w-4 mr-1" />}
+                      {voice.isListening ? 'Durdur' : 'Sesle Yaz'}
+                    </Button>
+                  </div>
                   <Textarea
                     id="content"
                     value={formData.content}
@@ -260,6 +327,22 @@ export default function DreamJournal() {
                     rows={5}
                     required
                   />
+                  <div className="rounded-xl border border-violet-500/20 bg-violet-500/5 p-3 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-2 font-medium text-foreground mb-1">
+                      <Sparkles className="h-3.5 w-3.5 text-violet-500" />
+                      Sesli dikte
+                    </div>
+                    {voice.isListening ? (
+                      <p>
+                        Dinleniyor... Konuştuklarınız otomatik olarak rüya içeriğine eklenecek.
+                        {voiceDraft && <span className="block mt-1 text-foreground/80">Son algılanan: {voiceDraft}</span>}
+                      </p>
+                    ) : voice.isSupported ? (
+                      <p>Anasayfadaki sesli arama altyapısıyla rüyanızı konuşarak metne çevirebilirsiniz.</p>
+                    ) : (
+                      <p>Bu tarayıcı sesli dikteyi desteklemiyor.</p>
+                    )}
+                  </div>
                 </div>
 
                 <div className="space-y-2">

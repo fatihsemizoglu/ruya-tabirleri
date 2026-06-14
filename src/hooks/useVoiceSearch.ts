@@ -32,6 +32,7 @@ function getSpeechRecognitionCtor(): (new () => SpeechRecognitionLike) | null {
 
 interface UseVoiceSearchOptions {
   lang?: string;
+  continuous?: boolean;
   onResult?: (transcript: string, isFinal: boolean) => void;
   onError?: (error: string) => void;
 }
@@ -55,7 +56,7 @@ interface UseVoiceSearchResult {
  * - Cleans up on unmount
  */
 export function useVoiceSearch(options: UseVoiceSearchOptions = {}): UseVoiceSearchResult {
-  const { lang = 'tr-TR', onResult, onError } = options;
+  const { lang = 'tr-TR', continuous = false, onResult, onError } = options;
   const Ctor = getSpeechRecognitionCtor();
 
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
@@ -88,7 +89,7 @@ export function useVoiceSearch(options: UseVoiceSearchOptions = {}): UseVoiceSea
 
     const recognition = new Ctor();
     recognition.lang = lang;
-    recognition.continuous = false;
+    recognition.continuous = continuous;
     recognition.interimResults = true;
     recognition.maxAlternatives = 1;
 
@@ -126,7 +127,7 @@ export function useVoiceSearch(options: UseVoiceSearchOptions = {}): UseVoiceSea
       setError(err instanceof Error ? err.message : 'start-failed');
       setIsListening(false);
     }
-  }, [Ctor, lang, onResult, onError]);
+  }, [Ctor, continuous, lang, onResult, onError]);
 
   useEffect(() => {
     return () => {

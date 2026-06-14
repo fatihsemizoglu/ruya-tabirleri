@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { t } from '@/constants/translations';
 import { Navigate, Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { User, Mail, Camera, Heart, Clock, Book, Plus, Trash2, Edit, Eye, Calendar, Settings, LogOut, BarChart3, MessageCircle, TrendingUp, Award, Sparkles, Save, Activity, Hash, ArrowRight, Bookmark } from 'lucide-react';
+import { User, Mail, Camera, Heart, Clock, Book, Plus, Trash2, Edit, Eye, Calendar, Settings, LogOut, BarChart3, MessageCircle, TrendingUp, Award, Sparkles, Save, Activity, Hash, ArrowRight, Bookmark, ShieldCheck, Lock, EyeOff } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,8 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/hooks/useAuth';
-import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { getErrorMessage, notify } from '@/lib/notify';
 import type { Dream, Favorite, ViewHistory, DreamJournalEntry, DreamMood, Comment } from '@/types/database';
 
 type MoodValue = DreamMood | '';
@@ -56,10 +56,16 @@ export default function Profile() {
   const { user, profile, isLoading: authLoading, signOut } = useAuth();
 
   const [isProfileLoading, setIsProfileLoading] = useState(false);
+  const [isPasswordLoading, setIsPasswordLoading] = useState(false);
+  const [showPasswordFields, setShowPasswordFields] = useState(false);
   const [formData, setFormData] = useState({
     fullName: '',
     username: '',
     bio: '',
+  });
+  const [passwordForm, setPasswordForm] = useState({
+    newPassword: '',
+    confirmPassword: '',
   });
 
   const [favorites, setFavorites] = useState<(Favorite & { dreams: Dream })[]>([]);
@@ -290,7 +296,7 @@ export default function Profile() {
         });
       }
 
-      toast.success(t('profile.profileUpdated'));
+      notify.success(t('profile.profileUpdated'));
     } catch (err: unknown) {
       // Daha anlasilir hata mesajlari (Supabase/Postgres hata kodlari)
       let message = t('profile.profileUpdateError');
@@ -303,9 +309,40 @@ export default function Profile() {
       } else if (error instanceof Error) {
         message = error.message;
       }
-      toast.error(message);
+      notify.error(message);
     } finally {
       setIsProfileLoading(false);
+    }
+  };
+
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const password = passwordForm.newPassword.trim();
+    const confirmPassword = passwordForm.confirmPassword.trim();
+
+    if (password.length < 6) {
+      notify.error('Şifre en az 6 karakter olmalıdır');
+      return;
+    }
+    if (password !== confirmPassword) {
+      notify.error('Şifreler eşleşmiyor', {
+        description: 'Yeni şifrenizi iki alanda da aynı yazın.',
+      });
+      return;
+    }
+
+    setIsPasswordLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) throw error;
+      setPasswordForm({ newPassword: '', confirmPassword: '' });
+      notify.success('Şifreniz güncellendi', {
+        description: 'Bir sonraki girişinizde yeni şifrenizi kullanabilirsiniz.',
+      });
+    } catch (error) {
+      notify.error('Şifre güncellenemedi', { description: getErrorMessage(error) });
+    } finally {
+      setIsPasswordLoading(false);
     }
   };
 
@@ -313,10 +350,10 @@ export default function Profile() {
     try {
       const { error } = await supabase.from('favorites').delete().eq('id', id);
       if (error) throw error;
-      toast.success(t('profile.favoriteRemoved'));
+      notify.success(t('profile.favoriteRemoved'));
       setFavorites(favorites.filter(f => f.id !== id));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : t('favorites.error'));
+      notify.error(error instanceof Error ? error.message : t('favorites.error'));
     }
   };
 
@@ -326,10 +363,10 @@ export default function Profile() {
     try {
       const { error } = await supabase.from('view_history').delete().eq('user_id', user!.id);
       if (error) throw error;
-      toast.success(t('profile.historyCleared'));
+      notify.success(t('profile.historyCleared'));
       setHistory([]);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : t('favorites.error'));
+      notify.error(error instanceof Error ? error.message : t('favorites.error'));
     }
   };
 
@@ -339,7 +376,7 @@ export default function Profile() {
       if (error) throw error;
       setHistory(history.filter(h => h.id !== id));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : t('favorites.error'));
+      notify.error(error instanceof Error ? error.message : t('favorites.error'));
     }
   };
 
@@ -362,11 +399,11 @@ export default function Profile() {
           .update(entryData)
           .eq('id', selectedEntry.id);
         if (error) throw error;
-        toast.success(t('profile.journalUpdated'));
+        notify.success(t('profile.journalUpdated'));
       } else {
         const { error } = await supabase.from('dream_journal').insert(entryData);
         if (error) throw error;
-        toast.success(t('profile.journalAdded'));
+        notify.success(t('profile.journalAdded'));
       }
 
       setIsJournalDialogOpen(false);
@@ -374,7 +411,7 @@ export default function Profile() {
       setJournalForm({ title: '', content: '', dream_date: new Date().toISOString().split('T')[0], mood: '', tags: '' });
       fetchEntries();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : t('favorites.error'));
+      notify.error(error instanceof Error ? error.message : t('favorites.error'));
     }
   };
 
@@ -396,10 +433,10 @@ export default function Profile() {
     try {
       const { error } = await supabase.from('dream_journal').delete().eq('id', id);
       if (error) throw error;
-      toast.success(t('profile.journalDeleted'));
+      notify.success(t('profile.journalDeleted'));
       setEntries(entries.filter(e => e.id !== id));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : t('favorites.error'));
+      notify.error(error instanceof Error ? error.message : t('favorites.error'));
     }
   };
 
@@ -793,6 +830,74 @@ export default function Profile() {
                         >
                           <Save className="h-4 w-4 mr-2" />
                           {isProfileLoading ? t('profile.saving') : t('profile.saveChanges')}
+                        </Button>
+                      </div>
+                    </form>
+
+                    <form onSubmit={handlePasswordSubmit} className="mt-8 pt-6 border-t border-border/60 space-y-5">
+                      <div className="flex items-center gap-3">
+                        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-md">
+                          <ShieldCheck className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <h2 className="text-lg font-serif-dream font-bold">Şifre ve Güvenlik</h2>
+                          <p className="text-sm text-muted-foreground">Hesabınızın giriş şifresini güvenli şekilde güncelleyin.</p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div className="space-y-2">
+                          <Label htmlFor="newPassword" className="text-sm font-medium">Yeni Şifre</Label>
+                          <div className="relative">
+                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                            <Input
+                              id="newPassword"
+                              type={showPasswordFields ? 'text' : 'password'}
+                              value={passwordForm.newPassword}
+                              onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                              className="pl-11 pr-11 h-11 rounded-xl border-border/60"
+                              placeholder="En az 6 karakter"
+                              autoComplete="new-password"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowPasswordFields((show) => !show)}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                              aria-label={showPasswordFields ? 'Şifreyi gizle' : 'Şifreyi göster'}
+                            >
+                              {showPasswordFields ? <EyeOff className="h-4 w-4 mx-auto" /> : <Eye className="h-4 w-4 mx-auto" />}
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="confirmPassword" className="text-sm font-medium">Yeni Şifre Tekrar</Label>
+                          <div className="relative">
+                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                            <Input
+                              id="confirmPassword"
+                              type={showPasswordFields ? 'text' : 'password'}
+                              value={passwordForm.confirmPassword}
+                              onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                              className="pl-11 h-11 rounded-xl border-border/60"
+                              placeholder="Yeni şifreyi tekrar yazın"
+                              autoComplete="new-password"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-muted/40 border border-border/60 p-4">
+                        <p className="text-xs text-muted-foreground max-w-xl">
+                          Şifre değişikliği mevcut oturumunuzu korur. Güvenlik için yeni şifrenizi başka sitelerde kullanmadığınız bir şifre olarak seçin.
+                        </p>
+                        <Button
+                          type="submit"
+                          disabled={isPasswordLoading || !passwordForm.newPassword || !passwordForm.confirmPassword}
+                          className="rounded-xl h-10 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white"
+                        >
+                          <ShieldCheck className="h-4 w-4 mr-2" />
+                          {isPasswordLoading ? 'Güncelleniyor...' : 'Şifreyi Güncelle'}
                         </Button>
                       </div>
                     </form>
