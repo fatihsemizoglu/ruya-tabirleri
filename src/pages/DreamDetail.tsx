@@ -145,6 +145,24 @@ function removeTrailingTitleRepeat(lines: string[], title: string): string[] {
   return lines;
 }
 
+function removeTrailingTitleSentence(line: string, title: string): string {
+  const titleToken = normalizeTitleToken(title);
+  if (!titleToken) return line;
+
+  const sentences = line.match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.map((part) => part.trim()).filter(Boolean) ?? [line];
+  if (sentences.length < 2) return line;
+
+  const lastSentence = sentences[sentences.length - 1];
+  const lastToken = normalizeTitleToken(lastSentence);
+  const lastWordCount = lastToken.split(' ').filter(Boolean).length;
+
+  if (lastWordCount <= 5 && (lastToken === titleToken || titleToken.endsWith(lastToken) || lastToken.endsWith(titleToken))) {
+    return sentences.slice(0, -1).join(' ').trim();
+  }
+
+  return line;
+}
+
 function formatPlainDreamContent(content: string, title: string): string {
   const normalized = content
     .replace(/\r\n/g, '\n')
@@ -163,7 +181,9 @@ function formatPlainDreamContent(content: string, title: string): string {
 
   const sections = lines.flatMap(splitInlineHeadings);
 
-  const html = sections.map((line) => {
+  const html = sections.map((section) => {
+    const line = removeTrailingTitleSentence(section, title);
+    if (!line) return '';
     const clean = escapeHtml(line.replace(/[:：]$/, ''));
     if (looksLikeHeading(line)) {
       return `<h3>${clean}</h3>`;
@@ -175,7 +195,7 @@ function formatPlainDreamContent(content: string, title: string): string {
       return [`<h3>${heading}</h3>`, paragraph ? `<p>${paragraph}</p>` : ''].filter(Boolean).join('\n');
     }
     return `<p>${clean}</p>`;
-  }).join('\n');
+  }).filter(Boolean).join('\n');
 
   return sanitizeHtml(html);
 }
