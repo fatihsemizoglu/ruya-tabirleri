@@ -276,7 +276,7 @@ export default function Search() {
     return categories.find(c => c.id === categoryId)?.name || '';
   };
 
-  const getCategoryIcon = (categoryId: string) => {
+  const getCategoryIconValue = (categoryId: string) => {
     return categories.find(c => c.id === categoryId)?.icon || '📖';
   };
 
@@ -481,7 +481,8 @@ export default function Search() {
                           <div className="flex items-start justify-between mb-3">
                             {dream.category_id && (
                               <Badge variant="secondary">
-                                {getCategoryIcon(dream.category_id)} {getCategoryName(dream.category_id)}
+                                <CategoryIcon icon={getCategoryIconValue(dream.category_id)} className="h-3.5 w-3.5" />
+                                {getCategoryName(dream.category_id)}
                               </Badge>
                             )}
                             {index < 3 && (
@@ -502,7 +503,8 @@ export default function Search() {
                             <div className="flex items-center gap-3 text-sm text-muted-foreground">
                               {dream.category_id && (
                                 <Badge variant="outline" className="text-xs">
-                                  {getCategoryIcon(dream.category_id)} {getCategoryName(dream.category_id)}
+                                  <CategoryIcon icon={getCategoryIconValue(dream.category_id)} className="h-3.5 w-3.5" />
+                                  {getCategoryName(dream.category_id)}
                                 </Badge>
                               )}
                               <span className="flex items-center gap-1">
@@ -537,7 +539,8 @@ export default function Search() {
                                 )}
                                 {dream.category_id && (
                                   <Badge variant="secondary">
-                                    {getCategoryIcon(dream.category_id)} {getCategoryName(dream.category_id)}
+                                    <CategoryIcon icon={getCategoryIconValue(dream.category_id)} className="h-3.5 w-3.5" />
+                                    {getCategoryName(dream.category_id)}
                                   </Badge>
                                 )}
                               </div>

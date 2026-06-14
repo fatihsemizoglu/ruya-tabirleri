@@ -118,7 +118,7 @@
 
 @layer components {
   .surface {
-    @apply bg-card rounded-2xl border border-border/60;
+    @apply rounded-2xl border border-border/45 bg-card/95 text-card-foreground backdrop-blur-xl;
     box-shadow: var(--shadow-sm);
   }
 
@@ -127,19 +127,37 @@
   }
 
   .admin-panel-surface {
-    @apply rounded-2xl border border-border/70 bg-card text-card-foreground shadow-xl;
+    @apply rounded-2xl border border-border/45 bg-card/90 text-card-foreground shadow-xl backdrop-blur-xl;
+    box-shadow: 0 24px 80px -40px hsl(var(--primary) / 0.28);
   }
 
   .admin-list-surface {
-    @apply rounded-2xl border border-border/70 bg-card text-card-foreground shadow-sm transition-all duration-200 hover:border-primary/35 hover:shadow-md;
+    @apply rounded-2xl border border-border/45 bg-card/85 text-card-foreground shadow-sm backdrop-blur-xl transition-all duration-200 hover:border-primary/30 hover:bg-card hover:shadow-md;
   }
 
   .admin-filter-surface {
-    @apply rounded-xl border border-border/70 bg-muted/45 text-foreground;
+    @apply rounded-xl border border-border/45 bg-muted/35 text-foreground backdrop-blur-xl;
   }
 
   .admin-muted-row {
-    @apply rounded-xl border border-border/60 bg-muted/45 text-xs font-bold uppercase text-muted-foreground;
+    @apply rounded-xl border border-border/45 bg-muted/35 text-xs font-bold uppercase text-muted-foreground;
+  }
+
+  .dark .surface,
+  .dark .admin-panel-surface,
+  .dark .admin-list-surface,
+  .dark .admin-filter-surface,
+  .dark .admin-muted-row {
+    @apply border-white/10;
+  }
+
+  .app-toast-surface {
+    @apply rounded-2xl border border-border/45 bg-card/95 text-card-foreground shadow-2xl backdrop-blur-xl;
+    box-shadow: 0 24px 80px -40px hsl(var(--primary) / 0.35);
+  }
+
+  .dark .app-toast-surface {
+    @apply border-white/10 bg-slate-950/90;
   }
 
   /* Off-screen performance: skip rendering work for content far below the fold.

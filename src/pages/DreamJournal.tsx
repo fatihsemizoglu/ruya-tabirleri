@@ -256,13 +256,13 @@ export default function DreamJournal() {
                 Yeni Rüya Ekle
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-lg">
+            <DialogContent className="sm:max-w-lg rounded-2xl border-border/45 bg-card text-card-foreground shadow-2xl dark:border-white/10 dark:bg-slate-950">
               <DialogHeader>
                 <DialogTitle>
                   {selectedEntry ? 'Rüyayı Düzenle' : 'Yeni Rüya Ekle'}
                 </DialogTitle>
               </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4 text-foreground">
                 <div className="space-y-2">
                   <Label htmlFor="title">Başlık</Label>
                   <Input

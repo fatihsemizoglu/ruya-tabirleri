@@ -834,7 +834,7 @@ export default function Profile() {
                       </div>
                     </form>
 
-                    <form onSubmit={handlePasswordSubmit} className="mt-8 pt-6 border-t border-border/60 space-y-5">
+                    <form onSubmit={handlePasswordSubmit} className="mt-8 pt-6 border-t border-border/45 space-y-5">
                       <div className="flex items-center gap-3">
                         <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-md">
                           <ShieldCheck className="w-5 h-5 text-white" />
@@ -887,7 +887,7 @@ export default function Profile() {
                         </div>
                       </div>
 
-                      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-muted/40 border border-border/60 p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/45 bg-muted/30 p-4 dark:border-white/10">
                         <p className="text-xs text-muted-foreground max-w-xl">
                           Şifre değişikliği mevcut oturumunuzu korur. Güvenlik için yeni şifrenizi başka sitelerde kullanmadığınız bir şifre olarak seçin.
                         </p>
@@ -1157,13 +1157,13 @@ export default function Profile() {
                       {t('profile.newJournalBtn')}
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-lg rounded-2xl">
+                  <DialogContent className="sm:max-w-lg rounded-2xl border-border/45 bg-card text-card-foreground shadow-2xl dark:border-white/10 dark:bg-slate-950">
                     <DialogHeader>
                       <DialogTitle className="text-xl font-serif-dream">
                         {selectedEntry ? t('profile.editJournalTitle') : t('profile.newJournalTitle')}
                       </DialogTitle>
                     </DialogHeader>
-                    <form onSubmit={handleJournalSubmit} className="space-y-4">
+                    <form onSubmit={handleJournalSubmit} className="space-y-4 text-foreground">
                       <div className="space-y-2">
                         <Label>{t('profile.titleLabel')}</Label>
                         <Input
@@ -1226,7 +1226,7 @@ export default function Profile() {
                       </div>
                       <div className="flex justify-end gap-2 pt-2">
                         <Button type="button" variant="outline" onClick={() => setIsJournalDialogOpen(false)} className="rounded-xl">
-                          {t('favorites.cancelBtn')}
+                          İptal
                         </Button>
                         <Button type="submit" className="rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white">
                           {selectedEntry ? t('profile.update') : t('profile.save')}

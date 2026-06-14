@@ -30,6 +30,5 @@ export function CategoryIcon({ icon, className = 'text-base leading-none', fallb
     return <LucideIcon className={className.replace('text-base', 'h-4 w-4').replace('leading-none', '')} />;
   }
 
-  // Fallback: render as text (might be an emoji not caught by regex)
-  return <span className={className}>{icon}</span>;
+  return <span className={className}>{fallback}</span>;
 }

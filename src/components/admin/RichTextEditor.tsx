@@ -135,9 +135,9 @@ export function RichTextEditor({ content, onChange, placeholder = 'İçerik yaz�
       aria-label={ariaLabel || title}
       className={cn(
         "p-2 rounded-md transition-colors",
-        isActive 
-          ? "bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300" 
-          : "hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400",
+        isActive
+          ? "bg-primary/10 text-primary"
+          : "text-muted-foreground hover:bg-muted/70 hover:text-foreground",
         disabled && "opacity-50 cursor-not-allowed"
       )}
     >
@@ -147,9 +147,8 @@ export function RichTextEditor({ content, onChange, placeholder = 'İçerik yaz�
 
   return (
     <>
-      <div className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
-        {/* Toolbar — sticky so it stays visible while scrolling long content */}
-        <div className="sticky top-0 z-10 flex flex-wrap items-center gap-0.5 p-2 bg-slate-50 dark:bg-slate-800/95 backdrop-blur-sm border-b border-slate-200 dark:border-slate-700">
+      <div className="overflow-visible rounded-2xl border border-border/45 bg-card/90 text-card-foreground shadow-sm dark:border-white/10">
+        <div className="sticky top-16 z-20 flex flex-wrap items-center gap-0.5 rounded-t-2xl border-b border-border/45 bg-card/95 p-2 backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/95">
           {/* History */}
           <ToolbarButton
             onClick={() => editor.chain().focus().undo().run()}
@@ -328,7 +327,7 @@ export function RichTextEditor({ content, onChange, placeholder = 'İçerik yaz�
         </div>
 
         {/* Editor Content */}
-        <EditorContent editor={editor} className="bg-white dark:bg-slate-900" />
+        <EditorContent editor={editor} className="rounded-b-2xl bg-background/80 dark:bg-slate-950/40" />
       </div>
 
       {/* Link / Image Dialog */}
@@ -336,7 +335,7 @@ export function RichTextEditor({ content, onChange, placeholder = 'İçerik yaz�
         open={dialog.type !== null}
         onOpenChange={(open) => !open && setDialog({ type: null, value: '' })}
       >
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md rounded-2xl border-border/45 bg-card text-card-foreground dark:border-white/10 dark:bg-slate-950">
           <DialogHeader>
             <DialogTitle>
               {dialog.type === 'link' ? 'Link Ekle' : 'Görsel Ekle'}
