@@ -60,6 +60,7 @@ export function useVoiceSearch(options: UseVoiceSearchOptions = {}): UseVoiceSea
   const Ctor = getSpeechRecognitionCtor();
 
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const finalTranscriptRef = useRef('');
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -78,6 +79,7 @@ export function useVoiceSearch(options: UseVoiceSearchOptions = {}): UseVoiceSea
   }, []);
 
   const reset = useCallback(() => {
+    finalTranscriptRef.current = '';
     setTranscript('');
     setError(null);
   }, []);
@@ -85,6 +87,7 @@ export function useVoiceSearch(options: UseVoiceSearchOptions = {}): UseVoiceSea
   const start = useCallback(() => {
     if (!Ctor) return;
     setError(null);
+    finalTranscriptRef.current = '';
     setTranscript('');
 
     const recognition = new Ctor();
@@ -102,7 +105,10 @@ export function useVoiceSearch(options: UseVoiceSearchOptions = {}): UseVoiceSea
         if (result.isFinal) final += text;
         else interim += text;
       }
-      const text = (final || interim).trim();
+      if (final) {
+        finalTranscriptRef.current = `${finalTranscriptRef.current} ${final}`.trim();
+      }
+      const text = `${finalTranscriptRef.current} ${interim}`.trim();
       setTranscript(text);
       onResult?.(text, !!final);
     };

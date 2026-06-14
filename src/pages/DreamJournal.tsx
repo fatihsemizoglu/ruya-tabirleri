@@ -40,30 +40,33 @@ export default function DreamJournal() {
     tags: '',
   });
   const [voiceDraft, setVoiceDraft] = useState('');
-  const [lastCommittedVoiceText, setLastCommittedVoiceText] = useState('');
+  const [voiceBaseContent, setVoiceBaseContent] = useState<string | null>(null);
 
-  const appendVoiceText = useCallback((text: string) => {
+  const applyVoiceText = useCallback((text: string, isFinal: boolean) => {
     const cleanText = text.trim();
     if (!cleanText) return;
     setVoiceDraft(cleanText);
-    setLastCommittedVoiceText(cleanText);
     setFormData((current) => {
-      const content = current.content.trim();
-      if (content.endsWith(cleanText)) return current;
+      const baseContent = voiceBaseContent ?? current.content;
+      const content = baseContent.trim();
       const suggestedTitle = cleanText.split(/\s+/).slice(0, 6).join(' ') || 'Sesli Rüya';
+      const nextContent = `${content ? `${content}\n\n` : ''}${cleanText}`;
       return {
         ...current,
         title: current.title.trim() ? current.title : suggestedTitle,
-        content: `${content ? `${content}\n\n` : ''}${cleanText}`,
+        content: nextContent,
       };
     });
-  }, []);
+    if (isFinal) {
+      setVoiceBaseContent(null);
+      setVoiceDraft('');
+    }
+  }, [voiceBaseContent]);
 
   const voice = useVoiceSearch({
     continuous: true,
     onResult: (text, isFinal) => {
-      setVoiceDraft(text);
-      if (isFinal) appendVoiceText(text);
+      applyVoiceText(text, isFinal);
     },
     onError: (error) => {
       const message = error === 'not-allowed' || error === 'service-not-allowed'
@@ -74,10 +77,6 @@ export default function DreamJournal() {
       notify.error(message);
     },
   });
-  const displayedContent = voice.isListening && voiceDraft && voiceDraft !== lastCommittedVoiceText
-    ? `${formData.content}${formData.content ? '\n\n' : ''}${voiceDraft}`
-    : formData.content;
-
   const fetchEntries = useCallback(async () => {
     try {
       const { data, error } = await supabase
@@ -103,15 +102,11 @@ export default function DreamJournal() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const contentToSave = voiceDraft && voiceDraft !== lastCommittedVoiceText
-      ? `${formData.content.trim()}${formData.content.trim() ? '\n\n' : ''}${voiceDraft.trim()}`
-      : formData.content;
-    
     try {
       const entryData = {
         user_id: user!.id,
         title: formData.title,
-        content: contentToSave,
+        content: formData.content,
         dream_date: formData.dream_date,
         mood: formData.mood || null,
         tags: formData.tags ? formData.tags.split(',').map(t => t.trim()) : [],
@@ -138,7 +133,7 @@ export default function DreamJournal() {
       voice.stop();
       voice.reset();
       setVoiceDraft('');
-      setLastCommittedVoiceText('');
+      setVoiceBaseContent(null);
       setSelectedEntry(null);
       setFormData({ title: '', content: '', dream_date: new Date().toISOString().split('T')[0], mood: '', tags: '' });
       fetchEntries();
@@ -180,7 +175,7 @@ export default function DreamJournal() {
     voice.stop();
     voice.reset();
     setVoiceDraft('');
-    setLastCommittedVoiceText('');
+    setVoiceBaseContent(null);
     setSelectedEntry(null);
     setFormData({ title: '', content: '', dream_date: new Date().toISOString().split('T')[0], mood: '', tags: '' });
   };
@@ -193,14 +188,13 @@ export default function DreamJournal() {
       return;
     }
     if (voice.isListening) {
-      if (voiceDraft && voiceDraft !== lastCommittedVoiceText) {
-        appendVoiceText(voiceDraft);
-      }
       voice.stop();
+      setVoiceBaseContent(null);
+      setVoiceDraft('');
       return;
     }
     setVoiceDraft('');
-    setLastCommittedVoiceText('');
+    setVoiceBaseContent(formData.content);
     voice.start();
   };
 
@@ -208,7 +202,7 @@ export default function DreamJournal() {
     setSelectedEntry(null);
     setFormData({ title: '', content: '', dream_date: new Date().toISOString().split('T')[0], mood: '', tags: '' });
     setVoiceDraft('');
-    setLastCommittedVoiceText('');
+    setVoiceBaseContent('');
     setIsDialogOpen(true);
     window.setTimeout(() => {
       if (voice.isSupported) {
@@ -358,8 +352,11 @@ export default function DreamJournal() {
                   </div>
                   <Textarea
                     id="content"
-                    value={displayedContent}
-                    onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                    value={formData.content}
+                    onChange={(e) => {
+                      setFormData({ ...formData, content: e.target.value });
+                      if (!voice.isListening) setVoiceBaseContent(null);
+                    }}
                     placeholder="Rüyanızı detaylı bir şekilde anlatın..."
                     rows={5}
                     required
