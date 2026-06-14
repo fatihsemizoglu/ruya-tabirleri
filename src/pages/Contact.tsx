@@ -232,7 +232,9 @@ export default function Contact() {
         description="Rüya Tabirleri ile iletişime geçin. Sorularınız, önerileriniz ve geri bildirimleriniz için bize ulaşın."
         path="/iletisim"
       />
-      <div className="relative">
+      <div className="relative overflow-hidden bg-mesh">
+        <div className="absolute -top-44 right-0 h-96 w-96 rounded-full bg-primary/10 blur-3xl" />
+        <div className="absolute top-[520px] -left-40 h-96 w-96 rounded-full bg-fuchsia-500/10 blur-3xl" />
         <PremiumBackground variant="soft" className="h-[460px]" />
         <div className="container py-12 md:py-20 relative">
           {/* Hero */}
