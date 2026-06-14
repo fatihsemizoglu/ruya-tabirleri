@@ -2,15 +2,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { AnimatePresence } from "framer-motion";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import { HelmetProvider } from "react-helmet-async";
 import * as Sentry from "@sentry/react";
 import { AuthProvider } from "@/contexts/AuthProvider";
-import { CommandPalette } from "@/components/ui/command-palette";
-import { OnboardingTour } from "@/components/onboarding/OnboardingTour";
-import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { OfflineIndicator } from "@/components/pwa/OfflineIndicator";
 import { MaintenanceModeGuard } from "@/components/layout/MaintenanceModeGuard";
 import { WebVitals } from "@/components/perf/WebVitals";
@@ -44,6 +40,9 @@ const Install = lazy(() => import("./pages/Install"));
 const SubscriptionVerify = lazy(() => import("./pages/SubscriptionVerify"));
 const SubscriptionCancel = lazy(() => import("./pages/SubscriptionCancel"));
 const DreamInterpret = lazy(() => import("./pages/DreamInterpret"));
+const CommandPalette = lazy(() => import("@/components/ui/command-palette").then((mod) => ({ default: mod.CommandPalette })));
+const OnboardingTour = lazy(() => import("@/components/onboarding/OnboardingTour").then((mod) => ({ default: mod.OnboardingTour })));
+const InstallPrompt = lazy(() => import("@/components/pwa/InstallPrompt").then((mod) => ({ default: mod.InstallPrompt })));
 
 import { queryClient } from "@/lib/query/client";
 
@@ -58,12 +57,9 @@ const PageLoader = () => (
 );
 
 function AnimatedRoutes() {
-  const location = useLocation();
-
   return (
-    <AnimatePresence mode="wait">
-      <Suspense fallback={<PageLoader />} key={location.pathname}>
-        <Routes location={location}>
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/ruya-yorumlat" element={<DreamInterpret />} />
           <Route path="/giris" element={<Auth mode="login" />} />
@@ -95,7 +91,6 @@ function AnimatedRoutes() {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
-    </AnimatePresence>
   );
 }
 
@@ -110,9 +105,11 @@ const App = () => {
               <Toaster />
               <Sonner />
               <OfflineIndicator />
-              <CommandPalette />
-              <OnboardingTour />
-              <InstallPrompt />
+              <Suspense fallback={null}>
+                <CommandPalette />
+                <OnboardingTour />
+                <InstallPrompt />
+              </Suspense>
               <MaintenanceModeGuard>
                 <AnimatedRoutes />
               </MaintenanceModeGuard>

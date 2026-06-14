@@ -3,7 +3,6 @@ import { Fragment } from 'react';
 import { Home, Compass, Heart, User, BookOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
-import { motion } from 'framer-motion';
 
 interface NavItem {
   to: string;
@@ -84,10 +83,8 @@ export function MobileBottomNav() {
                       )}
                     >
                       {active && (
-                        <motion.span
-                          layoutId="bottomNavIndicator"
+                        <span
                           className="absolute inset-0 rounded-2xl border border-primary/15 bg-primary/10 dark:bg-primary/15"
-                          transition={{ type: 'spring', stiffness: 400, damping: 32 }}
                         />
                       )}
                       <span className={cn(

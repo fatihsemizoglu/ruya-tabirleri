@@ -9,6 +9,8 @@ export function BackToTop() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
+    if (!window.matchMedia('(min-width: 1024px)').matches) return;
+
     let ticking = false;
     const onScroll = () => {
       if (ticking) return;

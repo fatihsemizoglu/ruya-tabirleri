@@ -25,7 +25,7 @@ export function Layout({
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground relative overflow-x-hidden">
       {backgroundVariant !== 'none' && (
-        <div className="fixed inset-0 z-0">
+        <div className="fixed inset-0 z-0 hidden md:block">
           <PremiumBackground variant={backgroundVariant} />
         </div>
       )}
