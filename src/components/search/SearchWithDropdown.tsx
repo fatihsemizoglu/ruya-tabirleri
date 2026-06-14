@@ -172,12 +172,51 @@ export function SearchWithDropdown({
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const findExactDream = useCallback(async (searchQuery: string): Promise<Suggestion | null> => {
+    const normalizedQuery = searchQuery.trim().toLocaleLowerCase('tr-TR');
+    const localMatch = suggestions.find(
+      suggestion => suggestion.title.trim().toLocaleLowerCase('tr-TR') === normalizedQuery
+    );
+    if (localMatch) return localMatch;
+
+    try {
+      const { data, error } = await supabase
+        .from('dreams')
+        .select(`
+          id,
+          title,
+          slug,
+          view_count,
+          categories:category_id (name)
+        `)
+        .eq('is_published', true)
+        .ilike('title', searchQuery.trim())
+        .order('view_count', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error || !data) return null;
+      return {
+        id: data.id,
+        title: data.title,
+        slug: data.slug,
+        view_count: data.view_count,
+        category_name: (data.categories as { name?: string })?.name || undefined,
+      };
+    } catch (error) {
+      console.error('Exact dream lookup error:', error);
+      return null;
+    }
+  }, [suggestions]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (query.trim()) {
-      saveRecentSearch(query.trim());
-      logSearch(query.trim(), suggestions.length);
-      navigate(`/ara?q=${encodeURIComponent(query.trim())}`);
+    const searchQuery = query.trim();
+    if (searchQuery) {
+      saveRecentSearch(searchQuery);
+      logSearch(searchQuery, suggestions.length);
+      const exactDream = await findExactDream(searchQuery);
+      navigate(exactDream ? `/ruya/${exactDream.slug}` : `/ara?q=${encodeURIComponent(searchQuery)}`);
       setQuery('');
       setShowDropdown(false);
       onSearchSubmit?.();

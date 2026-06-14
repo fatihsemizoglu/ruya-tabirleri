@@ -504,7 +504,7 @@ export function MediaLibrary() {
                             <Eye className="h-4 w-4 mr-2" />
                             Önizle
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => window.open(file.url, '_blank')}>
+                          <DropdownMenuItem onClick={() => window.open(file.url, '_blank', 'noopener,noreferrer')}>
                             <Download className="h-4 w-4 mr-2" />
                             İndir
                           </DropdownMenuItem>
@@ -556,7 +556,7 @@ export function MediaLibrary() {
               <Copy className="h-4 w-4 mr-2" />
               URL Kopyala
             </Button>
-            <Button onClick={() => window.open(previewFile?.url, '_blank')}>
+            <Button onClick={() => window.open(previewFile?.url, '_blank', 'noopener,noreferrer')}>
               <Download className="h-4 w-4 mr-2" />
               İndir
             </Button>

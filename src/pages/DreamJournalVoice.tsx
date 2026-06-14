@@ -35,8 +35,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { getErrorMessage, notify } from '@/lib/notify';
 import {
   savePendingDream,
   getPendingDreams,
@@ -57,7 +57,6 @@ const MOOD_LABELS: Record<string, { emoji: string; label: string }> = {
 
 export default function DreamJournalVoice() {
   const { user, isLoading: authLoading } = useAuth();
-  const { toast } = useToast();
   const [entries, setEntries] = useState<PendingVoiceDream[]>([]);
   const [pendingOffline, setPendingOffline] = useState<PendingVoiceDream[]>([]);
   const [search, setSearch] = useState('');
@@ -66,20 +65,6 @@ export default function DreamJournalVoice() {
   const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [showRecorder, setShowRecorder] = useState(false);
-
-  useEffect(() => {
-    const onOnline = () => {
-      setIsOnline(true);
-      handleSync();
-    };
-    const onOffline = () => setIsOnline(false);
-    window.addEventListener('online', onOnline);
-    window.addEventListener('offline', onOffline);
-    return () => {
-      window.removeEventListener('online', onOnline);
-      window.removeEventListener('offline', onOffline);
-    };
-  }, []);
 
   const loadEntries = useCallback(async () => {
     if (!user) return;
@@ -118,7 +103,9 @@ export default function DreamJournalVoice() {
 
   const handleSaveDream = async (data: { title: string; content: string; mood: string; audioBlob?: Blob }) => {
     if (!user) {
-      toast.error('Lütfen giriş yapın');
+      notify.error('Lütfen giriş yapın', {
+        description: 'Sesli rüya günlüğünü kullanmak için hesabınızla oturum açın.',
+      });
       return;
     }
 
@@ -134,7 +121,9 @@ export default function DreamJournalVoice() {
     if (!isOnline) {
       await savePendingDream(newDream);
       setPendingOffline(prev => [newDream, ...prev]);
-      toast.success('Çevrimdışı kaydedildi, online olunca senkronize edilecek');
+      notify.success('Çevrimdışı kaydedildi', {
+        description: 'İnternete bağlanınca otomatik senkronize edilecek.',
+      });
       setShowRecorder(false);
       return;
     }
@@ -148,17 +137,19 @@ export default function DreamJournalVoice() {
         dream_date: new Date().toISOString().split('T')[0],
       });
       if (error) throw error;
-      toast.success('Rüya kaydedildi');
+      notify.success('Rüya kaydedildi');
       setShowRecorder(false);
       loadEntries();
     } catch (err) {
       await savePendingDream(newDream);
       setPendingOffline(prev => [newDream, ...prev]);
-      toast.warning('Sunucuya ulaşılamadı, çevrimdışı kaydedildi');
+      notify.warning('Sunucuya ulaşılamadı', {
+        description: 'Rüya çevrimdışı kaydedildi ve bağlantı gelince eşitlenecek.',
+      });
     }
   };
 
-  const handleSync = async () => {
+  const handleSync = useCallback(async () => {
     if (!user || pendingOffline.length === 0) return;
     setIsSyncing(true);
     try {
@@ -172,25 +163,43 @@ export default function DreamJournalVoice() {
         });
         if (error) throw error;
       });
-      toast.success(`${synced} rüya senkronize edildi${failed > 0 ? `, ${failed} başarısız` : ''}`);
+      notify.success(`${synced} rüya senkronize edildi`, {
+        description: failed > 0 ? `${failed} kayıt eşitlenemedi.` : undefined,
+      });
       loadEntries();
       loadPending();
     } catch (err) {
-      toast.error('Senkronizasyon hatası');
+      notify.error('Senkronizasyon hatası', {
+        description: getErrorMessage(err),
+      });
     } finally {
       setIsSyncing(false);
     }
-  };
+  }, [loadEntries, loadPending, pendingOffline.length, user]);
+
+  useEffect(() => {
+    const onOnline = () => {
+      setIsOnline(true);
+      handleSync();
+    };
+    const onOffline = () => setIsOnline(false);
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onOffline);
+    return () => {
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('offline', onOffline);
+    };
+  }, [handleSync]);
 
   const handleDelete = async (id: string) => {
     if (!confirm('Bu rüyayı silmek istediğinize emin misiniz?')) return;
     const { error } = await supabase.from('dream_journal').delete().eq('id', id);
     if (error) {
-      toast.error('Silme hatası');
+      notify.error('Silme hatası', { description: error.message });
       return;
     }
     loadEntries();
-    toast.success('Rüya silindi');
+    notify.success('Rüya silindi');
   };
 
   const handleExportJSON = () => {
@@ -201,7 +210,7 @@ export default function DreamJournalVoice() {
     a.download = `ruya-gunlugu-${format(new Date(), 'yyyy-MM-dd')}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success('JSON olarak indirildi');
+    notify.success('JSON olarak indirildi');
   };
 
   const handleExportPDF = () => {
@@ -236,10 +245,12 @@ export default function DreamJournalVoice() {
           text: `${entry.title}\n\n${entry.content}`,
           url: window.location.href,
         });
-      } catch {}
+      } catch (_error) {
+        // User cancelled or share target failed; no UI action needed.
+      }
     } else {
       await navigator.clipboard.writeText(`${entry.title}\n\n${entry.content}`);
-      toast.success('Panoya kopyalandı');
+      notify.success('Panoya kopyalandı');
     }
   };
 

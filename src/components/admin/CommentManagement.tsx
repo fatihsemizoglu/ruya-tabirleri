@@ -185,7 +185,7 @@ export function CommentManagement() {
 
       <AdminStatsCards stats={statsData} />
 
-      <div className="bg-white dark:bg-[#0b0f19]/60 rounded-2xl p-6 border border-slate-200/50 dark:border-slate-800/40 shadow-xl space-y-6">
+      <div className="admin-panel-surface p-6 space-y-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full md:w-auto">
             <TabsList className="bg-slate-100/80 dark:bg-slate-900/60 p-1 rounded-xl">
@@ -209,7 +209,7 @@ export function CommentManagement() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Yorum içeriği veya kullanıcı ara..."
-              className="bg-slate-50/50 dark:bg-slate-900/50 border-slate-200/60 dark:border-slate-800/40 rounded-xl"
+              className="admin-filter-surface"
             />
           </div>
         </div>
@@ -228,7 +228,7 @@ export function CommentManagement() {
           <SkeletonAdminRow count={4} />
         ) : filteredComments.length > 0 ? (
           <div className="space-y-4">
-            <div className="bg-slate-50 dark:bg-slate-900/40 border border-slate-200/40 dark:border-slate-800/20 rounded-xl px-4 py-2 flex items-center gap-3 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase select-none">
+            <div className="admin-muted-row px-4 py-2 flex items-center gap-3 select-none">
               <Checkbox
                 checked={selection.isAllSelected}
                 onCheckedChange={selection.toggleAll}
@@ -241,7 +241,7 @@ export function CommentManagement() {
               {filteredComments.map((comment) => (
                 <div 
                   key={comment.id} 
-                  className={`bg-white dark:bg-slate-900/10 border border-slate-200/60 dark:border-slate-800/40 rounded-2xl p-5 flex flex-col sm:flex-row justify-between gap-4 shadow-sm hover:shadow-md hover:border-slate-350 dark:hover:border-slate-700 transition-all duration-200 ${selection.isSelected(comment.id) ? 'bg-primary/5 border-primary/20' : ''}`}
+                  className={`admin-list-surface p-5 flex flex-col sm:flex-row justify-between gap-4 ${selection.isSelected(comment.id) ? 'bg-primary/10 border-primary/40' : ''}`}
                 >
                   <div className="flex items-start gap-4">
                     <Checkbox 
@@ -263,7 +263,7 @@ export function CommentManagement() {
                           <User className="w-3.5 h-3.5 opacity-60" />
                           {getUsername(comment)}
                         </span>
-                        <span className="text-slate-300 dark:text-slate-800">•</span>
+                        <span className="text-muted-foreground/50">•</span>
                         <span className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
                           <Calendar className="w-3.5 h-3.5 opacity-60" />
                           {formatDistanceToNow(new Date(comment.created_at), { 
@@ -283,6 +283,7 @@ export function CommentManagement() {
                         <Link 
                           to={`/ruya/${comment.dreams.slug}`}
                           target="_blank"
+                          rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
                         >
                           <ExternalLink className="w-3 h-3" />
@@ -316,7 +317,7 @@ export function CommentManagement() {
                     <button
                       onClick={() => handleDelete(comment.id)}
                       disabled={deleteMutation.isPending}
-                      className="flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-750 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                      className="flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
                     >
                       <Trash2 className="w-4 h-4" />
                       Sil

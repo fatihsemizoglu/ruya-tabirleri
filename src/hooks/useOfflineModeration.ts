@@ -33,13 +33,6 @@ export function useOfflineModeration() {
   const [isSyncing, setIsSyncing] = useState(false);
   const { toast } = useToast();
 
-  // Load pending actions on mount
-  useEffect(() => {
-    loadPendingActions();
-    window.addEventListener('online', syncPendingActions);
-    return () => window.removeEventListener('online', syncPendingActions);
-  }, []);
-
   const loadPendingActions = useCallback(async () => {
     try {
       const db = await openDB();
@@ -196,7 +189,14 @@ export function useOfflineModeration() {
     }
     
     setIsSyncing(false);
-  }, [pendingActions, isSyncing, toast]);
+  }, [pendingActions, isSyncing, toast, removeAction]);
+
+  // Load pending actions on mount and retry sync when the browser comes online.
+  useEffect(() => {
+    loadPendingActions();
+    window.addEventListener('online', syncPendingActions);
+    return () => window.removeEventListener('online', syncPendingActions);
+  }, [loadPendingActions, syncPendingActions]);
 
   const queueAction = useCallback(async (action: Omit<OfflineAction, 'id' | 'timestamp'>) => {
     const fullAction: OfflineAction = {

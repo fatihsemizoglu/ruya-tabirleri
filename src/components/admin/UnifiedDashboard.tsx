@@ -772,6 +772,7 @@ export function UnifiedDashboard({ onNavigate }: UnifiedDashboardProps) {
                   key={dream.id}
                   to={`/ruya/${dream.slug}`}
                   target="_blank"
+                  rel="noopener noreferrer"
                   className="group flex items-center gap-2.5 p-2 rounded-lg hover:bg-muted/50 transition-colors"
                 >
                   <span className={cn(
@@ -829,6 +830,7 @@ export function UnifiedDashboard({ onNavigate }: UnifiedDashboardProps) {
                   key={post.id}
                   to={`/blog/${post.slug}`}
                   target="_blank"
+                  rel="noopener noreferrer"
                   className="group flex items-center gap-2.5 p-2 rounded-lg hover:bg-muted/50 transition-colors"
                 >
                   <span className={cn(

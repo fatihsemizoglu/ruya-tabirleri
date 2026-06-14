@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Mail,
   Users,
@@ -37,7 +37,7 @@ import {
   DialogFooter,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { toast } from 'sonner';
+import { notify } from '@/lib/notify';
 import { format, subDays } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
@@ -226,15 +226,19 @@ export function SubscriberAdvanced() {
       queryClient.invalidateQueries({ queryKey: ['admin-drip-campaigns'] });
       setDialogOpen(false);
       setEditing(null);
-      toast.success('Kampanya kaydedildi');
+      notify.success('Kampanya kaydedildi', {
+        description: 'Drip kampanya listesi güncellendi.',
+      });
     },
-    onError: (err: Error) => toast.error(err.message),
+    onError: (err: Error) => notify.error('Kampanya kaydedilemedi', { description: err.message }),
   });
 
   const handleSave = () => {
     if (!editing) return;
     if (!editing.name) {
-      toast.error('Kampanya adı zorunlu');
+      notify.error('Kampanya adı zorunlu', {
+        description: 'Kampanyayı kaydetmeden önce bir ad girin.',
+      });
       return;
     }
     saveMutation.mutate(editing);
@@ -248,9 +252,9 @@ export function SubscriberAdvanced() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-drip-campaigns'] });
-      toast.success('Kampanya silindi');
+      notify.success('Kampanya silindi');
     },
-    onError: (err: Error) => toast.error(err.message),
+    onError: (err: Error) => notify.error('Kampanya silinemedi', { description: err.message }),
   });
 
   const handleDelete = (id: string) => {
@@ -272,7 +276,9 @@ export function SubscriberAdvanced() {
   };
 
   const handleSendNow = (campaign: DripCampaign) => {
-    toast.success(`${campaign.name}: ${campaign.enrolledCount} alıcıya e-posta gönderildi`);
+    notify.success('E-posta gönderimi başlatıldı', {
+      description: `${campaign.name}: ${campaign.enrolledCount} alıcı kuyruğa alındı.`,
+    });
   };
 
   const handleExport = () => {

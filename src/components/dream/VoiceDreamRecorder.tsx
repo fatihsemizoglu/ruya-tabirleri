@@ -20,8 +20,8 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { getErrorMessage, notify } from '@/lib/notify';
 
 type SpeechRecognitionResultLike = {
   isFinal: boolean;
@@ -85,7 +85,6 @@ const MOODS = [
 ];
 
 export function VoiceDreamRecorder({ onSave }: VoiceDreamRecorderProps) {
-  const { toast } = useToast();
   const [isSupported, setIsSupported] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -112,29 +111,37 @@ export function VoiceDreamRecorder({ onSave }: VoiceDreamRecorderProps) {
   const durationTimerRef = useRef<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  const stopAll = useCallback(() => {
+    try {
+      recognitionRef.current?.abort();
+    } catch (_error) {
+      // Ignore browser-specific abort failures during cleanup.
+    }
+    try {
+      mediaRecorderRef.current?.stop();
+    } catch (_error) {
+      // MediaRecorder may already be stopped.
+    }
+    try {
+      streamRef.current?.getTracks().forEach(t => t.stop());
+    } catch (_error) {
+      // Stream cleanup should not block component unmount.
+    }
+    if (animationRef.current) cancelAnimationFrame(animationRef.current);
+    if (durationTimerRef.current) window.clearInterval(durationTimerRef.current);
+    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+      audioContextRef.current.close().catch((_error) => {
+        // Ignore close failures from already-closed audio contexts.
+      });
+    }
+  }, []);
+
   useEffect(() => {
     setIsSupported(getSpeechRecognition() !== null);
     return () => {
       stopAll();
     };
-  }, []);
-
-  const stopAll = useCallback(() => {
-    try {
-      recognitionRef.current?.abort();
-    } catch {}
-    try {
-      mediaRecorderRef.current?.stop();
-    } catch {}
-    try {
-      streamRef.current?.getTracks().forEach(t => t.stop());
-    } catch {}
-    if (animationRef.current) cancelAnimationFrame(animationRef.current);
-    if (durationTimerRef.current) window.clearInterval(durationTimerRef.current);
-    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-      audioContextRef.current.close().catch(() => {});
-    }
-  }, []);
+  }, [stopAll]);
 
   const startWaveform = (stream: MediaStream) => {
     try {
@@ -165,7 +172,9 @@ export function VoiceDreamRecorder({ onSave }: VoiceDreamRecorderProps) {
 
   const startRecording = async () => {
     if (!isSupported) {
-      toast.error('Tarayıcınız ses tanımayı desteklemiyor');
+      notify.error('Tarayıcınız ses tanımayı desteklemiyor', {
+        description: 'Sesli rüya kaydı için Chrome, Edge veya uyumlu bir tarayıcı deneyin.',
+      });
       return;
     }
     try {
@@ -214,16 +223,22 @@ export function VoiceDreamRecorder({ onSave }: VoiceDreamRecorderProps) {
         recognition.onerror = (e) => {
           console.error('Speech recognition error:', e.error);
           if (e.error === 'not-allowed') {
-            toast.error('Mikrofon erişimi reddedildi');
+            notify.error('Mikrofon erişimi reddedildi', {
+              description: 'Tarayıcı izinlerinden mikrofon erişimini açın.',
+            });
           } else if (e.error === 'no-speech') {
-            toast.warning('Ses algılanmadı, tekrar deneyin');
+            notify.warning('Ses algılanmadı', {
+              description: 'Mikrofona biraz daha yakın konuşup tekrar deneyin.',
+            });
           }
         };
         recognition.onend = () => {
           if (isRecording && recognitionRef.current) {
             try {
               recognition.start();
-            } catch {}
+            } catch (_error) {
+              // Restart can fail if recognition is already active or unavailable.
+            }
           }
         };
         recognition.start();
@@ -237,25 +252,32 @@ export function VoiceDreamRecorder({ onSave }: VoiceDreamRecorderProps) {
         setDuration(d => d + 1);
       }, 1000);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Bilinmeyen hata';
-      toast.error('Mikrofon erişimi başarısız: ' + message);
+      notify.error('Mikrofon erişimi başarısız', {
+        description: getErrorMessage(err),
+      });
     }
   };
 
   const stopRecording = () => {
     try {
       recognitionRef.current?.stop();
-    } catch {}
+    } catch (_error) {
+      // Recognition may already be stopped.
+    }
     try {
       mediaRecorderRef.current?.stop();
-    } catch {}
+    } catch (_error) {
+      // MediaRecorder may already be stopped.
+    }
     streamRef.current?.getTracks().forEach(t => t.stop());
     if (animationRef.current) cancelAnimationFrame(animationRef.current);
     if (durationTimerRef.current) window.clearInterval(durationTimerRef.current);
     setIsRecording(false);
     setIsPaused(false);
     setWaveform(Array.from({ length: 60 }, () => 0));
-    toast.success('Kayıt tamamlandı');
+    notify.success('Kayıt tamamlandı', {
+      description: 'Metni düzenleyebilir, analiz edebilir veya günlüğünüze kaydedebilirsiniz.',
+    });
   };
 
   const playAudio = () => {
@@ -291,7 +313,7 @@ export function VoiceDreamRecorder({ onSave }: VoiceDreamRecorderProps) {
   const analyzeDream = async () => {
     const text = (transcript + ' ' + interim).trim();
     if (!text) {
-      toast.error('Önce rüyanızı kaydedin veya yazın');
+      notify.error('Önce rüyanızı kaydedin veya yazın');
       return;
     }
     setIsAnalyzing(true);
@@ -303,10 +325,13 @@ export function VoiceDreamRecorder({ onSave }: VoiceDreamRecorderProps) {
       if (error) throw error;
       setInterpretation(data);
       setShowResult(true);
-      toast.success('Rüya analizi tamamlandı');
+      notify.success('Rüya analizi tamamlandı', {
+        description: 'Yorum sonucu aşağıda görüntüleniyor.',
+      });
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Analiz başarısız';
-      toast.error('Analiz hatası: ' + message);
+      notify.error('Analiz hatası', {
+        description: getErrorMessage(err),
+      });
     } finally {
       setIsAnalyzing(false);
     }
@@ -315,7 +340,7 @@ export function VoiceDreamRecorder({ onSave }: VoiceDreamRecorderProps) {
   const handleSave = async () => {
     const text = (transcript + ' ' + interim).trim();
     if (!text) {
-      toast.error('Rüya içeriği boş olamaz');
+      notify.error('Rüya içeriği boş olamaz');
       return;
     }
     await onSave({

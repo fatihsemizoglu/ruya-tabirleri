@@ -46,7 +46,9 @@ function setCachedVariant(testId: string, variantId: string, userId: string) {
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(CACHE_PREFIX + testId, JSON.stringify({ variantId, userId }));
-  } catch {}
+  } catch (_error) {
+    // localStorage may be unavailable in private browsing or SSR-like contexts.
+  }
 }
 
 function generateUserId(): string {
@@ -116,7 +118,6 @@ export function useABTest(testId: string, options: UseABTestOptions = {}): UseAB
     } finally {
       setIsLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [testId, effectiveTestId, userId, enabled]);
 
   useEffect(() => {
@@ -179,7 +180,9 @@ export function useTrackTimeOnPage(testId: string, variantId: string, userId: st
             const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ab-test-manager`;
             navigator.sendBeacon(url, new Blob([body], { type: 'application/json' }));
             return;
-          } catch {}
+          } catch (_error) {
+            // Fall back to the normal invoke path below.
+          }
         }
         trackEventInternal(testId, variantId, userId, 'time_on_page', elapsed);
       }

@@ -56,7 +56,7 @@ import { tr } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { exportToCSV } from '@/lib/adminExport';
 
-export const XP_RULES = {
+const XP_RULES = {
   comment: 10,
   share: 5,
   dailyLogin: 2,

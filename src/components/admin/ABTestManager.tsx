@@ -361,7 +361,9 @@ export function ABTestManager() {
                               ...editing,
                               variants: editing.variants!.map((vv, i) => i === idx ? { ...vv, payload } : vv),
                             });
-                          } catch {}
+                          } catch (_error) {
+                            // Keep the previous payload while JSON is incomplete.
+                          }
                         }}
                         placeholder='{"title": "...", "cta": "..."}'
                         rows={3}
