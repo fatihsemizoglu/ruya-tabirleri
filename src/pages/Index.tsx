@@ -29,8 +29,8 @@ const Index = () => {
       <HeroSection />
       <FeaturedDreams />
       <CategoriesSection />
-      <ContactCTASection />
       <BlogSection />
+      <ContactCTASection />
     </Layout>
   );
 };

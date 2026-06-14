@@ -103,12 +103,15 @@ export default function DreamJournal() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const contentToSave = voiceDraft && voiceDraft !== lastCommittedVoiceText
+      ? `${formData.content.trim()}${formData.content.trim() ? '\n\n' : ''}${voiceDraft.trim()}`
+      : formData.content;
     
     try {
       const entryData = {
         user_id: user!.id,
         title: formData.title,
-        content: formData.content,
+        content: contentToSave,
         dream_date: formData.dream_date,
         mood: formData.mood || null,
         tags: formData.tags ? formData.tags.split(',').map(t => t.trim()) : [],
@@ -201,6 +204,23 @@ export default function DreamJournal() {
     voice.start();
   };
 
+  const openVoiceJournal = () => {
+    setSelectedEntry(null);
+    setFormData({ title: '', content: '', dream_date: new Date().toISOString().split('T')[0], mood: '', tags: '' });
+    setVoiceDraft('');
+    setLastCommittedVoiceText('');
+    setIsDialogOpen(true);
+    window.setTimeout(() => {
+      if (voice.isSupported) {
+        voice.start();
+      } else {
+        notify.error('Tarayıcınız sesli dikteyi desteklemiyor', {
+          description: 'Chrome, Edge veya Web Speech API destekleyen bir tarayıcı deneyin.',
+        });
+      }
+    }, 250);
+  };
+
   if (authLoading) {
     return (
       <Layout>
@@ -256,6 +276,11 @@ export default function DreamJournal() {
               Gördüğünüz rüyaları kaydedin ve zamanla analiz edin.
             </motion.p>
           </div>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button type="button" variant="outline" onClick={openVoiceJournal} className="rounded-xl">
+              <Mic className="mr-2 h-4 w-4" />
+              Mikrofonla Rüyanı Yaz
+            </Button>
           <Dialog open={isDialogOpen} onOpenChange={(open) => {
             setIsDialogOpen(open);
             if (!open) {
@@ -378,6 +403,7 @@ export default function DreamJournal() {
               </form>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
 
         {/* Entries */}
