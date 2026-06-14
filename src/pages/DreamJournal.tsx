@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Plus, Book, Calendar, Trash2, Edit, BookOpen, Mic, MicOff, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -40,14 +40,14 @@ export default function DreamJournal() {
     tags: '',
   });
   const [voiceDraft, setVoiceDraft] = useState('');
-  const [voiceBaseContent, setVoiceBaseContent] = useState<string | null>(null);
+  const voiceBaseContentRef = useRef<string | null>(null);
 
   const applyVoiceText = useCallback((text: string, isFinal: boolean) => {
     const cleanText = text.trim();
     if (!cleanText) return;
     setVoiceDraft(cleanText);
     setFormData((current) => {
-      const baseContent = voiceBaseContent ?? current.content;
+      const baseContent = voiceBaseContentRef.current ?? current.content;
       const content = baseContent.trim();
       const suggestedTitle = cleanText.split(/\s+/).slice(0, 6).join(' ') || 'Sesli Rüya';
       const nextContent = `${content ? `${content} ` : ''}${cleanText}`;
@@ -58,10 +58,10 @@ export default function DreamJournal() {
       };
     });
     if (isFinal) {
-      setVoiceBaseContent(null);
+      voiceBaseContentRef.current = null;
       setVoiceDraft('');
     }
-  }, [voiceBaseContent]);
+  }, []);
 
   const voice = useVoiceSearch({
     continuous: true,
@@ -133,7 +133,7 @@ export default function DreamJournal() {
       voice.stop();
       voice.reset();
       setVoiceDraft('');
-      setVoiceBaseContent(null);
+      voiceBaseContentRef.current = null;
       setSelectedEntry(null);
       setFormData({ title: '', content: '', dream_date: new Date().toISOString().split('T')[0], mood: '', tags: '' });
       fetchEntries();
@@ -175,7 +175,7 @@ export default function DreamJournal() {
     voice.stop();
     voice.reset();
     setVoiceDraft('');
-    setVoiceBaseContent(null);
+    voiceBaseContentRef.current = null;
     setSelectedEntry(null);
     setFormData({ title: '', content: '', dream_date: new Date().toISOString().split('T')[0], mood: '', tags: '' });
   };
@@ -189,12 +189,12 @@ export default function DreamJournal() {
     }
     if (voice.isListening) {
       voice.stop();
-      setVoiceBaseContent(null);
+      voiceBaseContentRef.current = null;
       setVoiceDraft('');
       return;
     }
     setVoiceDraft('');
-    setVoiceBaseContent(formData.content);
+    voiceBaseContentRef.current = formData.content;
     voice.start();
   };
 
@@ -202,7 +202,7 @@ export default function DreamJournal() {
     setSelectedEntry(null);
     setFormData({ title: '', content: '', dream_date: new Date().toISOString().split('T')[0], mood: '', tags: '' });
     setVoiceDraft('');
-    setVoiceBaseContent('');
+    voiceBaseContentRef.current = '';
     setIsDialogOpen(true);
     window.setTimeout(() => {
       if (voice.isSupported) {
@@ -355,7 +355,7 @@ export default function DreamJournal() {
                     value={formData.content}
                     onChange={(e) => {
                       setFormData({ ...formData, content: e.target.value });
-                      if (!voice.isListening) setVoiceBaseContent(null);
+                      if (!voice.isListening) voiceBaseContentRef.current = null;
                     }}
                     placeholder="Rüyanızı detaylı bir şekilde anlatın..."
                     rows={5}
@@ -461,10 +461,16 @@ export default function DreamJournal() {
             <p className="text-muted-foreground mb-6">
               İlk rüyanızı kaydetmeye başlayın ve rüya dünyanızı keşfedin.
             </p>
-            <Button onClick={() => setIsDialogOpen(true)} className="dream-gradient">
-              <Plus className="mr-2 h-4 w-4" />
-              İlk Rüyamı Ekle
-            </Button>
+            <div className="flex flex-col items-center justify-center gap-2 sm:flex-row">
+              <Button type="button" variant="outline" onClick={openVoiceJournal} className="rounded-xl">
+                <Mic className="mr-2 h-4 w-4" />
+                Mikrofonla Rüyanı Yaz
+              </Button>
+              <Button onClick={() => setIsDialogOpen(true)} className="dream-gradient">
+                <Plus className="mr-2 h-4 w-4" />
+                İlk Rüyamı Ekle
+              </Button>
+            </div>
           </div>
         )}
       </div>

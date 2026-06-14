@@ -30,6 +30,20 @@ function getSpeechRecognitionCtor(): (new () => SpeechRecognitionLike) | null {
   return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
 }
 
+function normalizeTranscript(value: string): string {
+  return value.replace(/\s+/g, ' ').trim();
+}
+
+function appendTranscriptSegment(current: string, segment: string): string {
+  const base = normalizeTranscript(current);
+  const next = normalizeTranscript(segment);
+  if (!next) return base;
+  if (!base) return next;
+  if (base === next || base.endsWith(next)) return base;
+  if (next.startsWith(base)) return next;
+  return `${base} ${next}`.trim();
+}
+
 interface UseVoiceSearchOptions {
   lang?: string;
   continuous?: boolean;
@@ -106,9 +120,9 @@ export function useVoiceSearch(options: UseVoiceSearchOptions = {}): UseVoiceSea
         else interim += text;
       }
       if (final) {
-        finalTranscriptRef.current = `${finalTranscriptRef.current} ${final}`.trim();
+        finalTranscriptRef.current = appendTranscriptSegment(finalTranscriptRef.current, final);
       }
-      const text = `${finalTranscriptRef.current} ${interim}`.trim();
+      const text = appendTranscriptSegment(finalTranscriptRef.current, interim);
       setTranscript(text);
       onResult?.(text, !!final);
     };
