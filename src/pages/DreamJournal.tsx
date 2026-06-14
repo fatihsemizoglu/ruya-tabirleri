@@ -50,7 +50,7 @@ export default function DreamJournal() {
       const baseContent = voiceBaseContent ?? current.content;
       const content = baseContent.trim();
       const suggestedTitle = cleanText.split(/\s+/).slice(0, 6).join(' ') || 'Sesli Rüya';
-      const nextContent = `${content ? `${content}\n\n` : ''}${cleanText}`;
+      const nextContent = `${content ? `${content} ` : ''}${cleanText}`;
       return {
         ...current,
         title: current.title.trim() ? current.title : suggestedTitle,
