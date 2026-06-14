@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { 
@@ -34,6 +35,7 @@ interface Notification {
 }
 
 export function NotificationCenter() {
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
@@ -50,8 +52,9 @@ export function NotificationCenter() {
       if (error) throw error;
       return data;
     },
-    refetchInterval: 30000, // Refresh every 30 seconds
-  });
+      refetchInterval: 30000, // Refresh every 30 seconds
+      staleTime: 15000,
+    });
 
   // Fetch pending comments
   const { data: pendingComments } = useQuery({
@@ -67,6 +70,7 @@ export function NotificationCenter() {
       return data;
     },
     refetchInterval: 30000,
+    staleTime: 15000,
   });
 
   // Build notifications list
@@ -109,40 +113,45 @@ export function NotificationCenter() {
   const getIcon = (type: string) => {
     switch (type) {
       case 'message':
-        return <Mail className="h-4 w-4 text-blue-500" />;
+        return <Mail className="h-4 w-4 text-sky-600 dark:text-sky-400" />;
       case 'comment':
-        return <MessageSquare className="h-4 w-4 text-orange-500" />;
+        return <MessageSquare className="h-4 w-4 text-amber-600 dark:text-amber-400" />;
       default:
-        return <AlertCircle className="h-4 w-4 text-gray-500" />;
+        return <AlertCircle className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
   const getTypeColor = (type: string) => {
     switch (type) {
       case 'message':
-        return 'bg-blue-100 dark:bg-blue-900/30';
+        return 'bg-sky-100 dark:bg-sky-950/50';
       case 'comment':
-        return 'bg-orange-100 dark:bg-orange-900/30';
+        return 'bg-amber-100 dark:bg-amber-950/50';
       default:
-        return 'bg-gray-100 dark:bg-gray-900/30';
+        return 'bg-muted';
     }
+  };
+
+  const handleNotificationClick = (notification: Notification) => {
+    setIsOpen(false);
+    if (notification.link) navigate(notification.link);
   };
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
+        <Button variant="ghost" size="icon" className="relative" aria-label="Admin bildirimleri">
           <Bell className="h-5 w-5" />
           {totalUnread > 0 && (
             <Badge 
-              className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center bg-red-500 text-white text-xs"
+              className="absolute -top-1 -right-1 h-5 min-w-5 px-1 flex items-center justify-center bg-red-500 text-white text-xs shadow-sm"
             >
               {totalUnread > 9 ? '9+' : totalUnread}
             </Badge>
           )}
         </Button>
       </SheetTrigger>
-      <SheetContent className="w-[400px] sm:w-[540px]">
+      <SheetContent className="w-[calc(100vw-1.5rem)] sm:w-[540px]">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <Bell className="h-5 w-5" />
@@ -163,15 +172,17 @@ export function NotificationCenter() {
               </p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-3 pr-1">
               {notifications.map((notification) => (
-                <div
+                <button
                   key={notification.id}
+                  type="button"
+                  onClick={() => handleNotificationClick(notification)}
                   className={`p-4 rounded-lg border transition-colors ${
                     !notification.read 
-                      ? 'bg-primary/5 border-primary/20' 
+                      ? 'bg-primary/5 border-primary/20 hover:bg-primary/10' 
                       : 'hover:bg-muted/50'
-                  }`}
+                  } w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2`}
                 >
                   <div className="flex items-start gap-3">
                     <div className={`p-2 rounded-lg ${getTypeColor(notification.type)}`}>
@@ -193,22 +204,14 @@ export function NotificationCenter() {
                         {notification.description}
                       </p>
                       {notification.link && (
-                        <Button 
-                          variant="link" 
-                          size="sm" 
-                          className="px-0 h-auto mt-2"
-                          onClick={() => {
-                            setIsOpen(false);
-                            // Navigate programmatically if needed
-                          }}
-                        >
+                        <span className="mt-2 inline-flex items-center text-xs font-medium text-primary">
                           <ExternalLink className="h-3 w-3 mr-1" />
                           Görüntüle
-                        </Button>
+                        </span>
                       )}
                     </div>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           )}

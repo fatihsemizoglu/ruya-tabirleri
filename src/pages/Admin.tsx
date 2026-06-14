@@ -1,4 +1,5 @@
-import { useState, lazy, Suspense } from 'react';
+import { useEffect, useState, lazy, Suspense } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 
 const UnifiedDashboard = lazy(() => import('@/components/admin/UnifiedDashboard'));
@@ -45,7 +46,26 @@ const tabTitles: Record<string, { title: string; description: string }> = {
 };
 
 export default function Admin() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState('overview');
+
+  useEffect(() => {
+    if (tabParam && tabTitles[tabParam] && tabParam !== activeTab) {
+      setActiveTab(tabParam);
+    }
+  }, [activeTab, tabParam]);
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    const nextParams = new URLSearchParams(searchParams);
+    if (tab === 'overview') {
+      nextParams.delete('tab');
+    } else {
+      nextParams.set('tab', tab);
+    }
+    setSearchParams(nextParams, { replace: true });
+  };
 
   const currentTab = tabTitles[activeTab] || tabTitles.overview;
 
@@ -53,7 +73,7 @@ export default function Admin() {
     switch (activeTab) {
       case 'overview':
       case 'dashboard':
-        return <UnifiedDashboard onNavigate={setActiveTab} />;
+        return <UnifiedDashboard onNavigate={handleTabChange} />;
       case 'dreams':
         return <DreamManagement />;
       case 'categories':
@@ -91,7 +111,7 @@ export default function Admin() {
       case 'settings':
         return <SiteSettings />;
       default:
-        return <UnifiedDashboard onNavigate={setActiveTab} />;
+        return <UnifiedDashboard onNavigate={handleTabChange} />;
     }
   };
 
@@ -104,7 +124,7 @@ export default function Admin() {
   return (
     <AdminLayout
       activeTab={activeTab}
-      onTabChange={setActiveTab}
+      onTabChange={handleTabChange}
       title={currentTab.title}
       description={currentTab.description}
       hideHeaderBanner={pagesWithCustomHeader.includes(activeTab)}
@@ -119,4 +139,3 @@ export default function Admin() {
     </AdminLayout>
   );
 }
-
