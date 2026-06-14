@@ -39,7 +39,7 @@ export default defineConfig(({ mode }) => ({
         cleanupOutdatedCaches: true,
         skipWaiting: true,
         clientsClaim: true,
-        navigateFallback: "/offline.html",
+        navigateFallback: "/index.html",
         navigateFallbackDenylist: [/^\/admin/, /^\/api/],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB limit
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
