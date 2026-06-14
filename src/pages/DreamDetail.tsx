@@ -117,7 +117,35 @@ function splitInlineHeadings(line: string): string[] {
   return parts.length ? parts : [line];
 }
 
-function formatPlainDreamContent(content: string): string {
+function normalizeTitleToken(value: string): string {
+  return value
+    .toLocaleLowerCase('tr-TR')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\b(rüyada|rüya|ruyada|ruya|görmek|gormek|gördüğünü|gordugunu|görmek nedir|ne anlama gelir)\b/gi, ' ')
+    .replace(/[^a-zçğıöşü0-9\s]/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function removeTrailingTitleRepeat(lines: string[], title: string): string[] {
+  if (lines.length < 2) return lines;
+
+  const titleToken = normalizeTitleToken(title);
+  if (!titleToken) return lines;
+
+  const lastLine = lines[lines.length - 1];
+  const lastToken = normalizeTitleToken(lastLine);
+  const lastWordCount = lastToken.split(' ').filter(Boolean).length;
+
+  if (lastWordCount > 5) return lines;
+  if (lastToken === titleToken || titleToken.endsWith(lastToken) || lastToken.endsWith(titleToken)) {
+    return lines.slice(0, -1);
+  }
+
+  return lines;
+}
+
+function formatPlainDreamContent(content: string, title: string): string {
   const normalized = content
     .replace(/\r\n/g, '\n')
     .replace(/<br\s*\/?>/gi, '\n')
@@ -128,10 +156,10 @@ function formatPlainDreamContent(content: string): string {
     return sanitizeHtml(normalized);
   }
 
-  const lines = normalized
+  const lines = removeTrailingTitleRepeat(normalized
     .split(/\n+/)
     .map((line) => line.trim())
-    .filter(Boolean);
+    .filter(Boolean), title);
 
   const sections = lines.flatMap(splitInlineHeadings);
 
@@ -500,7 +528,7 @@ export default function DreamDetail() {
   const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
   const wordCount = dream.content.replace(/<[^>]*>/g, ' ').split(/\s+/).filter(Boolean).length;
   const readTime = Math.max(1, Math.ceil(wordCount / 200));
-  const formattedContent = formatPlainDreamContent(dream.content);
+  const formattedContent = formatPlainDreamContent(dream.content, dream.title);
 
   return (
     <Layout>
