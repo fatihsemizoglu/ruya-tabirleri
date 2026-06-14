@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, useScroll, useSpring } from 'framer-motion';
-import { Eye, Heart, Bookmark, ArrowLeft, Calendar, BookOpen, Sparkles, Clock, ChevronRight, Share2, Tag, Folder, Check, Moon } from 'lucide-react';
+import { Eye, Heart, Bookmark, ArrowLeft, Calendar, BookOpen, Sparkles, Clock, ChevronRight, Share2, Tag, Folder, Check, Moon, Type } from 'lucide-react';
 import DOMPurify from 'dompurify';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
@@ -44,6 +44,83 @@ const purifyConfig = {
 
 function sanitizeHtml(html: string): string {
   return DOMPurify.sanitize(html, purifyConfig);
+}
+
+type TextSize = 'sm' | 'base' | 'lg';
+
+const textSizeClasses: Record<TextSize, string> = {
+  sm: 'prose-base',
+  base: 'prose-lg',
+  lg: 'prose-xl',
+};
+
+function TextSizeControls({ value, onChange }: { value: TextSize; onChange: (value: TextSize) => void }) {
+  return (
+    <div className="flex items-center gap-1 rounded-xl border border-border/45 bg-muted/30 p-1">
+      <Type className="ml-2 h-4 w-4 text-muted-foreground" />
+      {(['sm', 'base', 'lg'] as TextSize[]).map((size) => (
+        <Button
+          key={size}
+          type="button"
+          variant={value === size ? 'secondary' : 'ghost'}
+          size="sm"
+          onClick={() => onChange(size)}
+          className="h-8 rounded-lg px-2.5"
+          aria-pressed={value === size}
+        >
+          {size === 'sm' ? 'A-' : size === 'lg' ? 'A+' : 'A'}
+        </Button>
+      ))}
+    </div>
+  );
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function looksLikeHeading(line: string): boolean {
+  const text = line.trim();
+  if (!text || text.length > 90) return false;
+  if (/[:：]$/.test(text)) return true;
+  if (/^(Rüyada|Rüya|Boğa|Yılan|Kara|Siyah|Beyaz|Yeşil|Sarı|Kırmızı|Su|Ev|Para|Altın|Bebek|Köpek|Kedi)\b/i.test(text) && !/[.!?]$/.test(text)) return true;
+  return false;
+}
+
+function formatPlainDreamContent(content: string): string {
+  const normalized = content
+    .replace(/\r\n/g, '\n')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .trim();
+
+  if (!normalized) return '';
+  if (/<(p|h[1-6]|ul|ol|blockquote|strong|b)\b/i.test(normalized)) {
+    return sanitizeHtml(normalized);
+  }
+
+  const lines = normalized
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const html = lines.map((line) => {
+    const clean = escapeHtml(line.replace(/[:：]$/, ''));
+    if (looksLikeHeading(line)) {
+      return `<h3>${clean}</h3>`;
+    }
+    const withInlineHeadings = clean.replace(
+      /(^|\s)((?:Rüyada|Rüya|Boğa|Yılan|Kara|Siyah|Beyaz|Yeşil|Sarı|Kırmızı)[^.!?]{3,70}?görmek)(?=\s|,|:)/gi,
+      '$1<strong>$2</strong>'
+    );
+    return `<p>${withInlineHeadings}</p>`;
+  }).join('\n');
+
+  return sanitizeHtml(html);
 }
 
 function DreamMeta({ dream }: { dream: Dream }) {
@@ -115,6 +192,7 @@ export default function DreamDetail() {
   const [isLiked, setIsLiked] = useState(false);
   const [likeAnimation, setLikeAnimation] = useState(false);
   const [favoriteAnimation, setFavoriteAnimation] = useState(false);
+  const [textSize, setTextSize] = useState<TextSize>('base');
   const { user } = useAuth();
 
   const fetchComments = useCallback(async (dreamId: string) => {
@@ -393,6 +471,7 @@ export default function DreamDetail() {
   const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
   const wordCount = dream.content.replace(/<[^>]*>/g, ' ').split(/\s+/).filter(Boolean).length;
   const readTime = Math.max(1, Math.ceil(wordCount / 200));
+  const formattedContent = formatPlainDreamContent(dream.content);
 
   return (
     <Layout>
@@ -503,9 +582,12 @@ export default function DreamDetail() {
           className="max-w-3xl mx-auto"
         >
           <ContentCard icon={BookOpen} gradient="from-blue-500 to-cyan-500" title="Rüya Tabiri">
+            <div className="mb-6 flex justify-end">
+              <TextSizeControls value={textSize} onChange={setTextSize} />
+            </div>
             <div
-              className="dream-content prose prose-lg dark:prose-invert max-w-none prose-headings:font-serif-dream prose-headings:font-bold prose-headings:text-foreground prose-h2:text-2xl prose-h2:mt-8 prose-h2:mb-4 prose-h2:border-b prose-h2:border-border/40 prose-h2:pb-2 prose-h3:text-xl prose-h3:mt-6 prose-h3:mb-3 prose-h3:text-primary/90 prose-p:leading-[1.8] prose-p:text-foreground/85 prose-p:mb-5 prose-li:leading-relaxed prose-blockquote:border-l-4 prose-blockquote:border-primary/30 prose-blockquote:pl-5 prose-blockquote:italic prose-blockquote:text-muted-foreground prose-a:text-primary prose-a:underline hover:prose-a:text-primary/80 prose-strong:text-foreground prose-img:rounded-xl"
-              dangerouslySetInnerHTML={{ __html: sanitizeHtml(dream.content) }}
+              className={`dream-content prose ${textSizeClasses[textSize]} dark:prose-invert max-w-none prose-headings:font-serif-dream prose-headings:font-bold prose-headings:text-foreground prose-h2:text-2xl prose-h2:mt-8 prose-h2:mb-4 prose-h2:border-b prose-h2:border-border/40 prose-h2:pb-2 prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-3 prose-h3:text-primary/90 prose-p:leading-[1.9] prose-p:text-foreground/85 prose-p:mb-5 prose-li:leading-relaxed prose-blockquote:border-l-4 prose-blockquote:border-primary/30 prose-blockquote:pl-5 prose-blockquote:italic prose-blockquote:text-muted-foreground prose-a:text-primary prose-a:underline hover:prose-a:text-primary/80 prose-strong:text-foreground prose-img:rounded-xl`}
+              dangerouslySetInnerHTML={{ __html: formattedContent }}
             />
           </ContentCard>
         </motion.div>

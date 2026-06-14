@@ -11,6 +11,7 @@ import {
   Tag,
   BookOpen,
   ChevronRight,
+  Type,
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { PageTransition } from '@/components/ui/page-transition';
@@ -34,6 +35,35 @@ import { Seo } from '@/components/Seo';
 import { nativeShare } from '@/lib/share';
 import { haptic } from '@/lib/haptics';
 
+type TextSize = 'sm' | 'base' | 'lg';
+
+const textSizeClasses: Record<TextSize, string> = {
+  sm: 'prose-base',
+  base: 'prose-lg',
+  lg: 'prose-xl',
+};
+
+function TextSizeControls({ value, onChange }: { value: TextSize; onChange: (value: TextSize) => void }) {
+  return (
+    <div className="flex items-center gap-1 rounded-xl border border-border/45 bg-muted/30 p-1">
+      <Type className="ml-2 h-4 w-4 text-muted-foreground" />
+      {(['sm', 'base', 'lg'] as TextSize[]).map((size) => (
+        <Button
+          key={size}
+          type="button"
+          variant={value === size ? 'secondary' : 'ghost'}
+          size="sm"
+          onClick={() => onChange(size)}
+          className="h-8 rounded-lg px-2.5"
+          aria-pressed={value === size}
+        >
+          {size === 'sm' ? 'A-' : size === 'lg' ? 'A+' : 'A'}
+        </Button>
+      ))}
+    </div>
+  );
+}
+
 export default function BlogPost() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -45,6 +75,7 @@ export default function BlogPost() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
+  const [textSize, setTextSize] = useState<TextSize>('base');
   const isMountedRef = useRef(true);
 
   const checkIfLiked = useCallback(async () => {
@@ -384,12 +415,15 @@ export default function BlogPost() {
             <div className="max-w-4xl mx-auto">
               {/* Table of Contents */}
               <TableOfContents content={post.content} className="mb-8" />
+              <div className="mb-6 flex justify-end">
+                <TextSizeControls value={textSize} onChange={setTextSize} />
+              </div>
 
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="prose prose-lg dark:prose-invert max-w-none mb-12 prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground"
+                className={`prose ${textSizeClasses[textSize]} dark:prose-invert max-w-none mb-12 prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground prose-p:leading-[1.85]`}
                 dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content, {
                   ALLOWED_TAGS: ['p','br','strong','em','u','s','h1','h2','h3','h4','h5','h6',
                     'ul','ol','li','blockquote','code','pre','a','img',
