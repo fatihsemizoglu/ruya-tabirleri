@@ -92,6 +92,31 @@ function looksLikeHeading(line: string): boolean {
   return false;
 }
 
+const inlineHeadingPattern = /(?:Rüyada|Rüya|Boğa|Yılan|Kara|Siyah|Beyaz|Yeşil|Sarı|Kırmızı)[^.!?\n]{3,70}?görmek/gi;
+
+function splitInlineHeadings(line: string): string[] {
+  const parts: string[] = [];
+  const matches = [...line.matchAll(inlineHeadingPattern)];
+
+  if (matches.length <= 1) return [line];
+
+  for (let index = 0; index < matches.length; index += 1) {
+    const match = matches[index];
+    const start = match.index ?? 0;
+    const end = matches[index + 1]?.index ?? line.length;
+
+    if (index === 0 && start > 0) {
+      const intro = line.slice(0, start).trim();
+      if (intro) parts.push(intro);
+    }
+
+    const section = line.slice(start, end).trim();
+    if (section) parts.push(section);
+  }
+
+  return parts.length ? parts : [line];
+}
+
 function formatPlainDreamContent(content: string): string {
   const normalized = content
     .replace(/\r\n/g, '\n')
@@ -108,16 +133,20 @@ function formatPlainDreamContent(content: string): string {
     .map((line) => line.trim())
     .filter(Boolean);
 
-  const html = lines.map((line) => {
+  const sections = lines.flatMap(splitInlineHeadings);
+
+  const html = sections.map((line) => {
     const clean = escapeHtml(line.replace(/[:：]$/, ''));
     if (looksLikeHeading(line)) {
       return `<h3>${clean}</h3>`;
     }
-    const withInlineHeadings = clean.replace(
-      /(^|\s)((?:Rüyada|Rüya|Boğa|Yılan|Kara|Siyah|Beyaz|Yeşil|Sarı|Kırmızı)[^.!?]{3,70}?görmek)(?=\s|,|:)/gi,
-      '$1<strong>$2</strong>'
-    );
-    return `<p>${withInlineHeadings}</p>`;
+    const headingMatch = clean.match(/^((?:Rüyada|Rüya|Boğa|Yılan|Kara|Siyah|Beyaz|Yeşil|Sarı|Kırmızı)[^.!?]{3,70}?görmek)(?:\s*[:,]?\s*)?(.*)$/i);
+    if (headingMatch?.[1]) {
+      const heading = headingMatch[1].trim();
+      const paragraph = headingMatch[2]?.trim();
+      return [`<h3>${heading}</h3>`, paragraph ? `<p>${paragraph}</p>` : ''].filter(Boolean).join('\n');
+    }
+    return `<p>${clean}</p>`;
   }).join('\n');
 
   return sanitizeHtml(html);
