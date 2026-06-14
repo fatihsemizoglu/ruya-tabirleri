@@ -50,6 +50,9 @@ export function VoiceSearchModal({ open, onOpenChange, onResult }: VoiceSearchMo
   const [error, setError] = useState<string | null>(null);
   const [audioLevel, setAudioLevel] = useState(0);
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
+  const transcriptRef = useRef('');
+  const interimTranscriptRef = useRef('');
+  const errorRef = useRef<string | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const micStreamRef = useRef<MediaStream | null>(null);
@@ -87,6 +90,18 @@ export function VoiceSearchModal({ open, onOpenChange, onResult }: VoiceSearchMo
     setIsListening(false);
     cleanupAudio();
   }, [cleanupAudio]);
+
+  useEffect(() => {
+    transcriptRef.current = transcript;
+  }, [transcript]);
+
+  useEffect(() => {
+    interimTranscriptRef.current = interimTranscript;
+  }, [interimTranscript]);
+
+  useEffect(() => {
+    errorRef.current = error;
+  }, [error]);
 
   useEffect(() => {
     if (!open) {
@@ -138,6 +153,7 @@ export function VoiceSearchModal({ open, onOpenChange, onResult }: VoiceSearchMo
 
   const startListening = useCallback(async () => {
     setError(null);
+    errorRef.current = null;
     setTranscript('');
     setInterimTranscript('');
 
@@ -180,11 +196,14 @@ export function VoiceSearchModal({ open, onOpenChange, onResult }: VoiceSearchMo
 
         if (interimText) {
           setInterimTranscript(interimText);
+          interimTranscriptRef.current = interimText;
         }
 
         if (finalText) {
           setTranscript(finalText);
+          transcriptRef.current = finalText;
           setInterimTranscript('');
+          interimTranscriptRef.current = '';
         }
       };
 
@@ -192,15 +211,27 @@ export function VoiceSearchModal({ open, onOpenChange, onResult }: VoiceSearchMo
         setIsListening(false);
         cleanupAudio();
         if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-          setError('Mikrofon erişimi reddedildi. Lütfen tarayıcı ayarlarınızı kontrol edin.');
+          const message = 'Mikrofon erişimi reddedildi. Lütfen tarayıcı ayarlarınızı kontrol edin.';
+          setError(message);
+          errorRef.current = message;
         } else if (event.error === 'no-speech') {
-          setError('Ses algılanamadı. Lütfen tekrar deneyin.');
+          const message = 'Ses algılanamadı. Lütfen tekrar deneyin.';
+          setError(message);
+          errorRef.current = message;
         } else if (event.error !== 'aborted') {
-          setError('Bir hata oluştu. Lütfen tekrar deneyin.');
+          const message = 'Bir hata oluştu. Lütfen tekrar deneyin.';
+          setError(message);
+          errorRef.current = message;
         }
       };
 
       recognition.onend = () => {
+        const text = (transcriptRef.current || interimTranscriptRef.current).trim();
+        if (!text && !errorRef.current) {
+          const message = 'Ses metne çevrilemedi. Lütfen daha net konuşup tekrar deneyin.';
+          setError(message);
+          errorRef.current = message;
+        }
         setIsListening(false);
         cleanupAudio();
       };
@@ -212,6 +243,7 @@ export function VoiceSearchModal({ open, onOpenChange, onResult }: VoiceSearchMo
       setIsListening(false);
       cleanupAudio();
       setError('Sesli arama başlatılamadı.');
+      errorRef.current = 'Sesli arama başlatılamadı.';
     }
   }, [cleanupAudio, startAudioAnalysis]);
 

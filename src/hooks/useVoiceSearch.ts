@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 type SpeechRecognitionEventLike = {
-  results: { 0: { transcript: string; isFinal: boolean }; length: number } & ArrayLike<{ transcript: string; isFinal: boolean }>;
+  results: SpeechRecognitionResultList;
   resultIndex: number;
 };
 
@@ -97,9 +97,10 @@ export function useVoiceSearch(options: UseVoiceSearchOptions = {}): UseVoiceSea
       let final = '';
       let interim = '';
       for (let i = e.resultIndex; i < e.results.length; i++) {
-        const r = e.results[i];
-        if (r.isFinal) final += r.transcript;
-        else interim += r.transcript;
+        const result = e.results[i];
+        const text = result[0]?.transcript || '';
+        if (result.isFinal) final += text;
+        else interim += text;
       }
       const text = (final || interim).trim();
       setTranscript(text);

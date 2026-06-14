@@ -40,11 +40,13 @@ export default function DreamJournal() {
     tags: '',
   });
   const [voiceDraft, setVoiceDraft] = useState('');
+  const [lastCommittedVoiceText, setLastCommittedVoiceText] = useState('');
 
   const appendVoiceText = useCallback((text: string) => {
     const cleanText = text.trim();
     if (!cleanText) return;
     setVoiceDraft(cleanText);
+    setLastCommittedVoiceText(cleanText);
     setFormData((current) => {
       const content = current.content.trim();
       if (content.endsWith(cleanText)) return current;
@@ -72,6 +74,9 @@ export default function DreamJournal() {
       notify.error(message);
     },
   });
+  const displayedContent = voice.isListening && voiceDraft && voiceDraft !== lastCommittedVoiceText
+    ? `${formData.content}${formData.content ? '\n\n' : ''}${voiceDraft}`
+    : formData.content;
 
   const fetchEntries = useCallback(async () => {
     try {
@@ -130,6 +135,7 @@ export default function DreamJournal() {
       voice.stop();
       voice.reset();
       setVoiceDraft('');
+      setLastCommittedVoiceText('');
       setSelectedEntry(null);
       setFormData({ title: '', content: '', dream_date: new Date().toISOString().split('T')[0], mood: '', tags: '' });
       fetchEntries();
@@ -171,6 +177,7 @@ export default function DreamJournal() {
     voice.stop();
     voice.reset();
     setVoiceDraft('');
+    setLastCommittedVoiceText('');
     setSelectedEntry(null);
     setFormData({ title: '', content: '', dream_date: new Date().toISOString().split('T')[0], mood: '', tags: '' });
   };
@@ -183,9 +190,14 @@ export default function DreamJournal() {
       return;
     }
     if (voice.isListening) {
+      if (voiceDraft && voiceDraft !== lastCommittedVoiceText) {
+        appendVoiceText(voiceDraft);
+      }
       voice.stop();
       return;
     }
+    setVoiceDraft('');
+    setLastCommittedVoiceText('');
     voice.start();
   };
 
@@ -321,7 +333,7 @@ export default function DreamJournal() {
                   </div>
                   <Textarea
                     id="content"
-                    value={formData.content}
+                    value={displayedContent}
                     onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                     placeholder="Rüyanızı detaylı bir şekilde anlatın..."
                     rows={5}

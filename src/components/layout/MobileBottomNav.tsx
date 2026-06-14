@@ -1,5 +1,6 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, Compass, Heart, User } from 'lucide-react';
+import { Fragment } from 'react';
+import { Home, Compass, Heart, User, BookOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { motion } from 'framer-motion';
@@ -29,6 +30,8 @@ function isActiveRoute(item: NavItem, pathname: string): boolean {
 export function MobileBottomNav() {
   const location = useLocation();
   const { user } = useAuth();
+  const showJournalFab = !!user;
+  const journalActive = location.pathname === '/ruya-gunlugum' || location.pathname.startsWith('/ruya-gunlugum/');
 
   return (
     <nav
@@ -37,45 +40,69 @@ export function MobileBottomNav() {
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
       <div className="mx-auto max-w-screen-sm pointer-events-auto px-3 pb-2">
-        <div className="relative overflow-hidden rounded-[1.75rem] border border-border/60 bg-background/92 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.45)] backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/92 dark:shadow-[0_18px_50px_-22px_rgba(0,0,0,0.7)]">
+        <div className="relative overflow-visible rounded-[1.75rem] border border-border/60 bg-background/90 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.45)] backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/90 dark:shadow-[0_18px_50px_-22px_rgba(0,0,0,0.7)]">
           <div className="pointer-events-none absolute inset-x-8 -top-10 h-16 rounded-full bg-gradient-to-r from-primary/25 via-fuchsia-500/20 to-blue-500/20 blur-2xl" />
-          <ul className="relative grid h-[4.45rem] grid-cols-4 items-stretch p-1.5">
+          <ul className={cn(
+            'relative grid h-[4.45rem] items-stretch p-1.5',
+            showJournalFab ? 'grid-cols-5' : 'grid-cols-4'
+          )}>
             {navItems.map((item) => {
               const Icon = item.icon;
               const target = item.requiresAuth && !user ? (item.fallback ?? '/giris') : item.to;
               const active = isActiveRoute(item, location.pathname);
+              const shouldRenderJournalFab = showJournalFab && item.to === '/favorilerim';
               return (
-                <li key={item.to} className="flex items-stretch">
-                  <NavLink
-                    to={target}
-                    aria-label={item.label}
-                    aria-current={active ? 'page' : undefined}
-                    className={cn(
-                      'relative flex-1 flex flex-col items-center justify-center gap-1 rounded-2xl text-[11px] font-semibold transition-all duration-200 active:scale-[0.97]',
-                      active
-                        ? 'text-primary shadow-sm'
-                        : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground'
-                    )}
-                  >
-                    {active && (
-                      <motion.span
-                        layoutId="bottomNavIndicator"
-                        className="absolute inset-0 rounded-2xl border border-primary/15 bg-primary/10 dark:bg-primary/15"
-                        transition={{ type: 'spring', stiffness: 400, damping: 32 }}
-                      />
-                    )}
-                    <span className={cn(
-                      'relative flex h-8 w-8 items-center justify-center rounded-xl transition-colors',
-                      active && 'bg-background/80 dark:bg-slate-950/55'
-                    )}>
-                      <Icon
-                        className={cn('h-5 w-5 transition-transform', active && 'scale-110')}
-                        strokeWidth={active ? 2.5 : 2}
-                      />
-                    </span>
-                    <span className="relative leading-none tracking-[-0.01em]">{item.label}</span>
-                  </NavLink>
-                </li>
+                <Fragment key={item.to}>
+                  {shouldRenderJournalFab && (
+                    <li key="journal-fab" className="flex items-center justify-center">
+                      <NavLink
+                        to="/ruya-gunlugum"
+                        aria-label="Rüya Günlüğü"
+                        aria-current={journalActive ? 'page' : undefined}
+                        className="group relative -mt-7 flex flex-col items-center gap-1 text-[10px] font-bold text-primary active:scale-95"
+                      >
+                        <span className={cn(
+                          'relative flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 via-fuchsia-500 to-pink-500 text-white shadow-xl shadow-fuchsia-500/30 ring-4 ring-background transition-transform group-hover:scale-105 dark:ring-slate-950',
+                          journalActive && 'shadow-primary/45'
+                        )}>
+                          <BookOpen className="h-6 w-6" strokeWidth={2.35} />
+                        </span>
+                        <span className="leading-none text-[10px] text-foreground/80 dark:text-white/80">Günlük</span>
+                      </NavLink>
+                    </li>
+                  )}
+                  <li className="flex items-stretch">
+                    <NavLink
+                      to={target}
+                      aria-label={item.label}
+                      aria-current={active ? 'page' : undefined}
+                      className={cn(
+                        'relative flex-1 flex flex-col items-center justify-center gap-1 rounded-2xl text-[11px] font-semibold transition-all duration-200 active:scale-[0.97]',
+                        active
+                          ? 'text-primary shadow-sm'
+                          : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground'
+                      )}
+                    >
+                      {active && (
+                        <motion.span
+                          layoutId="bottomNavIndicator"
+                          className="absolute inset-0 rounded-2xl border border-primary/15 bg-primary/10 dark:bg-primary/15"
+                          transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                        />
+                      )}
+                      <span className={cn(
+                        'relative flex h-8 w-8 items-center justify-center rounded-xl transition-colors',
+                        active && 'bg-background/80 dark:bg-slate-950/55'
+                      )}>
+                        <Icon
+                          className={cn('h-5 w-5 transition-transform', active && 'scale-110')}
+                          strokeWidth={active ? 2.5 : 2}
+                        />
+                      </span>
+                      <span className="relative leading-none tracking-[-0.01em]">{item.label}</span>
+                    </NavLink>
+                  </li>
+                </Fragment>
               );
             })}
           </ul>

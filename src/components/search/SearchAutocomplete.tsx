@@ -229,14 +229,14 @@ export const SearchAutocomplete = forwardRef<HTMLInputElement, SearchAutocomplet
               interimTranscript += transcript;
             }
           }
-          const text = finalTranscript || interimTranscript;
+          const text = (finalTranscript || interimTranscript).trim();
           if (text) {
             setQuery(text);
             if (finalTranscript) {
               setIsListening(false);
               // Otomatik arama
               setTimeout(() => {
-                onSearch(text.trim());
+                onSearch(text);
                 setShowDropdown(false);
               }, 200);
             }
