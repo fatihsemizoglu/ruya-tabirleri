@@ -11,6 +11,8 @@ import { PremiumBackground, PremiumBadge, GradientText } from '@/components/layo
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
 
+const authInputClass = 'bg-white text-slate-950 placeholder:text-slate-500 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-400 dark:border-white/15';
+
 const loginSchema = z.object({
   email: z.string().email('Geçerli bir e-posta adresi girin'),
   password: z.string().min(6, 'Şifre en az 6 karakter olmalıdır'),
@@ -231,7 +233,7 @@ export default function Auth({ mode }: AuthProps) {
                       placeholder="Adınız Soyadınız"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
-                      className="pl-10"
+                      className={`pl-10 ${authInputClass}`}
                     />
                   </div>
                   {errors.fullName && <p className="text-sm text-destructive">{errors.fullName}</p>}
@@ -247,7 +249,7 @@ export default function Auth({ mode }: AuthProps) {
                       placeholder="kullanici_adi"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
-                      className="pl-10"
+                      className={`pl-10 ${authInputClass}`}
                     />
                   </div>
                   {errors.username && <p className="text-sm text-destructive">{errors.username}</p>}
@@ -265,7 +267,7 @@ export default function Auth({ mode }: AuthProps) {
                   placeholder="ornek@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10"
+                  className={`pl-10 ${authInputClass}`}
                 />
               </div>
               {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
@@ -281,7 +283,7 @@ export default function Auth({ mode }: AuthProps) {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10 pr-10"
+                  className={`pl-10 pr-10 ${authInputClass}`}
                 />
                 <Button
                   type="button"

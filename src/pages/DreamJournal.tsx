@@ -10,7 +10,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/hooks/useAuth';
-import { useVoiceSearch } from '@/hooks/useVoiceSearch';
 import { supabase } from '@/integrations/supabase/client';
 import { getErrorMessage, notify } from '@/lib/notify';
 import type { DreamJournalEntry, DreamMood } from '@/types/database';
@@ -26,6 +25,34 @@ const moodOptions: { value: DreamMood; label: string; emoji: string }[] = [
   { value: 'neutral', label: 'Nötr', emoji: '😐' },
 ];
 
+type SpeechRecognitionEventLike = { results: SpeechRecognitionResultList };
+type SpeechRecognitionErrorEventLike = { error: string };
+type SpeechRecognitionLike = {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  maxAlternatives: number;
+  onresult: ((e: SpeechRecognitionEventLike) => void) | null;
+  onerror: ((e: SpeechRecognitionErrorEventLike) => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+  abort: () => void;
+};
+
+function getSpeechRecognitionCtor(): (new () => SpeechRecognitionLike) | null {
+  if (typeof window === 'undefined') return null;
+  const w = window as unknown as {
+    SpeechRecognition?: new () => SpeechRecognitionLike;
+    webkitSpeechRecognition?: new () => SpeechRecognitionLike;
+  };
+  return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
+}
+
+function normalizeVoiceText(value: string): string {
+  return value.replace(/\s+/g, ' ').trim();
+}
+
 export default function DreamJournal() {
   const { user, isLoading: authLoading } = useAuth();
   const [entries, setEntries] = useState<DreamJournalEntry[]>([]);
@@ -40,9 +67,16 @@ export default function DreamJournal() {
     tags: '',
   });
   const [voiceDraft, setVoiceDraft] = useState('');
+  const [isVoiceListening, setIsVoiceListening] = useState(false);
+  const [isVoiceSupported, setIsVoiceSupported] = useState(false);
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const voiceBaseContentRef = useRef<string | null>(null);
 
-  const applyVoiceText = useCallback((text: string, isFinal: boolean) => {
+  useEffect(() => {
+    setIsVoiceSupported(!!getSpeechRecognitionCtor());
+  }, []);
+
+  const applyVoiceText = useCallback((text: string) => {
     const cleanText = text.trim();
     if (!cleanText) return;
     setVoiceDraft(cleanText);
@@ -57,26 +91,87 @@ export default function DreamJournal() {
         content: nextContent,
       };
     });
-    if (isFinal) {
-      voiceBaseContentRef.current = null;
-      setVoiceDraft('');
-    }
   }, []);
 
-  const voice = useVoiceSearch({
-    continuous: true,
-    onResult: (text, isFinal) => {
-      applyVoiceText(text, isFinal);
-    },
-    onError: (error) => {
-      const message = error === 'not-allowed' || error === 'service-not-allowed'
+  const stopVoiceDictation = useCallback(() => {
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch {
+        try {
+          recognitionRef.current.abort();
+        } catch {
+          /* noop */
+        }
+      }
+    }
+    recognitionRef.current = null;
+    voiceBaseContentRef.current = null;
+    setIsVoiceListening(false);
+    setVoiceDraft('');
+  }, []);
+
+  const startVoiceDictation = useCallback(() => {
+    const Ctor = getSpeechRecognitionCtor();
+    if (!Ctor) {
+      notify.error('Tarayıcınız sesli dikteyi desteklemiyor', {
+        description: 'Chrome, Edge veya Web Speech API destekleyen bir tarayıcı deneyin.',
+      });
+      return;
+    }
+
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.abort();
+      } catch {
+        /* noop */
+      }
+    }
+
+    const recognition = new Ctor();
+    recognition.lang = 'tr-TR';
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.maxAlternatives = 1;
+    recognitionRef.current = recognition;
+    voiceBaseContentRef.current = formData.content;
+    setVoiceDraft('');
+
+    recognition.onresult = (event) => {
+      let transcript = '';
+      for (let index = 0; index < event.results.length; index += 1) {
+        transcript += ` ${event.results[index][0]?.transcript || ''}`;
+      }
+      applyVoiceText(normalizeVoiceText(transcript));
+    };
+
+    recognition.onerror = (event) => {
+      const message = event.error === 'not-allowed' || event.error === 'service-not-allowed'
         ? 'Mikrofon erişimi reddedildi. Tarayıcı izinlerini kontrol edin.'
-        : error === 'no-speech'
+        : event.error === 'no-speech'
         ? 'Ses algılanmadı. Mikrofona yakın konuşup tekrar deneyin.'
         : 'Sesli dikte başlatılamadı.';
       notify.error(message);
-    },
-  });
+      stopVoiceDictation();
+    };
+
+    recognition.onend = () => {
+      setIsVoiceListening(false);
+      voiceBaseContentRef.current = null;
+      recognitionRef.current = null;
+      setVoiceDraft('');
+    };
+
+    try {
+      recognition.start();
+      setIsVoiceListening(true);
+    } catch {
+      notify.error('Sesli dikte başlatılamadı. Lütfen tekrar deneyin.');
+      stopVoiceDictation();
+    }
+  }, [applyVoiceText, formData.content, stopVoiceDictation]);
+
+  useEffect(() => stopVoiceDictation, [stopVoiceDictation]);
   const fetchEntries = useCallback(async () => {
     try {
       const { data, error } = await supabase
@@ -130,8 +225,7 @@ export default function DreamJournal() {
       }
 
       setIsDialogOpen(false);
-      voice.stop();
-      voice.reset();
+      stopVoiceDictation();
       setVoiceDraft('');
       voiceBaseContentRef.current = null;
       setSelectedEntry(null);
@@ -172,8 +266,7 @@ export default function DreamJournal() {
   };
 
   const resetJournalForm = () => {
-    voice.stop();
-    voice.reset();
+    stopVoiceDictation();
     setVoiceDraft('');
     voiceBaseContentRef.current = null;
     setSelectedEntry(null);
@@ -181,21 +274,17 @@ export default function DreamJournal() {
   };
 
   const toggleVoiceDictation = () => {
-    if (!voice.isSupported) {
+    if (!isVoiceSupported) {
       notify.error('Tarayıcınız sesli dikteyi desteklemiyor', {
         description: 'Chrome, Edge veya Web Speech API destekleyen bir tarayıcı deneyin.',
       });
       return;
     }
-    if (voice.isListening) {
-      voice.stop();
-      voiceBaseContentRef.current = null;
-      setVoiceDraft('');
+    if (isVoiceListening) {
+      stopVoiceDictation();
       return;
     }
-    setVoiceDraft('');
-    voiceBaseContentRef.current = formData.content;
-    voice.start();
+    startVoiceDictation();
   };
 
   const openVoiceJournal = () => {
@@ -205,8 +294,8 @@ export default function DreamJournal() {
     voiceBaseContentRef.current = '';
     setIsDialogOpen(true);
     window.setTimeout(() => {
-      if (voice.isSupported) {
-        voice.start();
+      if (getSpeechRecognitionCtor()) {
+        startVoiceDictation();
       } else {
         notify.error('Tarayıcınız sesli dikteyi desteklemiyor', {
           description: 'Chrome, Edge veya Web Speech API destekleyen bir tarayıcı deneyin.',
@@ -341,13 +430,13 @@ export default function DreamJournal() {
                     <Label htmlFor="content">Rüya İçeriği</Label>
                     <Button
                       type="button"
-                      variant={voice.isListening ? 'destructive' : 'outline'}
+                      variant={isVoiceListening ? 'destructive' : 'outline'}
                       size="sm"
                       onClick={toggleVoiceDictation}
                       className="rounded-xl"
                     >
-                      {voice.isListening ? <MicOff className="h-4 w-4 mr-1" /> : <Mic className="h-4 w-4 mr-1" />}
-                      {voice.isListening ? 'Durdur' : 'Sesle Yaz'}
+                      {isVoiceListening ? <MicOff className="h-4 w-4 mr-1" /> : <Mic className="h-4 w-4 mr-1" />}
+                      {isVoiceListening ? 'Durdur' : 'Sesle Yaz'}
                     </Button>
                   </div>
                   <Textarea
@@ -355,7 +444,7 @@ export default function DreamJournal() {
                     value={formData.content}
                     onChange={(e) => {
                       setFormData({ ...formData, content: e.target.value });
-                      if (!voice.isListening) voiceBaseContentRef.current = null;
+                      if (!isVoiceListening) voiceBaseContentRef.current = null;
                     }}
                     placeholder="Rüyanızı detaylı bir şekilde anlatın..."
                     rows={5}
@@ -366,12 +455,12 @@ export default function DreamJournal() {
                       <Sparkles className="h-3.5 w-3.5 text-violet-500" />
                       Sesli dikte
                     </div>
-                    {voice.isListening ? (
+                    {isVoiceListening ? (
                       <p>
                         Dinleniyor... Konuştuklarınız otomatik olarak rüya içeriğine eklenecek.
                         {voiceDraft && <span className="block mt-1 text-foreground/80">Son algılanan: {voiceDraft}</span>}
                       </p>
-                    ) : voice.isSupported ? (
+                    ) : isVoiceSupported ? (
                       <p>Anasayfadaki sesli arama altyapısıyla rüyanızı konuşarak metne çevirebilirsiniz.</p>
                     ) : (
                       <p>Bu tarayıcı sesli dikteyi desteklemiyor.</p>
