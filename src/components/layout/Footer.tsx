@@ -25,6 +25,8 @@ const legalLinks = [
   { to: '/iletisim', label: 'İletişim' },
   { to: '/gizlilik', label: 'Gizlilik Politikası' },
   { to: '/kullanim-kosullari', label: 'Kullanım Koşulları' },
+  { to: '/kvkk', label: 'KVKK Aydınlatma Metni' },
+  { to: '/cerez-politikasi', label: 'Çerez Politikası' },
 ];
 
 const socialIconMap = [

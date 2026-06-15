@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Moon, Eye, EyeOff, Mail, Lock, User, Sparkles } from 'lucide-react';
+import { Moon, Eye, EyeOff, Mail, Lock, User, Sparkles, KeyRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Seo } from '@/components/Seo';
 import { PremiumBackground, PremiumBadge, GradientText } from '@/components/layout/PremiumBackground';
+import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
 
 const loginSchema = z.object({
@@ -20,8 +21,16 @@ const registerSchema = loginSchema.extend({
   username: z.string().min(3, 'Kullanıcı adı en az 3 karakter olmalıdır').regex(/^[a-zA-Z0-9_]+$/, 'Sadece harf, rakam ve alt çizgi kullanılabilir'),
 });
 
+const forgotSchema = z.object({
+  email: z.string().email('Geçerli bir e-posta adresi girin'),
+});
+
+const resetSchema = z.object({
+  password: z.string().min(6, 'Şifre en az 6 karakter olmalıdır'),
+});
+
 interface AuthProps {
-  mode: 'login' | 'register';
+  mode: 'login' | 'register' | 'forgot' | 'reset';
 }
 
 export default function Auth({ mode }: AuthProps) {
@@ -38,17 +47,21 @@ export default function Auth({ mode }: AuthProps) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (user) {
+    if (user && mode !== 'reset') {
       navigate('/');
     }
-  }, [user, navigate]);
+  }, [user, navigate, mode]);
 
   const validateForm = () => {
     try {
       if (mode === 'login') {
         loginSchema.parse({ email, password });
-      } else {
+      } else if (mode === 'register') {
         registerSchema.parse({ email, password, fullName, username });
+      } else if (mode === 'forgot') {
+        forgotSchema.parse({ email });
+      } else {
+        resetSchema.parse({ password });
       }
       setErrors({});
       return true;
@@ -91,7 +104,7 @@ export default function Auth({ mode }: AuthProps) {
           });
           navigate('/');
         }
-      } else {
+      } else if (mode === 'register') {
         const { error } = await signUp(email, password, { username, full_name: fullName });
         if (error) {
           toast({
@@ -108,6 +121,22 @@ export default function Auth({ mode }: AuthProps) {
           });
           navigate('/');
         }
+      } else if (mode === 'forgot') {
+        const redirectTo = `${window.location.origin}/sifre-sifirla`;
+        const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+        if (error) throw error;
+        toast({
+          title: 'Sıfırlama bağlantısı gönderildi',
+          description: 'E-postanızı kontrol edin ve gelen bağlantıyla yeni şifrenizi belirleyin.',
+        });
+      } else {
+        const { error } = await supabase.auth.updateUser({ password });
+        if (error) throw error;
+        toast({
+          title: 'Şifreniz güncellendi',
+          description: 'Yeni şifrenizle giriş yapabilirsiniz.',
+        });
+        navigate('/giris');
       }
     } catch (error) {
       toast({
@@ -120,12 +149,25 @@ export default function Auth({ mode }: AuthProps) {
     }
   };
 
+  const title = mode === 'login'
+    ? 'Giriş Yap'
+    : mode === 'register'
+    ? 'Kayıt Ol'
+    : mode === 'forgot'
+    ? 'Şifremi Unuttum'
+    : 'Yeni Şifre Belirle';
+  const description = mode === 'forgot'
+    ? 'E-posta adresinizi girin, şifre sıfırlama bağlantısını gönderelim.'
+    : mode === 'reset'
+    ? 'Hesabınız için yeni bir şifre belirleyin.'
+    : 'Rüya Tabirleri hesabınıza giriş yapın veya yeni hesap oluşturun.';
+
   return (
     <div className="min-h-screen flex relative">
       <Seo
-        title={mode === 'login' ? 'Giriş Yap' : 'Kayıt Ol'}
-        description="Rüya Tabirleri hesabınıza giriş yapın veya yeni hesap oluşturun."
-        path={mode === 'login' ? '/giris' : '/kayit'}
+          title={title}
+          description={description}
+          path={mode === 'login' ? '/giris' : mode === 'register' ? '/kayit' : mode === 'forgot' ? '/sifremi-unuttum' : '/sifre-sifirla'}
         noindex
       />
       {/* Background blobs for the form panel */}
@@ -148,7 +190,7 @@ export default function Auth({ mode }: AuthProps) {
           <div className="mb-4">
             <PremiumBadge>
               <Sparkles className="h-3.5 w-3.5" />
-              {mode === 'login' ? 'Hoş geldiniz' : 'Aramıza katılın'}
+              {mode === 'login' ? 'Hoş geldiniz' : mode === 'register' ? 'Aramıza katılın' : 'Güvenli hesap erişimi'}
             </PremiumBadge>
           </div>
 
@@ -156,14 +198,22 @@ export default function Auth({ mode }: AuthProps) {
           <h1 className="text-3xl sm:text-4xl font-bold tracking-[-0.025em] mb-2 text-foreground">
             {mode === 'login' ? (
               <>Tekrar <GradientText>Hoş Geldiniz</GradientText></>
-            ) : (
+            ) : mode === 'register' ? (
               <>Hesap <GradientText>Oluşturun</GradientText></>
+            ) : mode === 'forgot' ? (
+              <>Şifrenizi <GradientText>Sıfırlayın</GradientText></>
+            ) : (
+              <>Yeni <GradientText>Şifre Belirleyin</GradientText></>
             )}
           </h1>
           <p className="text-muted-foreground mb-8">
-            {mode === 'login' 
+            {mode === 'login'
               ? 'Hesabınıza giriş yapın ve rüya dünyanıza devam edin.'
-              : 'Ücretsiz hesap oluşturun ve rüya günlüğünüzü tutmaya başlayın.'
+              : mode === 'register'
+              ? 'Ücretsiz hesap oluşturun ve rüya günlüğünüzü tutmaya başlayın.'
+              : mode === 'forgot'
+              ? 'Kayıtlı e-posta adresinizi girin, sıfırlama bağlantısını gönderelim.'
+              : 'Yeni şifrenizi belirleyerek hesabınıza tekrar erişin.'
             }
           </p>
 
@@ -205,7 +255,7 @@ export default function Auth({ mode }: AuthProps) {
               </>
             )}
 
-            <div className="space-y-2">
+            {mode !== 'reset' && <div className="space-y-2">
               <Label htmlFor="email">E-posta</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -219,10 +269,10 @@ export default function Auth({ mode }: AuthProps) {
                 />
               </div>
               {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
-            </div>
+            </div>}
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Şifre</Label>
+            {mode !== 'forgot' && <div className="space-y-2">
+              <Label htmlFor="password">{mode === 'reset' ? 'Yeni Şifre' : 'Şifre'}</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -245,12 +295,28 @@ export default function Auth({ mode }: AuthProps) {
                 </Button>
               </div>
               {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
-            </div>
+            </div>}
 
             <Button type="submit" className="w-full dream-gradient" disabled={isLoading}>
-              {isLoading ? 'Lütfen bekleyin...' : mode === 'login' ? 'Giriş Yap' : 'Kayıt Ol'}
+              {isLoading
+                ? 'Lütfen bekleyin...'
+                : mode === 'login'
+                ? 'Giriş Yap'
+                : mode === 'register'
+                ? 'Kayıt Ol'
+                : mode === 'forgot'
+                ? <><KeyRound className="mr-2 h-4 w-4" /> Sıfırlama Bağlantısı Gönder</>
+                : 'Şifreyi Güncelle'}
             </Button>
           </form>
+
+          {mode === 'login' && (
+            <div className="mt-4 text-center">
+              <Link to="/sifremi-unuttum" className="text-sm font-medium text-primary hover:underline">
+                Parolamı unuttum
+              </Link>
+            </div>
+          )}
 
           {/* Switch Mode */}
           <p className="text-center text-sm text-muted-foreground mt-6">
@@ -261,9 +327,16 @@ export default function Auth({ mode }: AuthProps) {
                   Kayıt Olun
                 </Link>
               </>
-            ) : (
+            ) : mode === 'register' ? (
               <>
                 Zaten hesabınız var mı?{' '}
+                <Link to="/giris" className="text-primary hover:underline font-medium">
+                  Giriş Yapın
+                </Link>
+              </>
+            ) : (
+              <>
+                Şifrenizi hatırladınız mı?{' '}
                 <Link to="/giris" className="text-primary hover:underline font-medium">
                   Giriş Yapın
                 </Link>

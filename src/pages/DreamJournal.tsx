@@ -403,6 +403,24 @@ export default function DreamJournal() {
           </div>
         </div>
 
+        <div className="mb-8 rounded-3xl border border-violet-500/20 bg-gradient-to-br from-violet-500/10 via-fuchsia-500/5 to-background p-5 shadow-sm md:p-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-start gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-violet-500/15 text-violet-600 dark:text-violet-300">
+                <Mic className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="font-serif-dream text-xl font-bold">Rüyanı sesle kaydet</h2>
+                <p className="mt-1 text-sm text-muted-foreground">Mikrofonla anlat, içerik alanına otomatik olarak düz yazı şeklinde aktarılsın.</p>
+              </div>
+            </div>
+            <Button type="button" onClick={openVoiceJournal} className="rounded-xl dream-gradient md:min-w-48">
+              <Mic className="mr-2 h-4 w-4" />
+              Sesle Kaydet
+            </Button>
+          </div>
+        </div>
+
         {/* Entries */}
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

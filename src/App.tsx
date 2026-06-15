@@ -32,6 +32,8 @@ const About = lazy(() => import("./pages/About"));
 const Contact = lazy(() => import("./pages/Contact"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Terms = lazy(() => import("./pages/Terms"));
+const Kvkk = lazy(() => import("./pages/Kvkk"));
+const CookiePolicy = lazy(() => import("./pages/CookiePolicy"));
 const Blog = lazy(() => import("./pages/Blog"));
 const BlogPost = lazy(() => import("./pages/BlogPost"));
 const BlogTag = lazy(() => import("./pages/BlogTag"));
@@ -64,6 +66,8 @@ function AnimatedRoutes() {
           <Route path="/ruya-yorumlat" element={<DreamInterpret />} />
           <Route path="/giris" element={<Auth mode="login" />} />
           <Route path="/kayit" element={<Auth mode="register" />} />
+          <Route path="/sifremi-unuttum" element={<Auth mode="forgot" />} />
+          <Route path="/sifre-sifirla" element={<Auth mode="reset" />} />
           <Route path="/ara" element={<Search />} />
           <Route path="/ruya/:slug" element={<DreamDetail />} />
           <Route path="/ruya-tabirleri" element={<Navigate replace to="/populer" />} />
@@ -82,6 +86,8 @@ function AnimatedRoutes() {
           <Route path="/iletisim" element={<Contact />} />
           <Route path="/gizlilik" element={<Privacy />} />
           <Route path="/kullanim-kosullari" element={<Terms />} />
+          <Route path="/kvkk" element={<Kvkk />} />
+          <Route path="/cerez-politikasi" element={<CookiePolicy />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/blog/etiket/:tag" element={<BlogTag />} />
           <Route path="/blog/:slug" element={<BlogPost />} />

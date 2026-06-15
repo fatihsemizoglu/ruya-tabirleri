@@ -96,6 +96,7 @@ export default function Contact() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mapProvider, setMapProvider] = useState<MapProvider>('openstreetmap');
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [mapFailed, setMapFailed] = useState(false);
   const [formData, setFormData] = useState({
     name: '', email: '', subject: '', reason: 'genel', message: '',
   });
@@ -121,7 +122,7 @@ export default function Contact() {
   const getMapEmbedUrl = (provider: MapProvider) => {
     switch (provider) {
       case 'openstreetmap':
-        return `https://www.openstreetmap.org/export/embed.html?bbox=${lng - 0.2}%2C${lat - 0.075}%2C${lng + 0.2}%2C${lat + 0.075}&layer=mapnik&marker=${lat}%2C${lng}`;
+        return `https://www.openstreetmap.org/export/embed.html?bbox=${lng - 0.05}%2C${lat - 0.035}%2C${lng + 0.05}%2C${lat + 0.035}&layer=mapnik&marker=${lat},${lng}`;
       case 'google':
         return `https://maps.google.com/maps?q=${lat},${lng}&z=${zoom}&output=embed`;
       case 'apple':
@@ -168,6 +169,7 @@ export default function Contact() {
   const handleProviderChange = (provider: MapProvider) => {
     setMapProvider(provider);
     setMapLoaded(false);
+    setMapFailed(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -525,13 +527,22 @@ export default function Contact() {
               {/* Harita Alanı */}
               <div className="relative">
                 <div className="relative w-full h-[380px] sm:h-[440px] md:h-[500px] bg-muted">
-                  {!mapLoaded && (
+                  {(!mapLoaded || mapFailed) && (
                     <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-muted/60 to-muted/30 z-10 pointer-events-none">
-                      <div className="flex flex-col items-center gap-3">
+                      <div className="flex max-w-sm flex-col items-center gap-3 px-6 text-center">
                         <div className={cn('w-12 h-12 rounded-2xl flex items-center justify-center animate-pulse', currentProvider.bg, currentProvider.textColor)}>
                           <ProviderLogo provider={currentProvider} />
                         </div>
-                        <div className="text-sm font-medium text-muted-foreground">{currentProvider.name} yükleniyor...</div>
+                        <div className="text-sm font-medium text-muted-foreground">
+                          {mapFailed ? `${currentProvider.name} haritası gömülü olarak açılamadı.` : `${currentProvider.name} yükleniyor...`}
+                        </div>
+                        {mapFailed && (
+                          <Button asChild size="sm" variant="outline" className="pointer-events-auto rounded-lg">
+                            <a href={externalLinks.view} target="_blank" rel="noopener noreferrer">
+                              <ExternalLink className="mr-1.5 h-3.5 w-3.5" /> Haritada Aç
+                            </a>
+                          </Button>
+                        )}
                       </div>
                     </div>
                   )}
@@ -543,6 +554,7 @@ export default function Contact() {
                     loading="lazy"
                     referrerPolicy="no-referrer-when-downgrade"
                     onLoad={() => setMapLoaded(true)}
+                    onError={() => setMapFailed(true)}
                     style={{ filter: 'saturate(1.1) contrast(1.05)' }}
                     allowFullScreen
                   />
