@@ -268,7 +268,7 @@ export default function Contact() {
             </div>
           </div>
 
-          <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-5 gap-6 lg:gap-8 mb-14">
+          <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-5 gap-6 lg:gap-8 mb-14 items-start">
             {/* İletişim bilgi kartları (dinamik) */}
             <div className="lg:col-span-2 space-y-4">
               <Card className="border-border/60 hover:border-primary/40 transition-all hover:shadow-xl hover:shadow-primary/10 group overflow-hidden relative">
@@ -355,44 +355,44 @@ export default function Contact() {
 
               {/* Sosyal Medya */}
               <Card className="border-border/60 overflow-hidden">
-                <CardContent className="p-6">
-                  <h3 className="font-semibold mb-3 flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center">
-                      <Globe className="h-4 w-4 text-primary" />
-                    </div>
-                    Bizi Takip Edin
-                  </h3>
+                <CardContent className="p-4 sm:p-5">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <h3 className="font-semibold flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center">
+                        <Globe className="h-4 w-4 text-primary" />
+                      </div>
+                      Bizi Takip Edin
+                    </h3>
+                    <span className="text-[11px] font-medium text-muted-foreground">{dynamicSocials.length} kanal</span>
+                  </div>
                   {dynamicSocials.length > 0 ? (
-                    <div className="space-y-2">
+                    <div className="grid grid-cols-3 sm:grid-cols-6 lg:grid-cols-3 gap-2">
                       {dynamicSocials.map((s) => (
                         <a
                           key={s.name}
                           href={s.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center justify-between p-2.5 rounded-xl bg-muted/40 hover:bg-muted transition-all group hover:shadow-sm"
+                          aria-label={`${s.name} hesabını aç`}
+                          title={s.name}
+                          className="group flex min-h-[4.25rem] flex-col items-center justify-center gap-1.5 rounded-xl border border-border/50 bg-muted/35 px-2 py-2.5 text-center transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:bg-card hover:shadow-sm"
                         >
-                          <div className="flex items-center gap-2.5">
-                            <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${s.color} flex items-center justify-center text-white text-xs font-bold shadow-sm group-hover:scale-110 transition-transform`}>
-                              {s.icon}
-                            </div>
-                            <span className="text-sm font-medium">{s.name}</span>
+                          <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${s.color} flex items-center justify-center text-white text-[10px] font-bold shadow-sm transition-transform group-hover:scale-105`}>
+                            {s.icon}
                           </div>
-                          <span className="text-xs text-muted-foreground group-hover:text-primary transition-colors inline-flex items-center gap-1">
-                            Takip Et <ExternalLink className="h-3 w-3" />
-                          </span>
+                          <span className="max-w-full truncate text-[11px] font-medium leading-none">{s.name}</span>
                         </a>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-muted-foreground text-center py-4">Sosyal medya hesapları yakında eklenecek.</p>
+                    <p className="text-sm text-muted-foreground text-center py-3">Sosyal medya hesapları yakında eklenecek.</p>
                   )}
                 </CardContent>
               </Card>
             </div>
 
             {/* Mesaj Formu */}
-            <Card className="lg:col-span-3 border-border/60 shadow-xl shadow-primary/5 overflow-hidden">
+            <Card className="lg:col-span-3 self-start border-border/60 shadow-xl shadow-primary/5 overflow-hidden">
               <div className="h-1 dream-gradient" />
               <CardHeader className="border-b border-border/60 bg-gradient-to-br from-primary/5 via-transparent to-purple-500/5">
                 <CardTitle className="flex items-center gap-2 text-xl">
@@ -403,7 +403,7 @@ export default function Contact() {
                 </CardTitle>
                 <p className="text-sm text-muted-foreground mt-1.5">Formu doldurun, en kısa sürede size dönüş yapalım.</p>
               </CardHeader>
-              <CardContent className="pt-6">
+              <CardContent className="pt-5 sm:pt-6">
                 <form onSubmit={handleSubmit} className="space-y-5">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
