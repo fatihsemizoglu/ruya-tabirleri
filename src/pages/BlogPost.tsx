@@ -34,6 +34,7 @@ import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { Seo } from '@/components/Seo';
 import { nativeShare } from '@/lib/share';
 import { haptic } from '@/lib/haptics';
+import { absoluteUrl, SITE_NAME } from '@/lib/site';
 
 type TextSize = 'sm' | 'base' | 'lg';
 
@@ -210,6 +211,40 @@ export default function BlogPost() {
   const seoDescription = post?.seo_description || post?.excerpt || undefined;
   const seoImage = post?.featured_image || undefined;
   const seoPath = post ? `/blog/${post.slug}` : '/blog';
+  const blogJsonLd = post ? [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BlogPosting',
+      headline: seoTitle,
+      description: seoDescription,
+      image: seoImage ? absoluteUrl(seoImage) : absoluteUrl('/og-image.png'),
+      url: absoluteUrl(seoPath),
+      datePublished: post.created_at,
+      dateModified: post.updated_at || post.created_at,
+      author: {
+        '@type': 'Person',
+        name: post.author?.full_name || post.author?.username || SITE_NAME,
+      },
+      publisher: {
+        '@type': 'Organization',
+        name: SITE_NAME,
+        logo: { '@type': 'ImageObject', url: absoluteUrl('/pwa-512x512.png') },
+      },
+      mainEntityOfPage: absoluteUrl(seoPath),
+      articleSection: post.category?.name,
+      keywords: post.tags?.join(', '),
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Ana Sayfa', item: absoluteUrl('/') },
+        { '@type': 'ListItem', position: 2, name: 'Blog', item: absoluteUrl('/blog') },
+        ...(post.category ? [{ '@type': 'ListItem', position: 3, name: post.category.name, item: absoluteUrl(`/blog?kategori=${post.category.slug}`) }] : []),
+        { '@type': 'ListItem', position: post.category ? 4 : 3, name: post.title, item: absoluteUrl(seoPath) },
+      ],
+    },
+  ] : undefined;
 
   const handleLike = async () => {
     if (!user) {
@@ -290,6 +325,7 @@ export default function BlogPost() {
         path={seoPath}
         image={seoImage}
         type="article"
+        jsonLd={blogJsonLd}
       />
       <PageTransition>
         <article className="min-h-screen bg-gradient-to-b from-background to-muted/30">

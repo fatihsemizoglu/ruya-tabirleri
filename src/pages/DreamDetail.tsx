@@ -17,6 +17,7 @@ import type { Dream, Comment, Profile, Category } from '@/types/database';
 import { Seo } from '@/components/Seo';
 import { nativeShare } from '@/lib/share';
 import { haptic } from '@/lib/haptics';
+import { absoluteUrl, SITE_NAME } from '@/lib/site';
 
 const gradientPalette = [
   'from-violet-500 to-fuchsia-500',
@@ -198,23 +199,6 @@ function formatPlainDreamContent(content: string, title: string): string {
   }).filter(Boolean).join('\n');
 
   return sanitizeHtml(html);
-}
-
-function DreamMeta({ dream }: { dream: Dream }) {
-  useEffect(() => {
-    document.title = dream.meta_title || `${dream.title} - Rüya Tabiri`;
-
-    const metaDescription = document.querySelector('meta[name="description"]');
-    if (metaDescription) {
-      metaDescription.setAttribute('content', dream.meta_description || dream.content.slice(0, 160));
-    }
-
-    return () => {
-      document.title = 'Rüya Tabiri';
-    };
-  }, [dream]);
-
-  return null;
 }
 
 function ReadingProgress() {
@@ -549,16 +533,47 @@ export default function DreamDetail() {
   const wordCount = dream.content.replace(/<[^>]*>/g, ' ').split(/\s+/).filter(Boolean).length;
   const readTime = Math.max(1, Math.ceil(wordCount / 200));
   const formattedContent = formatPlainDreamContent(dream.content, dream.title);
+  const dreamPath = `/ruya/${dream.slug}`;
+  const dreamDescription = dream.meta_description || dream.excerpt || `${dream.title} rüya tabiri ve yorumu`;
+  const dreamJsonLd = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'Article',
+      headline: dream.meta_title || dream.title,
+      description: dreamDescription,
+      url: absoluteUrl(dreamPath),
+      datePublished: dream.created_at,
+      dateModified: dream.updated_at || dream.created_at,
+      author: { '@type': 'Organization', name: SITE_NAME },
+      publisher: {
+        '@type': 'Organization',
+        name: SITE_NAME,
+        logo: { '@type': 'ImageObject', url: absoluteUrl('/pwa-512x512.png') },
+      },
+      mainEntityOfPage: absoluteUrl(dreamPath),
+      articleSection: category?.name,
+      keywords: dream.keywords?.join(', '),
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Ana Sayfa', item: absoluteUrl('/') },
+        ...(category ? [{ '@type': 'ListItem', position: 2, name: category.name, item: absoluteUrl(`/kategori/${category.slug}`) }] : []),
+        { '@type': 'ListItem', position: category ? 3 : 2, name: dream.title, item: absoluteUrl(dreamPath) },
+      ],
+    },
+  ];
 
   return (
     <Layout>
       <Seo
-        title={dream.title}
-        description={dream.excerpt || `${dream.title} rüya tabiri ve yorumu`}
-        path={`/ruya/${dream.slug}`}
+        title={dream.meta_title || dream.title}
+        description={dreamDescription}
+        path={dreamPath}
         type="article"
+        jsonLd={dreamJsonLd}
       />
-      <DreamMeta dream={dream} />
       <ReadingProgress />
 
       {/* Hero Section */}
