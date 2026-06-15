@@ -25,15 +25,27 @@ export function TableOfContents({ content, className }: TableOfContentsProps) {
     const doc = parser.parseFromString(content, 'text/html');
     const headings = doc.querySelectorAll('h2, h3');
     
+    const slugCounts = new Map<string, number>();
     const tocItems: TocItem[] = [];
-    headings.forEach((heading, index) => {
-      const id = `heading-${index}`;
-      const text = heading.textContent || '';
+    headings.forEach((heading) => {
+      const text = heading.textContent?.trim() || '';
+      if (!text) return;
+
+      // Generate slug from heading text
+      const baseSlug = text
+        .toLocaleLowerCase('tr-TR')
+        .replace(/[^a-zçğıöşü0-9\s-]/gi, '')
+        .replace(/\s+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 60) || 'heading';
+
+      // Handle duplicate slugs with counter
+      const count = slugCounts.get(baseSlug) || 0;
+      slugCounts.set(baseSlug, count + 1);
+      const id = count === 0 ? baseSlug : `${baseSlug}-${count}`;
+
       const level = parseInt(heading.tagName.charAt(1));
-      
-      if (text.trim()) {
-        tocItems.push({ id, text, level });
-      }
+      tocItems.push({ id, text, level });
     });
     
     setItems(tocItems);
@@ -45,8 +57,21 @@ export function TableOfContents({ content, className }: TableOfContentsProps) {
     if (!articleContent) return;
 
     const headings = articleContent.querySelectorAll('h2, h3');
-    headings.forEach((heading, index) => {
-      heading.id = `heading-${index}`;
+    const slugCounts = new Map<string, number>();
+    headings.forEach((heading) => {
+      const text = heading.textContent?.trim() || '';
+      if (!text) return;
+
+      const baseSlug = text
+        .toLocaleLowerCase('tr-TR')
+        .replace(/[^a-zçğıöşü0-9\s-]/gi, '')
+        .replace(/\s+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 60) || 'heading';
+
+      const count = slugCounts.get(baseSlug) || 0;
+      slugCounts.set(baseSlug, count + 1);
+      heading.id = count === 0 ? baseSlug : `${baseSlug}-${count}`;
     });
 
     // Intersection Observer for active heading

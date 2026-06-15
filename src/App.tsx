@@ -10,6 +10,7 @@ import { AuthProvider } from "@/contexts/AuthProvider";
 import { OfflineIndicator } from "@/components/pwa/OfflineIndicator";
 import { MaintenanceModeGuard } from "@/components/layout/MaintenanceModeGuard";
 import { WebVitals } from "@/components/perf/WebVitals";
+import { RouteErrorBoundary } from "@/components/RouteErrorBoundary";
 
 // Eager load: en çok kullanılan sayfalar (initial bundle)
 import Index from "./pages/Index";
@@ -68,29 +69,33 @@ function AnimatedRoutes() {
           <Route path="/kayit" element={<Auth mode="register" />} />
           <Route path="/sifremi-unuttum" element={<Auth mode="forgot" />} />
           <Route path="/sifre-sifirla" element={<Auth mode="reset" />} />
-          <Route path="/ara" element={<Search />} />
-          <Route path="/ruya/:slug" element={<DreamDetail />} />
+          <Route path="/ara" element={<RouteErrorBoundary label="Search"><Search /></RouteErrorBoundary>} />
+          {/* Content routes - isolated boundary */}
+          <Route path="/ruya/:slug" element={<RouteErrorBoundary label="DreamDetail"><DreamDetail /></RouteErrorBoundary>} />
           <Route path="/ruya-tabirleri" element={<Navigate replace to="/populer" />} />
           <Route path="/kategoriler" element={<Categories />} />
           <Route path="/kategori/:slug" element={<CategoryDetail />} />
           <Route path="/populer" element={<Popular />} />
           <Route path="/az" element={<AlphabetList />} />
           <Route path="/az/:letter" element={<AlphabetList />} />
-          <Route path="/profil" element={<Profile />} />
-          <Route path="/ruya-gunlugum" element={<DreamJournal />} />
-          <Route path="/ruya-gunlugum/sesli" element={<DreamJournalVoice />} />
-          <Route path="/favorilerim" element={<Favorites />} />
-          <Route path="/gecmis" element={<History />} />
-          <Route path="/admin/*" element={<Admin />} />
+          {/* User routes - isolated boundary */}
+          <Route path="/profil" element={<RouteErrorBoundary label="Profile"><Profile /></RouteErrorBoundary>} />
+          <Route path="/ruya-gunlugum" element={<RouteErrorBoundary label="Journal"><DreamJournal /></RouteErrorBoundary>} />
+          <Route path="/ruya-gunlugum/sesli" element={<RouteErrorBoundary label="Journal"><DreamJournalVoice /></RouteErrorBoundary>} />
+          <Route path="/favorilerim" element={<RouteErrorBoundary label="Favorites"><Favorites /></RouteErrorBoundary>} />
+          <Route path="/gecmis" element={<RouteErrorBoundary label="History"><History /></RouteErrorBoundary>} />
+          {/* Admin routes - isolated boundary */}
+          <Route path="/admin/*" element={<RouteErrorBoundary label="Admin"><Admin /></RouteErrorBoundary>} />
           <Route path="/hakkimizda" element={<About />} />
           <Route path="/iletisim" element={<Contact />} />
           <Route path="/gizlilik" element={<Privacy />} />
           <Route path="/kullanim-kosullari" element={<Terms />} />
           <Route path="/kvkk" element={<Kvkk />} />
           <Route path="/cerez-politikasi" element={<CookiePolicy />} />
-          <Route path="/blog" element={<Blog />} />
-          <Route path="/blog/etiket/:tag" element={<BlogTag />} />
-          <Route path="/blog/:slug" element={<BlogPost />} />
+          {/* Blog routes - isolated boundary */}
+          <Route path="/blog" element={<RouteErrorBoundary label="Blog"><Blog /></RouteErrorBoundary>} />
+          <Route path="/blog/etiket/:tag" element={<RouteErrorBoundary label="Blog"><BlogTag /></RouteErrorBoundary>} />
+          <Route path="/blog/:slug" element={<RouteErrorBoundary label="Blog"><BlogPost /></RouteErrorBoundary>} />
           <Route path="/yukle" element={<Install />} />
           <Route path="/abonelik-dogrula" element={<SubscriptionVerify />} />
           <Route path="/abonelik-iptal" element={<SubscriptionCancel />} />

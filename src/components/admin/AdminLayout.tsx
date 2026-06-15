@@ -1,4 +1,4 @@
-import { ReactNode, useState, useEffect } from 'react';
+import { ReactNode, useState, useEffect, memo } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { AdminSidebar } from './AdminSidebar';
@@ -17,22 +17,24 @@ interface AdminLayoutProps {
   hideHeaderBanner?: boolean;
 }
 
+/** Isolated live clock to avoid re-rendering the entire layout every second */
+const LiveClock = memo(function LiveClock() {
+  const [time, setTime] = useState(() =>
+    new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  );
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTime(new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+  return <>{time}</>;
+});
+
 export function AdminLayout({ children, activeTab, onTabChange, title, description, hideHeaderBanner }: AdminLayoutProps) {
   const { user, isAdmin, isLoading } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [currentTime, setCurrentTime] = useState(() => {
-    const now = new Date();
-    return now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  });
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      const now = new Date();
-      setCurrentTime(now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
 
   if (isLoading) {
     return (
@@ -184,7 +186,7 @@ export function AdminLayout({ children, activeTab, onTabChange, title, descripti
                     {/* Last Updated */}
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-2 font-medium">
                       <Clock className="h-3.5 w-3.5" />
-                      <span>Son güncelleme: {currentTime}</span>
+                      <span>Son güncelleme: <LiveClock /></span>
                     </div>
                   </div>
                 </div>

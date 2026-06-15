@@ -57,8 +57,8 @@ export function Header() {
 
   const STALE_5_MIN = 5 * 60 * 1000;
   const location = useLocation();
-  const shouldLoadCategories = openCategoryMenu || isMenuOpen || location.pathname === '/kategoriler' || location.pathname.startsWith('/kategori/');
-  const shouldLoadBlogMenu = openBlogMega || isMenuOpen || location.pathname.startsWith('/blog');
+  const shouldLoadCategories = openCategoryMenu || mobileCategoryOpen || isMenuOpen || location.pathname === '/kategoriler' || location.pathname.startsWith('/kategori/');
+  const shouldLoadBlogMenu = openBlogMega || mobileBlogOpen || location.pathname.startsWith('/blog');
 
   const { data: categories = [] } = useQuery({
     queryKey: ['header-dream-categories'],

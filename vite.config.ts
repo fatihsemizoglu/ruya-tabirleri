@@ -1,4 +1,4 @@
-import { defineConfig } from "vite";
+import { defineConfig, type PluginOption } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
@@ -25,14 +25,14 @@ export default defineConfig(({ mode }) => ({
       gzipSize: true,
       brotliSize: true,
     }),
-    mode === "production" && SENTRY_AUTH_TOKEN && sentryVitePlugin({
+    mode === "production" && SENTRY_AUTH_TOKEN ? sentryVitePlugin({
       org: SENTRY_ORG,
       project: SENTRY_PROJECT,
       authToken: SENTRY_AUTH_TOKEN,
       sourcemaps: { assets: "./dist/**/*.{js,css,map}" },
       release: { name: process.env.VITE_APP_VERSION || `ruya-tabirleri@${Date.now()}` },
       telemetry: false,
-    }),
+    }) : false,
     VitePWA({
       registerType: "autoUpdate",
       workbox: {
@@ -44,6 +44,19 @@ export default defineConfig(({ mode }) => ({
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB limit
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
         runtimeCaching: [
+          {
+            // Navigation requests: try network first, timeout 5s, fall back to precached index.html (SPA)
+            // The SPA's OfflineIndicator shows a banner when navigator.onLine is false
+            urlPattern: ({ request }: { request: Request }) => request.mode === 'navigate',
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "pages-cache",
+              networkTimeoutSeconds: 5,
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
             handler: "CacheFirst",
@@ -102,6 +115,18 @@ export default defineConfig(({ mode }) => ({
                 statuses: [0, 200]
               }
             }
+          },
+          {
+            // Same-origin images: StaleWhileRevalidate for fast display + background updates
+            urlPattern: ({ request }: { request: Request }) => request.destination === 'image',
+            handler: "StaleWhileRevalidate",
+            options: {
+              cacheName: "local-images",
+              expiration: {
+                maxEntries: 200,
+                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+              }
+            }
           }
         ]
       },
@@ -141,7 +166,7 @@ export default defineConfig(({ mode }) => ({
         screenshots: []
       },
     })
-  ].filter(Boolean),
+  ] as PluginOption[],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -165,9 +190,8 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         // Single vendor chunk to avoid circular chunk dependencies
-        // (react-vendor -> vendor -> react-vendor loops caused
-        // "Cannot read properties of undefined (reading 'createContext')"
-        // at runtime because React was loaded after code that needed it).
+        // (react-vendor -> vendor -> heavy-vendor loops cause
+        // "Cannot read properties of undefined" at runtime).
         manualChunks(id) {
           if (id.includes('node_modules')) {
             return 'vendor';
@@ -179,7 +203,8 @@ export default defineConfig(({ mode }) => ({
       },
     },
     reportCompressedSize: true,
-    chunkSizeWarningLimit: 800,
+    // 2500 kB limit - single vendor chunk is safest approach
+    chunkSizeWarningLimit: 2500,
   },
   legacy: {
     skipWebSocketTokenCheck: true,

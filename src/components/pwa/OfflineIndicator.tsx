@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { WifiOff, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { usePWA } from '@/hooks/usePWA';
 
 export function OfflineIndicator() {

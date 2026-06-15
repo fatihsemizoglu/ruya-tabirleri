@@ -15,8 +15,11 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import type { Json } from '@/integrations/supabase/types';
 import { getErrorMessage, notify } from '@/lib/notify';
-import type { Dream, Favorite, ViewHistory, DreamJournalEntry, DreamMood, Comment } from '@/types/database';
+import type { Dream, DreamJournalEntry, DreamMood, Comment } from '@/types/database';
+import { ProfileFavoritesTab } from '@/components/profile/ProfileFavoritesTab';
+import { ProfileHistoryTab } from '@/components/profile/ProfileHistoryTab';
 
 type MoodValue = DreamMood | '';
 
@@ -67,12 +70,6 @@ export default function Profile() {
     newPassword: '',
     confirmPassword: '',
   });
-
-  const [favorites, setFavorites] = useState<(Favorite & { dreams: Dream })[]>([]);
-  const [favoritesLoading, setFavoritesLoading] = useState(true);
-
-  const [history, setHistory] = useState<(ViewHistory & { dreams: Dream })[]>([]);
-  const [historyLoading, setHistoryLoading] = useState(true);
 
   const [entries, setEntries] = useState<DreamJournalEntry[]>([]);
   const [entriesLoading, setEntriesLoading] = useState(true);
@@ -146,7 +143,7 @@ export default function Profile() {
         .order('created_at', { ascending: false });
 
       const moodDist: Record<string, number> = {};
-      journalData?.forEach((entry: DreamJournalEntry) => {
+      (journalData as unknown as DreamJournalEntry[])?.forEach((entry) => {
         if (entry.mood) {
           moodDist[entry.mood] = (moodDist[entry.mood] || 0) + 1;
         }
@@ -154,16 +151,17 @@ export default function Profile() {
 
       const recentActivity: { type: string; title: string; date: string; link?: string }[] = [];
 
-      commentsData?.slice(0, 3).forEach((comment: Comment & { dreams: { title: string; slug: string } | null }) => {
+      commentsData?.slice(0, 3).forEach((comment: Record<string, any>) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+        const dream = comment.dreams as { title: string; slug: string } | null;
         recentActivity.push({
           type: 'comment',
-          title: t('profile.commentActivity', { title: comment.dreams?.title || t('profile.dreamFallback') }),
-          date: comment.created_at,
-          link: comment.dreams?.slug ? `/ruya/${comment.dreams.slug}` : undefined,
+          title: t('profile.commentActivity', { title: dream?.title || t('profile.dreamFallback') }),
+          date: comment.created_at as string,
+          ...(dream?.slug ? { link: `/ruya/${dream.slug}` } : {}),
         });
       });
 
-      journalData?.slice(0, 3).forEach((entry: DreamJournalEntry) => {
+      (journalData as unknown as DreamJournalEntry[])?.slice(0, 3).forEach((entry) => {
         recentActivity.push({
           type: 'journal',
           title: t('profile.journalActivity', { title: entry.title }),
@@ -190,50 +188,6 @@ export default function Profile() {
     }
   }, [user, profile]);
 
-  const fetchFavorites = useCallback(async () => {
-    setFavoritesLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('favorites')
-        .select('*, dreams(*)')
-        .eq('user_id', user!.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setFavorites((data as (Favorite & { dreams: Dream })[]) || []);
-    } catch (error) {
-      console.error('Error fetching favorites:', error);
-    } finally {
-      setFavoritesLoading(false);
-    }
-  }, [user]);
-
-  const fetchHistory = useCallback(async () => {
-    setHistoryLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('view_history')
-        .select('*, dreams(*)')
-        .eq('user_id', user!.id)
-        .order('viewed_at', { ascending: false })
-        .limit(50);
-
-      if (error) throw error;
-
-      const uniqueHistory = data?.reduce((acc: (ViewHistory & { dreams?: Dream })[], curr: ViewHistory & { dreams?: Dream }) => {
-        const exists = acc.find(h => h.dream_id === curr.dream_id);
-        if (!exists) acc.push(curr);
-        return acc;
-      }, []) || [];
-
-      setHistory(uniqueHistory as (ViewHistory & { dreams: Dream })[]);
-    } catch (error) {
-      console.error('Error fetching history:', error);
-    } finally {
-      setHistoryLoading(false);
-    }
-  }, [user]);
-
   const fetchEntries = useCallback(async () => {
     setEntriesLoading(true);
     try {
@@ -257,14 +211,10 @@ export default function Profile() {
 
     if (activeTab === 'stats') {
       fetchStats();
-    } else if (activeTab === 'favorites' && favorites.length === 0) {
-      fetchFavorites();
-    } else if (activeTab === 'history' && history.length === 0) {
-      fetchHistory();
     } else if (activeTab === 'journal' && entries.length === 0) {
       fetchEntries();
     }
-  }, [activeTab, user, fetchStats, fetchFavorites, fetchHistory, fetchEntries, favorites.length, history.length, entries.length]);
+  }, [activeTab, user, fetchStats, fetchEntries, entries.length]);
 
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -346,40 +296,6 @@ export default function Profile() {
     }
   };
 
-  const removeFavorite = async (id: string) => {
-    try {
-      const { error } = await supabase.from('favorites').delete().eq('id', id);
-      if (error) throw error;
-      notify.success(t('profile.favoriteRemoved'));
-      setFavorites(favorites.filter(f => f.id !== id));
-    } catch (error) {
-      notify.error(error instanceof Error ? error.message : t('favorites.error'));
-    }
-  };
-
-  const clearHistory = async () => {
-    if (!confirm(t('profile.historyClearConfirm'))) return;
-
-    try {
-      const { error } = await supabase.from('view_history').delete().eq('user_id', user!.id);
-      if (error) throw error;
-      notify.success(t('profile.historyCleared'));
-      setHistory([]);
-    } catch (error) {
-      notify.error(error instanceof Error ? error.message : t('favorites.error'));
-    }
-  };
-
-  const removeHistoryItem = async (id: string) => {
-    try {
-      const { error } = await supabase.from('view_history').delete().eq('id', id);
-      if (error) throw error;
-      setHistory(history.filter(h => h.id !== id));
-    } catch (error) {
-      notify.error(error instanceof Error ? error.message : t('favorites.error'));
-    }
-  };
-
   const handleJournalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -388,9 +304,9 @@ export default function Profile() {
         user_id: user!.id,
         title: journalForm.title,
         content: journalForm.content,
-        dream_date: journalForm.dream_date,
+        dream_date: journalForm.dream_date || null,
         mood: journalForm.mood || null,
-        tags: journalForm.tags ? journalForm.tags.split(',').map(t => t.trim()) : [],
+        tags: (journalForm.tags ? journalForm.tags.split(',').map(t => t.trim()) : []) as unknown as Json,
       };
 
       if (selectedEntry) {
@@ -965,7 +881,7 @@ export default function Profile() {
                           const radius = 24;
                           const circumference = 2 * Math.PI * radius;
                           const strokeDashoffset = circumference - (percentage / 100) * circumference;
-                          const colors = moodColors[mood] || moodColors.neutral;
+                          const colors = moodColors[mood] ?? moodColors.neutral ?? { ring: 'stroke-slate-400', text: 'text-slate-500', bg: 'bg-slate-500/10' };
 
                           return (
                             <div key={mood} className="flex flex-col items-center p-3 rounded-xl bg-muted/30 border border-border/60 hover:border-primary/30 transition-all text-center">
@@ -1333,141 +1249,12 @@ export default function Profile() {
 
             {/* Favorites Tab */}
             <TabsContent value="favorites" className="mt-0">
-              <div className="mb-6">
-                <h2 className="text-2xl font-serif-dream font-bold">{t('profile.favoritesTitle')}</h2>
-                <p className="text-sm text-muted-foreground">{t('profile.favoritesDesc')}</p>
-              </div>
-              {favoritesLoading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {[1, 2, 3, 4].map((i) => <div key={i} className="h-40 surface rounded-2xl animate-pulse" />)}
-                </div>
-              ) : favorites.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  {favorites.map((fav) => (
-                    <motion.div
-                      key={fav.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="group relative surface p-5 hover:shadow-xl hover:-translate-y-0.5 transition-all overflow-hidden"
-                    >
-                      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-rose-500 to-pink-500" />
-                      <Link to={`/ruya/${fav.dreams.slug}`} className="block">
-                        <h3 className="text-lg font-serif-dream font-bold mb-2 group-hover:text-primary transition-colors line-clamp-2">
-                          {fav.dreams.title}
-                        </h3>
-                        <p className="text-sm text-muted-foreground line-clamp-2 mb-4">{fav.dreams.content}</p>
-                      </Link>
-                      <div className="flex items-center justify-between pt-3 border-t border-border/60">
-                        <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Eye className="h-3.5 w-3.5" />
-                            {(fav.dreams.view_count || 0).toLocaleString(locale)}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Heart className="h-3.5 w-3.5" />
-                            {(fav.dreams.like_count || 0).toLocaleString(locale)}
-                          </span>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removeFavorite(fav.id)}
-                          className="h-8 w-8 rounded-lg text-muted-foreground hover:text-rose-600 hover:bg-rose-500/10"
-                          title={t('profile.favoriteRemoveConfirm')}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              ) : (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="text-center py-20 surface rounded-3xl"
-                >
-                  <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-rose-500/20 to-pink-500/20 flex items-center justify-center mx-auto mb-5">
-                    <Heart className="h-10 w-10 text-rose-500" />
-                  </div>
-                  <h3 className="text-xl font-serif-dream font-bold mb-2">{t('profile.noFavoritesInTab')}</h3>
-                  <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                    {t('profile.noFavoritesInTabDesc')}
-                  </p>
-                  <Button asChild className="rounded-xl h-11 bg-gradient-to-r from-rose-600 to-pink-600 text-white">
-                    <Link to="/">{t('profile.browseDreams')}</Link>
-                  </Button>
-                </motion.div>
-              )}
+              <ProfileFavoritesTab userId={user.id} locale={locale} />
             </TabsContent>
 
             {/* History Tab */}
             <TabsContent value="history" className="mt-0">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-2xl font-serif-dream font-bold">{t('profile.historyTitle')}</h2>
-                  <p className="text-sm text-muted-foreground">{t('profile.historyDesc')}</p>
-                </div>
-                {history.length > 0 && (
-                  <Button variant="outline" size="sm" onClick={clearHistory} className="rounded-xl hover:bg-rose-500/10 hover:text-rose-600 hover:border-rose-500/30">
-                    <Trash2 className="mr-2 h-4 w-4" />{t('profile.clearAllHistory')}
-                  </Button>
-                )}
-              </div>
-              {historyLoading ? (
-                <div className="space-y-3">
-                  {[1, 2, 3, 4, 5].map((i) => <div key={i} className="h-16 surface rounded-xl animate-pulse" />)}
-                </div>
-              ) : history.length > 0 ? (
-                <div className="space-y-2">
-                  {history.map((item) => (
-                    <div key={item.id} className="group flex items-center gap-3 p-4 surface hover:border-amber-500/30 transition-all">
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/10 to-orange-500/10 flex items-center justify-center shrink-0">
-                        <Clock className="h-4 w-4 text-amber-600" />
-                      </div>
-                      <Link to={`/ruya/${item.dreams.slug}`} className="flex-1 min-w-0">
-                        <h3 className="font-semibold group-hover:text-primary transition-colors line-clamp-1">
-                          {item.dreams.title}
-                        </h3>
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
-                          <span>
-                            {new Date(item.viewed_at).toLocaleDateString(locale, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Eye className="h-3 w-3" />
-                            {(item.dreams.view_count || 0).toLocaleString(locale)}
-                          </span>
-                        </div>
-                      </Link>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeHistoryItem(item.id)}
-                        className="h-8 w-8 rounded-lg text-muted-foreground hover:text-rose-600 hover:bg-rose-500/10 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="text-center py-20 surface rounded-3xl"
-                >
-                  <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center mx-auto mb-5">
-                    <Clock className="h-10 w-10 text-amber-500" />
-                  </div>
-                  <h3 className="text-xl font-serif-dream font-bold mb-2">{t('profile.noHistory')}</h3>
-                  <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                    {t('profile.noHistoryDesc')}
-                  </p>
-                  <Button asChild className="rounded-xl h-11 bg-gradient-to-r from-amber-500 to-orange-500 text-white">
-                    <Link to="/">{t('profile.browseDreams')}</Link>
-                  </Button>
-                </motion.div>
-              )}
+              <ProfileHistoryTab userId={user.id} locale={locale} />
             </TabsContent>
           </Tabs>
         </section>
