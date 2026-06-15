@@ -3,7 +3,7 @@ import { Layout } from '@/components/layout/Layout';
 import { PremiumBackground, PremiumBadge, GradientText } from '@/components/layout/PremiumBackground';
 import {
   Mail, MessageSquare, Send, MapPin, Clock, Phone, Globe, Sparkles,
-  CheckCircle2, Heart, ShieldCheck, Navigation, Map as MapIcon,
+  CheckCircle2, Heart, ShieldCheck, Map as MapIcon,
   Compass, Copy, ExternalLink, Car, Star, Zap, Users,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,7 +26,7 @@ const contactReasons = [
   { value: 'isbirligi', label: 'İş Birliği', icon: Heart, color: 'from-violet-500 to-fuchsia-500' },
 ];
 
-type MapProvider = 'openstreetmap' | 'google' | 'apple' | 'yandex';
+type MapProvider = 'openstreetmap' | 'google' | 'yandex';
 
 const mapProviders: Array<{
   id: MapProvider;
@@ -65,18 +65,6 @@ const mapProviders: Array<{
     initial: 'G',
   },
   {
-    id: 'apple',
-    name: 'Apple Maps',
-    shortName: 'Apple',
-    description: 'Apple’ın zarif harita deneyimi',
-    color: 'from-slate-700 to-slate-900',
-    ringColor: 'ring-slate-500/40',
-    bg: 'bg-slate-500/10',
-    textColor: 'text-slate-700 dark:text-slate-300',
-    badgeBg: 'bg-slate-800',
-    initial: '',
-  },
-  {
     id: 'yandex',
     name: 'Yandex Maps',
     shortName: 'Yandex',
@@ -95,8 +83,6 @@ export default function Contact() {
   const { settings } = useSiteSettings();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mapProvider, setMapProvider] = useState<MapProvider>('openstreetmap');
-  const [mapLoaded, setMapLoaded] = useState(false);
-  const [mapFailed, setMapFailed] = useState(false);
   const [formData, setFormData] = useState({
     name: '', email: '', subject: '', reason: 'genel', message: '',
   });
@@ -119,21 +105,6 @@ export default function Contact() {
   const lng = parseFloat(settings.mapLongitude) || 28.9784;
   const zoom = 12;
 
-  const getMapEmbedUrl = (provider: MapProvider) => {
-    switch (provider) {
-      case 'openstreetmap':
-        return `https://www.openstreetmap.org/export/embed.html?bbox=${lng - 0.05}%2C${lat - 0.035}%2C${lng + 0.05}%2C${lat + 0.035}&layer=mapnik&marker=${lat},${lng}`;
-      case 'google':
-        return `https://maps.google.com/maps?q=${lat},${lng}&z=${zoom}&output=embed`;
-      case 'apple':
-        return `https://maps.apple.com/embed?v=2&ll=${lat},${lng}&z=${zoom}`;
-      case 'yandex':
-        return `https://yandex.com.tr/map-widget/v1/?ll=${lng},${lat}&z=${zoom}&pt=${lng},${lat},pm2rdl`;
-      default:
-        return '';
-    }
-  };
-
   const getMapExternalLinks = (provider: MapProvider) => {
     const links: Record<MapProvider, { view: string; directions: string }> = {
       openstreetmap: {
@@ -143,10 +114,6 @@ export default function Contact() {
       google: {
         view: `https://www.google.com/maps?q=${lat},${lng}&z=${zoom}`,
         directions: `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`,
-      },
-      apple: {
-        view: `https://maps.apple.com/?ll=${lat},${lng}&z=${zoom}&q=Konum`,
-        directions: `https://maps.apple.com/?daddr=${lat},${lng}&dirflg=d`,
       },
       yandex: {
         view: `https://yandex.com.tr/maps/?ll=${lng},${lat}&z=${zoom}&pt=${lng},${lat},pm2rdl`,
@@ -164,12 +131,6 @@ export default function Contact() {
     } else {
       toast({ title: 'Hata', description: 'Kopyalanamadı.', variant: 'destructive' });
     }
-  };
-
-  const handleProviderChange = (provider: MapProvider) => {
-    setMapProvider(provider);
-    setMapLoaded(false);
-    setMapFailed(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -195,13 +156,6 @@ export default function Contact() {
 
   // MapProvider logo rendering helper
   const ProviderLogo = ({ provider }: { provider: typeof mapProviders[number] }) => {
-    if (provider.id === 'apple') {
-      return (
-        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden>
-          <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
-        </svg>
-      );
-    }
     if (provider.id === 'google') {
       return (
         <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden>
@@ -481,16 +435,16 @@ export default function Contact() {
               <div className="border-b border-border/60 bg-gradient-to-r from-muted/30 via-muted/10 to-muted/30 p-3 sm:p-4">
                 <div className="flex items-center gap-2 mb-2.5 px-1">
                   <MapIcon className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Harita Sağlayıcısı</span>
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Haritada Aç</span>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   {mapProviders.map((provider) => {
                     const active = mapProvider === provider.id;
                     return (
                       <button
                         key={provider.id}
                         type="button"
-                        onClick={() => handleProviderChange(provider.id)}
+                        onClick={() => setMapProvider(provider.id)}
                         className={cn(
                           'group relative flex items-center gap-2.5 p-2.5 sm:p-3 rounded-xl border-2 transition-all text-left',
                           active
@@ -526,45 +480,53 @@ export default function Contact() {
 
               {/* Harita Alanı */}
               <div className="relative">
-                <div className="relative w-full h-[380px] sm:h-[440px] md:h-[500px] bg-muted">
-                  {(!mapLoaded || mapFailed) && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-muted/60 to-muted/30 z-10 pointer-events-none">
-                      <div className="flex max-w-sm flex-col items-center gap-3 px-6 text-center">
-                        <div className={cn('w-12 h-12 rounded-2xl flex items-center justify-center animate-pulse', currentProvider.bg, currentProvider.textColor)}>
-                          <ProviderLogo provider={currentProvider} />
-                        </div>
-                        <div className="text-sm font-medium text-muted-foreground">
-                          {mapFailed ? `${currentProvider.name} haritası gömülü olarak açılamadı.` : `${currentProvider.name} yükleniyor...`}
-                        </div>
-                        {mapFailed && (
-                          <Button asChild size="sm" variant="outline" className="pointer-events-auto rounded-lg">
-                            <a href={externalLinks.view} target="_blank" rel="noopener noreferrer">
-                              <ExternalLink className="mr-1.5 h-3.5 w-3.5" /> Haritada Aç
-                            </a>
-                          </Button>
-                        )}
+                <div className="relative overflow-hidden bg-gradient-to-br from-violet-500/10 via-background to-fuchsia-500/10 p-6 md:p-10">
+                  <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-primary/15 blur-3xl" />
+                  <div className="absolute -bottom-20 left-10 h-56 w-56 rounded-full bg-fuchsia-500/10 blur-3xl" />
+                  <div className="relative grid gap-6 lg:grid-cols-[1fr_320px] lg:items-center">
+                    <div>
+                      <div className={cn('mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl', currentProvider.bg, currentProvider.textColor)}>
+                        <ProviderLogo provider={currentProvider} />
+                      </div>
+                      <h3 className="text-2xl font-bold tracking-tight text-foreground">Konumu {currentProvider.name} ile açın</h3>
+                      <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                        Gömülü haritalar bazı tarayıcılar ve gizlilik ayarlarında engellenebiliyor. Bu nedenle konumu doğrudan seçtiğiniz harita servisinde açıyoruz.
+                      </p>
+                      <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+                        <Button asChild className="rounded-xl dream-gradient shadow-md shadow-primary/20">
+                          <a href={externalLinks.view} target="_blank" rel="noopener noreferrer">
+                            <ExternalLink className="mr-2 h-4 w-4" /> Haritada Aç
+                          </a>
+                        </Button>
+                        <Button asChild variant="outline" className="rounded-xl">
+                          <a href={externalLinks.directions} target="_blank" rel="noopener noreferrer">
+                            <Car className="mr-2 h-4 w-4" /> Yol Tarifi Al
+                          </a>
+                        </Button>
                       </div>
                     </div>
-                  )}
-                  <iframe
-                    key={mapProvider}
-                    title={`${currentProvider.name} - Konum Haritası`}
-                    src={getMapEmbedUrl(mapProvider)}
-                    className="absolute inset-0 w-full h-full border-0"
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                    onLoad={() => setMapLoaded(true)}
-                    onError={() => setMapFailed(true)}
-                    style={{ filter: 'saturate(1.1) contrast(1.05)' }}
-                    allowFullScreen
-                  />
-                  <div className="absolute inset-0 pointer-events-none ring-1 ring-inset ring-border/40 rounded-none" />
-                  {/* Sağ üst köşede aktif sağlayıcı rozeti */}
-                  <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5 bg-card/90 backdrop-blur-sm border border-border/60 rounded-full px-2.5 py-1 shadow-sm">
-                    <div className={cn('w-4 h-4 rounded flex items-center justify-center', currentProvider.bg, currentProvider.textColor)}>
-                      <ProviderLogo provider={currentProvider} />
+                    <div className="rounded-3xl border border-border/60 bg-card/80 p-5 shadow-sm backdrop-blur dark:border-white/10 dark:bg-slate-950/70">
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                          <MapPin className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Adres</p>
+                          <p className="mt-1 text-sm font-medium text-foreground whitespace-pre-line">{settings.contactAddress}</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleCopyCoords}
+                        className="mt-4 flex w-full items-start gap-3 rounded-xl border border-border/50 bg-muted/30 p-3 text-left transition-colors hover:bg-muted/50"
+                      >
+                        <Compass className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                        <span>
+                          <span className="block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Koordinat</span>
+                          <span className="block font-mono text-sm font-medium text-foreground">{lat}, {lng}</span>
+                        </span>
+                      </button>
                     </div>
-                    <span className="text-[10px] sm:text-xs font-semibold">{currentProvider.shortName}</span>
                   </div>
                 </div>
 

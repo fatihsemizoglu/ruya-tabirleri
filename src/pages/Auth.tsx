@@ -165,7 +165,7 @@ export default function Auth({ mode }: AuthProps) {
     : 'Rüya Tabirleri hesabınıza giriş yapın veya yeni hesap oluşturun.';
 
   return (
-    <div className="min-h-screen flex relative">
+    <div className="min-h-screen flex relative bg-background text-foreground">
       <Seo
           title={title}
           description={description}
@@ -173,11 +173,11 @@ export default function Auth({ mode }: AuthProps) {
         noindex
       />
       {/* Background blobs for the form panel */}
-      <PremiumBackground variant="soft" className="lg:hidden" />
+      <PremiumBackground variant="soft" className="hidden sm:block lg:hidden opacity-40" />
 
       {/* Left Panel - Form */}
-      <div className="flex-1 flex items-center justify-center p-8 relative">
-        <div className="w-full max-w-md">
+      <div className="flex-1 flex items-center justify-center p-4 sm:p-8 relative">
+        <div className="w-full max-w-md rounded-3xl border border-border/60 bg-card/95 p-6 text-card-foreground shadow-2xl shadow-primary/10 backdrop-blur-xl sm:p-8 dark:border-white/10 dark:bg-slate-950/95">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 mb-8 group">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 via-fuchsia-500 to-pink-500 flex items-center justify-center shadow-lg shadow-fuchsia-500/25 group-hover:scale-105 transition-transform">
@@ -208,7 +208,7 @@ export default function Auth({ mode }: AuthProps) {
               <>Yeni <GradientText>Şifre Belirleyin</GradientText></>
             )}
           </h1>
-          <p className="text-muted-foreground mb-8">
+          <p className="text-muted-foreground mb-8 leading-relaxed">
             {mode === 'login'
               ? 'Hesabınıza giriş yapın ve rüya dünyanıza devam edin.'
               : mode === 'register'
@@ -224,7 +224,7 @@ export default function Auth({ mode }: AuthProps) {
             {mode === 'register' && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="fullName">Ad Soyad</Label>
+                  <Label htmlFor="fullName" className="text-foreground">Ad Soyad</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -240,7 +240,7 @@ export default function Auth({ mode }: AuthProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="username">Kullanıcı Adı</Label>
+                  <Label htmlFor="username" className="text-foreground">Kullanıcı Adı</Label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">@</span>
                     <Input
@@ -258,7 +258,7 @@ export default function Auth({ mode }: AuthProps) {
             )}
 
             {mode !== 'reset' && <div className="space-y-2">
-              <Label htmlFor="email">E-posta</Label>
+              <Label htmlFor="email" className="text-foreground">E-posta</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -274,7 +274,7 @@ export default function Auth({ mode }: AuthProps) {
             </div>}
 
             {mode !== 'forgot' && <div className="space-y-2">
-              <Label htmlFor="password">{mode === 'reset' ? 'Yeni Şifre' : 'Şifre'}</Label>
+              <Label htmlFor="password" className="text-foreground">{mode === 'reset' ? 'Yeni Şifre' : 'Şifre'}</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -289,7 +289,7 @@ export default function Auth({ mode }: AuthProps) {
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="absolute right-0 top-0 h-full px-3"
+                  className="absolute right-0 top-0 h-full px-3 text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white"
                   onClick={() => setShowPassword(!showPassword)}
                   aria-label={showPassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
                 >
