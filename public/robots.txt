@@ -12,5 +12,4 @@ Allow: /
 
 User-agent: *
 Allow: /
- 
- Sitemap: https://srpuegfijtujagpuksgs.supabase.co/functions/v1/sitemap
+Sitemap: https://ruya-tabirleri.vercel.app/api/sitemap
