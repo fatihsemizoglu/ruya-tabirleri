@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, useScroll, useSpring } from 'framer-motion';
-import { Eye, Heart, Bookmark, ArrowLeft, Calendar, BookOpen, Sparkles, Clock, ChevronRight, Share2, Tag, Folder, Check, Moon, Type } from 'lucide-react';
+import { Eye, Heart, Bookmark, ArrowLeft, Calendar, BookOpen, Sparkles, Clock, ChevronRight, Share2, Tag, Folder, Check, Moon, Type, PenLine } from 'lucide-react';
 import DOMPurify from 'dompurify';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
@@ -374,6 +374,32 @@ export default function DreamDetail() {
     }
   }, [user, dream, isFavorite]);
 
+  const saveToJournal = useCallback(async () => {
+    if (!user) {
+      toast.error('Günlüğe kaydetmek için giriş yapmalısınız');
+      return;
+    }
+    if (!dream) return;
+
+    const plainContent = dream.content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    const content = `${dream.title}\n\n${plainContent}`.slice(0, 5000);
+
+    try {
+      const { error } = await supabase.from('dream_journal').insert({
+        user_id: user.id,
+        title: dream.title,
+        content,
+        dream_date: new Date().toISOString().split('T')[0],
+        tags: dream.keywords || [],
+      });
+      if (error) throw error;
+      toast.success('Rüya günlüğünüze kaydedildi');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Rüya günlüğüne kaydedilemedi';
+      toast.error(message);
+    }
+  }, [dream, user]);
+
   // Swipe gesture: right swipe to favorite, left swipe to share (touch only)
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -715,6 +741,29 @@ export default function DreamDetail() {
           </motion.div>
         </section>
       )}
+
+      <section className="container pb-8">
+        <div className="mx-auto max-w-3xl rounded-3xl border border-violet-500/20 bg-gradient-to-br from-violet-500/10 via-fuchsia-500/5 to-background p-5 shadow-sm md:p-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h2 className="font-serif-dream text-xl font-bold">Bu rüyayla devam edin</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Tabiri günlüğünüze ekleyin veya kendi rüyanızı AI ile yorumlatın.</p>
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button type="button" variant="outline" onClick={saveToJournal} className="rounded-xl">
+                <PenLine className="mr-2 h-4 w-4" />
+                Günlüğüme Kaydet
+              </Button>
+              <Button asChild className="rounded-xl dream-gradient">
+                <Link to={`/ruya-yorumlat?q=${encodeURIComponent(dream.title)}`}>
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Rüyamı Yorumlat
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Action Bar */}
       <section className="container">

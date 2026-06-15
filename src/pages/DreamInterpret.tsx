@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -21,7 +22,8 @@ interface InterpretationResult {
 }
 
 export default function DreamInterpret() {
-  const [dream, setDream] = useState('');
+  const [searchParams] = useSearchParams();
+  const [dream, setDream] = useState(() => searchParams.get('q')?.slice(0, 2000) || '');
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<InterpretationResult | null>(null);
 
