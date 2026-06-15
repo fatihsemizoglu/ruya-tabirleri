@@ -9,29 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { toast } from 'sonner';
 import { Loader2, Send, UserCircle2, Mail, Info } from 'lucide-react';
-import { z } from 'zod';
-
-const guestSchema = z.object({
-  name: z.string().trim().min(2, 'Ad Soyad en az 2 karakter olmalıdır').max(100),
-  email: z
-    .string()
-    .trim()
-    .toLowerCase()
-    .email('Geçerli bir e-posta adresi girin'),
-  content: z
-    .string()
-    .trim()
-    .min(10, 'Yorum en az 10 karakter olmalıdır')
-    .max(1000, 'Yorum en fazla 1000 karakter olabilir'),
-});
-
-const memberSchema = z.object({
-  content: z
-    .string()
-    .trim()
-    .min(10, 'Yorum en az 10 karakter olmalıdır')
-    .max(1000, 'Yorum en fazla 1000 karakter olabilir'),
-});
+import { getFirstValidationMessage, guestCommentSchema, memberCommentSchema } from '@/lib/validation/forms';
 
 interface CommentFormProps {
   dreamId: string;
@@ -54,8 +32,8 @@ export function CommentForm({ dreamId, onSuccess }: CommentFormProps) {
     mutationFn: async () => {
       if (user) {
         // Üye yorumu
-        const v = memberSchema.safeParse({ content });
-        if (!v.success) throw new Error(v.error.errors[0].message);
+        const v = memberCommentSchema.safeParse({ content });
+        if (!v.success) throw new Error(getFirstValidationMessage(v.error));
         const { error } = await supabase.from('comments').insert({
           dream_id: dreamId,
           user_id: user.id,
@@ -65,8 +43,8 @@ export function CommentForm({ dreamId, onSuccess }: CommentFormProps) {
         if (error) throw error;
       } else {
         // Guest yorumu
-        const v = guestSchema.safeParse({ name, email, content });
-        if (!v.success) throw new Error(v.error.errors[0].message);
+        const v = guestCommentSchema.safeParse({ name, email, content });
+        if (!v.success) throw new Error(getFirstValidationMessage(v.error));
         const { error } = await supabase.from('comments').insert({
           dream_id: dreamId,
           user_id: null,
@@ -106,7 +84,7 @@ export function CommentForm({ dreamId, onSuccess }: CommentFormProps) {
   const minChars = 10;
   const canSubmit = user
     ? charCount >= minChars
-    : charCount >= minChars && name.trim().length >= 2 && email.includes('@');
+    : guestCommentSchema.safeParse({ name, email, content }).success;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3">

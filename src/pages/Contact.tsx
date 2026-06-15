@@ -18,6 +18,7 @@ import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { cn } from '@/lib/utils';
 import { copyToClipboard } from '@/lib/share';
 import { haptic } from '@/lib/haptics';
+import { contactMessageSchema, getFirstValidationMessage } from '@/lib/validation/forms';
 
 const contactReasons = [
   { value: 'genel', label: 'Genel Bilgi', icon: MessageSquare, color: 'from-blue-500 to-cyan-500' },
@@ -135,11 +136,19 @@ export default function Contact() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const validation = contactMessageSchema.safeParse(formData);
+    if (!validation.success) {
+      toast({ title: 'Formu kontrol edin', description: getFirstValidationMessage(validation.error), variant: 'destructive' });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const { error } = await supabase.from('contact_messages').insert({
-        name: formData.name, email: formData.email,
-        subject: `[${formData.reason}] ${formData.subject}`, message: formData.message,
+        name: validation.data.name,
+        email: validation.data.email,
+        subject: `[${validation.data.reason}] ${validation.data.subject}`,
+        message: validation.data.message,
       });
       if (error) throw error;
       toast({ title: 'Mesajınız Gönderildi ✓', description: 'En kısa sürede size dönüş yapacağız.' });

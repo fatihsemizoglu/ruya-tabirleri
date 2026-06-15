@@ -15,6 +15,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
+import { getFirstValidationMessage, guestCommentSchema, memberCommentSchema } from '@/lib/validation/forms';
 
 interface BlogCommentSectionProps {
   postId: string;
@@ -143,10 +144,16 @@ export function BlogCommentSection({ postId }: BlogCommentSectionProps) {
     setIsSubmitting(true);
 
     if (user) {
+      const validation = memberCommentSchema.safeParse({ content });
+      if (!validation.success) {
+        toast.error(getFirstValidationMessage(validation.error));
+        setIsSubmitting(false);
+        return;
+      }
       const { error } = await supabase.from('blog_comments').insert({
         post_id: postId,
         user_id: user.id,
-        content: content.trim(),
+        content: validation.data.content,
         parent_id: parentId || null,
         is_approved: isApproved,
       });
@@ -156,27 +163,18 @@ export function BlogCommentSection({ postId }: BlogCommentSectionProps) {
         return;
       }
     } else {
-      if (!guestName.trim() || guestName.trim().length < 2) {
-        toast.error('Ad Soyad en az 2 karakter olmalıdır');
-        setIsSubmitting(false);
-        return;
-      }
-      if (!guestEmail.trim() || !guestEmail.includes('@')) {
-        toast.error('Geçerli bir e-posta adresi girin');
-        setIsSubmitting(false);
-        return;
-      }
-      if (content.trim().length < 10) {
-        toast.error('Yorum en az 10 karakter olmalıdır');
+      const validation = guestCommentSchema.safeParse({ name: guestName, email: guestEmail, content });
+      if (!validation.success) {
+        toast.error(getFirstValidationMessage(validation.error));
         setIsSubmitting(false);
         return;
       }
       const { error } = await supabase.from('blog_comments').insert({
         post_id: postId,
         user_id: null,
-        guest_name: guestName.trim(),
-        guest_email: guestEmail.trim().toLowerCase(),
-        content: content.trim(),
+        guest_name: validation.data.name,
+        guest_email: validation.data.email,
+        content: validation.data.content,
         parent_id: parentId || null,
         is_approved: isApproved,
       });

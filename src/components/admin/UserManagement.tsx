@@ -44,6 +44,7 @@ import { SkeletonAdminRow } from '@/components/ui/skeleton-card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { AdminPageHeader } from './common/AdminPageHeader';
 import { AdminStatsCards } from './common/AdminStatsCards';
+import { useAuth } from '@/hooks/useAuth';
 
 interface UserWithRole {
   id: string;
@@ -58,6 +59,7 @@ interface UserWithRole {
 }
 
 export function UserManagement() {
+  const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -104,6 +106,27 @@ export function UserManagement() {
   };
 
   const updateUserRole = async (userId: string, newRole: AppRole) => {
+    const targetUser = users.find((u) => u.user_id === userId);
+    const previousRole = targetUser?.role || 'user';
+    if (previousRole === newRole) {
+      setEditingRole(false);
+      return;
+    }
+
+    if (currentUser?.id === userId && previousRole === 'admin' && newRole !== 'admin') {
+      toast.error('Kendi admin yetkinizi düşüremezsiniz');
+      return;
+    }
+
+    if (previousRole === 'admin' && newRole !== 'admin' && adminCount <= 1) {
+      toast.error('Son admin kullanıcının yetkisi düşürülemez');
+      return;
+    }
+
+    const label = targetUser?.full_name || targetUser?.username || 'bu kullanıcı';
+    const confirmed = window.confirm(`${label} rolü ${previousRole} -> ${newRole} olarak değiştirilecek. Onaylıyor musunuz?`);
+    if (!confirmed) return;
+
     try {
       const { data: existingRole } = await supabase
         .from('user_roles')
@@ -133,6 +156,18 @@ export function UserManagement() {
       if (selectedUser?.user_id === userId) {
         setSelectedUser({ ...selectedUser, role: newRole });
       }
+
+      await supabase.rpc('log_admin_action', {
+        _action: 'role_change',
+        _entity_type: 'user_role',
+        _entity_id: null,
+        _entity_title: label,
+        _details: {
+          target_user_id: userId,
+          previous_role: previousRole,
+          new_role: newRole,
+        },
+      });
 
       toast.success('Kullanıcı rolü güncellendi');
       setEditingRole(false);
@@ -176,6 +211,14 @@ export function UserManagement() {
     { label: 'Sistem Yöneticisi', value: adminCount, subtext: 'Tam yetkili yöneticiler', icon: Crown },
     { label: 'Moderatör', value: moderatorCount, subtext: 'Denetleme yetkilileri', icon: ShieldCheck }
   ];
+
+  const canAssignRole = (target: UserWithRole, newRole: AppRole) => {
+    const previousRole = target.role || 'user';
+    if (previousRole === newRole) return true;
+    if (currentUser?.id === target.user_id && previousRole === 'admin' && newRole !== 'admin') return false;
+    if (previousRole === 'admin' && newRole !== 'admin' && adminCount <= 1) return false;
+    return true;
+  };
 
   if (loading) {
     return (
@@ -419,6 +462,7 @@ export function UserManagement() {
                   <Button
                     variant={selectedUser.role === 'user' ? 'default' : 'outline'}
                     className="flex flex-col items-center gap-2 h-auto py-4 rounded-xl font-semibold border-slate-200/60 dark:border-slate-855"
+                    disabled={!canAssignRole(selectedUser, 'user')}
                     onClick={() => updateUserRole(selectedUser.user_id, 'user')}
                   >
                     <User className="h-5 w-5" />
@@ -427,6 +471,7 @@ export function UserManagement() {
                   <Button
                     variant={selectedUser.role === 'moderator' ? 'default' : 'outline'}
                     className="flex flex-col items-center gap-2 h-auto py-4 rounded-xl font-semibold border-slate-200/60 dark:border-slate-855"
+                    disabled={!canAssignRole(selectedUser, 'moderator')}
                     onClick={() => updateUserRole(selectedUser.user_id, 'moderator')}
                   >
                     <ShieldCheck className="h-5 w-5" />
@@ -441,6 +486,11 @@ export function UserManagement() {
                     <span>Admin</span>
                   </Button>
                 </div>
+                {selectedUser.role === 'admin' && adminCount <= 1 && (
+                  <p className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs font-medium text-amber-700 dark:text-amber-300">
+                    Bu kullanıcı son admin olduğu için admin yetkisi düşürülemez.
+                  </p>
+                )}
               </div>
             </div>
           )}
