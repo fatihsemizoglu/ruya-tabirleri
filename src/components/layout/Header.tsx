@@ -50,8 +50,15 @@ export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
   const [isScrolled, setIsScrolled] = useState(false);
+  const [openCategoryMenu, setOpenCategoryMenu] = useState(false);
+  const [openBlogMega, setOpenBlogMega] = useState(false);
+  const [mobileCategoryOpen, setMobileCategoryOpen] = useState(false);
+  const [mobileBlogOpen, setMobileBlogOpen] = useState(false);
 
   const STALE_5_MIN = 5 * 60 * 1000;
+  const location = useLocation();
+  const shouldLoadCategories = openCategoryMenu || isMenuOpen || location.pathname === '/kategoriler' || location.pathname.startsWith('/kategori/');
+  const shouldLoadBlogMenu = openBlogMega || isMenuOpen || location.pathname.startsWith('/blog');
 
   const { data: categories = [] } = useQuery({
     queryKey: ['header-dream-categories'],
@@ -66,6 +73,7 @@ export function Header() {
       );
     },
     staleTime: STALE_5_MIN,
+    enabled: shouldLoadCategories,
   });
 
   const { data: blogCategories = [] } = useQuery({
@@ -81,6 +89,7 @@ export function Header() {
       return (data || []) as BlogCategory[];
     },
     staleTime: STALE_5_MIN,
+    enabled: shouldLoadBlogMenu,
   });
 
   const { data: recentPosts = [] } = useQuery({
@@ -96,19 +105,11 @@ export function Header() {
       return (data || []) as unknown as BlogPostPreview[];
     },
     staleTime: STALE_5_MIN,
+    enabled: shouldLoadBlogMenu,
   });
-
-  // Açık dropdown'lar
-  const [openCategoryMenu, setOpenCategoryMenu] = useState(false);
-  const [openBlogMega, setOpenBlogMega] = useState(false);
-
-  // Mobilde açık alt menüler
-  const [mobileCategoryOpen, setMobileCategoryOpen] = useState(false);
-  const [mobileBlogOpen, setMobileBlogOpen] = useState(false);
 
   const { user, profile, isAdmin, signOut } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
 
   // Hover kapatma için zamanlayıcı
   const closeTimer = useRef<number | null>(null);

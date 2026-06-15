@@ -31,6 +31,7 @@ import { tr } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
+import { ResponsiveImage } from '@/components/ui/ResponsiveImage';
 import { Seo } from '@/components/Seo';
 import { nativeShare } from '@/lib/share';
 import { haptic } from '@/lib/haptics';
@@ -434,12 +435,17 @@ export default function BlogPost() {
             >
               <div className="max-w-4xl mx-auto">
                 <div className="rounded-3xl overflow-hidden border border-border shadow-xl">
-                  <img
+                  <ResponsiveImage
                     src={post.featured_image}
                     alt={post.title}
                     loading="eager"
+                    fetchPriority="high"
                     decoding="async"
-                    className="w-full h-auto"
+                    fallbackWidth={1200}
+                    widths={[640, 960, 1200, 1600]}
+                    sizes="(max-width: 768px) 100vw, 896px"
+                    aspectRatio="16/9"
+                    className="h-auto w-full object-cover"
                   />
                 </div>
               </div>
