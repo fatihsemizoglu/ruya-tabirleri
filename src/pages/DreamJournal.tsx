@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Navigate } from 'react-router-dom';
-import { Plus, Book, Calendar, Trash2, Edit, BookOpen, Mic, MicOff, Sparkles } from 'lucide-react';
+import { Plus, Book, Calendar, Trash2, Edit, BookOpen, Mic, MicOff, Sparkles, Volume2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
@@ -27,6 +27,7 @@ const moodOptions: { value: DreamMood; label: string; emoji: string }[] = [
 
 type SpeechRecognitionEventLike = { results: SpeechRecognitionResultList };
 type SpeechRecognitionErrorEventLike = { error: string };
+type VoiceLaunchMode = 'manual' | 'auto';
 type SpeechRecognitionLike = {
   lang: string;
   continuous: boolean;
@@ -71,13 +72,19 @@ export default function DreamJournal() {
   const [isVoiceSupported, setIsVoiceSupported] = useState(false);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const voiceBaseContentRef = useRef<string | null>(null);
+  const voiceFinalPartsRef = useRef<string[]>([]);
+  const formContentRef = useRef(formData.content);
+
+  useEffect(() => {
+    formContentRef.current = formData.content;
+  }, [formData.content]);
 
   useEffect(() => {
     setIsVoiceSupported(!!getSpeechRecognitionCtor());
   }, []);
 
   const applyVoiceText = useCallback((text: string) => {
-    const cleanText = text.trim();
+    const cleanText = normalizeVoiceText(text);
     if (!cleanText) return;
     setVoiceDraft(cleanText);
     setFormData((current) => {
@@ -107,11 +114,12 @@ export default function DreamJournal() {
     }
     recognitionRef.current = null;
     voiceBaseContentRef.current = null;
+    voiceFinalPartsRef.current = [];
     setIsVoiceListening(false);
     setVoiceDraft('');
   }, []);
 
-  const startVoiceDictation = useCallback(() => {
+  const startVoiceDictation = useCallback((mode: VoiceLaunchMode = 'manual') => {
     const Ctor = getSpeechRecognitionCtor();
     if (!Ctor) {
       notify.error('Tarayıcınız sesli dikteyi desteklemiyor', {
@@ -134,15 +142,21 @@ export default function DreamJournal() {
     recognition.interimResults = true;
     recognition.maxAlternatives = 1;
     recognitionRef.current = recognition;
-    voiceBaseContentRef.current = formData.content;
+    voiceBaseContentRef.current = formContentRef.current;
+    voiceFinalPartsRef.current = [];
     setVoiceDraft('');
 
     recognition.onresult = (event) => {
-      let transcript = '';
+      const finalParts: string[] = [];
+      const interimParts: string[] = [];
       for (let index = 0; index < event.results.length; index += 1) {
-        transcript += ` ${event.results[index][0]?.transcript || ''}`;
+        const result = event.results[index];
+        const text = result[0]?.transcript || '';
+        if (result.isFinal) finalParts.push(text);
+        else interimParts.push(text);
       }
-      applyVoiceText(normalizeVoiceText(transcript));
+      voiceFinalPartsRef.current = finalParts.map(normalizeVoiceText).filter(Boolean);
+      applyVoiceText([...voiceFinalPartsRef.current, ...interimParts].join(' '));
     };
 
     recognition.onerror = (event) => {
@@ -165,11 +179,16 @@ export default function DreamJournal() {
     try {
       recognition.start();
       setIsVoiceListening(true);
+      if (mode === 'manual') {
+        notify.success('Sesli yazma başladı', {
+          description: 'Konuşmanız rüya içeriği alanına otomatik aktarılacak.',
+        });
+      }
     } catch {
       notify.error('Sesli dikte başlatılamadı. Lütfen tekrar deneyin.');
       stopVoiceDictation();
     }
-  }, [applyVoiceText, formData.content, stopVoiceDictation]);
+  }, [applyVoiceText, stopVoiceDictation]);
 
   useEffect(() => stopVoiceDictation, [stopVoiceDictation]);
   const fetchEntries = useCallback(async () => {
@@ -284,24 +303,28 @@ export default function DreamJournal() {
       stopVoiceDictation();
       return;
     }
-    startVoiceDictation();
+    startVoiceDictation('manual');
   };
 
-  const openVoiceJournal = () => {
+  const openNewDreamDialog = () => {
     setSelectedEntry(null);
     setFormData({ title: '', content: '', dream_date: new Date().toISOString().split('T')[0], mood: '', tags: '' });
     setVoiceDraft('');
     voiceBaseContentRef.current = '';
     setIsDialogOpen(true);
+  };
+
+  const openVoiceJournal = () => {
+    openNewDreamDialog();
     window.setTimeout(() => {
       if (getSpeechRecognitionCtor()) {
-        startVoiceDictation();
+        startVoiceDictation('auto');
       } else {
         notify.error('Tarayıcınız sesli dikteyi desteklemiyor', {
           description: 'Chrome, Edge veya Web Speech API destekleyen bir tarayıcı deneyin.',
         });
       }
-    }, 250);
+    }, 350);
   };
 
   if (authLoading) {
@@ -360,9 +383,13 @@ export default function DreamJournal() {
             </motion.p>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row">
-            <Button type="button" variant="outline" onClick={openVoiceJournal} className="rounded-xl">
+            <Button type="button" onClick={openVoiceJournal} className="rounded-xl dream-gradient shadow-lg shadow-primary/20">
               <Mic className="mr-2 h-4 w-4" />
-              Mikrofonla Rüyanı Yaz
+              Sesle Rüya Yaz
+            </Button>
+            <Button type="button" variant="outline" onClick={openNewDreamDialog} className="rounded-xl">
+              <Plus className="mr-2 h-4 w-4" />
+              Elle Yaz
             </Button>
           <Dialog open={isDialogOpen} onOpenChange={(open) => {
             setIsDialogOpen(open);
@@ -370,12 +397,6 @@ export default function DreamJournal() {
               resetJournalForm();
             }
           }}>
-            <DialogTrigger asChild>
-              <Button className="dream-gradient">
-                <Plus className="mr-2 h-4 w-4" />
-                Yeni Rüya Ekle
-              </Button>
-            </DialogTrigger>
             <DialogContent className="sm:max-w-lg rounded-2xl border-border/45 bg-card text-card-foreground shadow-2xl dark:border-white/10 dark:bg-slate-950">
               <DialogHeader>
                 <DialogTitle>
@@ -425,15 +446,17 @@ export default function DreamJournal() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-3">
-                    <Label htmlFor="content">Rüya İçeriği</Label>
+                <div className="space-y-2 rounded-2xl border border-violet-500/20 bg-violet-500/5 p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <Label htmlFor="content">Rüya İçeriği</Label>
+                      <p className="mt-1 text-xs text-muted-foreground">Masaüstü ve mobilde mikrofonla anlatabilir veya elle yazabilirsiniz.</p>
+                    </div>
                     <Button
                       type="button"
                       variant={isVoiceListening ? 'destructive' : 'outline'}
-                      size="sm"
                       onClick={toggleVoiceDictation}
-                      className="rounded-xl"
+                      className="shrink-0 rounded-xl"
                     >
                       {isVoiceListening ? <MicOff className="h-4 w-4 mr-1" /> : <Mic className="h-4 w-4 mr-1" />}
                       {isVoiceListening ? 'Durdur' : 'Sesle Yaz'}
@@ -449,10 +472,11 @@ export default function DreamJournal() {
                     placeholder="Rüyanızı detaylı bir şekilde anlatın..."
                     rows={5}
                     required
+                    className="min-h-36 rounded-xl bg-background/80 text-foreground dark:bg-slate-900/80"
                   />
-                  <div className="rounded-xl border border-violet-500/20 bg-violet-500/5 p-3 text-xs text-muted-foreground">
+                  <div className="rounded-xl border border-border/50 bg-card/70 p-3 text-xs text-muted-foreground dark:border-white/10 dark:bg-slate-900/60">
                     <div className="flex items-center gap-2 font-medium text-foreground mb-1">
-                      <Sparkles className="h-3.5 w-3.5 text-violet-500" />
+                      {isVoiceListening ? <Volume2 className="h-3.5 w-3.5 text-emerald-500" /> : <Sparkles className="h-3.5 w-3.5 text-violet-500" />}
                       Sesli dikte
                     </div>
                     {isVoiceListening ? (
@@ -461,7 +485,7 @@ export default function DreamJournal() {
                         {voiceDraft && <span className="block mt-1 text-foreground/80">Son algılanan: {voiceDraft}</span>}
                       </p>
                     ) : isVoiceSupported ? (
-                      <p>Anasayfadaki sesli arama altyapısıyla rüyanızı konuşarak metne çevirebilirsiniz.</p>
+                      <p>Sesle Yaz butonuna basın, tarayıcı mikrofon izni istediğinde izin verin ve rüyanızı anlatın.</p>
                     ) : (
                       <p>Bu tarayıcı sesli dikteyi desteklemiyor.</p>
                     )}
@@ -503,10 +527,16 @@ export default function DreamJournal() {
                 <p className="mt-1 text-sm text-muted-foreground">Mikrofonla anlat, içerik alanına otomatik olarak düz yazı şeklinde aktarılsın.</p>
               </div>
             </div>
+            <div className="flex flex-col gap-2 sm:flex-row">
             <Button type="button" onClick={openVoiceJournal} className="rounded-xl dream-gradient md:min-w-48">
               <Mic className="mr-2 h-4 w-4" />
               Sesle Kaydet
             </Button>
+            <Button type="button" variant="outline" onClick={openNewDreamDialog} className="rounded-xl md:min-w-36">
+              <Plus className="mr-2 h-4 w-4" />
+              Elle Yaz
+            </Button>
+            </div>
           </div>
         </div>
 
@@ -569,13 +599,13 @@ export default function DreamJournal() {
               İlk rüyanızı kaydetmeye başlayın ve rüya dünyanızı keşfedin.
             </p>
             <div className="flex flex-col items-center justify-center gap-2 sm:flex-row">
-              <Button type="button" variant="outline" onClick={openVoiceJournal} className="rounded-xl">
+              <Button type="button" onClick={openVoiceJournal} className="rounded-xl dream-gradient">
                 <Mic className="mr-2 h-4 w-4" />
-                Mikrofonla Rüyanı Yaz
+                Sesle Rüya Yaz
               </Button>
-              <Button onClick={() => setIsDialogOpen(true)} className="dream-gradient">
+              <Button type="button" variant="outline" onClick={openNewDreamDialog} className="rounded-xl">
                 <Plus className="mr-2 h-4 w-4" />
-                İlk Rüyamı Ekle
+                Elle Yaz
               </Button>
             </div>
           </div>
