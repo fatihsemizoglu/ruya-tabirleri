@@ -43,7 +43,6 @@ interface HealthPayload {
   timestamp: string;
   uptime_s: number;
   checks: CheckResult[];
-  env_debug?: Record<string, unknown>;
 }
 
 const startTime = Date.now();
@@ -76,28 +75,6 @@ async function checkSupabase(): Promise<CheckResult> {
   } catch (err) {
     return { name: 'supabase_rest', status: 'fail', detail: (err as Error).message };
   }
-}
-
-function envDebug(): Record<string, unknown> {
-  let decoded: { role?: string; ref?: string } | null = null;
-  if (SUPABASE_ANON_KEY) {
-    try {
-      const parts = SUPABASE_ANON_KEY.split('.');
-      if (parts.length === 3) {
-        decoded = JSON.parse(Buffer.from(parts[1], 'base64').toString());
-      }
-    } catch (_error) {
-      decoded = null;
-    }
-  }
-  return {
-    url_set: !!SUPABASE_URL,
-    url: SUPABASE_URL ? SUPABASE_URL.replace(/\/\/.+@/, '//***@') : null,
-    key_set: !!SUPABASE_ANON_KEY,
-    key_prefix: SUPABASE_ANON_KEY ? SUPABASE_ANON_KEY.slice(0, 20) + '...' : null,
-    key_role: decoded?.role ?? null,
-    key_ref: decoded?.ref ?? null,
-  };
 }
 
 async function checkEdgeFunctions(): Promise<CheckResult> {
@@ -143,7 +120,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     version: process.env.VITE_APP_VERSION || 'dev',
     timestamp: new Date().toISOString(),
     uptime_s: Math.floor((Date.now() - startTime) / 1000),
-    ...(supabase.status === 'fail' ? { env_debug: envDebug() } : {}),
     checks,
   };
 

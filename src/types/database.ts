@@ -105,4 +105,5 @@ export interface DreamSearchResult {
   view_count: number;
   like_count: number;
   rank: number;
+  total_count?: number;
 }

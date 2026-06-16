@@ -2105,6 +2105,7 @@ export type Database = {
               rank: number
               slug: string
               title: string
+              total_count: number
               view_count: number
             }[]
           }
@@ -2118,6 +2119,7 @@ export type Database = {
               rank: number
               slug: string
               title: string
+              total_count: number
               view_count: number
             }[]
           }

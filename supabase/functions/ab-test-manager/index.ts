@@ -49,7 +49,7 @@ const KV_EVENTS_KEY = (testId: string) => ["ab_events", testId];
 
 async function getKv() {
   try {
-    // @ts-ignore - Deno KV global available in Supabase Edge Functions
+    // @ts-expect-error - Deno KV global available in Supabase Edge Functions
     return await Deno.openKv();
   } catch {
     return null;
