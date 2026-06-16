@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { HelmetProvider } from "react-helmet-async";
 import * as Sentry from "@sentry/react";
 import { AuthProvider } from "@/contexts/AuthProvider";
@@ -105,6 +105,30 @@ function AnimatedRoutes() {
   );
 }
 
+function DeferredGlobalUi() {
+  const [shouldMount, setShouldMount] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const requestIdleCallback = window.requestIdleCallback ?? ((callback) => window.setTimeout(callback, 1500));
+    const cancelIdleCallback = window.cancelIdleCallback ?? window.clearTimeout;
+    const idleId = requestIdleCallback(() => setShouldMount(true), { timeout: 2500 });
+
+    return () => cancelIdleCallback(idleId);
+  }, []);
+
+  if (!shouldMount) return null;
+
+  return (
+    <Suspense fallback={null}>
+      <CommandPalette />
+      <OnboardingTour />
+      <InstallPrompt />
+    </Suspense>
+  );
+}
+
 const App = () => {
   const content = (
     <QueryClientProvider client={queryClient}>
@@ -116,11 +140,7 @@ const App = () => {
               <Toaster />
               <Sonner />
               <OfflineIndicator />
-              <Suspense fallback={null}>
-                <CommandPalette />
-                <OnboardingTour />
-                <InstallPrompt />
-              </Suspense>
+              <DeferredGlobalUi />
               <MaintenanceModeGuard>
                 <AnimatedRoutes />
               </MaintenanceModeGuard>
@@ -142,6 +162,7 @@ const App = () => {
 
 function ErrorFallback({ error }: { error: unknown }) {
   const message = error instanceof Error ? error.message : "Bilinmeyen hata";
+  const showDetails = import.meta.env.DEV;
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-6">
       <div className="max-w-md w-full bg-card border rounded-2xl p-8 text-center shadow-lg">
@@ -150,9 +171,11 @@ function ErrorFallback({ error }: { error: unknown }) {
         <p className="text-muted-foreground mb-4 text-sm">
           Rüya dünyasında geçici bir sis var. Sayfayı yenilemeyi deneyin.
         </p>
-        <pre className="text-xs bg-muted p-3 rounded text-left overflow-auto max-h-32 mb-4">
-          {message}
-        </pre>
+        {showDetails && (
+          <pre className="text-xs bg-muted p-3 rounded text-left overflow-auto max-h-32 mb-4">
+            {message}
+          </pre>
+        )}
         <button
           onClick={() => window.location.reload()}
           className="w-full bg-primary text-primary-foreground rounded-lg py-2 font-medium hover:bg-primary/90"

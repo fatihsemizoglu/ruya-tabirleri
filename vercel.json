@@ -13,6 +13,18 @@
       "destination": "https://dagjpitlouekbnwdcpbz.supabase.co/functions/v1/$1"
     },
     {
+      "source": "/assets/(.*)",
+      "destination": "/assets/$1"
+    },
+    {
+      "source": "/sw.js",
+      "destination": "/sw.js"
+    },
+    {
+      "source": "/workbox-(.*).js",
+      "destination": "/workbox-$1.js"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
@@ -29,7 +41,13 @@
     {
       "source": "/manifest.webmanifest",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+        { "key": "Cache-Control", "value": "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800" }
+      ]
+    },
+    {
+      "source": "/index.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
       ]
     },
     {

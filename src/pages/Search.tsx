@@ -15,6 +15,7 @@ import { AdvancedFilters, type AdvancedFilterState } from '@/components/search/A
 import type { DreamSearchResult, Category } from '@/types/database';
 import { Seo } from '@/components/Seo';
 import { useRecentSearches } from '@/hooks/useRecentSearches';
+import { useQuery } from '@tanstack/react-query';
 
 type ViewMode = 'grid' | 'list';
 
@@ -31,7 +32,6 @@ export default function Search() {
   
   const [results, setResults] = useState<DreamSearchResult[]>([]);
   const [totalCount, setTotalCount] = useState(0);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const {
@@ -42,7 +42,38 @@ export default function Search() {
   } = useRecentSearches();
   const [relatedDreams, setRelatedDreams] = useState<DreamSearchResult[]>([]);
   const [showScrollTop, setShowScrollTop] = useState(false);
-  const [maxStats, setMaxStats] = useState({ maxViews: 1000, maxLikes: 500 });
+  const { data: categories = [] } = useQuery({
+    queryKey: ['search-categories'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('id, name, slug, description, icon, created_at')
+        .order('name');
+      if (error) throw error;
+      return (data || []) as Category[];
+    },
+    staleTime: 30 * 60 * 1000,
+    gcTime: 2 * 60 * 60 * 1000,
+  });
+  const { data: maxStats = { maxViews: 1000, maxLikes: 500 } } = useQuery({
+    queryKey: ['search-max-stats'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('dreams')
+        .select('view_count, like_count')
+        .eq('is_published', true)
+        .order('view_count', { ascending: false })
+        .limit(1);
+      if (error) throw error;
+      if (!data || data.length === 0) return { maxViews: 1000, maxLikes: 500 };
+      return {
+        maxViews: Math.ceil((data[0].view_count || 1000) / 100) * 100,
+        maxLikes: Math.ceil((data[0].like_count || 500) / 50) * 50,
+      };
+    },
+    staleTime: 30 * 60 * 1000,
+    gcTime: 2 * 60 * 60 * 1000,
+  });
   const [currentPage, setCurrentPage] = useState(1);
   const [infiniteScroll, setInfiniteScroll] = useState(false);
   const [loadMoreLoading, setLoadMoreLoading] = useState(false);
@@ -75,36 +106,6 @@ export default function Search() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Fetch categories and max stats
-  useEffect(() => {
-    const fetchCategories = async () => {
-      const { data } = await supabase
-        .from('categories')
-        .select('*')
-        .order('name');
-      if (data) setCategories(data as Category[]);
-    };
-
-    const fetchMaxStats = async () => {
-      const { data } = await supabase
-        .from('dreams')
-        .select('view_count, like_count')
-        .eq('is_published', true)
-        .order('view_count', { ascending: false })
-        .limit(1);
-      
-      if (data && data.length > 0) {
-        setMaxStats({
-          maxViews: Math.ceil((data[0].view_count || 1000) / 100) * 100,
-          maxLikes: Math.ceil((data[0].like_count || 500) / 50) * 50
-        });
-      }
-    };
-
-    fetchCategories();
-    fetchMaxStats();
-  }, []);
-
   const fetchSearchPage = useCallback(async (searchTerm: string, page: number, append = false) => {
     if (append) {
       setLoadMoreLoading(true);
@@ -113,14 +114,11 @@ export default function Search() {
     }
     try {
       const offset = (page - 1) * RESULTS_PER_PAGE;
-      const [searchRes, countRes] = await Promise.all([
-        supabase.rpc('search_dreams', {
-          search_query: searchTerm,
-          limit_count: RESULTS_PER_PAGE,
-          offset_count: offset,
-        }),
-        supabase.rpc('count_search_dreams', { search_query: searchTerm }),
-      ]);
+      const searchRes = await supabase.rpc('search_dreams', {
+        search_query: searchTerm,
+        limit_count: RESULTS_PER_PAGE,
+        offset_count: offset,
+      });
 
       if (searchRes.error) throw searchRes.error;
       const newResults = (searchRes.data as DreamSearchResult[]) || [];
@@ -130,7 +128,7 @@ export default function Search() {
       } else {
         setResults(newResults);
       }
-      setTotalCount(typeof countRes.data === 'number' ? countRes.data : 0);
+      setTotalCount(newResults[0]?.total_count ?? (page === 1 ? 0 : totalCount));
 
       if (page === 1) {
         addRecentSearch(searchTerm);
@@ -145,7 +143,7 @@ export default function Search() {
       setIsLoading(false);
       setLoadMoreLoading(false);
     }
-  }, [addRecentSearch]);
+  }, [addRecentSearch, totalCount]);
 
   const fetchRelatedDreams = useCallback(async (_searchTerm: string) => {
     try {

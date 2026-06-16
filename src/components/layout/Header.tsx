@@ -30,6 +30,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { BlogCategory } from '@/types/blog';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { useQuery } from '@tanstack/react-query';
+import { supabaseResized } from '@/lib/supabaseImage';
 
 interface Category {
   id: string;
@@ -55,7 +56,8 @@ export function Header() {
   const [mobileCategoryOpen, setMobileCategoryOpen] = useState(false);
   const [mobileBlogOpen, setMobileBlogOpen] = useState(false);
 
-  const STALE_5_MIN = 5 * 60 * 1000;
+  const PUBLIC_MENU_STALE_TIME = 30 * 60 * 1000;
+  const PUBLIC_MENU_GC_TIME = 2 * 60 * 60 * 1000;
   const location = useLocation();
   const shouldLoadCategories = openCategoryMenu || mobileCategoryOpen || isMenuOpen || location.pathname === '/kategoriler' || location.pathname.startsWith('/kategori/');
   const shouldLoadBlogMenu = openBlogMega || mobileBlogOpen || location.pathname.startsWith('/blog');
@@ -72,7 +74,8 @@ export function Header() {
         a.name.localeCompare(b.name, 'tr', { sensitivity: 'base' })
       );
     },
-    staleTime: STALE_5_MIN,
+    staleTime: PUBLIC_MENU_STALE_TIME,
+    gcTime: PUBLIC_MENU_GC_TIME,
     enabled: shouldLoadCategories,
   });
 
@@ -88,7 +91,8 @@ export function Header() {
       if (error) throw error;
       return (data || []) as BlogCategory[];
     },
-    staleTime: STALE_5_MIN,
+    staleTime: PUBLIC_MENU_STALE_TIME,
+    gcTime: PUBLIC_MENU_GC_TIME,
     enabled: shouldLoadBlogMenu,
   });
 
@@ -104,7 +108,8 @@ export function Header() {
       if (error) throw error;
       return (data || []) as unknown as BlogPostPreview[];
     },
-    staleTime: STALE_5_MIN,
+    staleTime: PUBLIC_MENU_STALE_TIME,
+    gcTime: PUBLIC_MENU_GC_TIME,
     enabled: shouldLoadBlogMenu,
   });
 
@@ -455,7 +460,7 @@ export function Header() {
                               <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-primary/15 to-purple-500/15 overflow-hidden shrink-0 flex items-center justify-center">
                                 {p.featured_image ? (
                                   <img
-                                    src={p.featured_image}
+                                    src={supabaseResized(p.featured_image, 112, 70)}
                                     alt={p.title}
                                     loading="lazy"
                                     decoding="async"

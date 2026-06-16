@@ -42,15 +42,15 @@ export default defineConfig(({ mode }) => ({
         navigateFallback: "/index.html",
         navigateFallbackDenylist: [/^\/admin/, /^\/api/],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB limit
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        globPatterns: ["**/*.{js,css,ico,png,svg,woff2}"],
         runtimeCaching: [
           {
-            // Navigation requests: try network first, timeout 5s, fall back to precached index.html (SPA)
+            // Navigation requests: network-first avoids serving stale HTML that references old chunks.
             // The SPA's OfflineIndicator shows a banner when navigator.onLine is false
             urlPattern: ({ request }: { request: Request }) => request.mode === 'navigate',
             handler: "NetworkFirst",
             options: {
-              cacheName: "pages-cache",
+              cacheName: "pages-cache-v2",
               networkTimeoutSeconds: 5,
               cacheableResponse: {
                 statuses: [0, 200]
@@ -86,13 +86,14 @@ export default defineConfig(({ mode }) => ({
             }
           },
           {
-            urlPattern: /\/api\/.*/i,
+            urlPattern: ({ url, sameOrigin }: { url: URL; sameOrigin: boolean }) =>
+              sameOrigin && url.pathname === '/api/sitemap',
             handler: "NetworkFirst",
             options: {
-              cacheName: "api-cache",
+              cacheName: "public-api-cache",
               expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 // 1 day
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 // 1 hour
               },
               networkTimeoutSeconds: 10,
               cacheableResponse: {
@@ -130,7 +131,7 @@ export default defineConfig(({ mode }) => ({
           }
         ]
       },
-      includeAssets: ["favicon.ico", "robots.txt", "placeholder.svg", "offline.html"],
+       includeAssets: ["favicon.ico", "robots.txt", "placeholder.svg", "offline.html"],
       manifest: {
         name: "Rüya Tabirleri - Mistik Günlük",
         short_name: "Rüya Tabirleri",
@@ -189,11 +190,35 @@ export default defineConfig(({ mode }) => ({
     },
     rollupOptions: {
       output: {
-        // Single vendor chunk to avoid circular chunk dependencies
-        // (react-vendor -> vendor -> heavy-vendor loops cause
-        // "Cannot read properties of undefined" at runtime).
         manualChunks(id) {
           if (id.includes('node_modules')) {
+            if (id.includes('@supabase')) {
+              return 'supabase-vendor';
+            }
+            if (id.includes('date-fns')) {
+              return 'date-vendor';
+            }
+            if (id.includes('dompurify')) {
+              return 'sanitize-vendor';
+            }
+            if (id.includes('react-hook-form') || id.includes('@hookform') || id.includes('zod')) {
+              return 'form-vendor';
+            }
+            if (id.includes('embla-carousel') || id.includes('react-day-picker')) {
+              return 'interaction-vendor';
+            }
+            if (id.includes('@radix-ui') || id.includes('lucide-react') || id.includes('cmdk')) {
+              return 'ui-vendor';
+            }
+            if (id.includes('@tiptap')) {
+              return 'editor-vendor';
+            }
+            if (id.includes('recharts') || id.includes('d3-')) {
+              return 'charts-vendor';
+            }
+            if (id.includes('framer-motion')) {
+              return 'motion-vendor';
+            }
             return 'vendor';
           }
         },
@@ -203,8 +228,7 @@ export default defineConfig(({ mode }) => ({
       },
     },
     reportCompressedSize: true,
-    // 2500 kB limit - single vendor chunk is safest approach
-    chunkSizeWarningLimit: 2500,
+    chunkSizeWarningLimit: 800,
   },
   legacy: {
     skipWebSocketTokenCheck: true,

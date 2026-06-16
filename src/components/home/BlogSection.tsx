@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/carousel';
 import { supabase } from '@/integrations/supabase/client';
 import { BlogPost } from '@/types/blog';
+import { ResponsiveImage } from '@/components/ui/ResponsiveImage';
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString('tr-TR', {
@@ -218,11 +219,12 @@ export function BlogSection() {
                     <article className="group bg-card border border-border/50 rounded-2xl overflow-hidden hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/5 transition-all duration-300 flex flex-col h-full">
                       <Link to={`/blog/${post.slug}`} className="block relative aspect-[16/9] overflow-hidden bg-gradient-to-br from-violet-500/20 via-fuchsia-500/15 to-pink-500/20">
                         {post.featured_image ? (
-                          <img
+                          <ResponsiveImage
                             src={post.featured_image}
                             alt={post.title}
+                            fallbackWidth={640}
+                            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                             loading="lazy"
-                            decoding="async"
                             onError={(e) => {
                               (e.currentTarget as HTMLImageElement).style.display = 'none';
                             }}
@@ -268,11 +270,12 @@ export function BlogSection() {
                         <div className="mt-auto flex items-center justify-between pt-3 border-t border-border/40">
                           <div className="flex items-center gap-2 min-w-0">
                             {post.author?.avatar_url ? (
-                              <img
+                              <ResponsiveImage
                                 src={post.author.avatar_url}
                                 alt={post.author.full_name || ''}
+                                fallbackWidth={80}
+                                sizes="28px"
                                 loading="lazy"
-                                decoding="async"
                                 className="w-7 h-7 rounded-full object-cover ring-1 ring-border"
                               />
                             ) : (

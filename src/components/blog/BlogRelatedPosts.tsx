@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Clock, BookOpen } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { ResponsiveImage } from '@/components/ui/ResponsiveImage';
 
 interface BlogSummary {
   id: string;
@@ -67,12 +68,13 @@ export function BlogRelatedPosts({ posts, calculateReadingTime, categoryColor }:
                 >
                   <div className="relative w-full h-32 rounded-lg overflow-hidden shadow-md mb-3 bg-slate-100">
                     {post.featured_image ? (
-                      <img
+                      <ResponsiveImage
                         src={post.featured_image}
                         alt={post.title}
+                        fallbackWidth={480}
+                        sizes="(max-width: 640px) 100vw, 50vw"
                         className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
                         loading="lazy"
-                        decoding="async"
                       />
                     ) : (
                       <div className={`w-full h-full bg-gradient-to-br ${gradient} flex items-center justify-center`}>

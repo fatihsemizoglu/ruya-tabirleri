@@ -166,11 +166,12 @@ export const BlogCard = memo(function BlogCard({ post, variant = 'default' }: Bl
       {post.featured_image && (
         <Link to={`/blog/${post.slug}`} className="block relative overflow-hidden">
           <div className="aspect-[16/10] overflow-hidden">
-            <img
+            <ResponsiveImage
               src={post.featured_image}
               alt={post.title}
+              fallbackWidth={640}
+              sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
               loading="lazy"
-              decoding="async"
               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
             />
           </div>
@@ -233,11 +234,12 @@ export const BlogCard = memo(function BlogCard({ post, variant = 'default' }: Bl
         <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-700/50">
           <div className="flex items-center gap-3">
             {post.author?.avatar_url ? (
-              <img
+              <ResponsiveImage
                 src={post.author.avatar_url}
                 alt={post.author.full_name || 'Yazar'}
+                fallbackWidth={80}
+                sizes="36px"
                 loading="lazy"
-                decoding="async"
                 className="w-9 h-9 rounded-full object-cover ring-2 ring-slate-100 dark:ring-slate-700"
               />
             ) : (

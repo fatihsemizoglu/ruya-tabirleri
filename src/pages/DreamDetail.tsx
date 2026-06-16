@@ -171,36 +171,55 @@ export default function DreamDetail() {
       }
 
       setDream(dreamData as Dream);
+      setIsLoading(false);
 
-      await supabase.rpc('increment_view_count', { dream_id: dreamData.id });
-      if (slug !== latestSlugRef.current) return;
-      // Optimistik view_count +1 (RPC basarili olursa DB zaten +1, UI senkron kalsin).
-      setDream((prev) => (prev ? { ...prev, view_count: (prev.view_count || 0) + 1 } : prev));
-
-      if (user) {
-        await supabase.from('view_history').insert({
-          user_id: user.id,
-          dream_id: dreamData.id,
-        });
-
-        const { data: favData } = await supabase
-          .from('favorites')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('dream_id', dreamData.id)
-          .maybeSingle();
-        setIsFavorite(!!favData);
-
-        const { data: likeData } = await supabase
-          .from('dream_likes')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('dream_id', dreamData.id)
-          .maybeSingle();
-        setIsLiked(!!likeData);
+      const viewPromise = supabase.rpc('increment_view_count', { dream_id: dreamData.id });
+      if (window.requestIdleCallback) {
+        window.requestIdleCallback(() => fetchComments(dreamData.id), { timeout: 2000 });
+      } else {
+        window.setTimeout(() => fetchComments(dreamData.id), 500);
       }
 
-      await fetchComments(dreamData.id);
+      if (user) {
+        const [viewResult, historyResult, favResult, likeResult] = await Promise.all([
+          viewPromise,
+          supabase.from('view_history').insert({
+            user_id: user.id,
+            dream_id: dreamData.id,
+          }),
+          supabase
+            .from('favorites')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('dream_id', dreamData.id)
+            .maybeSingle(),
+          supabase
+            .from('dream_likes')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('dream_id', dreamData.id)
+            .maybeSingle(),
+        ]);
+
+        if (viewResult.error) console.error('Error incrementing view count:', viewResult.error);
+        if (historyResult.error) console.error('Error saving view history:', historyResult.error);
+        if (favResult.error) console.error('Error fetching favorite state:', favResult.error);
+        if (likeResult.error) console.error('Error fetching like state:', likeResult.error);
+
+        if (slug !== latestSlugRef.current) return;
+        if (!viewResult.error) {
+          setDream((prev) => (prev ? { ...prev, view_count: (prev.view_count || 0) + 1 } : prev));
+        }
+        setIsFavorite(!!favResult.data);
+        setIsLiked(!!likeResult.data);
+      } else {
+        const { error: viewError } = await viewPromise;
+        if (viewError) console.error('Error incrementing view count:', viewError);
+        if (slug !== latestSlugRef.current) return;
+        if (!viewError) {
+          setDream((prev) => (prev ? { ...prev, view_count: (prev.view_count || 0) + 1 } : prev));
+        }
+      }
 
     } catch (error) {
       console.error('Error fetching dream:', error);
