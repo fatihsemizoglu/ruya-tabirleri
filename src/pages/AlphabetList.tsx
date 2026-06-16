@@ -481,9 +481,6 @@ export default function AlphabetList() {
                           <h3 className="font-semibold group-hover:text-primary transition-colors line-clamp-1">
                             {dream.title}
                           </h3>
-                          <p className="text-sm text-muted-foreground line-clamp-1 mt-0.5">
-                            {dream.content}
-                          </p>
                         </div>
                         <div className="flex items-center gap-3 shrink-0 text-xs text-muted-foreground">
                           <span className="flex items-center gap-1">
@@ -511,7 +508,7 @@ export default function AlphabetList() {
                   >
                     <Link
                       to={`/ruya/${dream.slug}`}
-                      className="group relative surface p-5 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden block"
+                      className="group relative surface p-4 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden block"
                     >
                       <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${gradient}`} />
                       <div className={`absolute -top-12 -right-12 w-32 h-32 rounded-full bg-gradient-to-br ${gradient} opacity-0 group-hover:opacity-10 blur-2xl transition-opacity`} />
@@ -535,16 +532,12 @@ export default function AlphabetList() {
                           </Badge>
                         )}
 
-                        <h3 className="text-lg font-serif-dream font-semibold group-hover:text-primary transition-colors line-clamp-2 mb-2">
+                        <h3 className="text-base font-serif-dream font-semibold group-hover:text-primary transition-colors line-clamp-2 mb-3">
                           {dream.title}
                         </h3>
 
-                        <p className="text-sm text-muted-foreground line-clamp-3 mb-4 leading-relaxed">
-                          {dream.content}
-                        </p>
-
                         {dream.keywords && dream.keywords.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5 mb-4">
+                          <div className="flex flex-wrap gap-1.5 mb-3">
                             {dream.keywords.slice(0, 3).map((keyword) => (
                               <Badge key={keyword} variant="outline" className="rounded-full text-xs font-normal">
                                 {keyword}
