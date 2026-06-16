@@ -26,8 +26,8 @@ const faqs = [
     answer: 'Evet, sitemiz ve tüm içeriklerimiz tamamen mobil uyumludur. Telefon, tablet veya masaüstünden rahatça erişebilirsiniz. Ayrıca PWA olarak cihazınıza yükleyebilirsiniz.',
   },
   {
-    question: 'Rüyamı yorumlatmak ne kadar sürer?',
-    answer: 'İletişim formundan gönderdiğiniz rüya yorum taleplerine genellikle 24-48 saat içinde yanıt veriyoruz. Acil durumlar için telefon ile ulaşabilirsiniz.',
+    question: 'Rüya tabiri hakkında nasıl destek alabilirim?',
+    answer: 'İletişim formundan gönderdiğiniz sorulara genellikle 24-48 saat içinde yanıt veriyoruz. Acil durumlar için telefon ile ulaşabilirsiniz.',
   },
   {
     question: 'Kişisel verilerim korunuyor mu?',

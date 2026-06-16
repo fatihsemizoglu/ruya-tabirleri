@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, useScroll, useSpring } from 'framer-motion';
-import { Eye, Heart, Bookmark, ArrowLeft, Calendar, BookOpen, Sparkles, Clock, ChevronRight, Share2, Tag, Folder, Check, Moon, Type, PenLine } from 'lucide-react';
+import { Eye, Heart, Bookmark, ArrowLeft, Calendar, BookOpen, Clock, ChevronRight, Share2, Tag, Folder, Check, Moon, Type, PenLine } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -630,18 +630,12 @@ export default function DreamDetail() {
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <h2 className="font-serif-dream text-xl font-bold">Bu rüyayla devam edin</h2>
-              <p className="mt-1 text-sm text-muted-foreground">Tabiri günlüğünüze ekleyin veya kendi rüyanızı AI ile yorumlatın.</p>
+              <p className="mt-1 text-sm text-muted-foreground">Bu tabiri rüya günlüğünüze ekleyerek daha sonra kolayca erişin.</p>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row">
               <Button type="button" variant="outline" onClick={saveToJournal} className="rounded-xl">
                 <PenLine className="mr-2 h-4 w-4" />
                 Günlüğüme Kaydet
-              </Button>
-              <Button asChild className="rounded-xl dream-gradient">
-                <Link to={`/ruya-yorumlat?q=${encodeURIComponent(dream.title)}`}>
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  Rüyamı Yorumlat
-                </Link>
               </Button>
             </div>
           </div>

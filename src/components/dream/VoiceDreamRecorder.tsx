@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   Mic,
   MicOff,
@@ -7,10 +7,8 @@ import {
   Play,
   Pause,
   Trash2,
-  Loader2,
   Volume2,
   Sparkles,
-  X,
   CheckCircle2,
   Save,
 } from 'lucide-react';
@@ -62,15 +60,8 @@ function getSpeechRecognition(): (new () => SpeechRecognitionLike) | null {
   return window.SpeechRecognition || window.webkitSpeechRecognition || null;
 }
 
-interface DreamInterpretation {
-  islamic?: string;
-  psychological?: string;
-  symbols?: string[];
-  summary?: string;
-}
-
 interface VoiceDreamRecorderProps {
-  onSave: (data: { title: string; content: string; mood: string; interpretation?: DreamInterpretation; audioBlob?: Blob }) => Promise<void> | void;
+  onSave: (data: { title: string; content: string; mood: string; audioBlob?: Blob }) => Promise<void> | void;
 }
 
 const MOODS = [
@@ -97,10 +88,7 @@ export function VoiceDreamRecorder({ onSave }: VoiceDreamRecorderProps) {
   const [waveform, setWaveform] = useState<number[]>(() => Array.from({ length: 60 }, () => 0));
   const [mood, setMood] = useState<string>('');
   const [title, setTitle] = useState('');
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [interpretation, setInterpretation] = useState<DreamInterpretation | null>(null);
   const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
-  const [showResult, setShowResult] = useState(false);
 
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -276,7 +264,7 @@ export function VoiceDreamRecorder({ onSave }: VoiceDreamRecorderProps) {
     setIsPaused(false);
     setWaveform(Array.from({ length: 60 }, () => 0));
     notify.success('Kayıt tamamlandı', {
-      description: 'Metni düzenleyebilir, analiz edebilir veya günlüğünüze kaydedebilirsiniz.',
+      description: 'Metni düzenleyebilir veya günlüğünüze kaydedebilirsiniz.',
     });
   };
 
@@ -306,35 +294,6 @@ export function VoiceDreamRecorder({ onSave }: VoiceDreamRecorderProps) {
     setTranscript('');
     setInterim('');
     setDuration(0);
-    setInterpretation(null);
-    setShowResult(false);
-  };
-
-  const analyzeDream = async () => {
-    const text = (transcript + ' ' + interim).trim();
-    if (!text) {
-      notify.error('Önce rüyanızı kaydedin veya yazın');
-      return;
-    }
-    setIsAnalyzing(true);
-    try {
-      const { supabase } = await import('@/integrations/supabase/client');
-      const { data, error } = await supabase.functions.invoke('interpret-dream', {
-        body: { dream: text, type: 'voice' },
-      });
-      if (error) throw error;
-      setInterpretation(data);
-      setShowResult(true);
-      notify.success('Rüya analizi tamamlandı', {
-        description: 'Yorum sonucu aşağıda görüntüleniyor.',
-      });
-    } catch (err) {
-      notify.error('Analiz hatası', {
-        description: getErrorMessage(err),
-      });
-    } finally {
-      setIsAnalyzing(false);
-    }
   };
 
   const handleSave = async () => {
@@ -347,7 +306,6 @@ export function VoiceDreamRecorder({ onSave }: VoiceDreamRecorderProps) {
       title: title || `Sesli Rüya - ${new Date().toLocaleDateString('tr-TR')}`,
       content: text,
       mood,
-      interpretation: interpretation || undefined,
       audioBlob: audioBlob || undefined,
     });
     deleteAudio();
@@ -369,7 +327,7 @@ export function VoiceDreamRecorder({ onSave }: VoiceDreamRecorderProps) {
           <h3 className="font-bold text-lg">Sesli Rüya Günlüğü</h3>
         </div>
         <p className="text-sm text-muted-foreground">
-          Mikrofona anlatın, AI yorumlasın. Türkçe ses tanıma aktif.
+          Mikrofona anlatın, metne dönüştürün ve rüya günlüğünüze kaydedin.
         </p>
       </div>
 
@@ -511,72 +469,6 @@ export function VoiceDreamRecorder({ onSave }: VoiceDreamRecorderProps) {
             placeholder="Rüyana bir başlık ver..."
           />
         </div>
-
-        {/* Analyze */}
-        {!showResult && (
-          <Button
-            onClick={analyzeDream}
-            disabled={isAnalyzing || !(transcript + interim).trim()}
-            className="w-full bg-gradient-to-r from-violet-500 to-purple-500"
-            size="lg"
-          >
-            {isAnalyzing ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Rüyanız analiz ediliyor...
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-4 h-4 mr-2" />
-                AI ile Yorumla
-              </>
-            )}
-          </Button>
-        )}
-
-        {/* Interpretation Result */}
-        <AnimatePresence>
-          {showResult && interpretation && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="space-y-3"
-            >
-              <div className="flex items-center justify-between">
-                <h4 className="font-bold flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-violet-500" />
-                  Yorum
-                </h4>
-                <Button variant="ghost" size="icon" onClick={() => setShowResult(false)}>
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
-              {interpretation.islamic && (
-                <div className="p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-                  <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 mb-1">İslami Yorum</p>
-                  <p className="text-sm">{interpretation.islamic}</p>
-                </div>
-              )}
-              {interpretation.psychological && (
-                <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                  <p className="text-xs font-bold text-blue-600 dark:text-blue-400 mb-1">Psikolojik Yorum</p>
-                  <p className="text-sm">{interpretation.psychological}</p>
-                </div>
-              )}
-              {interpretation.symbols && interpretation.symbols.length > 0 && (
-                <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                  <p className="text-xs font-bold text-amber-600 dark:text-amber-400 mb-2">Semboller</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {interpretation.symbols.map((s, i) => (
-                      <Badge key={i} variant="outline">{s}</Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         {/* Save */}
         <Button

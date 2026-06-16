@@ -307,7 +307,7 @@ export default function DreamJournalVoice() {
               </span>
             </h1>
             <p className="text-base text-muted-foreground">
-              Rüyanı sesli anlat, AI yorumlasın, kaydedilsin.
+              Rüyanı sesli anlat, metne dönüştür ve günlüğüne kaydet.
             </p>
           </div>
           <div className="flex items-center gap-2">

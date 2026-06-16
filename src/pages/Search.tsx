@@ -122,13 +122,24 @@ export default function Search() {
 
       if (searchRes.error) throw searchRes.error;
       const newResults = (searchRes.data as DreamSearchResult[]) || [];
+      const totalFromResults = newResults[0]?.total_count;
+      let nextTotalCount = typeof totalFromResults === 'number' ? totalFromResults : totalCount;
+
+      if (typeof totalFromResults !== 'number' && page === 1) {
+        const { data: countData, error: countError } = await supabase.rpc('count_search_dreams', { search_query: searchTerm });
+        if (!countError && typeof countData === 'number') {
+          nextTotalCount = countData;
+        } else {
+          nextTotalCount = newResults.length;
+        }
+      }
       
       if (append) {
         setResults(prev => [...prev, ...newResults]);
       } else {
         setResults(newResults);
       }
-      setTotalCount(newResults[0]?.total_count ?? (page === 1 ? 0 : totalCount));
+      setTotalCount(nextTotalCount);
 
       if (page === 1) {
         addRecentSearch(searchTerm);

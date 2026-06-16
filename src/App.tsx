@@ -42,7 +42,6 @@ const Auth = lazy(() => import("./pages/Auth"));
 const Install = lazy(() => import("./pages/Install"));
 const SubscriptionVerify = lazy(() => import("./pages/SubscriptionVerify"));
 const SubscriptionCancel = lazy(() => import("./pages/SubscriptionCancel"));
-const DreamInterpret = lazy(() => import("./pages/DreamInterpret"));
 const CommandPalette = lazy(() => import("@/components/ui/command-palette").then((mod) => ({ default: mod.CommandPalette })));
 const OnboardingTour = lazy(() => import("@/components/onboarding/OnboardingTour").then((mod) => ({ default: mod.OnboardingTour })));
 const InstallPrompt = lazy(() => import("@/components/pwa/InstallPrompt").then((mod) => ({ default: mod.InstallPrompt })));
@@ -64,7 +63,6 @@ function AnimatedRoutes() {
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/ruya-yorumlat" element={<DreamInterpret />} />
           <Route path="/giris" element={<Auth mode="login" />} />
           <Route path="/kayit" element={<Auth mode="register" />} />
           <Route path="/sifremi-unuttum" element={<Auth mode="forgot" />} />
