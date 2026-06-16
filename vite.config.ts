@@ -118,8 +118,9 @@ export default defineConfig(({ mode }) => ({
             }
           },
           {
-            // Same-origin images: StaleWhileRevalidate for fast display + background updates
-            urlPattern: ({ request }: { request: Request }) => request.destination === 'image',
+            // Same-origin images only. Third-party images are governed by CSP and should not go through Workbox.
+            urlPattern: ({ request, sameOrigin }: { request: Request; sameOrigin: boolean }) =>
+              sameOrigin && request.destination === 'image',
             handler: "StaleWhileRevalidate",
             options: {
               cacheName: "local-images",
