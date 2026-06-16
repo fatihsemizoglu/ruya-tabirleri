@@ -25,27 +25,77 @@ const popularSearches = [
 ];
 
 const MAX_RECENT_SEARCHES = 10;
+const RESULTS_PER_PAGE = 24;
 
 const escapeSupabaseOrValue = (value: string) => value.replace(/[%,(){}]/g, '');
+
+const normalizeSearchTerm = (value: string) => value
+  .trim()
+  .toLocaleLowerCase('tr-TR')
+  .replace(/ı/g, 'i')
+  .replace(/ğ/g, 'g')
+  .replace(/ü/g, 'u')
+  .replace(/ş/g, 's')
+  .replace(/ö/g, 'o')
+  .replace(/ç/g, 'c')
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '');
+
+const toSlugTerm = (value: string) => normalizeSearchTerm(value).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
+const uniqueDreamResults = (items: DreamSearchResult[]) => {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    if (seen.has(item.id)) return false;
+    seen.add(item.id);
+    return true;
+  });
+};
 
 const fallbackSearchDreams = async (searchTerm: string, limit = RESULTS_PER_PAGE): Promise<DreamSearchResult[]> => {
   const trimmed = searchTerm.trim();
   const safeTerm = escapeSupabaseOrValue(trimmed);
-  const slugTerm = safeTerm.toLocaleLowerCase('tr-TR').replace(/\s+/g, '-');
+  const normalizedTerm = escapeSupabaseOrValue(normalizeSearchTerm(trimmed));
+  const slugTerm = toSlugTerm(trimmed);
 
   if (!safeTerm) return [];
 
-  const { data, error } = await supabase
-    .from('dreams')
-    .select('id, title, slug, content, category_id, keywords, view_count, like_count')
-    .eq('is_published', true)
-    .or(`title.ilike.%${safeTerm}%,slug.ilike.%${slugTerm}%,keywords.cs.{${safeTerm}}`)
-    .order('view_count', { ascending: false })
-    .limit(limit);
+  const selectFields = 'id, title, slug, content, category_id, keywords, view_count, like_count';
+  const titleQueries = [safeTerm, normalizedTerm]
+    .filter(Boolean)
+    .flatMap((term) => [term, `Rüyada ${term}`, `Ruyada ${term}`]);
 
-  if (error || !data) return [];
+  const queryPromises = [
+    ...titleQueries.map((term) => supabase
+      .from('dreams')
+      .select(selectFields)
+      .eq('is_published', true)
+      .ilike('title', `%${term}%`)
+      .order('view_count', { ascending: false })
+      .limit(limit)),
+    slugTerm ? supabase
+      .from('dreams')
+      .select(selectFields)
+      .eq('is_published', true)
+      .ilike('slug', `%${slugTerm}%`)
+      .order('view_count', { ascending: false })
+      .limit(limit) : null,
+    safeTerm ? supabase
+      .from('dreams')
+      .select(selectFields)
+      .eq('is_published', true)
+      .contains('keywords', [safeTerm])
+      .order('view_count', { ascending: false })
+      .limit(limit) : null,
+  ].filter(Boolean);
 
-  return data.map((dream) => ({ ...dream, rank: 1, total_count: data.length })) as DreamSearchResult[];
+  const responses = await Promise.all(queryPromises);
+  const rows = responses.flatMap((response) => response.error ? [] : (response.data || []));
+  const results = uniqueDreamResults(rows.map((dream) => ({ ...dream, rank: 1, total_count: rows.length })) as DreamSearchResult[])
+    .sort((a, b) => (b.view_count || 0) - (a.view_count || 0))
+    .slice(0, limit);
+
+  return results.map((dream) => ({ ...dream, total_count: results.length }));
 };
 
 export default function Search() {
@@ -99,7 +149,6 @@ export default function Search() {
   const [currentPage, setCurrentPage] = useState(1);
   const [infiniteScroll, setInfiniteScroll] = useState(false);
   const [loadMoreLoading, setLoadMoreLoading] = useState(false);
-  const RESULTS_PER_PAGE = 24;
   const searchInputRef = useRef<HTMLInputElement>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
@@ -135,30 +184,13 @@ export default function Search() {
       setIsLoading(true);
     }
     try {
-      const offset = (page - 1) * RESULTS_PER_PAGE;
-      const searchRes = await supabase.rpc('search_dreams', {
-        search_query: searchTerm,
-        limit_count: RESULTS_PER_PAGE,
-        offset_count: offset,
-      });
+      let newResults = await fallbackSearchDreams(searchTerm, RESULTS_PER_PAGE * page);
+      const nextTotalCount = newResults.length;
 
-      if (searchRes.error && (append || page > 1)) throw searchRes.error;
-      let newResults = searchRes.error ? [] : ((searchRes.data as DreamSearchResult[]) || []);
-      const totalFromResults = newResults[0]?.total_count;
-      let nextTotalCount = typeof totalFromResults === 'number' ? totalFromResults : totalCount;
-
-      if ((searchRes.error || newResults.length === 0) && page === 1) {
-        newResults = await fallbackSearchDreams(searchTerm);
-        nextTotalCount = newResults.length;
-      }
-
-      if (typeof totalFromResults !== 'number' && page === 1) {
-        const { data: countData, error: countError } = await supabase.rpc('count_search_dreams', { search_query: searchTerm });
-        if (!countError && typeof countData === 'number') {
-          nextTotalCount = countData;
-        } else {
-          nextTotalCount = newResults.length;
-        }
+      if (append) {
+        newResults = newResults.slice((page - 1) * RESULTS_PER_PAGE, page * RESULTS_PER_PAGE);
+      } else {
+        newResults = newResults.slice(0, RESULTS_PER_PAGE);
       }
       
       if (append) {
@@ -181,7 +213,7 @@ export default function Search() {
       setIsLoading(false);
       setLoadMoreLoading(false);
     }
-  }, [addRecentSearch, totalCount]);
+  }, [addRecentSearch]);
 
   const fetchRelatedDreams = useCallback(async (_searchTerm: string) => {
     try {

@@ -160,14 +160,14 @@ export function SearchWithDropdown({
 
   // Log search query
   const logSearch = async (searchQuery: string, resultsCount: number = 0) => {
-    try {
-      await supabase
-        .from('search_logs')
-        .insert({
-          query: searchQuery,
-          results_count: resultsCount,
-        });
-    } catch (error) {
+    const { error } = await supabase
+      .from('search_logs')
+      .insert({
+        query: searchQuery,
+        results_count: resultsCount,
+      });
+
+    if (error && !['42501', '401'].includes(error.code || '')) {
       console.error('Failed to log search:', error);
     }
   };

@@ -104,17 +104,10 @@ function ShareButton({ title, description, url }: { title: string; description: 
 }
 
 async function incrementDreamViewCount(dreamId: string, currentViewCount: number | null) {
-  const rpcResult = await supabase.rpc('increment_view_count', { dream_id: dreamId });
-  if (!rpcResult.error) return rpcResult;
-
-  if (rpcResult.error.code !== 'PGRST202') return rpcResult;
-
-  const fallbackResult = await supabase
+  return supabase
     .from('dreams')
     .update({ view_count: (currentViewCount || 0) + 1 })
     .eq('id', dreamId);
-
-  return fallbackResult;
 }
 
 export default function DreamDetail() {
