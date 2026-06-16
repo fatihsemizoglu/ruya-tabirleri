@@ -13,6 +13,7 @@ RETURNS TABLE (
   slug TEXT,
   content TEXT,
   category_id UUID,
+  keywords TEXT[],
   view_count INTEGER,
   like_count INTEGER,
   rank REAL,
@@ -40,26 +41,48 @@ BEGIN
       d.slug::TEXT AS slug,
       d.content::TEXT AS content,
       d.category_id,
+      coalesce(d.keywords, ARRAY[]::TEXT[]) AS keywords,
       d.view_count,
       d.like_count,
       (
-        CASE WHEN public.normalize_search_text(d.title) = normalized_query THEN 2 ELSE 0 END
-        + CASE WHEN public.normalize_search_text(d.title) LIKE '%' || normalized_query || '%' THEN 1 ELSE 0 END
-        + CASE WHEN d.slug LIKE '%' || slug_query || '%' THEN 0.8 ELSE 0 END
-        + CASE WHEN public.normalize_search_text(d.content) LIKE '%' || normalized_query || '%' THEN 0.2 ELSE 0 END
+        CASE WHEN public.normalize_search_text(d.title) = normalized_query THEN 10 ELSE 0 END
+        + CASE WHEN public.normalize_search_text(d.title) LIKE normalized_query || '%' THEN 6 ELSE 0 END
+        + CASE WHEN public.normalize_search_text(d.title) LIKE '%' || normalized_query || '%' THEN 4 ELSE 0 END
+        + CASE WHEN d.slug = slug_query THEN 8 ELSE 0 END
+        + CASE WHEN d.slug LIKE slug_query || '%' THEN 5 ELSE 0 END
+        + CASE WHEN d.slug LIKE '%' || slug_query || '%' THEN 3 ELSE 0 END
+        + CASE WHEN EXISTS (
+          SELECT 1
+          FROM unnest(coalesce(d.keywords, ARRAY[]::TEXT[])) AS keyword
+          WHERE public.normalize_search_text(keyword) = normalized_query
+        ) THEN 6 ELSE 0 END
+        + CASE WHEN EXISTS (
+          SELECT 1
+          FROM unnest(coalesce(d.keywords, ARRAY[]::TEXT[])) AS keyword
+          WHERE public.normalize_search_text(keyword) LIKE '%' || normalized_query || '%'
+        ) THEN 3 ELSE 0 END
+        + CASE WHEN public.normalize_search_text(d.content) LIKE '%' || normalized_query || '%' THEN 0.5 ELSE 0 END
       )::REAL AS rank
     FROM public.dreams d
     WHERE d.is_published = true
+      AND length(normalized_query) >= 2
       AND (
         d.title ILIKE '%' || search_query || '%'
         OR public.normalize_search_text(d.title) LIKE '%' || normalized_query || '%'
         OR d.slug LIKE '%' || slug_query || '%'
         OR EXISTS (
           SELECT 1
-          FROM jsonb_array_elements_text(coalesce(d.keywords, '[]'::jsonb)) AS keyword
+          FROM unnest(coalesce(d.keywords, ARRAY[]::TEXT[])) AS keyword
           WHERE public.normalize_search_text(keyword) LIKE '%' || normalized_query || '%'
         )
-        OR public.normalize_search_text(d.content) LIKE '%' || normalized_query || '%'
+        OR (
+          length(normalized_query) >= 4
+          AND public.normalize_search_text(d.content) LIKE '%' || normalized_query || '%'
+          AND (
+            public.normalize_search_text(d.title) LIKE '%' || left(normalized_query, 3) || '%'
+            OR d.slug LIKE '%' || left(slug_query, 3) || '%'
+          )
+        )
       )
   )
   SELECT
@@ -68,11 +91,13 @@ BEGIN
     matched.slug,
     matched.content,
     matched.category_id,
+    matched.keywords,
     matched.view_count,
     matched.like_count,
     matched.rank,
     COUNT(*) OVER ()::INTEGER AS total_count
   FROM matched
+  WHERE matched.rank >= 3
   ORDER BY matched.rank DESC, matched.view_count DESC
   LIMIT limit_count
   OFFSET offset_count;

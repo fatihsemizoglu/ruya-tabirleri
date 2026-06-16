@@ -7,6 +7,20 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { Dream } from '@/types/database';
 
+const normalizeText = (value: string) =>
+  value
+    .toLocaleLowerCase('tr-TR')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/ı/g, 'i')
+    .replace(/ğ/g, 'g')
+    .replace(/ü/g, 'u')
+    .replace(/ş/g, 's')
+    .replace(/ö/g, 'o')
+    .replace(/ç/g, 'c');
+
+const normalizeKeywords = (values: string[]) => values.map(normalizeText).filter(Boolean);
+
 interface SimilarDreamsProps {
   currentDream: Dream;
   categoryId: string | null;
@@ -26,77 +40,65 @@ export function SimilarDreams({ currentDream, categoryId, keywords }: SimilarDre
   const fetchSimilarDreams = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Fetch dreams from same category
-      let categoryDreams: Dream[] = [];
+      const normalizedCurrentKeywords = normalizeKeywords(keywords || []);
+      const searchTerms = normalizedCurrentKeywords.slice(0, 4);
+      const candidateQueries = [currentDream.title, ...searchTerms].filter(Boolean).slice(0, 4);
+      const candidateIds = new Set<string>();
+
+      const searchResults = await Promise.all(
+        candidateQueries.map((search_query) =>
+          supabase.rpc('search_dreams', { search_query, limit_count: 12 })
+        )
+      );
+
+      searchResults.forEach(({ data }) => {
+        data?.forEach((dream) => {
+          if (dream.id !== currentDream.id && dream.rank >= 3) candidateIds.add(dream.id);
+        });
+      });
+
       if (categoryId) {
         const { data } = await supabase
           .from('dreams')
-          .select('*')
+          .select('id')
           .eq('category_id', categoryId)
           .eq('is_published', true)
           .neq('id', currentDream.id)
           .order('view_count', { ascending: false })
-          .limit(10);
-        categoryDreams = (data as Dream[]) || [];
+          .limit(16);
+        data?.forEach((dream) => candidateIds.add(dream.id));
       }
 
-      // Fetch dreams with matching keywords using search
-      let keywordDreams: Dream[] = [];
-      if (keywords && keywords.length > 0) {
-        const keywordQuery = keywords.slice(0, 3).join(' ');
-        const { data } = await supabase
-          .rpc('search_dreams', { search_query: keywordQuery, limit_count: 10 });
-        
-        if (data) {
-          // Filter out current dream and fetch full details
-          const ids = data.filter(d => d.id !== currentDream.id).map(d => d.id);
-          if (ids.length > 0) {
-            const { data: fullDreams } = await supabase
-              .from('dreams')
-              .select('*')
-              .in('id', ids)
-              .eq('is_published', true);
-            keywordDreams = (fullDreams as Dream[]) || [];
-          }
-        }
+      if (candidateIds.size === 0) {
+        setSimilarDreams([]);
+        return;
       }
 
-      // Score and deduplicate dreams
+      const { data: candidates } = await supabase
+        .from('dreams')
+        .select('*')
+        .in('id', Array.from(candidateIds))
+        .eq('is_published', true);
+
       const dreamMap = new Map<string, SimilarDream>();
 
-      categoryDreams.forEach(dream => {
-        const existing = dreamMap.get(dream.id);
-        if (existing) {
-          existing.matchScore += 2;
-          if (!existing.matchReasons.includes('Aynı Kategori')) {
-            existing.matchReasons.push('Aynı Kategori');
-          }
-        } else {
-          dreamMap.set(dream.id, {
-            ...dream,
-            matchScore: 2,
-            matchReasons: ['Aynı Kategori']
-          });
-        }
-      });
+      (candidates as Dream[] | null)?.forEach((dream) => {
+        const normalizedDreamKeywords = normalizeKeywords(dream.keywords || []);
+        const matchingKeywordCount = normalizedDreamKeywords.filter((keyword) =>
+          normalizedCurrentKeywords.some((currentKeyword) => keyword === currentKeyword || keyword.includes(currentKeyword) || currentKeyword.includes(keyword))
+        ).length;
+        const titleSimilarity = searchTerms.some((term) => normalizeText(dream.title).includes(term)) ? 2 : 0;
+        const categoryScore = categoryId && dream.category_id === categoryId ? 2 : 0;
+        const matchScore = matchingKeywordCount * 3 + titleSimilarity + categoryScore;
 
-      keywordDreams.forEach(dream => {
-        const existing = dreamMap.get(dream.id);
-        const matchingKeywords = dream.keywords?.filter(k => keywords.includes(k)) || [];
-        const keywordScore = matchingKeywords.length;
+        if (matchScore < 3) return;
 
-        if (existing) {
-          existing.matchScore += keywordScore;
-          if (matchingKeywords.length > 0 && !existing.matchReasons.includes('Ortak Anahtar Kelimeler')) {
-            existing.matchReasons.push('Ortak Anahtar Kelimeler');
-          }
-        } else if (keywordScore > 0) {
-          dreamMap.set(dream.id, {
-            ...dream,
-            matchScore: keywordScore,
-            matchReasons: ['Ortak Anahtar Kelimeler']
-          });
-        }
+        const matchReasons: string[] = [];
+        if (matchingKeywordCount > 0) matchReasons.push('Ortak Anahtar Kelime');
+        if (categoryScore > 0) matchReasons.push('Aynı Kategori');
+        if (titleSimilarity > 0) matchReasons.push('Başlık Benzerliği');
+
+        dreamMap.set(dream.id, { ...dream, matchScore, matchReasons });
       });
 
       // Sort by score and popularity
@@ -115,7 +117,7 @@ export function SimilarDreams({ currentDream, categoryId, keywords }: SimilarDre
     } finally {
       setIsLoading(false);
     }
-  }, [currentDream.id, categoryId, keywords]);
+  }, [currentDream.id, currentDream.title, categoryId, keywords]);
 
   useEffect(() => {
     fetchSimilarDreams();
@@ -132,8 +134,7 @@ export function SimilarDreams({ currentDream, categoryId, keywords }: SimilarDre
           {[...Array(4)].map((_, i) => (
             <div key={i} className="p-4 rounded-xl bg-muted/50">
               <Skeleton className="h-5 w-3/4 mb-2" />
-              <Skeleton className="h-4 w-full mb-1" />
-              <Skeleton className="h-4 w-2/3" />
+              <Skeleton className="h-4 w-1/2" />
             </div>
           ))}
         </div>
@@ -172,7 +173,7 @@ export function SimilarDreams({ currentDream, categoryId, keywords }: SimilarDre
           <Link
             key={dream.id}
             to={`/ruya/${dream.slug}`}
-            className="group relative p-4 rounded-xl bg-muted/50 hover:bg-muted transition-all duration-200 hover:shadow-md border border-transparent hover:border-primary/20"
+            className="group relative p-3 rounded-xl bg-muted/50 hover:bg-muted transition-all duration-200 hover:shadow-md border border-transparent hover:border-primary/20"
           >
             {/* Match indicator */}
             {dream.matchScore >= 3 && (
@@ -182,12 +183,9 @@ export function SimilarDreams({ currentDream, categoryId, keywords }: SimilarDre
               </div>
             )}
             
-            <h4 className="font-medium mb-2 group-hover:text-primary transition-colors line-clamp-1">
+            <h4 className="font-medium mb-3 group-hover:text-primary transition-colors line-clamp-2">
               {dream.title}
             </h4>
-            <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-              {dream.content}
-            </p>
             
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3 text-xs text-muted-foreground">

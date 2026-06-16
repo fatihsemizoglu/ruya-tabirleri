@@ -468,15 +468,15 @@ export default function Search() {
               ) : filteredResults.length > 0 ? (
                 <>
                   {viewMode === 'grid' ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2.5 md:gap-3">
                       {paginatedResults.map((dream, index) => (
                         <Link
                           key={dream.id}
                           to={`/ruya/${dream.slug}`}
-                          className="group relative flex min-h-[132px] flex-col rounded-2xl border border-border/60 bg-card/80 p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/35 hover:bg-card hover:shadow-lg hover:shadow-primary/5 render-optimize animate-fadeIn"
+                          className="group relative flex min-h-[104px] flex-col rounded-xl border border-border/60 bg-card/80 p-3 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/35 hover:bg-card hover:shadow-md hover:shadow-primary/5 render-optimize animate-fadeIn"
                           style={{ animationDelay: `${Math.min(index * 50, 300)}ms` }}
                         >
-                          <div className="mb-3 flex items-start justify-between gap-2">
+                          <div className="mb-2 flex items-start justify-between gap-2">
                             {dream.category_id && (
                               <Badge variant="secondary" className="max-w-[70%] truncate text-[11px]">
                                 <CategoryIcon icon={getCategoryIconValue(dream.category_id)} className="h-3.5 w-3.5" />
@@ -489,11 +489,11 @@ export default function Search() {
                               </Badge>
                             )}
                           </div>
-                          <h3 className="text-base font-semibold leading-snug tracking-[-0.01em] transition-colors line-clamp-2 group-hover:text-primary sm:text-lg">
+                          <h3 className="text-[15px] font-semibold leading-snug tracking-[-0.01em] transition-colors line-clamp-2 group-hover:text-primary sm:text-base">
                             {dream.title}
                           </h3>
 
-                          <div className="mt-auto flex items-center justify-between gap-3 pt-4 text-xs text-muted-foreground">
+                          <div className="mt-auto flex items-center justify-between gap-3 pt-3 text-xs text-muted-foreground">
                             <div className="flex min-w-0 items-center gap-3">
                               <span className="flex items-center gap-1 tabular-nums">
                                 <Eye className="h-3.5 w-3.5" />
@@ -504,7 +504,7 @@ export default function Search() {
                                 {(dream.like_count || 0).toLocaleString('tr-TR')}
                               </span>
                             </div>
-                            <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                            <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
                               Oku
                             </span>
                           </div>
@@ -512,17 +512,17 @@ export default function Search() {
                       ))}
                     </div>
                   ) : (
-                    <div className="space-y-2.5">
+                    <div className="space-y-2">
                       {paginatedResults.map((dream, index) => (
                         <Link
                           key={dream.id}
                           to={`/ruya/${dream.slug}`}
                           style={{ animationDelay: `${Math.min(index * 50, 300)}ms` }}
-                          className="group block rounded-2xl border border-border/60 bg-card/80 p-4 shadow-sm transition-all duration-200 hover:border-primary/35 hover:bg-card hover:shadow-md render-optimize animate-fadeIn"
+                          className="group block rounded-xl border border-border/60 bg-card/80 p-3 shadow-sm transition-all duration-200 hover:border-primary/35 hover:bg-card hover:shadow-md render-optimize animate-fadeIn"
                         >
                           <div className="flex items-center gap-3">
                             <div className="min-w-0 flex-1">
-                              <div className="mb-2 flex items-center gap-2">
+                              <div className="mb-1.5 flex items-center gap-2">
                                 {index < 3 && (
                                   <Badge className="dream-gradient text-white">
                                     #{index + 1}
@@ -535,7 +535,7 @@ export default function Search() {
                                   </Badge>
                                 )}
                               </div>
-                              <h3 className="text-base font-semibold leading-snug transition-colors line-clamp-2 group-hover:text-primary sm:text-lg">
+                              <h3 className="text-[15px] font-semibold leading-snug transition-colors line-clamp-2 group-hover:text-primary sm:text-base">
                                 {dream.title}
                               </h3>
                             </div>

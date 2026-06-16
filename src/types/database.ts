@@ -102,6 +102,7 @@ export interface DreamSearchResult {
   slug: string;
   content: string;
   category_id: string | null;
+  keywords?: string[] | null;
   view_count: number;
   like_count: number;
   rank: number;

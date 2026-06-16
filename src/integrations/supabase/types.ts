@@ -2101,6 +2101,7 @@ export type Database = {
               category_id: string
               content: string
               id: string
+              keywords: string[] | null
               like_count: number
               rank: number
               slug: string
@@ -2115,6 +2116,7 @@ export type Database = {
               category_id: string
               content: string
               id: string
+              keywords: string[] | null
               like_count: number
               rank: number
               slug: string
