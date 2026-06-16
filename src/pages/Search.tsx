@@ -28,6 +28,26 @@ const MAX_RECENT_SEARCHES = 10;
 
 const escapeSupabaseOrValue = (value: string) => value.replace(/[%,(){}]/g, '');
 
+const fallbackSearchDreams = async (searchTerm: string, limit = RESULTS_PER_PAGE): Promise<DreamSearchResult[]> => {
+  const trimmed = searchTerm.trim();
+  const safeTerm = escapeSupabaseOrValue(trimmed);
+  const slugTerm = safeTerm.toLocaleLowerCase('tr-TR').replace(/\s+/g, '-');
+
+  if (!safeTerm) return [];
+
+  const { data, error } = await supabase
+    .from('dreams')
+    .select('id, title, slug, content, category_id, keywords, view_count, like_count')
+    .eq('is_published', true)
+    .or(`title.ilike.%${safeTerm}%,slug.ilike.%${slugTerm}%,keywords.cs.{${safeTerm}}`)
+    .order('view_count', { ascending: false })
+    .limit(limit);
+
+  if (error || !data) return [];
+
+  return data.map((dream) => ({ ...dream, rank: 1, total_count: data.length })) as DreamSearchResult[];
+};
+
 export default function Search() {
   const [searchParams, setSearchParams] = useSearchParams();
   const query = searchParams.get('q') || '';
@@ -122,27 +142,14 @@ export default function Search() {
         offset_count: offset,
       });
 
-      if (searchRes.error) throw searchRes.error;
-      let newResults = (searchRes.data as DreamSearchResult[]) || [];
+      if (searchRes.error && (append || page > 1)) throw searchRes.error;
+      let newResults = searchRes.error ? [] : ((searchRes.data as DreamSearchResult[]) || []);
       const totalFromResults = newResults[0]?.total_count;
       let nextTotalCount = typeof totalFromResults === 'number' ? totalFromResults : totalCount;
 
-      if (newResults.length === 0 && page === 1) {
-        const trimmed = searchTerm.trim();
-        const safeTerm = escapeSupabaseOrValue(trimmed);
-        const slugTerm = safeTerm.toLocaleLowerCase('tr-TR').replace(/\s+/g, '-');
-        const fallback = await supabase
-          .from('dreams')
-          .select('id, title, slug, content, category_id, keywords, view_count, like_count')
-          .eq('is_published', true)
-          .or(`title.ilike.%${safeTerm}%,slug.ilike.%${slugTerm}%,keywords.cs.{${safeTerm}}`)
-          .order('view_count', { ascending: false })
-          .limit(RESULTS_PER_PAGE);
-
-        if (!fallback.error && fallback.data) {
-          newResults = fallback.data.map((dream) => ({ ...dream, rank: 1, total_count: fallback.data.length })) as DreamSearchResult[];
-          nextTotalCount = newResults.length;
-        }
+      if ((searchRes.error || newResults.length === 0) && page === 1) {
+        newResults = await fallbackSearchDreams(searchTerm);
+        nextTotalCount = newResults.length;
       }
 
       if (typeof totalFromResults !== 'number' && page === 1) {
