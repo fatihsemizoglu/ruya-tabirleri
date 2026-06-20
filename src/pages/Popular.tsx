@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { TrendingUp, Eye, Heart, Star, ChevronUp, Loader2, Flame, Award, Sparkles, Search, Grid3X3, List, Clock, Filter, ArrowUpRight } from 'lucide-react';
+import { TrendingUp, Eye, Heart, Star, ChevronUp, Loader2, Flame, Award, Search, Grid3X3, List, Clock, Filter, ArrowUpRight } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState as PremiumEmptyState } from '@/components/ui/empty-state';
 import { Layout } from '@/components/layout/Layout';
