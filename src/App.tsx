@@ -18,6 +18,7 @@ import NotFound from "./pages/NotFound";
 // Lazy load: daha az kullanılan sayfalar (code splitting)
 const Search = lazy(() => import("./pages/Search"));
 const DreamDetail = lazy(() => import("./pages/DreamDetail"));
+const DreamCompare = lazy(() => import("./pages/DreamCompare"));
 const Categories = lazy(() => import("./pages/Categories"));
 const CategoryDetail = lazy(() => import("./pages/CategoryDetail"));
 const Popular = lazy(() => import("./pages/Popular"));
@@ -72,6 +73,7 @@ function AnimatedRoutes() {
           <Route path="/ara" element={<RouteErrorBoundary label="Search"><Search /></RouteErrorBoundary>} />
           {/* Content routes - isolated boundary */}
           <Route path="/ruya/:slug" element={<RouteErrorBoundary label="DreamDetail"><DreamDetail /></RouteErrorBoundary>} />
+          <Route path="/karsilastir" element={<RouteErrorBoundary label="DreamCompare"><DreamCompare /></RouteErrorBoundary>} />
           <Route path="/ruya-tabirleri" element={<Navigate replace to="/populer" />} />
           <Route path="/kategoriler" element={<Categories />} />
           <Route path="/kategori/:slug" element={<CategoryDetail />} />

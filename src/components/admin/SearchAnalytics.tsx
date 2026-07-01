@@ -10,7 +10,11 @@ import {
   Calendar,
   BarChart3,
   RefreshCw,
-  Trash2
+  Trash2,
+  Lightbulb,
+  AlertTriangle,
+  Target,
+  FilePlus2
 } from 'lucide-react';
 import { formatDistanceToNow, subDays, format } from 'date-fns';
 import { tr } from 'date-fns/locale';
@@ -29,6 +33,74 @@ interface SearchStat {
   query: string;
   count: number;
   last_searched: string;
+}
+
+interface SearchQualityStat extends SearchStat {
+  avgResults: number;
+  zeroResultCount: number;
+  opportunityScore: number;
+}
+
+type SearchLogRow = {
+  query: string;
+  created_at: string;
+  results_count: number | null;
+};
+
+function buildQualityStats(rows: SearchLogRow[] = []) {
+  const queryMap = new Map<string, { count: number; last_searched: string; totalResults: number; zeroResultCount: number }>();
+
+  rows.forEach((log) => {
+    const normalizedQuery = log.query.toLowerCase().trim();
+    if (!normalizedQuery) return;
+    const resultsCount = Math.max(0, log.results_count ?? 0);
+    const existing = queryMap.get(normalizedQuery);
+
+    if (existing) {
+      existing.count += 1;
+      existing.totalResults += resultsCount;
+      existing.zeroResultCount += resultsCount === 0 ? 1 : 0;
+      if (new Date(log.created_at) > new Date(existing.last_searched)) {
+        existing.last_searched = log.created_at;
+      }
+    } else {
+      queryMap.set(normalizedQuery, {
+        count: 1,
+        last_searched: log.created_at,
+        totalResults: resultsCount,
+        zeroResultCount: resultsCount === 0 ? 1 : 0,
+      });
+    }
+  });
+
+  const qualityStats: SearchQualityStat[] = Array.from(queryMap.entries()).map(([query, stats]) => {
+    const avgResults = stats.totalResults / stats.count;
+    const zeroRate = stats.zeroResultCount / stats.count;
+    const lowResultBoost = avgResults < 3 ? 2 : avgResults < 8 ? 1 : 0;
+    return {
+      query,
+      count: stats.count,
+      last_searched: stats.last_searched,
+      avgResults,
+      zeroResultCount: stats.zeroResultCount,
+      opportunityScore: Math.round((stats.count * (zeroRate + lowResultBoost + 1)) * 10) / 10,
+    };
+  });
+
+  return {
+    zeroResultQueries: qualityStats
+      .filter((item) => item.zeroResultCount > 0)
+      .sort((a, b) => b.zeroResultCount - a.zeroResultCount || b.count - a.count)
+      .slice(0, 10),
+    lowResultQueries: qualityStats
+      .filter((item) => item.avgResults > 0 && item.avgResults < 5)
+      .sort((a, b) => b.count - a.count || a.avgResults - b.avgResults)
+      .slice(0, 10),
+    contentOpportunities: qualityStats
+      .filter((item) => item.count >= 2 && (item.zeroResultCount > 0 || item.avgResults < 8))
+      .sort((a, b) => b.opportunityScore - a.opportunityScore)
+      .slice(0, 12),
+  };
 }
 
 export function SearchAnalytics() {
@@ -80,6 +152,22 @@ export function SearchAnalytics() {
         .slice(0, 20);
       
       return result;
+    },
+  });
+
+  const { data: quality, isLoading: isLoadingQuality } = useQuery({
+    queryKey: ['admin-search-quality', timeRange],
+    queryFn: async () => {
+      const startDate = subDays(new Date(), parseInt(timeRange)).toISOString();
+      const { data, error } = await supabase
+        .from('search_logs')
+        .select('query, created_at, results_count')
+        .gte('created_at', startDate)
+        .order('created_at', { ascending: false })
+        .limit(3000);
+
+      if (error) throw error;
+      return buildQualityStats((data || []) as SearchLogRow[]);
     },
   });
 
@@ -168,6 +256,7 @@ export function SearchAnalytics() {
             onClick={() => {
               queryClient.invalidateQueries({ queryKey: ['admin-search-analytics'] });
               queryClient.invalidateQueries({ queryKey: ['admin-search-stats'] });
+              queryClient.invalidateQueries({ queryKey: ['admin-search-quality'] });
             }}
           >
             <RefreshCw className="w-4 h-4" />
@@ -224,6 +313,37 @@ export function SearchAnalytics() {
             </div>
           </div>
         </Card>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+        <QualityCard
+          title="Sıfır Sonuç Verenler"
+          description="Yeni içerik veya eş anlamlı ihtiyacı yüksek sorgular"
+          icon={AlertTriangle}
+          items={quality?.zeroResultQueries || []}
+          isLoading={isLoadingQuality}
+          metric={(item) => `${item.zeroResultCount} sıfır sonuç`}
+          emptyText="Sıfır sonuçlu arama yok"
+        />
+        <QualityCard
+          title="Düşük Sonuçlu Aramalar"
+          description="Var olan ama zayıf karşılanan kullanıcı niyetleri"
+          icon={Target}
+          items={quality?.lowResultQueries || []}
+          isLoading={isLoadingQuality}
+          metric={(item) => `${item.avgResults.toFixed(1)} ort. sonuç`}
+          emptyText="Düşük sonuçlu arama yok"
+        />
+        <QualityCard
+          title="İçerik Fırsatları"
+          description="SEO ve içerik üretimi için öncelikli başlıklar"
+          icon={Lightbulb}
+          items={quality?.contentOpportunities || []}
+          isLoading={isLoadingQuality}
+          metric={(item) => `Skor ${item.opportunityScore}`}
+          emptyText="Fırsat önerisi yok"
+          showCreateLink
+        />
       </div>
 
       {/* Top Searches */}
@@ -321,6 +441,72 @@ export function SearchAnalytics() {
         )}
       </Card>
     </div>
+  );
+}
+
+function QualityCard({
+  title,
+  description,
+  icon: Icon,
+  items,
+  isLoading,
+  metric,
+  emptyText,
+  showCreateLink = false,
+}: {
+  title: string;
+  description: string;
+  icon: typeof Lightbulb;
+  items: SearchQualityStat[];
+  isLoading: boolean;
+  metric: (item: SearchQualityStat) => string;
+  emptyText: string;
+  showCreateLink?: boolean;
+}) {
+  return (
+    <Card className="p-5">
+      <div className="mb-4 flex items-start gap-3">
+        <div className="rounded-xl bg-primary/10 p-2 text-primary">
+          <Icon className="h-5 w-5" />
+        </div>
+        <div>
+          <h3 className="font-bold text-slate-900 dark:text-white">{title}</h3>
+          <p className="text-xs text-muted-foreground">{description}</p>
+        </div>
+      </div>
+
+      {isLoading ? (
+        <div className="space-y-3">
+          {Array.from({ length: 5 }).map((_, index) => (
+            <Skeleton key={index} className="h-12 w-full rounded-xl" />
+          ))}
+        </div>
+      ) : items.length > 0 ? (
+        <div className="space-y-2">
+          {items.map((item) => (
+            <div key={item.query} className="rounded-xl border border-border/60 p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate font-medium text-sm">{item.query}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {item.count} arama • {metric(item)}
+                  </p>
+                </div>
+                {showCreateLink && (
+                  <Button asChild variant="ghost" size="sm" className="h-8 shrink-0 px-2">
+                    <a href={`/admin?tab=dreams&draftTitle=${encodeURIComponent(item.query)}`}>
+                      <FilePlus2 className="h-4 w-4" />
+                    </a>
+                  </Button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">{emptyText}</p>
+      )}
+    </Card>
   );
 }
 

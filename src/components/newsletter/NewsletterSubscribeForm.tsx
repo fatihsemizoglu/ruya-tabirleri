@@ -5,6 +5,8 @@ import { Mail, Loader2, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
+import { useQuery } from '@tanstack/react-query';
+import { Badge } from '@/components/ui/badge';
 
 interface NewsletterSubscribeFormProps {
   variant?: 'default' | 'compact' | 'footer';
@@ -15,8 +17,24 @@ export function NewsletterSubscribeForm({ variant = 'default', className = '' }:
   const { settings } = useSiteSettings();
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ['newsletter-categories'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('id, name')
+        .order('name')
+        .limit(12);
+      if (error) throw error;
+      return data || [];
+    },
+    staleTime: 30 * 60 * 1000,
+    enabled: variant === 'default',
+  });
 
   if (!settings.enableNewsletter) {
     return null;
@@ -34,7 +52,7 @@ export function NewsletterSubscribeForm({ variant = 'default', className = '' }:
 
     try {
       const { data, error } = await supabase.functions.invoke('subscribe-newsletter', {
-        body: { email, name: name || undefined }
+        body: { email, name: name || undefined, preferredCategoryIds: selectedCategoryIds }
       });
 
       if (error) throw error;
@@ -44,6 +62,7 @@ export function NewsletterSubscribeForm({ variant = 'default', className = '' }:
         toast.success(data.message || 'Doğrulama e-postası gönderildi!');
         setEmail('');
         setName('');
+        setSelectedCategoryIds([]);
       } else {
         throw new Error(data.error || 'Bir hata oluştu');
       }
@@ -53,6 +72,14 @@ export function NewsletterSubscribeForm({ variant = 'default', className = '' }:
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const toggleCategory = (categoryId: string) => {
+    setSelectedCategoryIds((current) => (
+      current.includes(categoryId)
+        ? current.filter((id) => id !== categoryId)
+        : [...current, categoryId]
+    ));
   };
 
   if (isSuccess) {
@@ -139,6 +166,41 @@ export function NewsletterSubscribeForm({ variant = 'default', className = '' }:
           disabled={isLoading}
           required
         />
+        {categories.length > 0 && (
+          <div className="space-y-2 rounded-xl border border-border/60 bg-background/60 p-3">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm font-medium">İlgi alanlarınız</p>
+              {selectedCategoryIds.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedCategoryIds([])}
+                  className="text-xs text-muted-foreground hover:text-foreground"
+                >
+                  Tümünü temizle
+                </button>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {categories.map((category) => {
+                const selected = selectedCategoryIds.includes(category.id);
+                return (
+                  <button
+                    key={category.id}
+                    type="button"
+                    onClick={() => toggleCategory(category.id)}
+                    className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    aria-pressed={selected}
+                  >
+                    <Badge variant={selected ? 'default' : 'outline'} className="cursor-pointer">
+                      {category.name}
+                    </Badge>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-xs text-muted-foreground">Seçmezseniz tüm yeni içeriklerden haberdar olursunuz.</p>
+          </div>
+        )}
         <Button type="submit" disabled={isLoading} className="w-full">
           {isLoading ? (
             <>

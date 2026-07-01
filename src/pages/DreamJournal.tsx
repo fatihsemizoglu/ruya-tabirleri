@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Navigate } from 'react-router-dom';
-import { Plus, Book, Calendar, Trash2, Edit, BookOpen, Mic, MicOff, Sparkles, Volume2 } from 'lucide-react';
+import { Plus, Book, Calendar, Trash2, Edit, BookOpen, Mic, MicOff, Sparkles, Volume2, WifiOff, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { getErrorMessage, notify } from '@/lib/notify';
 import type { DreamJournalEntry, DreamMood } from '@/types/database';
+import { getPendingJournalEntries, savePendingJournalEntry, syncPendingJournalEntries } from '@/lib/voiceDreamDB';
 
 const moodOptions: { value: DreamMood; label: string; emoji: string }[] = [
   { value: 'happy', label: 'Mutlu', emoji: '😊' },
@@ -70,6 +71,7 @@ export default function DreamJournal() {
   const [voiceDraft, setVoiceDraft] = useState('');
   const [isVoiceListening, setIsVoiceListening] = useState(false);
   const [isVoiceSupported, setIsVoiceSupported] = useState(false);
+  const [pendingOfflineCount, setPendingOfflineCount] = useState(0);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const voiceBaseContentRef = useRef<string | null>(null);
   const voiceFinalPartsRef = useRef<string[]>([]);
@@ -209,11 +211,48 @@ export default function DreamJournal() {
     }
   }, [user]);
 
+  const refreshPendingOfflineCount = useCallback(async () => {
+    if (!user) return;
+    const pending = await getPendingJournalEntries(user.id);
+    setPendingOfflineCount(pending.length);
+  }, [user]);
+
+  const syncOfflineEntries = useCallback(async () => {
+    if (!user || typeof navigator !== 'undefined' && !navigator.onLine) return;
+    const result = await syncPendingJournalEntries(user.id, async (entry) => {
+      const { error } = await supabase.from('dream_journal').insert({
+        user_id: entry.userId,
+        title: entry.title,
+        content: entry.content,
+        dream_date: entry.dreamDate,
+        mood: entry.mood,
+        tags: entry.tags,
+      } as never);
+      if (error) throw error;
+    });
+    if (result.synced > 0) {
+      notify.success(`${result.synced} offline rüya senkronize edildi`);
+      fetchEntries();
+    }
+    if (result.failed > 0) {
+      notify.error(`${result.failed} offline rüya senkronize edilemedi`);
+    }
+    refreshPendingOfflineCount();
+  }, [fetchEntries, refreshPendingOfflineCount, user]);
+
   useEffect(() => {
     if (user) {
       fetchEntries();
+      refreshPendingOfflineCount();
+      syncOfflineEntries();
     }
-  }, [user, fetchEntries]);
+  }, [user, fetchEntries, refreshPendingOfflineCount, syncOfflineEntries]);
+
+  useEffect(() => {
+    const handleOnline = () => syncOfflineEntries();
+    window.addEventListener('online', handleOnline);
+    return () => window.removeEventListener('online', handleOnline);
+  }, [syncOfflineEntries]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -228,6 +267,12 @@ export default function DreamJournal() {
       };
 
       if (selectedEntry) {
+        if (typeof navigator !== 'undefined' && !navigator.onLine) {
+          notify.error('Offline düzenleme desteklenmiyor', {
+            description: 'Bağlantı geldiğinde mevcut kayıtları düzenleyebilirsiniz.',
+          });
+          return;
+        }
         const { error } = await supabase
           .from('dream_journal')
           .update(entryData as never)
@@ -236,12 +281,29 @@ export default function DreamJournal() {
         if (error) throw error;
         notify.success('Rüya güncellendi');
       } else {
+        if (typeof navigator !== 'undefined' && !navigator.onLine) {
+          await savePendingJournalEntry({
+            id: crypto.randomUUID(),
+            userId: user!.id,
+            title: formData.title,
+            content: formData.content,
+            dreamDate: formData.dream_date || new Date().toISOString().slice(0, 10),
+            mood: formData.mood || null,
+            tags: formData.tags ? formData.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
+            createdAt: Date.now(),
+          });
+          notify.success('Rüya offline kaydedildi', {
+            description: 'İnternete bağlandığınızda otomatik senkronize edilecek.',
+          });
+          refreshPendingOfflineCount();
+        } else {
         const { error } = await supabase
           .from('dream_journal')
           .insert(entryData as never);
 
         if (error) throw error;
         notify.success('Rüya eklendi');
+        }
       }
 
       setIsDialogOpen(false);
@@ -331,7 +393,22 @@ export default function DreamJournal() {
   if (authLoading) {
     return (
       <Layout>
-        <div className="container py-8">
+      <div className="container py-8">
+        {pendingOfflineCount > 0 && (
+          <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-amber-900 dark:text-amber-200 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <WifiOff className="h-5 w-5" />
+              <div>
+                <p className="font-semibold">{pendingOfflineCount} rüya offline bekliyor</p>
+                <p className="text-sm opacity-80">Bağlantı geldiğinde otomatik senkronize edilir.</p>
+              </div>
+            </div>
+            <Button type="button" variant="outline" size="sm" onClick={syncOfflineEntries}>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Şimdi Dene
+            </Button>
+          </div>
+        )}
           <div className="animate-pulse">
             <div className="h-8 bg-muted rounded w-1/3 mb-8" />
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

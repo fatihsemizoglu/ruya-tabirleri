@@ -29,6 +29,7 @@ interface Subscriber {
   is_verified: boolean;
   subscribed_at: string;
   unsubscribed_at: string | null;
+  preferred_category_ids?: string[] | null;
 }
 
 export function SubscriberManagement() {
@@ -47,6 +48,18 @@ export function SubscriberManagement() {
       return data as Subscriber[];
     },
   });
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ['admin-subscriber-categories'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('categories').select('id, name').order('name');
+      if (error) throw error;
+      return data || [];
+    },
+    staleTime: 30 * 60 * 1000,
+  });
+
+  const categoryNameById = new Map(categories.map((category) => [category.id, category.name]));
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -283,6 +296,20 @@ export function SubscriberManagement() {
                           </>
                         )}
                       </div>
+                      {subscriber.preferred_category_ids && subscriber.preferred_category_ids.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {subscriber.preferred_category_ids.slice(0, 4).map((categoryId) => (
+                            <Badge key={categoryId} variant="outline" className="text-[10px]">
+                              {categoryNameById.get(categoryId) || 'Kategori'}
+                            </Badge>
+                          ))}
+                          {subscriber.preferred_category_ids.length > 4 && (
+                            <Badge variant="outline" className="text-[10px]">
+                              +{subscriber.preferred_category_ids.length - 4}
+                            </Badge>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
 

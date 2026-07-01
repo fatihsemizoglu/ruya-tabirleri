@@ -5,6 +5,7 @@ import { getCorsHeaders, handleOptions } from "../_shared/cors.ts";
 interface SubscribeRequest {
   email: string;
   name?: string;
+  preferredCategoryIds?: string[];
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -12,6 +13,7 @@ const MAX_NAME_LENGTH = 80;
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
 const RATE_LIMIT_MAX = 5;
 const rateLimitBuckets = new Map<string, { count: number; resetAt: number }>();
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function escapeHtml(input: string): string {
   return input
@@ -100,9 +102,12 @@ const handler = async (req: Request): Promise<Response> => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    const { email: rawEmail, name: rawName }: SubscribeRequest = await req.json();
+    const { email: rawEmail, name: rawName, preferredCategoryIds }: SubscribeRequest = await req.json();
     const email = typeof rawEmail === "string" ? normalizeEmail(rawEmail) : "";
     const name = typeof rawName === "string" ? rawName.trim().slice(0, MAX_NAME_LENGTH) : "";
+    const safeCategoryIds = Array.isArray(preferredCategoryIds)
+      ? [...new Set(preferredCategoryIds.filter((id) => typeof id === "string" && UUID_RE.test(id)))].slice(0, 20)
+      : [];
 
     if (!email || !EMAIL_RE.test(email)) {
       return new Response(JSON.stringify({ success: false, error: "Geçerli bir e-posta adresi girin" }), {
@@ -143,7 +148,8 @@ const handler = async (req: Request): Promise<Response> => {
           unsubscribed_at: null,
           is_verified: false,
           verification_token: crypto.randomUUID(),
-          name: name || null
+          name: name || null,
+          preferred_category_ids: safeCategoryIds,
         })
         .eq('id', existing.id)
         .select('verification_token')
@@ -155,7 +161,7 @@ const handler = async (req: Request): Promise<Response> => {
       // New subscriber
       const { data: newSub, error: insertError } = await supabase
         .from('blog_subscribers')
-        .insert({ email, name: name || null })
+        .insert({ email, name: name || null, preferred_category_ids: safeCategoryIds })
         .select('verification_token')
         .single();
 

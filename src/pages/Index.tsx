@@ -1,6 +1,7 @@
 import { Layout } from '@/components/layout/Layout';
 import { HeroSection } from '@/components/home/HeroSection';
 import { FeaturedDreams } from '@/components/home/FeaturedDreams';
+import { DailyDreamCard } from '@/components/home/DailyDreamCard';
 import { CategoriesSection } from '@/components/home/CategoriesSection';
 import { BlogSection } from '@/components/home/BlogSection';
 import { ContactCTASection } from '@/components/home/ContactCTASection';
@@ -36,6 +37,7 @@ const Index = () => {
         ]}
       />
       <HeroSection />
+      <DailyDreamCard />
       <FeaturedDreams />
       <CategoriesSection />
       <BlogSection />

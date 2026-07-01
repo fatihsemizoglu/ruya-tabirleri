@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, useScroll, useSpring } from 'framer-motion';
 import DOMPurify from 'dompurify';
-import { Eye, Heart, Bookmark, ArrowLeft, Calendar, BookOpen, Clock, ChevronRight, Share2, Tag, Folder, Check, Moon, Type, PenLine, Sparkles } from 'lucide-react';
+import { Eye, Heart, Bookmark, ArrowLeft, Calendar, BookOpen, Clock, ChevronRight, Share2, Tag, Folder, Check, Moon, Type, PenLine, Sparkles, ArrowLeftRight, Glasses, Rows3, Sun } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,6 +18,9 @@ import { nativeShare } from '@/lib/share';
 import { haptic } from '@/lib/haptics';
 import { absoluteUrl, SITE_NAME } from '@/lib/site';
 import { formatPlainDreamContent } from '@/lib/dreamContent';
+import { useDreamCompare } from '@/hooks/useDreamCompare';
+import { useReadingMode } from '@/hooks/useReadingMode';
+import { useWakeLock } from '@/hooks/useWakeLock';
 
 const gradientPalette = [
   'from-violet-500 to-fuchsia-500',
@@ -37,11 +40,18 @@ const pickGradient = (seed: string) => {
 };
 
 type TextSize = 'sm' | 'base' | 'lg';
+type LineSpacing = 'normal' | 'relaxed' | 'loose';
 
 const textSizeClasses: Record<TextSize, string> = {
   sm: 'prose-base',
   base: 'prose-lg',
   lg: 'prose-xl',
+};
+
+const lineSpacingClasses: Record<LineSpacing, string> = {
+  normal: 'prose-p:leading-[1.75] prose-li:leading-[1.75]',
+  relaxed: 'prose-p:leading-[1.95] prose-li:leading-[1.9]',
+  loose: 'prose-p:leading-[2.15] prose-li:leading-[2.05]',
 };
 
 function TextSizeControls({ value, onChange }: { value: TextSize; onChange: (value: TextSize) => void }) {
@@ -104,6 +114,48 @@ function ShareButton({ title, description, url }: { title: string; description: 
   );
 }
 
+function ReadingControls({
+  textSize,
+  onTextSizeChange,
+  lineSpacing,
+  onLineSpacingChange,
+  isReadingMode,
+  onToggleReadingMode,
+  wakeLockActive,
+  onToggleWakeLock,
+}: {
+  textSize: TextSize;
+  onTextSizeChange: (value: TextSize) => void;
+  lineSpacing: LineSpacing;
+  onLineSpacingChange: (value: LineSpacing) => void;
+  isReadingMode: boolean;
+  onToggleReadingMode: () => void;
+  wakeLockActive: boolean;
+  onToggleWakeLock: () => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center justify-end gap-2">
+      <TextSizeControls value={textSize} onChange={onTextSizeChange} />
+      <div className="flex items-center gap-1 rounded-xl border border-border/45 bg-muted/30 p-1">
+        <Rows3 className="ml-2 h-4 w-4 text-muted-foreground" />
+        {(['normal', 'relaxed', 'loose'] as LineSpacing[]).map((spacing) => (
+          <Button key={spacing} type="button" variant={lineSpacing === spacing ? 'secondary' : 'ghost'} size="sm" onClick={() => onLineSpacingChange(spacing)} className="h-8 rounded-lg px-2.5" aria-pressed={lineSpacing === spacing}>
+            {spacing === 'normal' ? 'Sık' : spacing === 'relaxed' ? 'Rahat' : 'Geniş'}
+          </Button>
+        ))}
+      </div>
+      <Button type="button" variant={isReadingMode ? 'default' : 'outline'} size="sm" onClick={onToggleReadingMode} className="h-10 rounded-xl">
+        <Glasses className="mr-2 h-4 w-4" />
+        Okuma Modu
+      </Button>
+      <Button type="button" variant={wakeLockActive ? 'secondary' : 'outline'} size="sm" onClick={onToggleWakeLock} className="h-10 rounded-xl">
+        <Sun className="mr-2 h-4 w-4" />
+        Ekranı Açık Tut
+      </Button>
+    </div>
+  );
+}
+
 async function incrementDreamViewCount(dreamId: string, currentViewCount: number | null) {
   return supabase
     .from('dreams')
@@ -125,7 +177,11 @@ export default function DreamDetail() {
   const [likeAnimation, setLikeAnimation] = useState(false);
   const [favoriteAnimation, setFavoriteAnimation] = useState(false);
   const [textSize, setTextSize] = useState<TextSize>('base');
+  const [lineSpacing, setLineSpacing] = useState<LineSpacing>('relaxed');
   const { user } = useAuth();
+  const compare = useDreamCompare();
+  const readingMode = useReadingMode();
+  const wakeLock = useWakeLock();
 
   const fetchComments = useCallback(async (dreamId: string) => {
     setCommentsLoading(true);
@@ -374,6 +430,22 @@ export default function DreamDetail() {
     setTimeout(() => setFavoriteAnimation(false), 300);
   };
 
+  const addToCompare = () => {
+    if (!dream) return;
+    compare.add(dream.id);
+    toast.success('Karşılaştırma listesine eklendi', {
+      action: {
+        label: 'Aç',
+        onClick: () => window.location.assign('/karsilastir'),
+      },
+    });
+  };
+
+  const toggleWakeLock = async () => {
+    if (wakeLock.isActive) await wakeLock.release();
+    else await wakeLock.request();
+  };
+
   if (isLoading) {
     return (
       <Layout>
@@ -597,10 +669,19 @@ export default function DreamDetail() {
         >
           <ContentCard icon={BookOpen} gradient="from-blue-500 to-cyan-500" title="Rüya Tabiri">
             <div className="mb-6 flex justify-end">
-              <TextSizeControls value={textSize} onChange={setTextSize} />
+              <ReadingControls
+                textSize={textSize}
+                onTextSizeChange={setTextSize}
+                lineSpacing={lineSpacing}
+                onLineSpacingChange={setLineSpacing}
+                isReadingMode={readingMode.isReadingMode}
+                onToggleReadingMode={readingMode.toggle}
+                wakeLockActive={wakeLock.isActive}
+                onToggleWakeLock={toggleWakeLock}
+              />
             </div>
             <div
-              className={`dream-content prose ${textSizeClasses[textSize]} dark:prose-invert max-w-none prose-headings:font-serif-dream prose-headings:font-bold prose-headings:text-foreground prose-h2:text-2xl prose-h2:mt-8 prose-h2:mb-4 prose-h2:border-b prose-h2:border-border/40 prose-h2:pb-2 prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-3 prose-h3:text-primary/90 prose-p:leading-[1.9] prose-p:text-foreground/85 prose-p:mb-5 prose-li:leading-relaxed prose-blockquote:border-l-4 prose-blockquote:border-primary/30 prose-blockquote:pl-5 prose-blockquote:italic prose-blockquote:text-muted-foreground prose-a:text-primary prose-a:underline hover:prose-a:text-primary/80 prose-strong:text-foreground prose-img:rounded-xl`}
+              className={`dream-content reading-content prose ${textSizeClasses[textSize]} ${lineSpacingClasses[lineSpacing]} dark:prose-invert max-w-none prose-headings:font-serif-dream prose-headings:font-bold prose-headings:text-foreground prose-h2:text-2xl prose-h2:mt-8 prose-h2:mb-4 prose-h2:border-b prose-h2:border-border/40 prose-h2:pb-2 prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-3 prose-h3:text-primary/90 prose-p:text-foreground/85 prose-p:mb-5 prose-blockquote:border-l-4 prose-blockquote:border-primary/30 prose-blockquote:pl-5 prose-blockquote:italic prose-blockquote:text-muted-foreground prose-a:text-primary prose-a:underline hover:prose-a:text-primary/80 prose-strong:text-foreground prose-img:rounded-xl`}
               dangerouslySetInnerHTML={{ __html: formattedContent }}
             />
           </ContentCard>
@@ -694,6 +775,11 @@ export default function DreamDetail() {
           >
             <Bookmark className={`mr-2 h-4 w-4 transition-transform ${isFavorite ? 'fill-current' : ''} ${favoriteAnimation ? 'scale-125' : ''}`} />
             {isFavorite ? 'Kaydedildi' : 'Kaydet'}
+          </Button>
+
+          <Button variant={compare.isSelected(dream.id) ? 'secondary' : 'outline'} size="sm" onClick={addToCompare} className="rounded-xl h-10">
+            <ArrowLeftRight className="mr-2 h-4 w-4" />
+            {compare.isSelected(dream.id) ? 'Listede' : 'Karşılaştır'}
           </Button>
 
           <div className="ml-auto">

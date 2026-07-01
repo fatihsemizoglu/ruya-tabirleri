@@ -214,6 +214,14 @@
     font-size: 1.125rem;
   }
 
+  .reading-mode body {
+    background: linear-gradient(180deg, hsl(var(--background)), hsl(var(--muted) / 0.45));
+  }
+
+  .reading-mode .surface {
+    box-shadow: none;
+  }
+
   .dream-gradient {
     background: var(--dream-gradient);
   }

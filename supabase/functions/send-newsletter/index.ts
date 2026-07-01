@@ -14,6 +14,7 @@ interface NewsletterRequest {
   postExcerpt: string;
   postSlug: string;
   postType: 'blog' | 'dream';
+  categoryId?: string;
 }
 
 function escapeHtml(input: string): string {
@@ -72,22 +73,27 @@ const handler = async (req: Request): Promise<Response> => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    const { postId, postTitle, postExcerpt, postSlug, postType }: NewsletterRequest = await req.json();
+    const { postId, postTitle, postExcerpt, postSlug, postType, categoryId }: NewsletterRequest = await req.json();
 
     if (!postId || !postTitle || !postSlug) {
       throw new Error("Missing required fields: postId, postTitle, postSlug");
     }
 
     // Get verified subscribers
-    const { data: subscribers, error: fetchError } = await supabase
+    const { data: allSubscribers, error: fetchError } = await supabase
       .from('blog_subscribers')
-      .select('email, name')
+      .select('email, name, preferred_category_ids')
       .eq('is_verified', true)
       .is('unsubscribed_at', null);
 
     if (fetchError) {
       throw new Error(`Failed to fetch subscribers: ${fetchError.message}`);
     }
+
+    const subscribers = (allSubscribers || []).filter((subscriber: { preferred_category_ids?: string[] | null }) => {
+      const preferences = subscriber.preferred_category_ids || [];
+      return !categoryId || preferences.length === 0 || preferences.includes(categoryId);
+    });
 
     if (!subscribers || subscribers.length === 0) {
       return new Response(
