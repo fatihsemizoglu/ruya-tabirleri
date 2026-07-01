@@ -214,9 +214,6 @@ export default defineConfig(({ mode }) => ({
             if (id.includes('dompurify')) {
               return 'sanitize-vendor';
             }
-            if (id.includes('react-hook-form') || id.includes('@hookform') || id.includes('zod')) {
-              return 'form-vendor';
-            }
             if (id.includes('embla-carousel') || id.includes('react-day-picker')) {
               return 'interaction-vendor';
             }
