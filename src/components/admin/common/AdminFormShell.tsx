@@ -7,17 +7,17 @@ import { cn } from '@/lib/utils';
 
 interface AdminFormShellProps {
   title: string;
-  description?: string;
+  description?: string | undefined;
   icon: LucideIcon;
-  badge?: string;
-  isEditing?: boolean;
-  isSubmitting?: boolean;
-  onSubmit?: () => void;
+  badge?: string | undefined;
+  isEditing?: boolean | undefined;
+  isSubmitting?: boolean | undefined;
+  onSubmit?: (() => void) | undefined;
   onCancel: () => void;
-  submitLabel?: string;
-  cancelLabel?: string;
+  submitLabel?: string | undefined;
+  cancelLabel?: string | undefined;
   children: ReactNode;
-  className?: string;
+  className?: string | undefined;
 }
 
 export function AdminFormShell({

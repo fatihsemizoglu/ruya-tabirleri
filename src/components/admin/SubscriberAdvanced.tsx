@@ -23,6 +23,7 @@ import {
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
@@ -66,12 +67,27 @@ const LIFECYCLE_STAGES = [
   { id: 'churned', name: 'Churned', color: '#ef4444', icon: '💔' },
 ];
 
+interface DripCampaign {
+  id: string;
+  name: string;
+  description: string | null;
+  segment: string;
+  trigger: string;
+  active: boolean;
+  steps: { id: string; dayOffset: number; subject: string; body: string }[];
+  enrolledCount: number;
+  openRate: number;
+  clickRate: number;
+  createdAt: string;
+  drip_steps?: DbStep[];
+}
+
 interface DbCampaign {
   id: string;
   name: string;
   description: string | null;
-  segment: DripCampaign['segment'];
-  trigger: DripCampaign['trigger'];
+  segment: string;
+  trigger: string;
   active: boolean;
   enrolled_count: number;
   open_rate: number;
@@ -132,7 +148,7 @@ export function SubscriberAdvanced() {
     queryFn: async () => {
       const { data, error, count } = await supabase
         .from('blog_subscribers')
-        .select('id, email, is_active, created_at, unsubscribed_at', { count: 'exact' })
+        .select('id, email, is_verified, created_at, unsubscribed_at', { count: 'exact' })
         .order('created_at', { ascending: false });
       if (error) throw error;
       return { rows: data || [], count: count || 0 };
@@ -141,7 +157,7 @@ export function SubscriberAdvanced() {
 
   const stats = useMemo(() => {
     const total = subscribers?.count || 0;
-    const active = subscribers?.rows.filter(s => s.is_active).length || 0;
+    const active = subscribers?.rows.filter(s => s.is_verified === true).length || 0;
     const inactive = total - active;
     const last7d = subscribers?.rows.filter(s => new Date(s.created_at) > subDays(new Date(), 7)).length || 0;
 
@@ -209,8 +225,8 @@ export function SubscriberAdvanced() {
         if (error) throw error;
         campaignId = data!.id;
       }
-      if (c.steps.length > 0) {
-        const steps = c.steps.map((s, idx) => ({
+      if ((c.steps ?? []).length > 0) {
+        const steps = (c.steps ?? []).map((s, idx) => ({
           campaign_id: campaignId,
           step_index: idx,
           day_offset: s.dayOffset,
@@ -282,9 +298,10 @@ export function SubscriberAdvanced() {
   };
 
   const handleExport = () => {
-    const rows = (subscribers?.rows || []).map(s => ({
+    type SubscriberRow = { email: string; is_verified: boolean | null; created_at: string; unsubscribed_at?: string | null };
+    const rows = (subscribers?.rows || []).map((s: SubscriberRow) => ({
       Email: s.email,
-      Durum: s.is_active ? 'Aktif' : 'Pasif',
+      Durum: s.is_verified ? 'Aktif' : 'Pasif',
       'Kayıt Tarihi': format(new Date(s.created_at), 'dd.MM.yyyy'),
       'Abonelikten Çıkış': s.unsubscribed_at ? format(new Date(s.unsubscribed_at), 'dd.MM.yyyy') : '-',
     }));
@@ -426,15 +443,15 @@ export function SubscriberAdvanced() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <p className="text-xs font-semibold text-muted-foreground">Adımlar ({c.steps.length})</p>
-                  {c.steps.slice(0, 3).map(step => (
+                  <p className="text-xs font-semibold text-muted-foreground">Adımlar ({(c.steps ?? []).length})</p>
+                  {(c.steps ?? []).slice(0, 3).map(step => (
                     <div key={step.id} className="flex items-center gap-2 text-xs">
                       <span className="font-mono text-[10px] bg-muted px-1.5 py-0.5 rounded">+{step.dayOffset}g</span>
                       <span className="truncate flex-1">{step.subject}</span>
                     </div>
                   ))}
-                  {c.steps.length > 3 && (
-                    <p className="text-[10px] text-muted-foreground">+ {c.steps.length - 3} adım daha</p>
+                  {(c.steps ?? []).length > 3 && (
+                    <p className="text-[10px] text-muted-foreground">+ {(c.steps ?? []).length - 3} adım daha</p>
                   )}
                 </div>
 
@@ -470,17 +487,17 @@ export function SubscriberAdvanced() {
           <Card className="p-5">
             <h3 className="text-sm font-bold mb-3">Toplu E-posta Gönder</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <Button variant="outline" className="h-auto py-4 flex-col" onClick={() => toast.info('Tüm aktif abonelere e-posta hazırlandı')}>
+              <Button variant="outline" className="h-auto py-4 flex-col" onClick={() => notify.info('Tüm aktif abonelere e-posta hazırlandı')}>
                 <Users className="w-5 h-5 mb-1 text-blue-500" />
                 <span className="text-sm">Tüm Aboneler</span>
                 <span className="text-xs text-muted-foreground">{stats.active} alıcı</span>
               </Button>
-              <Button variant="outline" className="h-auto py-4 flex-col" onClick={() => toast.info('Aktif kullanıcılara gönderildi')}>
+              <Button variant="outline" className="h-auto py-4 flex-col" onClick={() => notify.info('Aktif kullanıcılara gönderildi')}>
                 <CheckCircle2 className="w-5 h-5 mb-1 text-emerald-500" />
                 <span className="text-sm">Aktif Kullanıcılar</span>
                 <span className="text-xs text-muted-foreground">{Math.floor(stats.active * 0.7)} alıcı</span>
               </Button>
-              <Button variant="outline" className="h-auto py-4 flex-col" onClick={() => toast.info('VIP kullanıcılara gönderildi')}>
+              <Button variant="outline" className="h-auto py-4 flex-col" onClick={() => notify.info('VIP kullanıcılara gönderildi')}>
                 <Sparkles className="w-5 h-5 mb-1 text-amber-500" />
                 <span className="text-sm">VIP</span>
                 <span className="text-xs text-muted-foreground">{Math.floor(stats.active * 0.08)} alıcı</span>
@@ -506,12 +523,12 @@ export function SubscriberAdvanced() {
               </div>
               <div className="space-y-2">
                 <Label>Açıklama</Label>
-                <Textarea value={editing.description} onChange={(e) => setEditing({ ...editing, description: e.target.value })} rows={2} />
+                <Textarea value={editing.description ?? ''} onChange={(e) => setEditing({ ...editing, description: e.target.value })} rows={2} />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label>Segment</Label>
-                  <Select value={editing.segment} onValueChange={(v) => setEditing({ ...editing, segment: v as DripCampaign['segment'] })}>
+                  <Select value={editing.segment ?? ''} onValueChange={(v: string) => setEditing({ ...editing, segment: v as DripCampaign['segment'] })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Tümü</SelectItem>
@@ -547,21 +564,21 @@ export function SubscriberAdvanced() {
                     variant="outline"
                     onClick={() => setEditing({
                       ...editing,
-                      steps: [...editing.steps, { id: `s-${Date.now()}`, dayOffset: 0, subject: '', body: '' }],
+                      steps: [...(editing.steps ?? []), { id: `s-${Date.now()}`, dayOffset: 0, subject: '', body: '' }],
                     })}
                   >
                     <Plus className="w-3 h-3 mr-1" />
                     Adım
                   </Button>
                 </div>
-                {editing.steps.map((step, idx) => (
+                {(editing.steps ?? []).map((step, idx) => (
                   <div key={step.id} className="p-3 border rounded-lg space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold">Adım {idx + 1}</span>
                       <Button
                         size="icon"
                         variant="ghost"
-                        onClick={() => setEditing({ ...editing, steps: editing.steps.filter(s => s.id !== step.id) })}
+                        onClick={() => setEditing({ ...editing,                           steps: (editing.steps ?? []).filter(s => s.id !== step.id) })}
                       >
                         <Trash2 className="w-3 h-3 text-rose-500" />
                       </Button>
@@ -572,7 +589,7 @@ export function SubscriberAdvanced() {
                         value={step.dayOffset}
                         onChange={(e) => setEditing({
                           ...editing,
-                          steps: editing.steps.map(s => s.id === step.id ? { ...s, dayOffset: parseInt(e.target.value) || 0 } : s),
+                          steps: (editing.steps ?? []).map(s => s.id === step.id ? { ...s, dayOffset: parseInt(e.target.value) || 0 } : s),
                         })}
                         placeholder="Gün"
                       />
@@ -580,7 +597,7 @@ export function SubscriberAdvanced() {
                         value={step.subject}
                         onChange={(e) => setEditing({
                           ...editing,
-                          steps: editing.steps.map(s => s.id === step.id ? { ...s, subject: e.target.value } : s),
+                          steps: (editing.steps ?? []).map(s => s.id === step.id ? { ...s, subject: e.target.value } : s),
                         })}
                         placeholder="E-posta konusu"
                       />
@@ -589,7 +606,7 @@ export function SubscriberAdvanced() {
                       value={step.body}
                       onChange={(e) => setEditing({
                         ...editing,
-                        steps: editing.steps.map(s => s.id === step.id ? { ...s, body: e.target.value } : s),
+                          steps: (editing.steps ?? []).map(s => s.id === step.id ? { ...s, body: e.target.value } : s),
                       })}
                       placeholder="E-posta içeriği"
                       rows={2}

@@ -39,7 +39,7 @@ const colorPalette = [
   { bg: 'from-fuchsia-500/20 to-pink-500/20', accent: 'bg-fuchsia-500', text: 'text-fuchsia-600' },
 ];
 
-const getColorForIndex = (index: number) => colorPalette[index % colorPalette.length];
+const getColorForIndex = (index: number) => colorPalette[index % colorPalette.length] ?? colorPalette[0]!;
 
 export default function Categories() {
   const [categories, setCategories] = useState<CategoryWithStats[]>([]);
@@ -123,6 +123,7 @@ export default function Categories() {
 
       const categoriesWithStats: CategoryWithStats[] = categoriesData.map(cat => ({
         ...cat,
+        order_index: cat.order_index ?? 0,
         dream_count: statsMap.get(cat.id)?.count || 0,
         total_views: statsMap.get(cat.id)?.views || 0
       }));
@@ -331,7 +332,7 @@ export default function Categories() {
             : "flex flex-col gap-4"
           }>
             {filteredCategories.map((category, index) => {
-              const colors = getColorForIndex(index);
+              const colors = getColorForIndex(index) ?? colorPalette[0];
 
               return viewMode === 'grid' ? (
                 <Link

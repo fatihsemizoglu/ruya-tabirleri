@@ -124,16 +124,36 @@ export default function BlogPost() {
 
       if (!isMountedRef.current) return;
 
-      const postData: BlogPostData = {
-        ...data,
+      const postData = {
+        id: data.id,
+        title: data.title,
+        slug: data.slug,
+        content: data.content,
+        excerpt: data.excerpt,
+        featured_image: data.featured_image,
+        category_id: data.category_id,
+        author_id: data.author_id,
+        is_published: data.is_published ?? false,
+        is_featured: data.is_featured ?? false,
+        view_count: data.view_count ?? 0,
+        like_count: data.like_count ?? 0,
+        meta_title: data.meta_title,
+        meta_description: data.meta_description,
+        tags: Array.isArray(data.tags) ? (data.tags as string[]) : [],
+        created_at: data.created_at,
+        updated_at: data.updated_at,
         category: data.category as BlogPostData['category'],
-        author: authorData ? {
-          id: authorData.user_id,
-          full_name: authorData.full_name,
-          username: authorData.username,
-          avatar_url: authorData.avatar_url,
-        } : undefined,
-      };
+        ...(authorData
+          ? {
+              author: {
+                id: authorData.user_id,
+                full_name: authorData.full_name,
+                username: authorData.username,
+                avatar_url: authorData.avatar_url,
+              },
+            }
+          : {}),
+      } as BlogPostData;
 
       setPost(postData);
       setAuthorBio(authorData?.bio || null);
@@ -169,14 +189,34 @@ export default function BlogPost() {
             relatedData.map((p) => {
               const author = profileMap.get(p.author_id);
               return {
-                ...p,
+                id: p.id,
+                title: p.title,
+                slug: p.slug,
+                content: p.content,
+                excerpt: p.excerpt,
+                featured_image: p.featured_image,
+                category_id: p.category_id,
+                author_id: p.author_id,
+                is_published: p.is_published ?? false,
+                is_featured: p.is_featured ?? false,
+                view_count: p.view_count ?? 0,
+                like_count: p.like_count ?? 0,
+                meta_title: p.meta_title,
+                meta_description: p.meta_description,
+                tags: Array.isArray(p.tags) ? (p.tags as string[]) : [],
+                created_at: p.created_at,
+                updated_at: p.updated_at,
                 category: p.category as BlogPostData['category'],
-                author: author ? {
-                  id: author.user_id,
-                  full_name: author.full_name,
-                  username: author.username,
-                  avatar_url: author.avatar_url,
-                } : undefined,
+                ...(author
+                  ? {
+                      author: {
+                        id: author.user_id,
+                        full_name: author.full_name,
+                        username: author.username,
+                        avatar_url: author.avatar_url,
+                      },
+                    }
+                  : {}),
               } as BlogPostData;
             })
           );
@@ -208,8 +248,8 @@ export default function BlogPost() {
     }
   }, [post, user, checkIfLiked]);
 
-  const seoTitle = post?.seo_title || post?.title;
-  const seoDescription = post?.seo_description || post?.excerpt || undefined;
+  const seoTitle = post?.meta_title || post?.title;
+  const seoDescription = post?.meta_description || post?.excerpt || undefined;
   const seoImage = post?.featured_image || undefined;
   const seoPath = post ? `/blog/${post.slug}` : '/blog';
   const blogJsonLd = post ? [

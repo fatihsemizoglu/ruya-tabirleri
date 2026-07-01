@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom';
 import {
-  LayoutDashboard, 
-  BookOpen, 
-  FolderOpen, 
-  MessageSquare, 
+  LayoutDashboard,
+  BookOpen,
+  FolderOpen,
+  MessageSquare,
   MessageCircle,
   Settings,
   Users,
@@ -23,6 +23,7 @@ import {
   BarChart3,
   Trophy,
   FlaskConical,
+  type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -30,7 +31,7 @@ import { useAuth } from '@/hooks/useAuth';
 interface NavItem {
   title: string;
   subtitle: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: LucideIcon;
   tab: string;
   colorClass: string;
   bgClass: string;

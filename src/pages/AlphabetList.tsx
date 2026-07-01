@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Eye, Heart, Star, ChevronUp, BookOpen, Search, Grid3X3, List, ArrowUpDown, Filter, X, ArrowUpRight, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Eye, Heart, Star, ChevronUp, BookOpen, Search, Grid3X3, List, ArrowUpDown, X, ArrowUpRight, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { Badge } from '@/components/ui/badge';
@@ -153,6 +153,15 @@ export default function AlphabetList() {
 
     return result;
   }, [dreams, searchQuery, sortBy, showOnlyFeatured]);
+
+  const letterCounts = useMemo<Record<string, number>>(() => {
+    const counts: Record<string, number> = {};
+    for (const d of dreams) {
+      const first = getMeaningfulFirstLetter(d.title);
+      counts[first] = (counts[first] || 0) + 1;
+    }
+    return counts;
+  }, [dreams]);
 
   // Reset page when filters change
   useEffect(() => {

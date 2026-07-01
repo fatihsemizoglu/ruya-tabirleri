@@ -191,7 +191,7 @@ export function ABTestManager() {
   const handleComplete = (test: ABTest, winnerId?: string) =>
     updateMutation.mutate({
       id: test.id,
-      patch: { status: 'completed', winner: winnerId || test.winner },
+      patch: { status: 'completed', ...(winnerId ? { winner: winnerId } : test.winner ? { winner: test.winner } : {}) },
     });
 
   const handleExport = (test: ABTest) => {

@@ -11,8 +11,8 @@ interface Suggestion {
   id: string;
   title: string;
   slug: string;
-  category_name?: string;
-  view_count?: number;
+  category_name?: string | undefined;
+  view_count?: number | null;
 }
 
 interface SearchWithDropdownProps {
@@ -265,11 +265,13 @@ export function SearchWithDropdown({
     } else if (e.key === 'Enter' && selectedIndex >= 0) {
       e.preventDefault();
       if (selectedIndex < suggestions.length) {
-        handleSelectSuggestion(suggestions[selectedIndex]);
+        const item = suggestions[selectedIndex];
+        if (item) handleSelectSuggestion(item);
       } else {
         const recentIndex = selectedIndex - suggestions.length;
         if (recentIndex < recentSearches.length) {
-          handleSelectRecentSearch(recentSearches[recentIndex]);
+          const recent = recentSearches[recentIndex];
+          if (recent) handleSelectRecentSearch(recent);
         }
       }
     } else if (e.key === 'Escape') {
@@ -343,6 +345,7 @@ export function SearchWithDropdown({
               'absolute top-1/2 -translate-y-1/2',
               isHero ? 'right-2 h-10 w-10 rounded-xl dream-gradient' : 'right-0 h-full'
             )}
+            aria-label="Ara"
           >
             <Search className={isHero ? 'h-5 w-5' : 'h-4 w-4'} />
           </Button>

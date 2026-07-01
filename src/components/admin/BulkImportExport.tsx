@@ -21,13 +21,13 @@ import { useState } from 'react';
    Loader2,
    FileText
  } from 'lucide-react';
- import { toast } from 'sonner';
- import type { Tables } from '@/integrations/supabase/types';
+import { toast } from 'sonner';
+import type { Database } from '@/integrations/supabase/types';
  
- type DreamRow = Tables<'dreams'>['Row'];
- type BlogPostRow = Tables<'blog_posts'>['Row'];
- type CategoryRow = Tables<'categories'>['Row'];
- type BlogCategoryRow = Tables<'blog_categories'>['Row'];
+type DreamRow = Database['public']['Tables']['dreams']['Row'];
+type BlogPostRow = Database['public']['Tables']['blog_posts']['Row'];
+type CategoryRow = Database['public']['Tables']['categories']['Row'];
+type BlogCategoryRow = Database['public']['Tables']['blog_categories']['Row'];
  
  interface DreamExport {
    title: string;
@@ -164,14 +164,16 @@ import { useState } from 'react';
        return;
      }
 
-     const exportData = data.map((item) => {
-       const { id, created_at, updated_at, search_vector, view_count, like_count, categories, blog_categories, ...rest } = item;
-       const exportItem = { ...rest };
-       if (contentType === 'dreams' && categories) {
-         (exportItem as DreamExport).category_name = categories.name;
-       } else if (contentType === 'blog' && blog_categories) {
-         (exportItem as BlogPostExport).category_name = blog_categories.name;
-       }
+      const exportData = data.map((item) => {
+        const { id, created_at, updated_at, view_count, like_count, ...rest } = item as Record<string, unknown> & { id?: string; created_at?: string; updated_at?: string; view_count?: number; like_count?: number; categories?: { name: string } | null; blog_categories?: { name: string } | null };
+        const { search_vector: _sv, categories, blog_categories, ...cleanRest } = rest;
+        void _sv;
+        const exportItem: Record<string, unknown> = { ...cleanRest };
+        if (contentType === 'dreams' && categories) {
+          (exportItem as unknown as DreamExport).category_name = categories.name;
+        } else if (contentType === 'blog' && blog_categories) {
+          (exportItem as unknown as BlogPostExport).category_name = blog_categories.name;
+        }
        return exportItem;
      });
 
@@ -194,17 +196,18 @@ import { useState } from 'react';
      const csvRows = [headers.join(',')];
 
      data.forEach((item) => {
-       const row = headers.map((header: string) => {
-         let value = '';
-         if (header === 'category_name') {
-           value = item.categories?.name || item.blog_categories?.name || '';
-         } else if (header === 'keywords') {
-           value = item.keywords?.join(';') || '';
-         } else if (header === 'tags') {
-           value = item.tags?.join(';') || '';
-         } else {
-           value = (item as Record<string, unknown>)[header] ?? '';
-         }
+        const row = headers.map((header: string) => {
+          let value: string | number = '';
+          const itemAny = item as unknown as Record<string, unknown> & { categories?: { name: string } | null; blog_categories?: { name: string } | null; keywords?: string[]; tags?: string[] };
+          if (header === 'category_name') {
+            value = itemAny.categories?.name || itemAny.blog_categories?.name || '';
+          } else if (header === 'keywords') {
+            value = itemAny.keywords?.join(';') || '';
+          } else if (header === 'tags') {
+            value = itemAny.tags?.join(';') || '';
+          } else {
+            value = String((item as Record<string, unknown>)[header] ?? '');
+          }
          // Escape CSV special characters
          if (typeof value === 'string' && (value.includes(',') || value.includes('"') || value.includes('\n'))) {
            value = `"${value.replace(/"/g, '""')}"`;
@@ -235,15 +238,19 @@ import { useState } from 'react';
      const lines = text.split('\n').filter(line => line.trim());
      if (lines.length < 2) return [];
 
-     const headers = lines[0].split(',').map(h => h.trim());
-     const records: (ImportDreamRecord | ImportBlogPostRecord)[] = [];
+      const firstLine = lines[0];
+      if (!firstLine) return [];
+      const headers = firstLine.split(',').map(h => h.trim());
+      const records: (ImportDreamRecord | ImportBlogPostRecord)[] = [];
 
-     for (let i = 1; i < lines.length; i++) {
-       const values: string[] = [];
-       let current = '';
-       let inQuotes = false;
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i];
+        if (!line) continue;
+        const values: string[] = [];
+        let current = '';
+        let inQuotes = false;
 
-       for (const char of lines[i]) {
+        for (const char of line) {
          if (char === '"') {
            inQuotes = !inQuotes;
          } else if (char === ',' && !inQuotes) {
@@ -319,15 +326,16 @@ import { useState } from 'react';
        const result: ImportResult = { success: 0, failed: 0, errors: [] };
  
        for (let i = 0; i < records.length; i++) {
-         const record = records[i];
-         setImportProgress(Math.round(((i + 1) / records.length) * 100));
- 
-         try {
-           if (contentType === 'dreams') {
-             await importDream(record);
-           } else {
-             await importBlogPost(record);
-           }
+          const record = records[i];
+          if (!record) continue;
+          setImportProgress(Math.round(((i + 1) / records.length) * 100));
+
+          try {
+            if (contentType === 'dreams') {
+              await importDream(record as ImportDreamRecord);
+            } else {
+              await importBlogPost(record as ImportBlogPostRecord);
+            }
            result.success++;
           } catch (error: unknown) {
             result.failed++;
@@ -370,7 +378,7 @@ const importDream = async (record: ImportDreamRecord) => {
      
      if (existing) throw new Error(`"${slug}" slug'ı zaten mevcut`);
 
-     const categoryId = findCategoryId(record.category_name || record.category, 'dreams');
+      const categoryId = findCategoryId(record.category_name || record.category || '', 'dreams');
      const keywords = record.keywords 
        ? (typeof record.keywords === 'string' ? record.keywords.split(';').map((k: string) => k.trim()).filter(Boolean) : record.keywords)
        : [];
@@ -410,7 +418,7 @@ const importDream = async (record: ImportDreamRecord) => {
      
       if (existing) throw new Error(`"${slug}" slug'ı zaten mevcut`);
 
-      const categoryId = findCategoryId(record.category_name || record.category, 'blog');
+      const categoryId = findCategoryId(record.category_name || record.category || '', 'blog');
      const tags = record.tags 
        ? (typeof record.tags === 'string' ? record.tags.split(';').map((t: string) => t.trim()).filter(Boolean) : record.tags)
        : [];
@@ -554,7 +562,7 @@ const importDream = async (record: ImportDreamRecord) => {
                         <tr key={item.id} className="border-b">
                           <td className="p-2 truncate max-w-[200px]">{item.title}</td>
                           <td className="p-2 text-muted-foreground">{item.slug}</td>
-                          <td className="p-2">{item.categories?.name || item.blog_categories?.name || '-'}</td>
+                          <td className="p-2">{((item as Record<string, unknown>).categories as { name?: string } | null)?.name || ((item as Record<string, unknown>).blog_categories as { name?: string } | null)?.name || '-'}</td>
                           <td className="p-2">
                             <Badge variant={item.is_published ? 'default' : 'secondary'}>
                               {item.is_published ? 'Yayında' : 'Taslak'}

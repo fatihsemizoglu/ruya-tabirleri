@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, useScroll, useSpring } from 'framer-motion';
+import DOMPurify from 'dompurify';
 import { Eye, Heart, Bookmark, ArrowLeft, Calendar, BookOpen, Clock, ChevronRight, Share2, Tag, Folder, Check, Moon, Type, PenLine, Sparkles } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
@@ -154,7 +155,7 @@ export default function DreamDetail() {
         profiles: profilesMap.get(comment.user_id),
       }));
 
-      setComments(commentsWithProfiles as (Comment & { profiles?: Profile })[]);
+      setComments(commentsWithProfiles as unknown as (Comment & { profiles?: Profile })[]);
     } finally {
       setCommentsLoading(false);
     }
@@ -166,7 +167,7 @@ export default function DreamDetail() {
       const { data: dreamData, error } = await supabase
         .from('dreams')
         .select('*, categories(*)')
-        .eq('slug', slug)
+        .eq('slug', slug ?? '')
         .eq('is_published', true)
         .maybeSingle();
 
@@ -279,8 +280,8 @@ export default function DreamDetail() {
         title: dream.title,
         content,
         dream_date: new Date().toISOString().split('T')[0],
-        tags: dream.keywords || [],
-      });
+        tags: dream.keywords ?? [],
+      } as never);
       if (error) throw error;
       toast.success('Rüya günlüğünüze kaydedildi');
     } catch (error) {
@@ -301,8 +302,8 @@ export default function DreamDetail() {
 
     const onStart = (e: TouchEvent) => {
       if (e.touches.length !== 1) return;
-      startX = e.touches[0].clientX;
-      startY = e.touches[0].clientY;
+      startX = e.touches[0]?.clientX ?? 0;
+      startY = e.touches[0]?.clientY ?? 0;
       tracking = true;
     };
 
@@ -448,7 +449,12 @@ export default function DreamDetail() {
   const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
   const wordCount = dream.content.replace(/<[^>]*>/g, ' ').split(/\s+/).filter(Boolean).length;
   const readTime = Math.max(1, Math.ceil(wordCount / 200));
-  const formattedContent = formatPlainDreamContent(dream.content, dream.title);
+  const formattedContent = DOMPurify.sanitize(formatPlainDreamContent(dream.content, dream.title), {
+    ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 's', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'blockquote', 'code', 'pre', 'a', 'img', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'hr', 'figure', 'figcaption'],
+    ALLOWED_ATTR: ['href', 'src', 'alt', 'class', 'target', 'rel', 'loading'],
+    FORBID_TAGS: ['script', 'style', 'iframe'],
+    FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover'],
+  });
   const dreamPath = `/ruya/${dream.slug}`;
   const dreamDescription = dream.meta_description || dream.content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160) || `${dream.title} rüya tabiri ve yorumu`;
   const dreamJsonLd = [

@@ -36,7 +36,13 @@ const getAuthorDisplay = (comment: BlogComment) => {
 
 const getAuthorInitial = (name: string) => {
   const parts = name.trim().split(/\s+/);
-  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  if (parts.length >= 2) {
+    const first = parts[0];
+    const last = parts[parts.length - 1];
+    if (first && last && first[0] && last[0]) {
+      return (first[0] + last[0]).toUpperCase();
+    }
+  }
   return name.charAt(0).toUpperCase();
 };
 
@@ -118,12 +124,13 @@ export function BlogCommentSection({ postId }: BlogCommentSectionProps) {
 
   const fetchUserLikes = useCallback(async () => {
     if (!user) return;
-    const { data } = await supabase
-      .from('blog_comment_likes')
+    const queryPromise = supabase
+      .from('blog_comment_likes' as never)
       .select('comment_id')
-      .eq('user_id', user.id);
-    if (data) {
-      setLikedComments(new Set(data.map((l) => l.comment_id)));
+      .eq('user_id', user.id) as unknown as Promise<{ data: { comment_id: string }[] | null }>;
+    const result = await queryPromise;
+    if (result.data) {
+      setLikedComments(new Set(result.data.map((l) => l.comment_id)));
     }
   }, [user]);
 
@@ -177,7 +184,7 @@ export function BlogCommentSection({ postId }: BlogCommentSectionProps) {
         content: validation.data.content,
         parent_id: parentId || null,
         is_approved: isApproved,
-      });
+      } as never);
       if (error) {
         toast.error('Yorum eklenirken bir hata oluştu');
         setIsSubmitting(false);
@@ -207,10 +214,10 @@ export function BlogCommentSection({ postId }: BlogCommentSectionProps) {
     }
     const isLiked = likedComments.has(commentId);
     if (isLiked) {
-      await supabase.from('blog_comment_likes').delete().eq('comment_id', commentId).eq('user_id', user.id);
+      await supabase.from('blog_comment_likes' as never).delete().eq('comment_id', commentId).eq('user_id', user.id);
       setLikedComments((prev) => { const s = new Set(prev); s.delete(commentId); return s; });
     } else {
-      await supabase.from('blog_comment_likes').insert({ comment_id: commentId, user_id: user.id });
+      await supabase.from('blog_comment_likes' as never).insert({ comment_id: commentId, user_id: user.id } as never);
       setLikedComments((prev) => new Set(prev).add(commentId));
     }
     fetchComments();

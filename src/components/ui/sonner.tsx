@@ -1,14 +1,12 @@
 import { useTheme } from "next-themes";
 import { Toaster as Sonner, toast } from "sonner";
 
-type ToasterProps = React.ComponentProps<typeof Sonner>;
-
-const Toaster = ({ ...props }: ToasterProps) => {
+const Toaster = (props: Record<string, unknown>) => {
   const { theme = "system" } = useTheme();
 
   return (
     <Sonner
-      theme={theme as ToasterProps["theme"]}
+      theme={theme as "light" | "dark" | "system"}
       className="toaster group"
       position="top-right"
       richColors
@@ -27,7 +25,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
           cancelButton: "group-[.toast]:bg-muted/70 group-[.toast]:text-foreground group-[.toast]:border-border/40",
         },
       }}
-      {...props}
+      {...((props ?? {}) as Record<string, unknown>)}
     />
   );
 };

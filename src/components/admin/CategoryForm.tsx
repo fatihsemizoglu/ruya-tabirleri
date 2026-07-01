@@ -1,7 +1,7 @@
 import { useForm, UseFormReturn, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { FolderTree, Type, Hash, FileText, Smile, Sparkles } from 'lucide-react';
+import { FolderTree, Type, Hash, FileText, Smile, Sparkles, type LucideIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -20,14 +20,14 @@ const categorySchema = z.object({
 export type CategoryFormValues = z.infer<typeof categorySchema>;
 
 interface CategoryFormProps {
-  form?: UseFormReturn<CategoryFormValues>;
-  defaultValues?: CategoryFormValues;
+  form?: UseFormReturn<CategoryFormValues> | undefined;
+  defaultValues?: CategoryFormValues | undefined;
   onSubmit: (values: CategoryFormValues) => void;
   onCancel: () => void;
-  isSubmitting?: boolean;
+  isSubmitting?: boolean | undefined;
 }
 
-function SectionLabel({ icon: Icon, label }: { icon: React.ComponentType<{ className?: string }>; label: string }) {
+function SectionLabel({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
   return (
     <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
       <Icon className="h-3.5 w-3.5" />

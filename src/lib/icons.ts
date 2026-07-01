@@ -1,3 +1,4 @@
+import { type LucideIcon } from 'lucide-react';
 import {
   Moon,
   Sun,
@@ -41,7 +42,6 @@ import {
   Loader2,
   Hash,
   Activity,
-  Award,
   Flame,
   Mic,
   MicOff,
@@ -124,7 +124,6 @@ import {
   Cat,
   Hand,
   Footprints,
-  Eye as EyeIcon,
   Brain,
   Wind,
   Snowflake,
@@ -181,7 +180,7 @@ import {
   CloudFog,
 } from 'lucide-react';
 
-const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+const iconMap: Record<string, LucideIcon> = {
   Moon,
   Sun,
   Menu,

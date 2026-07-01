@@ -14,8 +14,8 @@ if (SENTRY_DSN) {
     integrations: [
       Sentry.browserTracingIntegration(),
       Sentry.replayIntegration({
-        maskAllText: false,
-        blockAllMedia: false,
+        maskAllText: true,
+        blockAllMedia: true,
       }),
     ],
     tracesSampleRate: import.meta.env.PROD ? 0.1 : 1.0,
@@ -27,6 +27,28 @@ if (SENTRY_DSN) {
       if (msg.includes("Failed to fetch")) return null;
       return event;
     },
+  });
+
+  // Unhandled async errors (Promise rejections) — RouteErrorBoundary bunları yakalayamaz
+  window.addEventListener("unhandledrejection", (event) => {
+    const reason = event.reason;
+    const error = reason instanceof Error ? reason : new Error(String(reason));
+    Sentry.captureException(error, {
+      tags: { source: "unhandledrejection" },
+    });
+    // Geliştirme ortamında console'a da düşsün
+    if (!import.meta.env.PROD) {
+      console.error("[unhandledrejection]", error);
+    }
+  });
+
+  // Global JS errors (Component boundary dışı)
+  window.addEventListener("error", (event) => {
+    if (event.error) {
+      Sentry.captureException(event.error, {
+        tags: { source: "window.error" },
+      });
+    }
   });
 }
 

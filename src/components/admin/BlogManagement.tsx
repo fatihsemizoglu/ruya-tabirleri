@@ -122,7 +122,7 @@ export function BlogManagement() {
         is_featured: values.is_featured,
         author_id: user?.id,
         scheduled_at: values.scheduled_at?.toISOString() || null,
-      });
+      } as never);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -343,20 +343,22 @@ export function BlogManagement() {
                 key={editingPost?.id ?? 'new'}
                 form={form}
                 categories={categories || []}
-                defaultValues={editingPost ? {
-                  title: editingPost.title,
-                  slug: editingPost.slug,
-                  excerpt: editingPost.excerpt || '',
-                  content: editingPost.content,
-                  featured_image: editingPost.featured_image || '',
-                  category_id: editingPost.category_id || '',
-                  tags: editingPost.tags?.join(', ') || '',
-                  meta_title: editingPost.meta_title || '',
-                  meta_description: editingPost.meta_description || '',
-                  is_published: editingPost.is_published,
-                  is_featured: editingPost.is_featured,
-                  scheduled_at: editingPost.scheduled_at ? new Date(editingPost.scheduled_at) : null,
-                } : undefined}
+                {...(editingPost ? {
+                  defaultValues: {
+                    title: editingPost.title,
+                    slug: editingPost.slug,
+                    excerpt: editingPost.excerpt || '',
+                    content: editingPost.content,
+                    featured_image: editingPost.featured_image || '',
+                    category_id: editingPost.category_id || '',
+                    tags: editingPost.tags?.join(', ') || '',
+                    meta_title: editingPost.meta_title || '',
+                    meta_description: editingPost.meta_description || '',
+                    is_published: editingPost.is_published,
+                    is_featured: editingPost.is_featured,
+                    scheduled_at: editingPost.scheduled_at ? new Date(editingPost.scheduled_at) : null,
+                  }
+                } : {})}
                 onSubmit={onSubmit}
                 onCancel={handleClose}
                 isSubmitting={createMutation.isPending || updateMutation.isPending}
@@ -418,7 +420,7 @@ export function BlogManagement() {
                                         if (field.value && e.target.value) {
                                           const [hours, minutes] = e.target.value.split(':');
                                           const newDate = new Date(field.value);
-                                          newDate.setHours(parseInt(hours), parseInt(minutes));
+                                          newDate.setHours(parseInt(hours ?? '0'), parseInt(minutes ?? '0'));
                                           field.onChange(newDate);
                                         }
                                       }}
@@ -549,7 +551,7 @@ export function BlogManagement() {
             </div>
 
             <div className="space-y-3">
-              {filteredPosts.map((post: BlogPost & { blog_categories?: { name: string } | null }) => (
+              {filteredPosts.map((post) => (
                 <div
                   key={post.id}
                   className="admin-list-surface p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
@@ -616,14 +618,14 @@ export function BlogManagement() {
                       Görüntüle
                     </button>
                     <button
-                      onClick={() => handleEdit(post)}
+                      onClick={() => handleEdit(post as unknown as Parameters<typeof handleEdit>[0])}
                       className="flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
                     >
                       <Pencil className="w-4 h-4" />
                       Düzenle
                     </button>
                     <button
-                      onClick={() => handleDelete(post)}
+                      onClick={() => handleDelete(post as unknown as Parameters<typeof handleDelete>[0])}
                       className="flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
                       disabled={deleteMutation.isPending}
                     >

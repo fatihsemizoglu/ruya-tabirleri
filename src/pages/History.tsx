@@ -106,7 +106,7 @@ export default function History() {
       }, []) || [];
 
       // Fetch category info for each dream
-      const categoryIds = [...new Set(uniqueHistory.map(h => h.dream?.category_id).filter(Boolean))];
+      const categoryIds = [...new Set(uniqueHistory.map(h => h.dream?.category_id).filter((id): id is string => Boolean(id)))];
       if (categoryIds.length > 0) {
         const { data: catData } = await supabase
           .from('categories')
@@ -227,10 +227,12 @@ export default function History() {
         });
       }
 
-      if (!groups[dateKey]) {
-        groups[dateKey] = [];
+      const existing = groups[dateKey];
+      if (existing) {
+        existing.push(item);
+      } else {
+        groups[dateKey] = [item];
       }
-      groups[dateKey].push(item);
     });
 
     return groups;

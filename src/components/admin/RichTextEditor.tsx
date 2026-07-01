@@ -343,6 +343,7 @@ export function RichTextEditor({ content, onChange, placeholder = 'İçerik yaz�
           </DialogHeader>
 
           <Input
+            // eslint-disable-next-line jsx-a11y/no-autofocus -- editor intentionally focuses on mount for immediate typing
             autoFocus
             value={dialog.value}
             onChange={(e) => setDialog((prev) => ({ ...prev, value: e.target.value }))}

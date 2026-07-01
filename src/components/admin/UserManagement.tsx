@@ -96,7 +96,7 @@ export function UserManagement() {
         role: rolesMap.get(profile.user_id) || ('user' as AppRole),
       }));
 
-      setUsers(usersWithRoles);
+      setUsers(usersWithRoles as unknown as UserWithRole[]);
     } catch (error) {
       console.error('Error fetching users:', error);
       toast.error('Kullanıcılar yüklenirken hata oluştu');
@@ -160,7 +160,6 @@ export function UserManagement() {
       await supabase.rpc('log_admin_action', {
         _action: 'role_change',
         _entity_type: 'user_role',
-        _entity_id: null,
         _entity_title: label,
         _details: {
           target_user_id: userId,

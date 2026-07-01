@@ -61,12 +61,16 @@ export function usePullToRefresh({
     const onTouchStart = (e: TouchEvent) => {
       if (isRefreshing) return;
       if (el.scrollTop > 0) return;
-      startY.current = e.touches[0].clientY;
+      const touch = e.touches[0];
+      if (!touch) return;
+      startY.current = touch.clientY;
     };
 
     const onTouchMove = (e: TouchEvent) => {
       if (startY.current === null || isRefreshing) return;
-      const delta = e.touches[0].clientY - startY.current;
+      const touch = e.touches[0];
+      if (!touch) return;
+      const delta = touch.clientY - startY.current;
       if (delta <= 0) {
         if (currentPull.current !== 0) {
           currentPull.current = 0;

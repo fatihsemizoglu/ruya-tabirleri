@@ -129,7 +129,7 @@ export function AuditLog() {
       if (error) throw error;
 
       // Fetch profiles for user_ids
-      const userIds = [...new Set(logsData?.map(log => log.user_id) || [])];
+      const userIds = (logsData ?? []).map(log => log.user_id).filter((id): id is string => Boolean(id));
       const { data: profiles } = await supabase
         .from('profiles')
         .select('user_id, username, full_name')
@@ -137,10 +137,14 @@ export function AuditLog() {
 
       const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
 
-      const logs: AuditLogEntry[] = (logsData || []).map(log => ({
-        ...log,
-        profile: profileMap.get(log.user_id) as { username: string | null; full_name: string | null } | undefined,
-      }));
+      const logs: AuditLogEntry[] = (logsData || []).map(log => {
+        const profile = profileMap.get(log.user_id ?? '');
+        return {
+          ...log,
+          user_id: log.user_id ?? '',
+          ...(profile ? { profile: profile as { username: string | null; full_name: string | null } } : {}),
+        } as AuditLogEntry;
+      });
 
       return { logs, totalCount: count || 0 };
     },
@@ -284,13 +288,13 @@ export function AuditLog() {
                               "{log.entity_title}"
                             </p>
                           )}
-                          {log.details && Object.keys(log.details).length > 0 && (
+                          {log.details && typeof log.details === 'object' && Object.keys(log.details as object).length > 0 ? (
                             <div className="mt-2 text-xs text-muted-foreground bg-muted/50 rounded p-2">
                               <pre className="whitespace-pre-wrap">
-                                {JSON.stringify(log.details, null, 2)}
+                                {String(JSON.stringify(log.details, null, 2))}
                               </pre>
                             </div>
-                          )}
+                          ) : null}
                         </div>
                         <div className="text-right shrink-0">
                           <p className="text-sm text-muted-foreground">

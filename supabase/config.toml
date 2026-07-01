@@ -31,6 +31,11 @@ verify_jwt = false
 # AI_API_KEY=your_openai_compatible_api_key
 # AI_API_URL=https://api.openai.com/v1/chat/completions (optional, defaults to OpenAI)
 # AI_MODEL=gpt-4o-mini (optional, defaults to gpt-4o-mini)
+#
+# NVIDIA NIM example:
+# AI_API_KEY=nvapi-...
+# AI_API_URL=https://integrate.api.nvidia.com/v1/chat/completions
+# AI_MODEL=meta/llama-3.1-8b-instruct
 # RESEND_API_KEY=your_resend_api_key (for newsletter emails)
 # CRON_SECRET=your_secure_random_string (for publish-scheduled-posts cron)
 # SITE_URL=https://your-domain.com (for sitemap generation)

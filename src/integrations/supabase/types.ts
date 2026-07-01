@@ -1917,6 +1917,7 @@ export type Database = {
       cleanup_expired_email_change_requests: { Args: never; Returns: number }
       compute_level: { Args: { p_xp: number }; Returns: number }
       count_search_dreams: { Args: { search_query: string }; Returns: number }
+      increment_blog_view_count: { Args: { post_id: string }; Returns: undefined }
       get_dream_category_counts: {
         Args: never
         Returns: {

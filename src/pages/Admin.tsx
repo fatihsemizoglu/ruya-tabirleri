@@ -67,7 +67,7 @@ export default function Admin() {
     setSearchParams(nextParams, { replace: true });
   };
 
-  const currentTab = tabTitles[activeTab] || tabTitles.overview;
+  const currentTab = tabTitles[activeTab] ?? tabTitles.overview!;
 
   const renderContent = () => {
     switch (activeTab) {

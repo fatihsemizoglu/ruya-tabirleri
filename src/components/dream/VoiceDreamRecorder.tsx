@@ -194,11 +194,13 @@ export function VoiceDreamRecorder({ onSave }: VoiceDreamRecorderProps) {
           let finalText = '';
           let interimText = '';
           for (let i = e.resultIndex; i < e.results.length; i++) {
-            const result = e.results[i];
-            if (result.isFinal) {
-              finalText += result[0].transcript;
+            const r = e.results[i];
+            if (!r) continue;
+            const t = r[0]?.transcript ?? '';
+            if (r.isFinal) {
+              finalText += t;
             } else {
-              interimText += result[0].transcript;
+              interimText += t;
             }
           }
           if (finalText) {
@@ -306,8 +308,8 @@ export function VoiceDreamRecorder({ onSave }: VoiceDreamRecorderProps) {
       title: title || `Sesli Rüya - ${new Date().toLocaleDateString('tr-TR')}`,
       content: text,
       mood,
-      audioBlob: audioBlob || undefined,
-    });
+      ...(audioBlob ? { audioBlob } : {}),
+    } as Parameters<typeof onSave>[0]);
     deleteAudio();
     setTitle('');
     setMood('');

@@ -33,8 +33,9 @@ export function TagCloud({ className, maxTags = 20 }: TagCloudProps) {
 
       const tagCounts = new Map<string, number>();
       posts.forEach((post) => {
-        if (post.tags) {
-          post.tags.forEach((tag: string) => {
+        const tags = post.tags;
+        if (Array.isArray(tags)) {
+          (tags as string[]).forEach((tag: string) => {
             tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
           });
         }

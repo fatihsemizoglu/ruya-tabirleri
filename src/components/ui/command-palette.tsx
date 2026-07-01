@@ -89,8 +89,12 @@ export function CommandPalette() {
   );
 
   const groupedCommands = filteredCommands.reduce((acc, cmd) => {
-    if (!acc[cmd.category]) acc[cmd.category] = [];
-    acc[cmd.category].push(cmd);
+    const list = acc[cmd.category];
+    if (list) {
+      list.push(cmd);
+    } else {
+      acc[cmd.category] = [cmd];
+    }
     return acc;
   }, {} as Record<string, CommandItem[]>);
 
@@ -156,6 +160,7 @@ export function CommandPalette() {
               <div className="flex items-center gap-3 border-b border-border px-4 py-3">
                 <Search className="h-5 w-5 text-muted-foreground" />
                 <Input
+                  // eslint-disable-next-line jsx-a11y/no-autofocus -- command palette intentionally focuses on open for immediate typing
                   autoFocus
                   value={search}
                   onChange={e => setSearch(e.target.value)}

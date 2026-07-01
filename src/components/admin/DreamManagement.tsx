@@ -238,7 +238,7 @@ export function DreamManagement() {
       slug: dream.slug,
       content: dream.content,
       category_id: dream.category_id || '',
-      keywords: dream.keywords?.join(', ') || '',
+      keywords: Array.isArray(dream.keywords) ? (dream.keywords as string[]).join(', ') : '',
       meta_title: dream.meta_title || '',
       meta_description: dream.meta_description || '',
       is_published: dream.is_published ?? true,
@@ -264,7 +264,7 @@ export function DreamManagement() {
   const totalDreams = totalCount || 0;
   const publishedDreams = dreams?.filter(d => d.is_published).length || 0;
   const featuredDreams = dreams?.filter(d => d.is_featured).length || 0;
-  const totalPages = Math.ceil(totalCount / PAGE_SIZE) || 1;
+  const totalPages = Math.ceil((totalCount ?? 0) / PAGE_SIZE) || 1;
 
   const statsData: [{ label: string; value: number; subtext: string; icon: typeof BookOpen }, { label: string; value: number; subtext: string; icon: typeof Check }, { label: string; value: number; subtext: string; icon: typeof Star }] = [
     { label: 'Toplam Rüya', value: totalDreams, subtext: 'Veritabanındaki rüyalar', icon: BookOpen },
@@ -296,17 +296,19 @@ export function DreamManagement() {
               <DreamForm
                 categories={categories || []}
                 form={form}
-                defaultValues={editingDream ? {
-                  title: editingDream.title,
-                  slug: editingDream.slug,
-                  content: editingDream.content,
-                  category_id: editingDream.category_id || '',
-                  keywords: editingDream.keywords?.join(', ') || '',
-                  meta_title: editingDream.meta_title || '',
-                  meta_description: editingDream.meta_description || '',
-                  is_published: editingDream.is_published ?? true,
-                  is_featured: editingDream.is_featured ?? false,
-                } : undefined}
+                {...(editingDream ? {
+                  defaultValues: {
+                    title: editingDream.title,
+                    slug: editingDream.slug,
+                    content: editingDream.content,
+                    category_id: editingDream.category_id || '',
+                    keywords: Array.isArray(editingDream.keywords) ? (editingDream.keywords as string[]).join(', ') : '',
+                    meta_title: editingDream.meta_title || '',
+                    meta_description: editingDream.meta_description || '',
+                    is_published: editingDream.is_published ?? true,
+                    is_featured: editingDream.is_featured ?? false,
+                  }
+                } : {})}
                 onSubmit={onSubmit}
                 onCancel={handleClose}
                 isSubmitting={createMutation.isPending || updateMutation.isPending}

@@ -48,6 +48,7 @@ const contactItems = [
 export function ContactInfo() {
   const featured = contactItems[0];
   const rest = contactItems.slice(1);
+  if (!featured) return null;
   const FeaturedIcon = featured.icon;
 
   return (

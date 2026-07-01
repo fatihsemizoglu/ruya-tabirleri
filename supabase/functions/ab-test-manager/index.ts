@@ -46,6 +46,7 @@ interface Event {
 const KV_TEST_KEY = (id: string) => ["ab_test", id];
 const KV_LIST_KEY = ["ab_test_list"];
 const KV_EVENTS_KEY = (testId: string) => ["ab_events", testId];
+const KV_EVENT_KEY = (testId: string, ts: number, id: string) => ["ab_events", testId, ts, id];
 
 async function getKv() {
   try {
@@ -100,10 +101,7 @@ async function deleteTest(kv: Deno.Kv | null, id: string): Promise<void> {
 
 async function addEvent(kv: Deno.Kv | null, testId: string, ev: Event): Promise<void> {
   if (kv) {
-    const list = (await kv.get(KV_EVENTS_KEY(testId))) as Deno.KvEntryMaybe<Event[]>;
-    const arr = (list.value as Event[]) || [];
-    arr.push(ev);
-    await kv.set(KV_EVENTS_KEY(testId), arr);
+    await kv.set(KV_EVENT_KEY(testId, ev.ts, crypto.randomUUID()), ev);
   } else {
     const arr = memEvents.get(testId) || [];
     arr.push(ev);
@@ -113,8 +111,15 @@ async function addEvent(kv: Deno.Kv | null, testId: string, ev: Event): Promise<
 
 async function getEvents(kv: Deno.Kv | null, testId: string): Promise<Event[]> {
   if (kv) {
-    const r = await kv.get(KV_EVENTS_KEY(testId));
-    return (r.value as Event[]) || [];
+    const events: Event[] = [];
+    for await (const entry of kv.list({ prefix: KV_EVENTS_KEY(testId) })) {
+      if (Array.isArray(entry.value)) {
+        events.push(...entry.value as Event[]);
+      } else {
+        events.push(entry.value as Event);
+      }
+    }
+    return events;
   }
   return memEvents.get(testId) || [];
 }
@@ -140,6 +145,11 @@ function assignVariant(test: ABTest, userId: string): Variant {
     if (bucket < acc) return v;
   }
   return test.variants[0];
+}
+
+function isAllowedEvent(test: ABTest, event: string): boolean {
+  const metrics = test.metrics.length ? test.metrics : ["view", "click", "conversion"];
+  return metrics.includes(event);
 }
 
 // Statistical helpers
@@ -318,6 +328,15 @@ serve(async (req) => {
         const event = body.event as string;
         if (!id || !variantId || !event) {
           return jsonResponse({ error: "Eksik parametre" }, 400);
+        }
+        const test = await getTest(kv, id);
+        if (!test) return jsonResponse({ error: "Test bulunamadı" }, 404);
+        if (test.status !== "running") return jsonResponse({ error: "Test aktif değil" }, 400);
+        if (!test.variants.some((variant) => variant.id === variantId)) {
+          return jsonResponse({ error: "Geçersiz varyant" }, 400);
+        }
+        if (!isAllowedEvent(test, event)) {
+          return jsonResponse({ error: "Geçersiz event" }, 400);
         }
         await addEvent(kv, id, {
           variantId,

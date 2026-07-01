@@ -64,6 +64,9 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
+DECLARE
+  safe_limit INTEGER := LEAST(GREATEST(COALESCE(limit_count, 20), 1), 50);
+  safe_offset INTEGER := GREATEST(COALESCE(offset_count, 0), 0);
 BEGIN
   RETURN QUERY
   SELECT
@@ -83,8 +86,8 @@ BEGIN
       OR search_query = ANY(d.keywords)
     )
   ORDER BY rank DESC, d.view_count DESC
-  LIMIT limit_count
-  OFFSET offset_count;
+  LIMIT safe_limit
+  OFFSET safe_offset;
 END;
 $$;
 

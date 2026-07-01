@@ -126,11 +126,12 @@ export function SocialShareBar({
           size="icon"
           onClick={handleCopyLink}
           className="h-9 w-9"
+          aria-label="Linki kopyala"
           title="Linki Kopyala"
         >
           {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
         </Button>
-        
+
         {shareLinks.slice(0, 4).map((link) => (
           <Button
             key={link.name}
@@ -138,6 +139,7 @@ export function SocialShareBar({
             size="icon"
             onClick={() => handleShare(link.url)}
             className={cn('h-9 w-9', link.color)}
+            aria-label={`${link.name} ile paylaş`}
             title={link.name}
           >
             <link.icon className="h-4 w-4" />
@@ -150,6 +152,7 @@ export function SocialShareBar({
             size="icon"
             onClick={handleNativeShare}
             className="h-9 w-9"
+            aria-label="Cihazla paylaş"
             title="Paylaş"
           >
             <Share2 className="h-4 w-4" />
@@ -167,11 +170,12 @@ export function SocialShareBar({
           size="icon"
           onClick={handleCopyLink}
           className="h-8 w-8"
+          aria-label="Linki kopyala"
           title="Linki Kopyala"
         >
           {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
         </Button>
-        
+
         {shareLinks.slice(0, 3).map((link) => (
           <Button
             key={link.name}
@@ -179,6 +183,7 @@ export function SocialShareBar({
             size="icon"
             onClick={() => handleShare(link.url)}
             className={cn('h-8 w-8', link.color)}
+            aria-label={`${link.name} ile paylaş`}
             title={link.name}
           >
             <link.icon className="h-4 w-4" />

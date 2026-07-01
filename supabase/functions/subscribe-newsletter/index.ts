@@ -1,15 +1,56 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+import { getCorsHeaders, handleOptions } from "../_shared/cors.ts";
 
 interface SubscribeRequest {
   email: string;
   name?: string;
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MAX_NAME_LENGTH = 80;
+const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
+const RATE_LIMIT_MAX = 5;
+const rateLimitBuckets = new Map<string, { count: number; resetAt: number }>();
+
+function escapeHtml(input: string): string {
+  return input
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function normalizeEmail(email: string): string {
+  return email.trim().toLocaleLowerCase("tr-TR");
+}
+
+function getClientIp(req: Request): string {
+  return req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+    || req.headers.get("cf-connecting-ip")
+    || "unknown";
+}
+
+function isRateLimited(key: string): boolean {
+  const now = Date.now();
+  const current = rateLimitBuckets.get(key);
+  if (!current || current.resetAt <= now) {
+    rateLimitBuckets.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return false;
+  }
+  current.count += 1;
+  return current.count > RATE_LIMIT_MAX;
+}
+
+function resolveBaseUrl(req: Request): string {
+  const siteUrl = Deno.env.get("SITE_URL") || "https://ruya-tabirleri.vercel.app";
+  const origin = req.headers.get("origin");
+  const allowed = Deno.env.get("ALLOWED_ORIGINS")
+    ?.split(/[\s,]+/)
+    .map((o) => o.trim())
+    .filter(Boolean) ?? [];
+  return origin && allowed.includes(origin) ? origin : siteUrl;
 }
 
 async function sendEmail(apiKey: string, params: { from: string; to: string[]; subject: string; html: string }) {
@@ -31,8 +72,17 @@ async function sendEmail(apiKey: string, params: { from: string; to: string[]; s
 }
 
 const handler = async (req: Request): Promise<Response> => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+  const options = handleOptions(req);
+  if (options) return options;
+
+  const origin = req.headers.get("origin");
+  const responseHeaders = { ...getCorsHeaders(origin), "Content-Type": "application/json" };
+
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ success: false, error: "Method not allowed" }), {
+      status: 405,
+      headers: { ...responseHeaders, Allow: "POST" },
+    });
   }
 
   try {
@@ -50,10 +100,23 @@ const handler = async (req: Request): Promise<Response> => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    const { email, name }: SubscribeRequest = await req.json();
+    const { email: rawEmail, name: rawName }: SubscribeRequest = await req.json();
+    const email = typeof rawEmail === "string" ? normalizeEmail(rawEmail) : "";
+    const name = typeof rawName === "string" ? rawName.trim().slice(0, MAX_NAME_LENGTH) : "";
 
-    if (!email) {
-      throw new Error("Email is required");
+    if (!email || !EMAIL_RE.test(email)) {
+      return new Response(JSON.stringify({ success: false, error: "Geçerli bir e-posta adresi girin" }), {
+        status: 400,
+        headers: responseHeaders,
+      });
+    }
+
+    const rateKey = `${getClientIp(req)}:${email}`;
+    if (isRateLimited(rateKey)) {
+      return new Response(JSON.stringify({ success: false, error: "Çok fazla deneme yapıldı, lütfen daha sonra tekrar deneyin" }), {
+        status: 429,
+        headers: responseHeaders,
+      });
     }
 
     // Check if already subscribed
@@ -100,10 +163,9 @@ const handler = async (req: Request): Promise<Response> => {
       verificationToken = newSub.verification_token;
     }
 
-    const baseUrl = req.headers.get("origin")
-      || Deno.env.get("SITE_URL")
-      || "https://ruya-tabirleri.vercel.app";
+    const baseUrl = resolveBaseUrl(req);
     const verifyUrl = `${baseUrl}/abonelik-dogrula?token=${verificationToken}&email=${encodeURIComponent(email)}`;
+    const safeName = name ? escapeHtml(name) : "";
 
     // Send verification email
     await sendEmail(RESEND_API_KEY, {
@@ -123,7 +185,7 @@ const handler = async (req: Request): Promise<Response> => {
           </div>
           
           <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 12px 12px;">
-            <p style="margin-top: 0;">Merhaba${name ? ` ${name}` : ''},</p>
+            <p style="margin-top: 0;">Merhaba${safeName ? ` ${safeName}` : ''},</p>
             
             <p>Bülten aboneliğinizi tamamlamak için lütfen aşağıdaki butona tıklayın:</p>
             
@@ -148,15 +210,14 @@ const handler = async (req: Request): Promise<Response> => {
 
     return new Response(
       JSON.stringify({ success: true, message: "Doğrulama e-postası gönderildi" }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 200, headers: responseHeaders }
     );
 
   } catch (error: unknown) {
     console.error("Error in subscribe-newsletter function:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return new Response(
-      JSON.stringify({ success: false, error: errorMessage }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ success: false, error: "Abonelik işlemi tamamlanamadı" }),
+      { status: 500, headers: responseHeaders }
     );
   }
 };

@@ -15,6 +15,7 @@ serve(async (req) => {
 
   try {
     const { title, content, currentKeywords, type } = await req.json();
+    const AI_API_KEY = getAiApiKey();
 
     if (!AI_API_KEY) {
       throw new Error("AI_API_KEY is not configured");

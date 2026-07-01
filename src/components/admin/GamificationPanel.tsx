@@ -193,7 +193,8 @@ export function GamificationPanel() {
       const userMap = new Map<string, { name: string; avatar?: string }>();
 
       profiles?.forEach(p => {
-        userMap.set(p.user_id, { name: p.full_name || p.username || 'Kullanıcı', avatar: p.avatar_url || undefined });
+        const avatar = p.avatar_url ?? '';
+        userMap.set(p.user_id, { name: p.full_name || p.username || 'Kullanıcı', avatar });
         xpMap.set(p.user_id, { xp: 0, comments: 0, shares: 0 });
       });
 
@@ -220,7 +221,7 @@ export function GamificationPanel() {
           return {
             userId,
             name: profile?.name || 'Anonim',
-            avatar: profile?.avatar,
+            avatar: profile?.avatar ?? '',
             xp: stats.xp,
             comments: stats.comments,
             shares: stats.shares,
@@ -241,7 +242,7 @@ export function GamificationPanel() {
         supabase.from('profiles').select('user_id, username, full_name').limit(500),
         supabase.from('comments').select('user_id, created_at').gte('created_at', since30),
         supabase.from('view_history').select('user_id, viewed_at').gte('viewed_at', since30),
-        supabase.from('blog_subscribers').select('user_id, is_active'),
+        supabase.from('blog_subscribers').select('id, is_verified'),
       ]);
 
       const userMap = new Map<string, ChurnRisk>();
@@ -251,7 +252,7 @@ export function GamificationPanel() {
 
       comments?.forEach(c => commentMap.set(c.user_id, (commentMap.get(c.user_id) || 0) + 1));
       views?.forEach(v => viewMap.set(v.user_id, (viewMap.get(v.user_id) || 0) + 1));
-      subs?.forEach(s => subMap.set(s.user_id, !!s.is_active));
+      subs?.forEach(s => subMap.set(s.id, !!s.is_verified));
 
       profiles?.forEach(p => {
         const c = commentMap.get(p.user_id) || 0;

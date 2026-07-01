@@ -1,0 +1,17 @@
+{
+  "id": "019f1c66-fc66-730b-91df-8b9540df5c2e",
+  "name": "iptal normalsohbete dön",
+  "description": "iptal normalsohbete dön",
+  "status": "draft",
+  "worktree": {
+    "path": "/mnt/c/Users/fsemi/OneDrive/Masaüstü/Projeler/ruya-tabirleri",
+    "branch": "main",
+    "commit": "0fd8897f615672f3176566f5d69c8f72fc14dbca"
+  },
+  "scoping": {},
+  "phases": [],
+  "decisions": [],
+  "memories": [],
+  "createdAt": "2026-07-01T06:38:59.174Z",
+  "updatedAt": "2026-07-01T06:38:59.174Z"
+}

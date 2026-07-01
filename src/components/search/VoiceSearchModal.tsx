@@ -139,7 +139,7 @@ export function VoiceSearchModal({ open, onOpenChange, onResult }: VoiceSearchMo
         if (!analyserRef.current) return;
         analyserRef.current.getByteFrequencyData(dataArray);
         let sum = 0;
-        for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
+        for (let i = 0; i < dataArray.length; i++) sum += dataArray[i] ?? 0;
         const avg = sum / dataArray.length;
         const level = Math.min(100, (avg / 255) * 100);
         setAudioLevel(level);
@@ -186,8 +186,10 @@ export function VoiceSearchModal({ open, onOpenChange, onResult }: VoiceSearchMo
         let finalText = '';
         let interimText = '';
         for (let i = event.resultIndex; i < event.results.length; i++) {
-          const t = event.results[i][0].transcript;
-          if (event.results[i].isFinal) {
+          const result = event.results[i];
+          if (!result) continue;
+          const t = result[0]?.transcript ?? '';
+          if (result.isFinal) {
             finalText += t;
           } else {
             interimText += t;

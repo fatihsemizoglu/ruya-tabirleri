@@ -57,7 +57,7 @@ export default function CategoryDetail() {
       const { data: categoryData, error: categoryError } = await supabase
         .from('categories')
         .select('*')
-        .eq('slug', slug)
+        .eq('slug', slug ?? '')
         .maybeSingle();
 
       if (categoryError) throw categoryError;
@@ -609,7 +609,7 @@ export default function CategoryDetail() {
                     <DreamCard
                       dream={dream}
                       viewMode={viewMode}
-                      gradient={pickGradient(dream.id)}
+                      gradient={pickGradient(dream.id) ?? ''}
                     />
                   </motion.div>
                 ))}

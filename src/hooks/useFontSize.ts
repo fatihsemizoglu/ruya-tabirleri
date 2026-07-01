@@ -50,14 +50,14 @@ export function useFontSize(): UseFontSizeResult {
 
   const cycleUp = useCallback(() => {
     setFontSizeState((prev) => {
-      const next = ORDER[Math.min(ORDER.indexOf(prev) + 1, ORDER.length - 1)];
+      const next = ORDER[Math.min(ORDER.indexOf(prev) + 1, ORDER.length - 1)] ?? prev;
       localStorage.setItem(STORAGE_KEY, next);
       return next;
     });
   }, []);
   const cycleDown = useCallback(() => {
     setFontSizeState((prev) => {
-      const next = ORDER[Math.max(ORDER.indexOf(prev) - 1, 0)];
+      const next = ORDER[Math.max(ORDER.indexOf(prev) - 1, 0)] ?? prev;
       localStorage.setItem(STORAGE_KEY, next);
       return next;
     });

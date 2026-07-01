@@ -182,7 +182,7 @@ export function CategoriesSection() {
           className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3"
         >
           {categories.map((category, index) => {
-            const theme = themeGradients[index % themeGradients.length] ?? themeGradients[0];
+            const theme = themeGradients[index % themeGradients.length] ?? themeGradients[0]!;
 
             return (
               <motion.div

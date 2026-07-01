@@ -132,7 +132,7 @@ export default defineConfig(({ mode }) => ({
           }
         ]
       },
-       includeAssets: ["favicon.ico", "robots.txt", "placeholder.svg", "offline.html"],
+      includeAssets: ["favicon.ico", "robots.txt", "placeholder.svg", "offline.html"],
       manifest: {
         name: "Rüya Tabirleri - Mistik Günlük",
         short_name: "Rüya Tabirleri",
@@ -193,6 +193,12 @@ export default defineConfig(({ mode }) => ({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
+            if (id.includes('node_modules/scheduler/')) {
+              return 'react-vendor';
+            }
+            if (id.includes('node_modules/react-router')) {
+              return 'router-vendor';
+            }
             if (id.includes('@tanstack/react-query')) {
               return 'query-vendor';
             }

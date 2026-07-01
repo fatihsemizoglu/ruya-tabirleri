@@ -5,7 +5,9 @@ export function exportToCSV(rows: Record<string, unknown>[], filename: string) {
     toast.error('Dışa aktarılacak veri bulunamadı');
     return;
   }
-  const headers = Object.keys(rows[0]);
+  const firstRow = rows[0];
+  if (!firstRow) return;
+  const headers = Object.keys(firstRow);
   const csv = [
     headers.join(','),
     ...rows.map(r =>
@@ -32,7 +34,9 @@ export function exportToPDF(rows: Record<string, unknown>[], title: string, file
     toast.error('Dışa aktarılacak veri bulunamadı');
     return;
   }
-  const headers = Object.keys(rows[0]);
+  const firstRow = rows[0];
+  if (!firstRow) return;
+  const headers = Object.keys(firstRow);
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${title}</title>
     <style>body{font-family:Arial,sans-serif;padding:24px}h1{color:#4f46e5}
     table{width:100%;border-collapse:collapse;margin-top:16px}

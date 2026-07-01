@@ -71,7 +71,7 @@ export function MessageManagement() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setMessages(data || []);
+      setMessages((data || []) as unknown as ContactMessage[]);
     } catch (error) {
       console.error('Error fetching messages:', error);
       toast.error('Mesajlar yüklenirken hata oluştu');

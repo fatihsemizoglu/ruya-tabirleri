@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, ReactNode } from 'react';
+import * as Sentry from '@sentry/react';
 import { supabase } from '@/integrations/supabase/client';
 import type { Profile, AppRole } from '@/types/database';
 import { AuthContext, type AuthContextType } from './auth-context';
@@ -13,6 +14,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Race condition önleme: aynı userId için duplicate fetch engelle
   const currentUserIdRef = useRef<string | null>(null);
   const initializedRef = useRef(false);
+
+  const syncSentryUser = useCallback((currentUser: AuthContextType['user'], currentProfile: Profile | null) => {
+    if (!import.meta.env.VITE_SENTRY_DSN) return;
+    if (currentUser) {
+      Sentry.setUser({
+        id: currentUser.id,
+        email: currentUser.email ?? '',
+        username: currentProfile?.username ?? currentProfile?.full_name ?? '',
+        role: roles[0] ?? '',
+      });
+      Sentry.setTag('isAdmin', String(roles.includes('admin')));
+    } else {
+      Sentry.setUser(null);
+    }
+  }, [roles]);
 
   const fetchProfile = useCallback(async (userId: string) => {
     try {
@@ -37,7 +53,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq('user_id', userId);
 
       if (error) throw error;
-      setRoles(data?.map((r) => r.role) || []);
+      const roles = (data ?? []).map((r) => r.role as AppRole);
+      setRoles(roles);
     } catch (error) {
       console.error('Error fetching roles:', error);
     } finally {
@@ -50,6 +67,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     currentUserIdRef.current = userId;
     await Promise.all([fetchProfile(userId), fetchRoles(userId)]);
   }, [fetchProfile, fetchRoles]);
+
+  useEffect(() => {
+    syncSentryUser(user, profile);
+  }, [user, profile, roles, syncSentryUser]);
 
   useEffect(() => {
     // ADIM 1: Önce listener kur (Supabase önerisi)
@@ -93,13 +114,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: metadata },
+      options: metadata ? { data: metadata } : {},
     });
     return { error: error as Error | null };
   };
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    if (import.meta.env.VITE_SENTRY_DSN) {
+      Sentry.setUser(null);
+    }
     setProfile(null);
     setRoles([]);
   };

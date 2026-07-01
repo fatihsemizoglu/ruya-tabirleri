@@ -17,8 +17,8 @@ export function useAuditLog() {
       const { error } = await supabase.rpc('log_admin_action', {
         _action: action,
         _entity_type: entityType,
-        _entity_id: entityId || null,
-        _entity_title: entityTitle || null,
+        _entity_id: entityId as string,
+        _entity_title: entityTitle as string,
         _details: details ? JSON.parse(JSON.stringify(details)) : null,
       });
 

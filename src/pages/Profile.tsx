@@ -22,6 +22,7 @@ import { ProfileFavoritesTab } from '@/components/profile/ProfileFavoritesTab';
 import { ProfileHistoryTab } from '@/components/profile/ProfileHistoryTab';
 
 type MoodValue = DreamMood | '';
+type UserComment = Comment & { dreams?: Dream };
 
 const moodOptions: { value: DreamMood; key: string; emoji: string }[] = [
   { value: 'happy', key: 'moodHappy', emoji: '😊' },
@@ -95,7 +96,7 @@ export default function Profile() {
   });
   const [statsLoading, setStatsLoading] = useState(true);
 
-  const [userComments, setUserComments] = useState<(Comment & { dreams?: Dream })[]>([]);
+  const [userComments, setUserComments] = useState<UserComment[]>([]);
 
   useEffect(() => {
     if (profile) {
@@ -127,7 +128,8 @@ export default function Profile() {
         .order('created_at', { ascending: false })
         .limit(10);
 
-      setUserComments((commentsData as (Comment & { dreams?: Dream })[]) || []);
+      const typedComments = (commentsData as UserComment[]) || [];
+      setUserComments(typedComments);
 
       const { data: likesData } = await supabase
         .from('comments')
@@ -151,7 +153,7 @@ export default function Profile() {
 
       const recentActivity: { type: string; title: string; date: string; link?: string }[] = [];
 
-      commentsData?.slice(0, 3).forEach((comment: Record<string, any>) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+      typedComments.slice(0, 3).forEach((comment) => {
         const dream = comment.dreams as { title: string; slug: string } | null;
         recentActivity.push({
           type: 'comment',

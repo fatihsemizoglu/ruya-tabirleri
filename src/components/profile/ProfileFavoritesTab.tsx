@@ -92,6 +92,7 @@ export function ProfileFavoritesTab({ userId, locale }: ProfileFavoritesTabProps
                   size="icon"
                   onClick={() => removeFavorite(fav.id)}
                   className="h-8 w-8 rounded-lg text-muted-foreground hover:text-rose-600 hover:bg-rose-500/10"
+                  aria-label="Favorilerden kaldır"
                   title={t('profile.favoriteRemoveConfirm')}
                 >
                   <Trash2 className="h-3.5 w-3.5" />

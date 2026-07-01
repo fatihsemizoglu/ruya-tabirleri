@@ -39,7 +39,7 @@ import {
   Scatter,
   ZAxis,
 } from 'recharts';
-import { subDays, format, formatDistanceToNow } from 'date-fns';
+import { subDays, format as formatDate, formatDistanceToNow } from 'date-fns';
 import { tr } from 'date-fns/locale';
 
 import { supabase } from '@/integrations/supabase/client';
@@ -128,7 +128,9 @@ function exportToCSV(rows: Record<string, unknown>[], filename: string) {
     toast.error('Dışa aktarılacak veri bulunamadı');
     return;
   }
-  const headers = Object.keys(rows[0]);
+  const firstRow = rows[0];
+  if (!firstRow) return;
+  const headers = Object.keys(firstRow);
   const csv = [
     headers.join(','),
     ...rows.map(r => headers.map(h => {
@@ -153,14 +155,16 @@ function exportToPDF(rows: Record<string, unknown>[], title: string, filename: s
     toast.error('Dışa aktarılacak veri bulunamadı');
     return;
   }
-  const headers = Object.keys(rows[0]);
+  const firstRow = rows[0];
+  if (!firstRow) return;
+  const headers = Object.keys(firstRow);
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${title}</title>
     <style>body{font-family:Arial,sans-serif;padding:24px}h1{color:#4f46e5}
     table{width:100%;border-collapse:collapse;margin-top:16px}
     th{background:#4f46e5;color:white;padding:8px;text-align:left}
     td{border:1px solid #e5e7eb;padding:6px;font-size:13px}
     tr:nth-child(even){background:#f9fafb}</style></head>
-    <body><h1>${title}</h1><p>${format(new Date(), 'dd MMMM yyyy HH:mm', { locale: tr })}</p>
+    <body><h1>${title}</h1><p>${formatDate(new Date(), 'dd MMMM yyyy HH:mm', { locale: tr })}</p>
     <table><thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
     <tbody>${rows.map(r => `<tr>${headers.map(h => `<td>${r[h] ?? ''}</td>`).join('')}</tr>`).join('')}</tbody>
     </table></body></html>`;
@@ -343,7 +347,7 @@ export function AnalyticsDashboard() {
           supabase.from('comments').select('user_id, created_at').gte('created_at', cutoff),
           supabase.from('view_history').select('user_id, viewed_at').gte('viewed_at', cutoff),
           supabase.from('favorites').select('user_id, created_at').gte('created_at', cutoff),
-          supabase.from('blog_subscribers').select('user_id, is_active, created_at'),
+          supabase.from('blog_subscribers').select('id, is_verified, created_at'),
         ]);
 
       const userMap = new Map<string, {
@@ -392,8 +396,8 @@ export function AnalyticsDashboard() {
       });
 
       subs?.forEach(s => {
-        const u = userMap.get(s.user_id);
-        if (u) u.isActive = !!s.is_active;
+        const u = userMap.get(s.id);
+        if (u) u.isActive = !!s.is_verified;
       });
 
       const segments: Record<string, { count: number; recencies: number[]; freqs: number[] }> = {
@@ -406,8 +410,9 @@ export function AnalyticsDashboard() {
 
       userMap.forEach((u) => {
         const lastActivity = u.lastView || u.lastComment;
+        const yeniSeg = segments['Yeni'];
         if (!lastActivity && new Date(u.signupAt) > subDays(new Date(), 7)) {
-          segments['Yeni'].count += 1;
+          if (yeniSeg) yeniSeg.count += 1;
           return;
         }
         const daysSince = lastActivity
@@ -415,15 +420,19 @@ export function AnalyticsDashboard() {
           : 999;
 
         if (u.frequency >= 20 && u.favorites >= 3) {
-          segments['VIP'].count += 1;
+          const vip = segments['VIP'];
+          if (vip) vip.count += 1;
         } else if (daysSince <= 7 && u.frequency >= 3) {
-          segments['Aktif'].count += 1;
+          const aktif = segments['Aktif'];
+          if (aktif) aktif.count += 1;
         } else if (daysSince > 7 && daysSince <= 30) {
-          segments['Riskli'].count += 1;
+          const riskli = segments['Riskli'];
+          if (riskli) riskli.count += 1;
         } else if (daysSince > 30) {
-          segments['Churned'].count += 1;
+          const churned = segments['Churned'];
+          if (churned) churned.count += 1;
         } else {
-          segments['Yeni'].count += 1;
+          if (yeniSeg) yeniSeg.count += 1;
         }
       });
 
@@ -442,7 +451,7 @@ export function AnalyticsDashboard() {
         count: data.count,
         percentage: (data.count / totalUsers) * 100,
         avgRevenue: 0,
-        color: SEGMENT_COLORS[segment],
+        color: SEGMENT_COLORS[segment] ?? 'bg-gray-500',
         recommendations: recommendationMap[segment] || [],
       }));
     },
@@ -554,8 +563,8 @@ export function AnalyticsDashboard() {
       'ROI (%)': r.roi.toFixed(1),
       'CTR (%)': r.ctr.toFixed(2),
     }));
-    if (format === 'csv') exportToCSV(rows, `icerik-roi-${format(new Date(), 'yyyy-MM-dd')}.csv`);
-    else exportToPDF(rows, 'İçerik ROI Raporu', `icerik-roi-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+    if (format === 'csv') exportToCSV(rows, `icerik-roi-${formatDate(new Date(), 'yyyy-MM-dd')}.csv`);
+    else exportToPDF(rows, 'İçerik ROI Raporu', `icerik-roi-${formatDate(new Date(), 'yyyy-MM-dd')}.pdf`);
   };
 
   const handleExportGaps = (format: 'csv' | 'pdf') => {
@@ -566,8 +575,8 @@ export function AnalyticsDashboard() {
       Niyet: g.intent,
       'Son Aranma': formatDistanceToNow(new Date(g.lastSearched), { addSuffix: true, locale: tr }),
     }));
-    if (format === 'csv') exportToCSV(rows, `icerik-bosluklari-${format(new Date(), 'yyyy-MM-dd')}.csv`);
-    else exportToPDF(rows, 'İçerik Boşlukları', `icerik-bosluklari-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+    if (format === 'csv') exportToCSV(rows, `icerik-bosluklari-${formatDate(new Date(), 'yyyy-MM-dd')}.csv`);
+    else exportToPDF(rows, 'İçerik Boşlukları', `icerik-bosluklari-${formatDate(new Date(), 'yyyy-MM-dd')}.pdf`);
   };
 
   const handleExportSegments = (format: 'csv' | 'pdf') => {
@@ -577,8 +586,8 @@ export function AnalyticsDashboard() {
       Yüzde: s.percentage.toFixed(1) + '%',
       Öneriler: s.recommendations.join('; '),
     }));
-    if (format === 'csv') exportToCSV(rows, `kullanici-segmentleri-${format(new Date(), 'yyyy-MM-dd')}.csv`);
-    else exportToPDF(rows, 'Kullanıcı Segmentasyonu', `kullanici-segmentleri-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+    if (format === 'csv') exportToCSV(rows, `kullanici-segmentleri-${formatDate(new Date(), 'yyyy-MM-dd')}.csv`);
+    else exportToPDF(rows, 'Kullanıcı Segmentasyonu', `kullanici-segmentleri-${formatDate(new Date(), 'yyyy-MM-dd')}.pdf`);
   };
 
   return (
@@ -743,7 +752,7 @@ export function AnalyticsDashboard() {
                       </tr>
                     </thead>
                     <tbody>
-                      {roiData.slice(0, 50).map(r => (
+                      {(roiData || []).slice(0, 50).map(r => (
                         <tr key={`${r.type}-${r.id}`} className="border-b hover:bg-muted/50">
                           <td className="py-2 pr-3 max-w-[260px] truncate font-medium">{r.title}</td>
                           <td className="py-2 pr-3">

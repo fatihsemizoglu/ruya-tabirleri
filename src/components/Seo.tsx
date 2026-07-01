@@ -2,13 +2,13 @@ import { Helmet } from 'react-helmet-async';
 import { absoluteUrl, DEFAULT_DESCRIPTION, DEFAULT_OG_IMAGE, SITE_NAME } from '@/lib/site';
 
 export interface SeoProps {
-  title?: string;
-  description?: string;
-  path?: string;
-  image?: string;
-  type?: 'website' | 'article';
-  noindex?: boolean;
-  jsonLd?: Record<string, unknown> | Array<Record<string, unknown>>;
+  title?: string | undefined;
+  description?: string | undefined;
+  path?: string | undefined;
+  image?: string | undefined;
+  type?: 'website' | 'article' | undefined;
+  noindex?: boolean | undefined;
+  jsonLd?: Record<string, unknown> | Array<Record<string, unknown>> | undefined;
 }
 
 export function Seo({

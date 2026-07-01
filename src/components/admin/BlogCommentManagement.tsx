@@ -335,9 +335,11 @@ export function BlogCommentManagement() {
                         )}
                         <span className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300">
                           {comment.profiles?.avatar_url ? (
-                            <img 
-                              src={comment.profiles.avatar_url} 
-                              alt="" 
+                            <img
+                              src={comment.profiles.avatar_url}
+                              alt=""
+                              loading="lazy"
+                              decoding="async"
                               className="w-4 h-4 rounded-full object-cover"
                             />
                           ) : (

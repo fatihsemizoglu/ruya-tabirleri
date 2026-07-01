@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 interface ShortcutConfig {
@@ -13,7 +13,7 @@ interface ShortcutConfig {
 export function useKeyboardShortcuts() {
   const navigate = useNavigate();
 
-  const shortcuts: ShortcutConfig[] = [
+  const shortcuts = useMemo<ShortcutConfig[]>(() => [
     {
       key: 'k',
       ctrl: true,
@@ -65,7 +65,7 @@ export function useKeyboardShortcuts() {
       },
       description: 'Kapat',
     },
-  ];
+  ], [navigate]);
 
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
     // Ignore if user is typing in an input/textarea
@@ -91,8 +91,7 @@ export function useKeyboardShortcuts() {
         break;
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [navigate, shortcuts]);
+  }, [shortcuts]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);

@@ -63,7 +63,7 @@ export function FeaturedDreams() {
             like_count: d.like_count || 0,
             category: d.categories?.name || 'Genel',
             is_featured: d.is_featured ?? false,
-            gradient: gradients[index % gradients.length],
+            gradient: gradients[index % gradients.length] ?? gradients[0]!,
           }));
           setDreams(mapped);
         }

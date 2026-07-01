@@ -17,7 +17,7 @@ import {
   ChevronLeft,
   Mic2,
 } from 'lucide-react';
-import { format, parseISO, subDays } from 'date-fns';
+import { format, subDays } from 'date-fns';
 import { tr } from 'date-fns/locale';
 
 import { Layout } from '@/components/layout/Layout';
@@ -115,7 +115,7 @@ export default function DreamJournalVoice() {
       content: data.content,
       mood: data.mood,
       createdAt: Date.now(),
-      audioBlob: data.audioBlob,
+      ...(data.audioBlob ? { audioBlob: data.audioBlob } : {}),
     };
 
     if (!isOnline) {
@@ -135,7 +135,7 @@ export default function DreamJournalVoice() {
         content: data.content,
         mood: data.mood || null,
         dream_date: new Date().toISOString().split('T')[0],
-      });
+      } as never);
       if (error) throw error;
       notify.success('Rüya kaydedildi');
       setShowRecorder(false);
@@ -160,7 +160,7 @@ export default function DreamJournalVoice() {
           content: dream.content,
           mood: dream.mood || null,
           dream_date: new Date(dream.createdAt).toISOString().split('T')[0],
-        });
+        } as never);
         if (error) throw error;
       });
       notify.success(`${synced} rüya senkronize edildi`, {

@@ -45,7 +45,13 @@ const getAuthorDisplay = (comment: CommentWithProfile) => {
 
 const getAuthorInitial = (name: string) => {
   const parts = name.trim().split(/\s+/);
-  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  if (parts.length >= 2) {
+    const first = parts[0] ?? '';
+    const last = parts[parts.length - 1] ?? '';
+    const f = first[0] ?? '';
+    const l = last[0] ?? '';
+    return (f + l).toUpperCase();
+  }
   return name.charAt(0).toUpperCase();
 };
 
@@ -232,6 +238,7 @@ export function CommentList({ comments, dreamId, onRefresh }: CommentListProps) 
                       variant="ghost"
                       size="icon"
                       className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
+                      aria-label="Yorum menüsü"
                     >
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>

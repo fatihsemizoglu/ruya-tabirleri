@@ -115,6 +115,7 @@ export function useVoiceSearch(options: UseVoiceSearchOptions = {}): UseVoiceSea
       let interim = '';
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const result = e.results[i];
+        if (!result) continue;
         const text = result[0]?.transcript || '';
         if (result.isFinal) final += text;
         else interim += text;

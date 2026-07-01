@@ -466,7 +466,7 @@ export function MediaLibrary() {
                   >
                     <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted flex-shrink-0">
                       {file.type?.startsWith('image/') ? (
-                        <img src={file.url} alt={file.name} loading="lazy" className="w-full h-full object-cover" />
+                        <img src={file.url} alt={file.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
                           <ImageIcon className="h-5 w-5 text-muted-foreground" />

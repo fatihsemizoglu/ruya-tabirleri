@@ -443,14 +443,14 @@ export function UnifiedDashboard({ onNavigate }: UnifiedDashboardProps) {
         .limit(8);
       if (error) throw error;
       if (!logs || logs.length === 0) return [];
-      const userIds = [...new Set(logs.map(l => l.user_id))];
+      const userIds = logs.map(l => l.user_id).filter((id): id is string => Boolean(id));
       const { data: profiles } = await supabase
         .from('profiles')
         .select('user_id, username, full_name')
         .in('user_id', userIds);
       const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
       return logs.map(log => {
-        const profile = profileMap.get(log.user_id);
+        const profile = profileMap.get(log.user_id ?? '');
         return {
           id: log.id,
           action: log.action,

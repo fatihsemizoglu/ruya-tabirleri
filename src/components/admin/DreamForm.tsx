@@ -318,7 +318,7 @@ export function DreamForm({
                   <PremiumField>
                     <FormItem>
                       <FormLabel>Kategori</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value || undefined}>
+                      <Select onValueChange={field.onChange} value={field.value ?? ''}>
                         <FormControl>
                           <SelectTrigger className="h-11 rounded-xl">
                             <SelectValue placeholder="Seçin" />

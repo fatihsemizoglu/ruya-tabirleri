@@ -524,6 +524,7 @@ export function Header() {
             size="icon"
             onClick={toggleTheme}
             className="hidden md:flex rounded-lg h-9 w-9"
+            aria-label={isDark ? 'Aydınlık moda geç' : 'Karanlık moda geç'}
           >
             {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>

@@ -5,7 +5,7 @@ interface AutocompleteSuggestion {
   id: string;
   title: string;
   slug: string;
-  category_name?: string;
+  category_name?: string | undefined;
 }
 
 interface UseSearchAutocompleteOptions {

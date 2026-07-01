@@ -5,7 +5,6 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { HelmetProvider } from "react-helmet-async";
-import * as Sentry from "@sentry/react";
 import { AuthProvider } from "@/contexts/AuthProvider";
 import { OfflineIndicator } from "@/components/pwa/OfflineIndicator";
 import { MaintenanceModeGuard } from "@/components/layout/MaintenanceModeGuard";
@@ -45,6 +44,9 @@ const SubscriptionCancel = lazy(() => import("./pages/SubscriptionCancel"));
 const CommandPalette = lazy(() => import("@/components/ui/command-palette").then((mod) => ({ default: mod.CommandPalette })));
 const OnboardingTour = lazy(() => import("@/components/onboarding/OnboardingTour").then((mod) => ({ default: mod.OnboardingTour })));
 const InstallPrompt = lazy(() => import("@/components/pwa/InstallPrompt").then((mod) => ({ default: mod.InstallPrompt })));
+const SentryErrorBoundary = import.meta.env.VITE_SENTRY_DSN
+  ? lazy(() => import("@sentry/react").then((mod) => ({ default: mod.ErrorBoundary })))
+  : null;
 
 import { queryClient } from "@/lib/query/client";
 
@@ -151,10 +153,14 @@ const App = () => {
 
   if (!import.meta.env.VITE_SENTRY_DSN) return content;
 
+  if (!SentryErrorBoundary) return content;
+
   return (
-    <Sentry.ErrorBoundary fallback={ErrorFallback} showDialog>
-      {content}
-    </Sentry.ErrorBoundary>
+    <Suspense fallback={content}>
+      <SentryErrorBoundary fallback={ErrorFallback} showDialog>
+        {content}
+      </SentryErrorBoundary>
+    </Suspense>
   );
 };
 

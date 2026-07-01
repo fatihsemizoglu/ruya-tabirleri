@@ -185,7 +185,7 @@ export const t = (key: string, replacements?: Record<string, string | number>) =
 
   for (let i = 1; i < parts.length; i++) {
     if (value && typeof value === 'object') {
-      value = (value as Record<string, unknown>)[parts[i]];
+      value = (value as Record<string, unknown>)[parts[i] ?? ''];
     } else {
       value = undefined;
       break;
@@ -204,7 +204,7 @@ export const t = (key: string, replacements?: Record<string, string | number>) =
   if (typeof value === 'string') return value;
   // Try a nested lookup: if only the last segment is missing, return last segment
   // as a best-effort label (so e.g. "profile.unknownKey" -> "unknownKey" prettified)
-  const last = parts[parts.length - 1];
+  const last = parts[parts.length - 1] ?? key;
   return last
     .replace(/([A-Z])/g, ' $1')
     .replace(/^./, (c) => c.toUpperCase())

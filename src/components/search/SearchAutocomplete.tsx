@@ -11,8 +11,8 @@ interface AutocompleteSuggestion {
   id: string;
   title: string;
   slug: string;
-  category_name?: string;
-  view_count?: number;
+  category_name?: string | undefined;
+  view_count?: number | null;
 }
 
 interface SpeechRecognitionInstance {
@@ -222,8 +222,10 @@ export const SearchAutocomplete = forwardRef<HTMLInputElement, SearchAutocomplet
           let finalTranscript = '';
           let interimTranscript = '';
           for (let i = event.resultIndex; i < event.results.length; i++) {
-            const transcript = event.results[i][0].transcript;
-            if (event.results[i].isFinal) {
+            const r = event.results[i];
+            if (!r) continue;
+            const transcript = r[0]?.transcript ?? '';
+            if (r.isFinal) {
               finalTranscript += transcript;
             } else {
               interimTranscript += transcript;
@@ -292,10 +294,12 @@ export const SearchAutocomplete = forwardRef<HTMLInputElement, SearchAutocomplet
       } else if (e.key === 'Enter' && selectedIndex >= 0) {
         e.preventDefault();
         if (selectedIndex < suggestions.length) {
-          handleSelectSuggestion(suggestions[selectedIndex]);
+          const item = suggestions[selectedIndex];
+          if (item) handleSelectSuggestion(item);
         } else {
           const recentIndex = selectedIndex - suggestions.length;
-          handleSelectRecentSearch(recentSearches[recentIndex]);
+          const recent = recentSearches[recentIndex];
+          if (recent) handleSelectRecentSearch(recent);
         }
       } else if (e.key === 'Escape') {
         setShowDropdown(false);
@@ -338,6 +342,7 @@ export const SearchAutocomplete = forwardRef<HTMLInputElement, SearchAutocomplet
             type="submit"
             size="icon"
             className="absolute right-2 top-2 h-10 w-10 rounded-xl dream-gradient"
+            aria-label="Ara"
           >
             <Search className="h-5 w-5" />
           </Button>

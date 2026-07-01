@@ -28,7 +28,7 @@ function pickColor(key: string): string {
   const colors = Object.keys(iconColorMap);
   let hash = 0;
   for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
-  return colors[hash % colors.length];
+  return colors[hash % colors.length] ?? 'text-primary';
 }
 
 export function AdminStatsCards({ stats, className }: AdminStatsCardsProps) {

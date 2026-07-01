@@ -52,7 +52,7 @@ export function CommentForm({ dreamId, onSuccess }: CommentFormProps) {
           guest_email: v.data.email,
           content: v.data.content,
           is_approved: isApproved,
-        });
+        } as never);
         if (error) throw error;
       }
     },

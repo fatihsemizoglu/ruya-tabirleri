@@ -97,10 +97,12 @@ export function useLongPress<T extends HTMLElement = HTMLElement>({
 
     const onTouchStart = (e: TouchEvent) => {
       const t = e.touches[0];
+      if (!t) return;
       start(t.clientX, t.clientY, e);
     };
     const onTouchMove = (e: TouchEvent) => {
       const t = e.touches[0];
+      if (!t) return;
       move(t.clientX, t.clientY);
     };
     const onTouchEnd = (e: TouchEvent) => end(e);

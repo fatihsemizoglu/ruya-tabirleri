@@ -2,6 +2,38 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, handleOptions, jsonResponse } from "../_shared/cors.ts";
 import { requireCronSecret } from "../_shared/auth.ts";
 
+const PAGE_SIZE = 1000;
+
+type QueryBuilder = {
+  eq: (column: string, value: unknown) => QueryBuilder;
+  order: (column: string, options: { ascending: boolean }) => QueryBuilder;
+  range: (from: number, to: number) => Promise<{ data: unknown[] | null; error: Error | null }>;
+};
+
+type SupabaseLike = {
+  from: (table: string) => {
+    select: (columns: string) => QueryBuilder;
+  };
+};
+
+async function fetchAllRows<T>(
+  supabase: SupabaseLike,
+  table: string,
+  select: string,
+  configure: (query: QueryBuilder) => QueryBuilder,
+): Promise<T[]> {
+  const rows: T[] = [];
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const to = from + PAGE_SIZE - 1;
+    const query = supabase.from(table).select(select).order("updated_at", { ascending: false }).range(from, to);
+    const { data, error } = await configure(query).range(from, to);
+    if (error) throw error;
+    rows.push(...((data || []) as T[]));
+    if (!data || data.length < PAGE_SIZE) break;
+  }
+  return rows;
+}
+
 Deno.serve(async (req) => {
   const options = handleOptions(req);
   if (options) return options;
@@ -32,31 +64,12 @@ Deno.serve(async (req) => {
       { url: "/kullanim-kosullari", priority: "0.3", changefreq: "yearly" },
     ];
 
-    // Fetch published dreams
-    const { data: dreams } = await supabase
-      .from("dreams")
-      .select("slug, updated_at")
-      .eq("is_published", true)
-      .order("updated_at", { ascending: false });
-
-    // Fetch published blog posts
-    const { data: blogPosts } = await supabase
-      .from("blog_posts")
-      .select("slug, updated_at")
-      .eq("is_published", true)
-      .order("updated_at", { ascending: false });
-
-    // Fetch categories
-    const { data: categories } = await supabase
-      .from("categories")
-      .select("slug, updated_at")
-      .order("updated_at", { ascending: false });
-
-    // Fetch blog categories
-    const { data: blogCategories } = await supabase
-      .from("blog_categories")
-      .select("slug, updated_at")
-      .order("updated_at", { ascending: false });
+    const [dreams, blogPosts, categories, blogCategories] = await Promise.all([
+      fetchAllRows<{ slug: string; updated_at: string }>(supabase, "dreams", "slug, updated_at", (query) => query.eq("is_published", true)),
+      fetchAllRows<{ slug: string; updated_at: string }>(supabase, "blog_posts", "slug, updated_at", (query) => query.eq("is_published", true)),
+      fetchAllRows<{ slug: string; updated_at: string }>(supabase, "categories", "slug, updated_at", (query) => query),
+      fetchAllRows<{ slug: string; updated_at: string }>(supabase, "blog_categories", "slug, updated_at", (query) => query),
+    ]);
 
     // Build XML
     let xml = `<?xml version="1.0" encoding="UTF-8"?>

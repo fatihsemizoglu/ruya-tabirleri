@@ -20,11 +20,11 @@ const blogCategorySchema = z.object({
 export type BlogCategoryFormValues = z.infer<typeof blogCategorySchema>;
 
 interface BlogCategoryFormProps {
-  form?: UseFormReturn<BlogCategoryFormValues>;
-  defaultValues?: BlogCategoryFormValues;
+  form?: UseFormReturn<BlogCategoryFormValues> | undefined;
+  defaultValues?: BlogCategoryFormValues | undefined;
   onSubmit: (values: BlogCategoryFormValues) => void;
   onCancel: () => void;
-  isSubmitting?: boolean;
+  isSubmitting?: boolean | undefined;
 }
 
 function SectionLabel({ icon: Icon, label }: { icon: typeof Type; label: string }) {

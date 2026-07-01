@@ -90,12 +90,34 @@ const fallbackSearchDreams = async (searchTerm: string, limit = RESULTS_PER_PAGE
   ].filter(Boolean);
 
   const responses = await Promise.all(queryPromises);
-  const rows = responses.flatMap((response) => response.error ? [] : (response.data || []));
+  const rows = responses.flatMap((response) => (response && response.error ? [] : (response?.data || [])));
   const results = uniqueDreamResults(rows.map((dream) => ({ ...dream, rank: 1, total_count: rows.length })) as DreamSearchResult[])
     .sort((a, b) => (b.view_count || 0) - (a.view_count || 0))
     .slice(0, limit);
 
   return results.map((dream) => ({ ...dream, total_count: results.length }));
+};
+
+const searchDreamsPage = async (searchTerm: string, page: number): Promise<{ rows: DreamSearchResult[]; total: number }> => {
+  const offset = (page - 1) * RESULTS_PER_PAGE;
+  const [{ data, error }, { data: countData, error: countError }] = await Promise.all([
+    supabase.rpc('search_dreams', {
+      search_query: searchTerm,
+      limit_count: RESULTS_PER_PAGE,
+      offset_count: offset,
+    }),
+    supabase.rpc('count_search_dreams', { search_query: searchTerm }),
+  ]);
+
+  if (error || countError) {
+    const fallbackRows = await fallbackSearchDreams(searchTerm, RESULTS_PER_PAGE);
+    return { rows: fallbackRows, total: fallbackRows.length };
+  }
+
+  return {
+    rows: (data || []) as DreamSearchResult[],
+    total: typeof countData === 'number' ? countData : 0,
+  };
 };
 
 export default function Search() {
@@ -138,9 +160,11 @@ export default function Search() {
         .limit(1);
       if (error) throw error;
       if (!data || data.length === 0) return { maxViews: 1000, maxLikes: 500 };
+      const first = data[0];
+      if (!first) return { maxViews: 1000, maxLikes: 500 };
       return {
-        maxViews: Math.ceil((data[0].view_count || 1000) / 100) * 100,
-        maxLikes: Math.ceil((data[0].like_count || 500) / 50) * 50,
+        maxViews: Math.ceil((first.view_count || 1000) / 100) * 100,
+        maxLikes: Math.ceil((first.like_count || 500) / 50) * 50,
       };
     },
     staleTime: 30 * 60 * 1000,
@@ -184,14 +208,7 @@ export default function Search() {
       setIsLoading(true);
     }
     try {
-      let newResults = await fallbackSearchDreams(searchTerm, RESULTS_PER_PAGE * page);
-      const nextTotalCount = newResults.length;
-
-      if (append) {
-        newResults = newResults.slice((page - 1) * RESULTS_PER_PAGE, page * RESULTS_PER_PAGE);
-      } else {
-        newResults = newResults.slice(0, RESULTS_PER_PAGE);
-      }
+      const { rows: newResults, total: nextTotalCount } = await searchDreamsPage(searchTerm, page);
       
       if (append) {
         setResults(prev => [...prev, ...newResults]);
@@ -239,7 +256,7 @@ export default function Search() {
     const observer = new IntersectionObserver(
       (entries) => {
         const target = entries[0];
-        if (target.isIntersecting) {
+        if (target?.isIntersecting) {
           const nextPage = currentPage + 1;
           const totalPages = Math.ceil(totalCount / RESULTS_PER_PAGE);
           if (nextPage <= totalPages) {

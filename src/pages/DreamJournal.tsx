@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -151,6 +151,7 @@ export default function DreamJournal() {
       const interimParts: string[] = [];
       for (let index = 0; index < event.results.length; index += 1) {
         const result = event.results[index];
+        if (!result) continue;
         const text = result[0]?.transcript || '';
         if (result.isFinal) finalParts.push(text);
         else interimParts.push(text);
@@ -221,7 +222,7 @@ export default function DreamJournal() {
         user_id: user!.id,
         title: formData.title,
         content: formData.content,
-        dream_date: formData.dream_date,
+        ...(formData.dream_date ? { dream_date: formData.dream_date } : {}),
         mood: formData.mood || null,
         tags: formData.tags ? formData.tags.split(',').map(t => t.trim()) : [],
       };
@@ -229,7 +230,7 @@ export default function DreamJournal() {
       if (selectedEntry) {
         const { error } = await supabase
           .from('dream_journal')
-          .update(entryData)
+          .update(entryData as never)
           .eq('id', selectedEntry.id);
 
         if (error) throw error;
@@ -237,7 +238,7 @@ export default function DreamJournal() {
       } else {
         const { error } = await supabase
           .from('dream_journal')
-          .insert(entryData);
+          .insert(entryData as never);
 
         if (error) throw error;
         notify.success('Rüya eklendi');

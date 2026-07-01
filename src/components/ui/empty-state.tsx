@@ -21,14 +21,14 @@ import { cn } from '@/lib/utils';
 type PresetIcon = 'search' | 'file' | 'inbox' | 'frown' | 'warning' | 'sparkles' | 'moon' | 'book' | 'users' | 'folder' | 'mail' | 'bell';
 
 interface EmptyStateProps {
-  icon?: PresetIcon | LucideIcon;
+  icon?: PresetIcon | LucideIcon | undefined;
   title: string;
-  description?: string;
-  action?: { label: string; onClick: () => void };
-  secondaryAction?: { label: string; onClick: () => void };
-  variant?: 'default' | 'compact' | 'hero';
-  children?: ReactNode;
-  className?: string;
+  description?: string | undefined;
+  action?: { label: string; onClick: () => void } | undefined;
+  secondaryAction?: { label: string; onClick: () => void } | undefined;
+  variant?: 'default' | 'compact' | 'hero' | undefined;
+  children?: ReactNode | undefined;
+  className?: string | undefined;
 }
 
 const presetIcons: Record<PresetIcon, LucideIcon> = {

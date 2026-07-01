@@ -179,7 +179,7 @@ export function AdvancedFilters({
             </div>
             <Slider
               value={[filters.minViews]}
-              onValueChange={([value]) => onChange({ ...filters, minViews: value })}
+              onValueChange={([value]) => onChange({ ...filters, minViews: value ?? 0 })}
               max={maxViews}
               step={50}
               className="cursor-pointer"
@@ -202,7 +202,7 @@ export function AdvancedFilters({
             </div>
             <Slider
               value={[filters.minLikes]}
-              onValueChange={([value]) => onChange({ ...filters, minLikes: value })}
+              onValueChange={([value]) => onChange({ ...filters, minLikes: value ?? 0 })}
               max={maxLikes}
               step={10}
               className="cursor-pointer"

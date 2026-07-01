@@ -473,7 +473,7 @@ export function BlogForm({
               render={({ field }) => (
                 <PremiumField>
                   <FormItem>
-                    <Select onValueChange={field.onChange} value={field.value || undefined}>
+                    <Select onValueChange={field.onChange} value={field.value ?? ''}>
                       <FormControl>
                         <SelectTrigger className="h-11 rounded-xl">
                           <SelectValue placeholder="Kategori seçin" />

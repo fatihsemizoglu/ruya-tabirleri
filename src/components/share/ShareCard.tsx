@@ -123,12 +123,12 @@ export function ShareCard({ title, description, onFeedback, className = '', chil
   ];
 
   const quickActions: QuickActionItem[] = [
-    ...(navigator.share ? [{
+    {
       key: 'share',
       icon: Share2,
       color: 'from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600 hover:shadow-[0_6px_20px_rgba(139,92,246,0.4)]',
       onClick: handleNativeShare,
-    }] : []),
+    },
     {
       key: copied ? 'copied' : 'copy',
       icon: copied ? Check : LinkIcon,

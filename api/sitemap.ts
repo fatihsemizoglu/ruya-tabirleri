@@ -17,14 +17,27 @@ const SUPABASE_ANON_KEY =
   '';
 const CRON_SECRET = process.env.CRON_SECRET || '';
 
+function getMissingConfig() {
+  const missing: string[] = [];
+  if (!SUPABASE_URL) missing.push('SUPABASE_URL');
+  if (!SUPABASE_ANON_KEY) missing.push('SUPABASE_ANON_KEY');
+  if (!CRON_SECRET) missing.push('CRON_SECRET');
+  return missing;
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
     res.setHeader('Allow', 'GET');
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !CRON_SECRET) {
-    return res.status(500).json({ error: 'Server configuration incomplete' });
+  const missingConfig = getMissingConfig();
+  if (missingConfig.length > 0) {
+    console.error('Sitemap configuration incomplete:', missingConfig.join(', '));
+    return res.status(500).json({
+      error: 'Server configuration incomplete',
+      missing: missingConfig,
+    });
   }
 
   try {
