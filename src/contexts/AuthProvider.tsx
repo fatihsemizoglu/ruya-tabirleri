@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, ReactNode } from 'react';
 import * as Sentry from '@sentry/react';
 import { supabase } from '@/integrations/supabase/client';
+import { captureError } from '@/lib/logger';
 import type { Profile, AppRole } from '@/types/database';
 import { AuthContext, type AuthContextType } from './auth-context';
 
@@ -41,7 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (error) throw error;
       setProfile(data);
     } catch (error) {
-      console.error('Error fetching profile:', error);
+      captureError(error, { tags: { feature: 'auth', action: 'fetch-profile' } });
     }
   }, []);
 
@@ -56,7 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const roles = (data ?? []).map((r) => r.role as AppRole);
       setRoles(roles);
     } catch (error) {
-      console.error('Error fetching roles:', error);
+      captureError(error, { tags: { feature: 'auth', action: 'fetch-roles' } });
     } finally {
       setIsLoading(false);
     }

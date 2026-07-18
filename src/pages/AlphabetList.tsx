@@ -16,6 +16,7 @@ import {
   DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
 import { supabase } from '@/integrations/supabase/client';
+import { captureError } from '@/lib/logger';
 import type { Dream, Category } from '@/types/database';
 
 const alphabet = 'ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ'.split('');
@@ -90,7 +91,7 @@ export default function AlphabetList() {
         setDreams((data as Dream[]) || []);
         setCurrentPage(1);
       } catch (error) {
-        console.error('Error fetching dreams:', error);
+        captureError(error, { tags: { feature: 'alphabet-list' } });
       } finally {
         setIsLoading(false);
       }

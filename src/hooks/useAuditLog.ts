@@ -1,3 +1,4 @@
+import { captureError } from '@/lib/logger';
 import { supabase } from '@/integrations/supabase/client';
 
 type EntityType = 'dream' | 'category' | 'user' | 'comment' | 'blog_post' | 'blog_category' | 'setting' | 'message';
@@ -23,10 +24,10 @@ export function useAuditLog() {
       });
 
       if (error) {
-        console.error('Audit log error:', error);
+        captureError(error, { tags: { feature: 'audit-log' }, extra: { context: 'log-action' } });
       }
     } catch (err) {
-      console.error('Failed to log action:', err);
+      captureError(err, { tags: { feature: 'audit-log' }, extra: { context: 'log-action-catch' } });
     }
   };
 

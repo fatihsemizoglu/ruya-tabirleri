@@ -13,6 +13,7 @@ import {
   CarouselNext,
 } from '@/components/ui/carousel';
 import { supabase } from '@/integrations/supabase/client';
+import { captureError } from '@/lib/logger';
 import { BlogPost } from '@/types/blog';
 import { ResponsiveImage } from '@/components/ui/ResponsiveImage';
 
@@ -50,7 +51,7 @@ export function BlogSection() {
         .limit(8);
 
       if (postsError) {
-        console.error('Error fetching blog posts:', postsError);
+        captureError(postsError, { tags: { feature: 'blog-section' }, extra: { context: 'fetch-posts' } });
         setIsLoading(false);
         return;
       }
@@ -84,7 +85,7 @@ export function BlogSection() {
 
       setPosts(enrichedPosts);
     } catch (err) {
-      console.error('Error in fetchPosts:', err);
+      captureError(err, { tags: { feature: 'blog-section' }, extra: { context: 'fetch-posts-catch' } });
     } finally {
       setIsLoading(false);
     }

@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
+import { captureError } from '@/lib/logger';
 import { useToast } from '@/hooks/use-toast';
 
 interface AutocompleteSuggestion {
@@ -142,7 +143,7 @@ export const SearchAutocomplete = forwardRef<HTMLInputElement, SearchAutocomplet
           })));
         }
       } catch (error) {
-        console.error('Autocomplete error:', error);
+        captureError(error, { tags: { feature: 'search-autocomplete' } });
         setSuggestions([]);
       } finally {
         setIsLoading(false);

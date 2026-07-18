@@ -15,6 +15,7 @@ import { AdvancedFilters, type AdvancedFilterState } from '@/components/search/A
 import type { DreamSearchResult, Category } from '@/types/database';
 import { Seo } from '@/components/Seo';
 import { useRecentSearches } from '@/hooks/useRecentSearches';
+import { captureError } from '@/lib/logger';
 import { useQuery } from '@tanstack/react-query';
 
 type ViewMode = 'grid' | 'list';
@@ -60,7 +61,7 @@ const fallbackSearchDreams = async (searchTerm: string, limit = RESULTS_PER_PAGE
 
   if (!safeTerm) return [];
 
-  const selectFields = 'id, title, slug, content, category_id, keywords, view_count, like_count';
+  const selectFields = 'id, title, slug, content, category_id, keywords, view_count, like_count, is_featured, created_at';
   const titleQueries = [safeTerm, normalizedTerm]
     .filter(Boolean)
     .flatMap((term) => [term, `Rüyada ${term}`, `Ruyada ${term}`]);
@@ -221,7 +222,7 @@ export default function Search() {
         addRecentSearch(searchTerm);
       }
     } catch (error) {
-      console.error('Search error:', error);
+      captureError(error, { tags: { feature: 'search', action: append ? 'load-more' : 'fetch-page' }, extra: { searchTerm, page } });
       if (!append) {
         setResults([]);
         setTotalCount(0);
@@ -245,7 +246,7 @@ export default function Search() {
         setRelatedDreams(data.map(d => ({ ...d, rank: 0 })) as DreamSearchResult[]);
       }
     } catch (error) {
-      console.error('Related dreams error:', error);
+      captureError(error, { tags: { feature: 'search', action: 'fetch-related' }, extra: { searchTerm: _searchTerm } });
     }
   }, []);
 
@@ -294,8 +295,7 @@ export default function Search() {
 
     // Featured filter
     if (advancedFilters.showFeaturedOnly) {
-      // Note: search_dreams doesn't return is_featured, so we'd need to fetch separately
-      // For now, we'll filter client-side if we have the data
+      filtered = filtered.filter(dream => dream.is_featured === true);
     }
 
     // Category filter
@@ -322,7 +322,7 @@ export default function Search() {
         filtered.sort((a, b) => (b.like_count || 0) - (a.like_count || 0));
         break;
       case 'newest':
-        // Keep original order for newest as the RPC doesn't return created_at
+        filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
         break;
       case 'relevance':
       default:

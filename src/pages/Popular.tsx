@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
+import { captureError } from '@/lib/logger';
 import type { Dream, Category } from '@/types/database';
 import { Seo } from '@/components/Seo';
 
@@ -162,7 +163,7 @@ export default function Popular() {
       setFeatured((featuredData as Dream[]) || []);
       setHasMoreFeatured((featuredData?.length || 0) === ITEMS_PER_PAGE);
     } catch (error) {
-      console.error('Error fetching dreams:', error);
+      captureError(error, { tags: { feature: 'popular' }, extra: { context: 'fetch-dreams' } });
     } finally {
       setIsLoading(false);
     }
@@ -224,7 +225,7 @@ export default function Popular() {
         }
       }
     } catch (error) {
-      console.error('Error loading more dreams:', error);
+      captureError(error, { tags: { feature: 'popular' }, extra: { context: 'load-more' } });
     } finally {
       setLoadingMore(false);
     }

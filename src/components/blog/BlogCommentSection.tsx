@@ -15,6 +15,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
+import { captureError } from '@/lib/logger';
 import { getFirstValidationMessage, guestCommentSchema, memberCommentSchema } from '@/lib/validation/forms';
 
 interface BlogCommentSectionProps {
@@ -69,7 +70,7 @@ export function BlogCommentSection({ postId }: BlogCommentSectionProps) {
       .order('created_at', { ascending: true });
 
     if (error) {
-      console.error('Error fetching comments:', error);
+      captureError(error, { tags: { feature: 'blog-comment-section' } });
       setIsLoading(false);
       return;
     }

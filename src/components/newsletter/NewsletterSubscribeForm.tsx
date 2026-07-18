@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Mail, Loader2, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { captureError } from '@/lib/logger';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { useQuery } from '@tanstack/react-query';
 import { Badge } from '@/components/ui/badge';
@@ -67,7 +68,7 @@ export function NewsletterSubscribeForm({ variant = 'default', className = '' }:
         throw new Error(data.error || 'Bir hata oluştu');
       }
     } catch (error: unknown) {
-      console.error('Subscribe error:', error);
+      captureError(error, { tags: { feature: 'newsletter-subscribe' } });
       toast.error(error instanceof Error ? error.message : 'Abonelik sırasında bir hata oluştu');
     } finally {
       setIsLoading(false);

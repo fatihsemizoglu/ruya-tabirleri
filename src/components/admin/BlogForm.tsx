@@ -16,6 +16,7 @@ import { generateSlug } from '@/lib/slug';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { captureError } from '@/lib/logger';
 import { toast } from 'sonner';
 
 const blogSchema = z.object({
@@ -317,7 +318,7 @@ export function BlogForm({
       toast.success('Görsel yüklendi');
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Bilinmeyen hata';
-      console.error('Yükleme hatası:', err);
+      captureError(err, { tags: { feature: 'blog-form' }, extra: { context: 'image-upload' } });
       toast.error(`Yükleme başarısız: ${errorMessage}. Supabase'de "${BLOG_IMAGE_BUCKET}" bucket'ı oluşturulmuş olmalı.`);
     } finally {
       setUploading(false);

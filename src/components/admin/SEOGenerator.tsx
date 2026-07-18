@@ -1,8 +1,9 @@
  import { useState } from 'react';
  import { Button } from '@/components/ui/button';
  import { Sparkles, Loader2 } from 'lucide-react';
- import { supabase } from '@/integrations/supabase/client';
- import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { captureError } from '@/lib/logger';
+import { toast } from 'sonner';
  
  interface SEOGeneratorProps {
    title: string;
@@ -38,7 +39,7 @@
        onGenerated(data.meta_title, data.meta_description);
        toast.success('SEO meta verileri başarıyla oluşturuldu');
      } catch (error) {
-       console.error('SEO generation error:', error);
+       captureError(error, { tags: { feature: 'seo-generator' } });
        toast.error(error instanceof Error ? error.message : 'SEO oluşturulurken hata oluştu');
      } finally {
        setIsGenerating(false);

@@ -3,6 +3,7 @@ import { Upload, X, Loader2, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { captureError } from '@/lib/logger';
 import { toast } from 'sonner';
 
 interface ImageUploadProps {
@@ -60,7 +61,7 @@ export function ImageUpload({
       onChange(publicUrl);
       toast.success('Görsel yüklendi');
     } catch (error: unknown) {
-      console.error('Upload error:', error);
+      captureError(error, { tags: { feature: 'image-upload' }, extra: { context: 'upload' } });
       toast.error(error instanceof Error ? error.message : 'Görsel yüklenirken bir hata oluştu');
     } finally {
       setIsUploading(false);
@@ -105,7 +106,7 @@ export function ImageUpload({
         try {
           await supabase.storage.from(bucket).remove([filePath]);
         } catch (error) {
-          console.error('Delete error:', error);
+          captureError(error, { tags: { feature: 'image-upload' }, extra: { context: 'delete' } });
         }
       }
     }

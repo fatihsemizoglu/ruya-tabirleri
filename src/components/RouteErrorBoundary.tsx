@@ -1,5 +1,5 @@
 import { Component, type ReactNode, type ErrorInfo } from 'react';
-import * as Sentry from '@sentry/react';
+import { captureError } from '@/lib/logger';
 
 interface Props {
   children: ReactNode;
@@ -30,14 +30,10 @@ export class RouteErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error(`[RouteErrorBoundary${this.props.label ? `:${this.props.label}` : ''}]`, error, errorInfo);
-    // Report to Sentry if available
-    if (import.meta.env.VITE_SENTRY_DSN) {
-      Sentry.captureException(error, {
-        contexts: { react: { componentStack: errorInfo.componentStack || '' } },
-        tags: { boundary: this.props.label || 'route' },
-      });
-    }
+    captureError(error, {
+      tags: { boundary: this.props.label || 'route', feature: 'route-boundary' },
+      extra: { componentStack: errorInfo.componentStack || '' },
+    });
   }
 
   private handleReset = () => {

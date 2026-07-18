@@ -21,6 +21,7 @@ import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { captureError } from '@/lib/logger';
 import type { BlogPost as BlogPostData } from '@/types/blog';
 import { BlogCard } from '@/components/blog/BlogCard';
 import { BlogCommentSection } from '@/components/blog/BlogCommentSection';
@@ -224,7 +225,7 @@ export default function BlogPost() {
       }
     } catch (err) {
       if (isMountedRef.current) {
-        console.error('fetchPost error:', err);
+        captureError(err, { tags: { feature: 'blog-post' } });
         navigate('/blog');
       }
     } finally {

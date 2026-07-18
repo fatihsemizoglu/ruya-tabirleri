@@ -109,6 +109,9 @@
   body {
     font-family: 'Inter', 'Plus Jakarta Sans', system-ui, sans-serif;
     font-size: var(--app-font-size, 16px);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   ::selection {

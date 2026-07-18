@@ -5,6 +5,7 @@ import { ArrowRight, Eye, Star, Moon, Flame } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
+import { captureError } from '@/lib/logger';
 import { supabase } from '@/integrations/supabase/client';
 
 interface PopularDream {
@@ -68,7 +69,7 @@ export function FeaturedDreams() {
           setDreams(mapped);
         }
       } catch (err) {
-        console.error('Error fetching popular dreams:', err);
+        captureError(err, { tags: { feature: 'featured-dreams' } });
       } finally {
         setLoading(false);
       }

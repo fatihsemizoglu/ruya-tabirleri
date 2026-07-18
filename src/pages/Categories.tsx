@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { supabase } from '@/integrations/supabase/client';
+import { captureError } from '@/lib/logger';
 import type { Category } from '@/types/database';
 import { Seo } from '@/components/Seo';
 
@@ -130,7 +131,7 @@ export default function Categories() {
 
       setCategories(categoriesWithStats);
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      captureError(error, { tags: { feature: 'categories-page' } });
     } finally {
       setIsLoading(false);
     }

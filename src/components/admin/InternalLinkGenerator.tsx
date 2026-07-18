@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
+import { captureError } from '@/lib/logger';
 import { toast } from 'sonner';
 
 interface LinkSuggestion {
@@ -65,7 +66,7 @@ export function InternalLinkGenerator({
         setHasGenerated(true);
       }
     } catch (error) {
-      console.error('Error generating links:', error);
+      captureError(error, { tags: { feature: 'internal-link-generator' } });
       toast.error('Bağlantı önerileri oluşturulurken hata oluştu');
     } finally {
       setIsLoading(false);

@@ -5,12 +5,13 @@ import { Moon, ArrowLeft, Home, Search, Compass } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Layout } from "@/components/layout/Layout";
 import { PremiumBackground, PremiumBadge, GradientText } from "@/components/layout/PremiumBackground";
+import { captureError } from '@/lib/logger';
 
 const NotFound = () => {
   const location = useLocation();
 
   useEffect(() => {
-    console.error("404 Error: User attempted to access non-existent route:", location.pathname);
+    captureError(new Error('404: ' + location.pathname), { tags: { feature: 'not-found' }, extra: { path: location.pathname } });
   }, [location.pathname]);
 
   return (

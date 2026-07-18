@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { captureError } from '@/lib/logger';
 import { supabase } from '@/integrations/supabase/client';
 
 interface RawHistoryRow {
@@ -125,7 +126,7 @@ export default function History() {
 
       setHistory(uniqueHistory);
     } catch (error) {
-      console.error('Error fetching history:', error);
+      captureError(error, { tags: { feature: 'history-page' } });
     } finally {
       setIsLoading(false);
     }

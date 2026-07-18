@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { getErrorMessage, notify } from '@/lib/notify';
+import { captureError } from '@/lib/logger';
 import type { DreamJournalEntry, DreamMood } from '@/types/database';
 import { getPendingJournalEntries, savePendingJournalEntry, syncPendingJournalEntries } from '@/lib/voiceDreamDB';
 
@@ -205,7 +206,7 @@ export default function DreamJournal() {
       if (error) throw error;
       setEntries((data as DreamJournalEntry[]) || []);
     } catch (error) {
-      console.error('Error fetching entries:', error);
+      captureError(error, { tags: { feature: 'dream-journal' } });
     } finally {
       setIsLoading(false);
     }

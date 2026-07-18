@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { notify } from '@/lib/notify';
 import { t } from '@/constants/translations';
+import { captureError } from '@/lib/logger';
 import type { Dream, Favorite } from '@/types/database';
 
 interface ProfileFavoritesTabProps {
@@ -29,7 +30,7 @@ export function ProfileFavoritesTab({ userId, locale }: ProfileFavoritesTabProps
       if (error) throw error;
       setFavorites((data as (Favorite & { dreams: Dream })[]) || []);
     } catch (error) {
-      console.error('Error fetching favorites:', error);
+      captureError(error, { tags: { feature: 'profile-favorites' } });
     } finally {
       setIsLoading(false);
     }

@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Lightbulb, Tags, Link2, Plus, Check } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { captureError } from '@/lib/logger';
 import { toast } from 'sonner';
 
 interface KeywordSuggestion {
@@ -60,7 +61,7 @@ export function ContentSuggestionsGenerator({
         toast.success('Anahtar kelime önerileri oluşturuldu');
       }
     } catch (error) {
-      console.error('Keyword generation error:', error);
+      captureError(error, { tags: { feature: 'content-suggestions' }, extra: { context: 'keyword-generation' } });
       toast.error('Anahtar kelime önerileri oluşturulamadı');
     } finally {
       setIsLoadingKeywords(false);
@@ -87,7 +88,7 @@ export function ContentSuggestionsGenerator({
         toast.success('İlişkili içerik önerileri oluşturuldu');
       }
     } catch (error) {
-      console.error('Related suggestions error:', error);
+      captureError(error, { tags: { feature: 'content-suggestions' }, extra: { context: 'related-suggestions' } });
       toast.error('İlişkili içerik önerileri oluşturulamadı');
     } finally {
       setIsLoadingRelated(false);

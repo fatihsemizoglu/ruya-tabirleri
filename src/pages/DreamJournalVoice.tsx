@@ -37,6 +37,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { getErrorMessage, notify } from '@/lib/notify';
+import { captureError } from '@/lib/logger';
 import {
   savePendingDream,
   getPendingDreams,
@@ -85,7 +86,7 @@ export default function DreamJournalVoice() {
         }))
       );
     } catch (err) {
-      console.error(err);
+      captureError(err, { tags: { feature: 'dream-journal-voice' } });
     }
   }, [user]);
 

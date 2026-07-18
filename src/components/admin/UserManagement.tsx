@@ -44,6 +44,7 @@ import { SkeletonAdminRow } from '@/components/ui/skeleton-card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { AdminPageHeader } from './common/AdminPageHeader';
 import { AdminStatsCards } from './common/AdminStatsCards';
+import { captureError } from '@/lib/logger';
 import { useAuth } from '@/hooks/useAuth';
 
 interface UserWithRole {
@@ -98,7 +99,7 @@ export function UserManagement() {
 
       setUsers(usersWithRoles as unknown as UserWithRole[]);
     } catch (error) {
-      console.error('Error fetching users:', error);
+      captureError(error, { tags: { feature: 'user-management' }, extra: { context: 'fetch-users' } });
       toast.error('Kullanıcılar yüklenirken hata oluştu');
     } finally {
       setLoading(false);
@@ -171,7 +172,7 @@ export function UserManagement() {
       toast.success('Kullanıcı rolü güncellendi');
       setEditingRole(false);
     } catch (error) {
-      console.error('Error updating role:', error);
+      captureError(error, { tags: { feature: 'user-management' }, extra: { context: 'update-role' } });
       toast.error('Rol güncellenirken hata oluştu');
     }
   };

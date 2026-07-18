@@ -9,6 +9,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
+import { captureError } from '@/lib/logger';
 import { supabase } from '@/integrations/supabase/client';
 
 const themeGradients = [
@@ -67,7 +68,7 @@ export function CategoriesSection() {
           setCategories(categoriesWithCounts);
         }
       } catch (error) {
-        console.error('Error fetching categories:', error);
+        captureError(error, { tags: { feature: 'categories-section' } });
       } finally {
         setLoading(false);
       }

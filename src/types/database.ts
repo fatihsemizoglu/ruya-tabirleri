@@ -105,6 +105,8 @@ export interface DreamSearchResult {
   keywords?: string[] | null;
   view_count: number;
   like_count: number;
+  is_featured: boolean;
+  created_at: string;
   rank: number;
   total_count?: number;
 }

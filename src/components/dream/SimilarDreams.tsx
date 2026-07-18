@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { captureError } from '@/lib/logger';
 import type { Dream } from '@/types/database';
 
 const normalizeText = (value: string) =>
@@ -113,7 +114,7 @@ export function SimilarDreams({ currentDream, categoryId, keywords }: SimilarDre
 
       setSimilarDreams(sorted);
     } catch (error) {
-      console.error('Error fetching similar dreams:', error);
+      captureError(error, { tags: { feature: 'similar-dreams' } });
     } finally {
       setIsLoading(false);
     }

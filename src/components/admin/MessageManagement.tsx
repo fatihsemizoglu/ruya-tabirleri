@@ -33,6 +33,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
+import { captureError } from '@/lib/logger';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { SkeletonAdminRow } from '@/components/ui/skeleton-card';
@@ -73,7 +74,7 @@ export function MessageManagement() {
       if (error) throw error;
       setMessages((data || []) as unknown as ContactMessage[]);
     } catch (error) {
-      console.error('Error fetching messages:', error);
+      captureError(error, { tags: { feature: 'message-management' }, extra: { context: 'fetch-messages' } });
       toast.error('Mesajlar yüklenirken hata oluştu');
     } finally {
       setLoading(false);
@@ -95,7 +96,7 @@ export function MessageManagement() {
       
       toast.success(message.is_read ? 'Okunmadı olarak işaretlendi' : 'Okundu olarak işaretlendi');
     } catch (error) {
-      console.error('Error updating message:', error);
+      captureError(error, { tags: { feature: 'message-management' }, extra: { context: 'update-message' } });
       toast.error('İşlem başarısız');
     }
   };
@@ -115,7 +116,7 @@ export function MessageManagement() {
       setMessageToDelete(null);
       toast.success('Mesaj silindi');
     } catch (error) {
-      console.error('Error deleting message:', error);
+      captureError(error, { tags: { feature: 'message-management' }, extra: { context: 'delete-message' } });
       toast.error('Silme işlemi başarısız');
     }
   };
@@ -134,7 +135,7 @@ export function MessageManagement() {
           m.id === message.id ? { ...m, is_read: true } : m
         ));
       } catch (error) {
-        console.error('Error marking as read:', error);
+        captureError(error, { tags: { feature: 'message-management' }, extra: { context: 'mark-as-read' } });
       }
     }
   };

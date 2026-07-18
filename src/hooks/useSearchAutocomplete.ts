@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { captureError } from '@/lib/logger';
 import { supabase } from '@/integrations/supabase/client';
 
 interface AutocompleteSuggestion {
@@ -85,7 +86,7 @@ export function useSearchAutocomplete(options: UseSearchAutocompleteOptions = {}
         })));
       }
     } catch (error) {
-      console.error('Autocomplete error:', error);
+      captureError(error, { tags: { feature: 'search-autocomplete' } });
       setSuggestions([]);
     } finally {
       setIsLoading(false);

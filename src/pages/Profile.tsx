@@ -17,6 +17,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import type { Json } from '@/integrations/supabase/types';
 import { getErrorMessage, notify } from '@/lib/notify';
+import { captureError } from '@/lib/logger';
 import type { Dream, DreamJournalEntry, DreamMood, Comment } from '@/types/database';
 import { ProfileFavoritesTab } from '@/components/profile/ProfileFavoritesTab';
 import { ProfileHistoryTab } from '@/components/profile/ProfileHistoryTab';
@@ -184,7 +185,7 @@ export default function Profile() {
         recentActivity: recentActivity.slice(0, 5),
       });
     } catch (error) {
-      console.error('Error fetching stats:', error);
+      captureError(error, { tags: { feature: 'profile' }, extra: { context: 'fetch-stats' } });
     } finally {
       setStatsLoading(false);
     }
@@ -202,7 +203,7 @@ export default function Profile() {
       if (error) throw error;
       setEntries((data as DreamJournalEntry[]) || []);
     } catch (error) {
-      console.error('Error fetching entries:', error);
+      captureError(error, { tags: { feature: 'profile' }, extra: { context: 'fetch-entries' } });
     } finally {
       setEntriesLoading(false);
     }

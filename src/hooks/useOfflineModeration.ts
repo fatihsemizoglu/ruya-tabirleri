@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { captureError } from '@/lib/logger';
 import { useToast } from '@/hooks/use-toast';
 
 interface OfflineAction {
@@ -64,7 +65,7 @@ export function useOfflineModeration() {
       });
       setPendingActions(prev => [...prev, action]);
     } catch (error) {
-      console.error('Failed to save offline action:', error);
+      captureError(error, { tags: { feature: 'offline-moderation' }, extra: { context: 'save-action' } });
     }
   }, []);
 
@@ -80,7 +81,7 @@ export function useOfflineModeration() {
       });
       setPendingActions(prev => prev.filter(a => a.id !== id));
     } catch (error) {
-      console.error('Failed to remove offline action:', error);
+      captureError(error, { tags: { feature: 'offline-moderation' }, extra: { context: 'remove-action' } });
     }
   }, []);
 
@@ -168,11 +169,11 @@ export function useOfflineModeration() {
           await removeAction(action.id);
           successCount++;
         } else {
-          console.error('Sync failed for action:', action.id, error);
+          captureError(error, { tags: { feature: 'offline-moderation' }, extra: { context: 'sync-failed', actionId: action.id } });
           failCount++;
         }
       } catch (error) {
-        console.error('Sync error:', error);
+        captureError(error, { tags: { feature: 'offline-moderation' }, extra: { context: 'sync-error' } });
         failCount++;
       }
     }

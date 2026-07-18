@@ -12,6 +12,7 @@ import {
   Facebook, Instagram, Twitter, Youtube, Linkedin,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { captureError } from '@/lib/logger';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { invalidateSiteSettingsCache } from '@/hooks/useSiteSettings';
 
@@ -88,7 +89,7 @@ export function SiteSettings() {
         setSettings(loaded);
       }
     } catch (error) {
-      console.error('Error fetching settings:', error);
+      captureError(error, { tags: { feature: 'site-settings' }, extra: { context: 'fetch-settings' } });
     } finally {
       setLoading(false);
     }
@@ -109,7 +110,7 @@ export function SiteSettings() {
       setHasChanges(false);
       toast.success('Ayarlar kaydedildi');
     } catch (error) {
-      console.error('Error saving settings:', error);
+      captureError(error, { tags: { feature: 'site-settings' }, extra: { context: 'save-settings' } });
       toast.error('Ayarlar kaydedilirken hata oluştu');
     } finally {
       setSaving(false);

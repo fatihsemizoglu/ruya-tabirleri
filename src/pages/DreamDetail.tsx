@@ -7,6 +7,7 @@ import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { captureError } from '@/lib/logger';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { toast } from 'sonner';
 import { SimilarDreams } from '@/components/dream/SimilarDreams';
@@ -265,10 +266,10 @@ export default function DreamDetail() {
             .maybeSingle(),
         ]);
 
-        if (viewResult.error) console.error('Error incrementing view count:', viewResult.error);
-        if (historyResult.error) console.error('Error saving view history:', historyResult.error);
-        if (favResult.error) console.error('Error fetching favorite state:', favResult.error);
-        if (likeResult.error) console.error('Error fetching like state:', likeResult.error);
+        if (viewResult.error) captureError(viewResult.error, { tags: { feature: 'dream-detail' }, extra: { context: 'increment-view' } });
+        if (historyResult.error) captureError(historyResult.error, { tags: { feature: 'dream-detail' }, extra: { context: 'save-history' } });
+        if (favResult.error) captureError(favResult.error, { tags: { feature: 'dream-detail' }, extra: { context: 'fetch-favorite' } });
+        if (likeResult.error) captureError(likeResult.error, { tags: { feature: 'dream-detail' }, extra: { context: 'fetch-like' } });
 
         if (slug !== latestSlugRef.current) return;
         if (!viewResult.error) {
@@ -278,7 +279,7 @@ export default function DreamDetail() {
         setIsLiked(!!likeResult.data);
       } else {
         const { error: viewError } = await viewPromise;
-        if (viewError) console.error('Error incrementing view count:', viewError);
+        if (viewError) captureError(viewError, { tags: { feature: 'dream-detail' }, extra: { context: 'increment-view-guest' } });
         if (slug !== latestSlugRef.current) return;
         if (!viewError) {
           setDream((prev) => (prev ? { ...prev, view_count: (prev.view_count || 0) + 1 } : prev));
@@ -286,7 +287,7 @@ export default function DreamDetail() {
       }
 
     } catch (error) {
-      console.error('Error fetching dream:', error);
+      captureError(error, { tags: { feature: 'dream-detail' }, extra: { context: 'fetch-dream' } });
     } finally {
       setIsLoading(false);
     }

@@ -34,11 +34,17 @@ supabase/.temp/
 # IDE / tooling
 .kiro/
 
-# Audit reports and screenshots
-*DENETIM_RAPORU*.md
+# Legacy audit/analysis reports and dev screenshots.
+# The current living audit (DENETIM_RAPORU_YYYY-MM.md) and setup guides stay tracked.
+/HATA_*.md
+/FRONTEND_*.md
+/OZET_RAPOR.md
+/PROJECT_ANALYSIS_REPORT.md
+/REFACTORING_GUIDE.md
+/SUPABASE_BACKEND_ANALIZI.md
 screenshot-*.png
 search-results-screenshot.png
-vercel-homepage-check.png
+vercel-*.png
 
 # Playwright MCP browser cache
 .playwright-mcp/

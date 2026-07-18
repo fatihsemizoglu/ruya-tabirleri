@@ -38,6 +38,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { captureError } from '@/lib/logger';
 import type { Favorite, Dream, Category } from '@/types/database';
 
 type SortOption = 'newest' | 'oldest' | 'views' | 'likes' | 'title';
@@ -72,7 +73,7 @@ export default function Favorites() {
       if (error) throw error;
       setFavorites((data as (Favorite & { dreams: Dream & { categories?: Category } })[]) || []);
     } catch (error) {
-      console.error('Error fetching favorites:', error);
+      captureError(error, { tags: { feature: 'favorites-page' } });
     } finally {
       setIsLoading(false);
     }

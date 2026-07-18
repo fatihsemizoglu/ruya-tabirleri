@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { captureError } from '@/lib/logger';
 import { supabase } from '@/integrations/supabase/client';
 
 export function ContactForm() {
@@ -42,7 +43,7 @@ export function ContactForm() {
 
       setFormData({ name: '', email: '', subject: '', message: '' });
     } catch (error) {
-      console.error('Error sending message:', error);
+      captureError(error, { tags: { feature: 'contact-form' } });
       toast({
         title: 'Hata',
         description: 'Mesaj gönderilirken bir hata oluştu. Lütfen tekrar deneyin.',

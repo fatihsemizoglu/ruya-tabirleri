@@ -12,6 +12,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { supabase } from '@/integrations/supabase/client';
+import { captureError } from '@/lib/logger';
 import type { Category, Dream } from '@/types/database';
 import { Seo } from '@/components/Seo';
 
@@ -77,7 +78,7 @@ export default function CategoryDetail() {
       if (dreamsError) throw dreamsError;
       setDreams((dreamsData as Dream[]) || []);
     } catch (error) {
-      console.error('Error fetching category:', error);
+      captureError(error, { tags: { feature: 'category-detail' } });
     } finally {
       setIsLoading(false);
     }

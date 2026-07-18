@@ -4,6 +4,7 @@ import { Search, Loader2, Sparkles, ChevronRight, Clock, X, Mic } from 'lucide-r
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
+import { captureError } from '@/lib/logger';
 import { cn } from '@/lib/utils';
 import { VoiceSearchModal } from './VoiceSearchModal';
 
@@ -137,7 +138,7 @@ export function SearchWithDropdown({
         );
       }
     } catch (error) {
-      console.error('Autocomplete error:', error);
+      captureError(error, { tags: { feature: 'search-with-dropdown' }, extra: { context: 'autocomplete' } });
       setSuggestions([]);
     } finally {
       setIsLoading(false);
@@ -168,7 +169,7 @@ export function SearchWithDropdown({
       });
 
     if (error && !['42501', '401'].includes(error.code || '')) {
-      console.error('Failed to log search:', error);
+      captureError(error, { tags: { feature: 'search-with-dropdown' }, extra: { context: 'log-search' } });
     }
   };
 
@@ -204,7 +205,7 @@ export function SearchWithDropdown({
         category_name: (data.categories as { name?: string })?.name || undefined,
       };
     } catch (error) {
-      console.error('Exact dream lookup error:', error);
+      captureError(error, { tags: { feature: 'search-with-dropdown' }, extra: { context: 'exact-dream-lookup' } });
       return null;
     }
   }, [suggestions]);

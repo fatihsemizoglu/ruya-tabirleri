@@ -20,6 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { getErrorMessage, notify } from '@/lib/notify';
+import { captureError } from '@/lib/logger';
 
 type SpeechRecognitionResultLike = {
   isFinal: boolean;
@@ -154,7 +155,7 @@ export function VoiceDreamRecorder({ onSave }: VoiceDreamRecorderProps) {
       };
       tick();
     } catch (e) {
-      console.error('Waveform error', e);
+      captureError(e, { tags: { feature: 'voice-dream-recorder' }, extra: { context: 'waveform' } });
     }
   };
 
@@ -211,7 +212,7 @@ export function VoiceDreamRecorder({ onSave }: VoiceDreamRecorderProps) {
           }
         };
         recognition.onerror = (e) => {
-          console.error('Speech recognition error:', e.error);
+          captureError(e, { tags: { feature: 'voice-dream-recorder' }, extra: { errorCode: e.error } });
           if (e.error === 'not-allowed') {
             notify.error('Mikrofon erişimi reddedildi', {
               description: 'Tarayıcı izinlerinden mikrofon erişimini açın.',
