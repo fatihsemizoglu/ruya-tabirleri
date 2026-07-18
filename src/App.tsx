@@ -22,6 +22,7 @@ const DreamCompare = lazy(() => import("./pages/DreamCompare"));
 const Categories = lazy(() => import("./pages/Categories"));
 const CategoryDetail = lazy(() => import("./pages/CategoryDetail"));
 const Popular = lazy(() => import("./pages/Popular"));
+const DreamFeed = lazy(() => import("./pages/DreamFeed"));
 const AlphabetList = lazy(() => import("./pages/AlphabetList"));
 const Profile = lazy(() => import("./pages/Profile"));
 const DreamJournal = lazy(() => import("./pages/DreamJournal"));
@@ -78,6 +79,7 @@ function AnimatedRoutes() {
           <Route path="/kategoriler" element={<Categories />} />
           <Route path="/kategori/:slug" element={<CategoryDetail />} />
           <Route path="/populer" element={<Popular />} />
+          <Route path="/akis" element={<DreamFeed />} />
           <Route path="/az" element={<AlphabetList />} />
           <Route path="/az/:letter" element={<AlphabetList />} />
           {/* User routes - isolated boundary */}

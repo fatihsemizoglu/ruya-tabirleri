@@ -15,6 +15,7 @@ import {
   ArrowRight,
   Sparkles,
   Newspaper,
+  Radio,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -346,6 +347,22 @@ export function Header() {
             )}
           >
             Popüler Rüyalar
+          </Link>
+
+          {/* Akış */}
+          <Link
+            to="/akis"
+            onMouseEnter={cancelClose}
+            aria-current={isActiveLink('/akis') ? 'page' : undefined}
+            className={cn(
+              'px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 shrink-0',
+              isActiveLink('/akis')
+                ? 'text-primary bg-primary/5'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+            )}
+          >
+            <Radio className="h-3.5 w-3.5 inline mr-1" />
+            Akış
           </Link>
 
           {/* Blog (Mega Menu) */}
@@ -693,6 +710,9 @@ export function Header() {
 
             {/* Popüler Rüyalar */}
             <MobileNavLink to="/populer" label="Popüler Rüyalar" onClose={() => setIsMenuOpen(false)} />
+
+            {/* Akış */}
+            <MobileNavLink to="/akis" label="Akış" onClose={() => setIsMenuOpen(false)} />
 
             {/* Blog (Accordion) */}
             <div>

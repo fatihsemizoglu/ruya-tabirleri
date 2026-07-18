@@ -21,6 +21,7 @@ import { captureError } from '@/lib/logger';
 import type { Dream, DreamJournalEntry, DreamMood, Comment } from '@/types/database';
 import { ProfileFavoritesTab } from '@/components/profile/ProfileFavoritesTab';
 import { ProfileHistoryTab } from '@/components/profile/ProfileHistoryTab';
+import { GamificationPanel } from '@/components/gamification/GamificationPanel';
 
 type MoodValue = DreamMood | '';
 type UserComment = Comment & { dreams?: Dream };
@@ -593,6 +594,10 @@ export default function Profile() {
                   <BarChart3 className="h-4 w-4 mr-1.5" />
                   <span>{t('profile.tabStats')}</span>
                 </TabsTrigger>
+                <TabsTrigger value="achievements" className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-600 data-[state=active]:to-orange-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all flex-1">
+                  <Award className="h-4 w-4 mr-1.5" />
+                  <span>Başarımlar</span>
+                </TabsTrigger>
                 <TabsTrigger value="journal" className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-violet-600 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all flex-1">
                   <Book className="h-4 w-4 mr-1.5" />
                   <span>{t('profile.tabJournal')}</span>
@@ -1054,6 +1059,11 @@ export default function Profile() {
                   )}
                 </div>
               )}
+            </TabsContent>
+
+            {/* Achievements Tab */}
+            <TabsContent value="achievements" className="mt-0">
+              <GamificationPanel userId={user.id} />
             </TabsContent>
 
             {/* Dream Journal Tab */}

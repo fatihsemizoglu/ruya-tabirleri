@@ -96,6 +96,39 @@ export interface Comment {
   profile?: Profile;
 }
 
+export interface Badge {
+  id: string;
+  name: string;
+  description: string | null;
+  icon: string;
+  color: string;
+  category: 'engagement' | 'achievement' | 'special' | 'loyalty';
+  rarity: 'common' | 'rare' | 'epic' | 'legendary';
+  condition: string | null;
+  auto: boolean;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserXp {
+  user_id: string;
+  xp: number;
+  level: number;
+  last_login: string | null;
+  login_streak: number;
+  updated_at: string;
+}
+
+export interface UserBadge {
+  id: string;
+  user_id: string;
+  badge_id: string;
+  assigned_at: string;
+  assigned_by: string | null;
+  badge?: Badge;
+}
+
 export interface DreamSearchResult {
   id: string;
   title: string;

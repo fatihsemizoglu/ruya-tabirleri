@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import type { Dream, DreamSearchResult } from "@/types/database";
+import type { Dream, DreamSearchResult, Category } from "@/types/database";
 
 export async function fetchDreamBySlug(slug: string): Promise<Dream | null> {
   const { data, error } = await supabase
@@ -145,6 +145,17 @@ export async function fetchSimilarDreams(dreamId: string, limit = 5): Promise<Dr
   return [];
 }
 
+export async function fetchDreamFeed(limit = 30): Promise<(Dream & { category?: Category })[]> {
+  const { data } = await supabase
+    .from("dreams")
+    .select("*, category:category_id(*)")
+    .eq("is_published", true)
+    .order("view_count", { ascending: false })
+    .limit(limit);
+
+  return (data || []) as (Dream & { category?: Category })[];
+}
+
 export const dreamQueryKeys = {
   all: ["dreams"],
   bySlug: (slug: string) => ["dreams", "slug", slug],
@@ -153,4 +164,5 @@ export const dreamQueryKeys = {
   byAlphabet: (letter: string, page: number) => ["dreams", "alphabet", letter, page],
   stats: ["dreams", "stats"],
   similar: (id: string) => ["dreams", "similar", id],
+  feed: (limit?: number) => ["dreams", "feed", limit],
 };
