@@ -40,7 +40,7 @@ export default defineConfig(({ mode }) => ({
         skipWaiting: true,
         clientsClaim: true,
         navigateFallback: "/index.html",
-        navigateFallbackDenylist: [/^\/admin/, /^\/api/],
+        navigateFallbackDenylist: [/^\/admin/, /^\/api/, /\.(js|css|json|png|jpg|jpeg|gif|svg|ico|woff2?|ttf|eot)$/],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB limit
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
         runtimeCaching: [
@@ -90,7 +90,6 @@ export default defineConfig(({ mode }) => ({
             }
           },
           {
-            // Same-origin images only. Third-party images are governed by CSP and should not go through Workbox.
             urlPattern: ({ request, sameOrigin }: { request: Request; sameOrigin: boolean }) =>
               sameOrigin && request.destination === 'image',
             handler: "StaleWhileRevalidate",
@@ -99,6 +98,20 @@ export default defineConfig(({ mode }) => ({
               expiration: {
                 maxEntries: 200,
                 maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+              }
+            }
+          },
+          {
+            // JS/CSS assets: StaleWhileRevalidate prevents old-chunk MIME errors
+            // when a user has an old tab open referencing a removed chunk hash.
+            urlPattern: ({ request, sameOrigin }: { request: Request; sameOrigin: boolean }) =>
+              sameOrigin && (request.destination === 'script' || request.destination === 'style'),
+            handler: "StaleWhileRevalidate",
+            options: {
+              cacheName: "static-assets",
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 * 7 // 7 days
               }
             }
           }
