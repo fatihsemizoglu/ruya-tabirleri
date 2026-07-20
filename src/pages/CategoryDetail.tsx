@@ -1,12 +1,17 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Eye, Heart, Search, SlidersHorizontal, ChevronUp, TrendingUp, Clock, Star, Grid3X3, List, Filter, X, Tag, Folder, ArrowLeft, Sparkles, BookOpen, ArrowUpRight } from 'lucide-react';
+import { motion, useInView } from 'framer-motion';
+import {
+  Eye, Heart, Search, SlidersHorizontal, ChevronUp, TrendingUp, Clock,
+  Star, Grid3X3, List, Filter, Tag, Folder, ArrowLeft, Sparkles, BookOpen, ArrowUpRight, X, Zap
+} from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
+import { PremiumBadge, GradientText } from '@/components/layout/PremiumBackground';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -36,6 +41,38 @@ const pickGradient = (seed: string) => {
   let hash = 0;
   for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) | 0;
   return gradientPalette[Math.abs(hash) % gradientPalette.length];
+};
+
+function AnimatedCounter({ value }: { value: number }) {
+  const [count, setCount] = useState(0);
+  const ref = useRef<HTMLSpanElement>(null);
+  const inView = useInView(ref, { once: true });
+
+  useEffect(() => {
+    if (!inView) return;
+    const duration = 1500;
+    const startTime = performance.now();
+    let raf: number;
+    const animate = (now: number) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setCount(Math.floor(eased * value));
+      if (progress < 1) raf = requestAnimationFrame(animate);
+    };
+    raf = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(raf);
+  }, [inView, value]);
+
+  return <span ref={ref}>{count.toLocaleString('tr-TR')}</span>;
+}
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 24 },
+  show: (i: number) => ({
+    opacity: 1, y: 0,
+    transition: { duration: 0.45, delay: i * 0.06, ease: [0.25, 0.25, 0, 1] as [number, number, number, number] },
+  }),
 };
 
 export default function CategoryDetail() {
@@ -200,25 +237,48 @@ export default function CategoryDetail() {
   if (isLoading) {
     return (
       <Layout>
-        <div className="min-h-screen bg-mesh">
+        <div className="min-h-screen">
           <div className="container py-12">
-            <div className="animate-pulse space-y-8">
-              <div className="h-4 bg-muted rounded w-32" />
+            <div className="space-y-8">
+              <Skeleton className="h-4 w-32 rounded-full" />
               <div className="flex items-center gap-4">
-                <div className="w-20 h-20 rounded-2xl bg-muted" />
+                <Skeleton className="w-20 h-20 rounded-2xl" />
                 <div className="flex-1 space-y-3">
-                  <div className="h-10 bg-muted rounded w-1/2" />
-                  <div className="h-4 bg-muted rounded w-1/3" />
+                  <Skeleton className="h-10 w-1/2 rounded-xl" />
+                  <Skeleton className="h-4 w-1/3 rounded-full" />
                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {[1, 2, 3].map(i => (
-                  <div key={i} className="h-28 surface" />
+                  <div key={i} className="bg-card/60 backdrop-blur-sm border border-border/40 rounded-2xl p-5">
+                    <Skeleton className="h-10 w-10 rounded-xl mb-3" />
+                    <Skeleton className="h-3 w-20 mb-2 rounded-full" />
+                    <Skeleton className="h-7 w-16 rounded-lg" />
+                  </div>
                 ))}
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {[1, 2, 3, 4, 5, 6].map(i => (
-                  <div key={i} className="h-56 surface" />
+                  <div key={i} className="bg-card/60 backdrop-blur-sm border border-border/40 rounded-2xl p-5">
+                    <Skeleton className="h-1 w-full rounded-full mb-4" />
+                    <div className="flex items-start justify-between mb-4">
+                      <Skeleton className="h-10 w-10 rounded-xl" />
+                      <Skeleton className="h-5 w-16 rounded-full" />
+                    </div>
+                    <Skeleton className="h-5 w-4/5 mb-3" />
+                    <div className="space-y-2 mb-4">
+                      <Skeleton className="h-3 w-full" />
+                      <Skeleton className="h-3 w-11/12" />
+                      <Skeleton className="h-3 w-3/4" />
+                    </div>
+                    <div className="flex gap-1.5 mb-4">
+                      <Skeleton className="h-5 w-14 rounded-full" />
+                    </div>
+                    <div className="flex items-center justify-between pt-3 border-t border-border/40">
+                      <Skeleton className="h-4 w-20" />
+                      <Skeleton className="h-4 w-4" />
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
@@ -232,7 +292,7 @@ export default function CategoryDetail() {
     return (
       <Layout>
         <Seo title="Kategori Bulunamadı" path="/kategoriler" noindex />
-        <div className="min-h-screen bg-mesh">
+        <div className="min-h-screen">
           <div className="container py-20">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -266,13 +326,23 @@ export default function CategoryDetail() {
         description={category.description || `${category.name} kategorisindeki rüya tabirleri ve yorumları.`}
         path={`/kategori/${category.slug}`}
       />
-      <div className="min-h-screen bg-mesh">
+      <div className="min-h-screen">
         {/* Hero Header */}
-        <section className="relative overflow-hidden">
+        <section className="relative overflow-hidden pb-6">
           <div className={`absolute -top-32 -right-32 w-96 h-96 rounded-full blur-3xl opacity-20 bg-gradient-to-br ${featuredGradient}`} />
           <div className={`absolute -bottom-32 -left-32 w-96 h-96 rounded-full blur-3xl opacity-20 bg-gradient-to-br ${featuredGradient}`} />
 
-          <div className="container relative py-12 md:py-16">
+          {/* Grid pattern overlay */}
+          <div
+            className="absolute inset-0 opacity-[0.03]"
+            style={{
+              backgroundImage:
+                'linear-gradient(rgba(255,255,255,.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.6) 1px, transparent 1px)',
+              backgroundSize: '48px 48px',
+            }}
+          />
+
+          <div className="container relative py-8 md:py-12">
             <motion.div
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
@@ -301,10 +371,12 @@ export default function CategoryDetail() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.1 }}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-medium mb-4"
+                  className="mb-4"
                 >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  Kategori
+                  <PremiumBadge>
+                    <Sparkles className="h-3.5 w-3.5" />
+                    {category.name} Rüya Tabirleri
+                  </PremiumBadge>
                 </motion.div>
 
                 <motion.h1
@@ -316,6 +388,7 @@ export default function CategoryDetail() {
                   <span className={`bg-gradient-to-br ${featuredGradient} bg-clip-text text-transparent`}>
                     {category.name}
                   </span>
+                  {' '}<GradientText>Rüya Tabirleri</GradientText>
                 </motion.h1>
 
                 {category.description && (
@@ -345,9 +418,9 @@ export default function CategoryDetail() {
             className="grid grid-cols-2 md:grid-cols-3 gap-4"
           >
             {[
-              { icon: BookOpen, label: 'Rüya Tabiri', value: dreams.length, gradient: 'from-violet-500/10 to-violet-500/5', color: 'text-violet-600 dark:text-violet-400' },
-              { icon: Eye, label: 'Toplam Görüntülenme', value: totalViews, gradient: 'from-blue-500/10 to-blue-500/5', color: 'text-blue-600 dark:text-blue-400' },
-              { icon: Heart, label: 'Toplam Beğeni', value: totalLikes, gradient: 'from-rose-500/10 to-rose-500/5', color: 'text-rose-600 dark:text-rose-400' },
+              { icon: BookOpen, label: 'Rüya Tabiri', value: dreams.length, gradient: 'from-violet-500/10 to-violet-500/5', iconBg: 'from-violet-500/20 to-violet-500/5', color: 'text-violet-600 dark:text-violet-400', border: 'hover:border-violet-500/30' },
+              { icon: Eye, label: 'Toplam Görüntülenme', value: totalViews, gradient: 'from-blue-500/10 to-blue-500/5', iconBg: 'from-blue-500/20 to-blue-500/5', color: 'text-blue-600 dark:text-blue-400', border: 'hover:border-blue-500/30' },
+              { icon: Heart, label: 'Toplam Beğeni', value: totalLikes, gradient: 'from-rose-500/10 to-rose-500/5', iconBg: 'from-rose-500/20 to-rose-500/5', color: 'text-rose-600 dark:text-rose-400', border: 'hover:border-rose-500/30' },
             ].map((stat) => {
               const Icon = stat.icon;
               return (
@@ -357,16 +430,16 @@ export default function CategoryDetail() {
                     hidden: { opacity: 0, y: 20 },
                     show: { opacity: 1, y: 0 },
                   }}
-                  className="surface p-5 hover:shadow-lg transition-all duration-300 group"
+                  className={`bg-gradient-to-br ${stat.gradient} border border-border/50 rounded-2xl p-5 ${stat.border} hover:shadow-lg transition-all duration-300 group`}
                 >
-                  <div className={`inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br ${stat.gradient} mb-3 group-hover:scale-110 transition-transform`}>
+                  <div className={`inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br ${stat.iconBg} mb-3 group-hover:scale-110 transition-transform`}>
                     <Icon className={`w-5 h-5 ${stat.color}`} />
                   </div>
-                  <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1 font-medium">
                     {stat.label}
                   </p>
-                  <p className="text-2xl md:text-3xl font-bold tracking-tight">
-                    {stat.value.toLocaleString('tr-TR')}
+                  <p className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
+                    <AnimatedCounter value={stat.value} />
                   </p>
                 </motion.div>
               );
@@ -378,25 +451,26 @@ export default function CategoryDetail() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="mt-4 surface p-4 flex items-center gap-3 bg-gradient-to-r from-amber-500/5 to-orange-500/5 border-amber-500/20"
+              className="mt-4 bg-gradient-to-r from-amber-500/5 to-orange-500/5 border border-amber-500/20 rounded-2xl p-4 flex items-center gap-3 hover:shadow-md hover:border-amber-500/30 transition-all duration-300 group"
             >
-              <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                 <Star className="w-5 h-5 text-amber-600 fill-amber-500" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium">
+                <p className="text-sm font-medium text-foreground">
                   {featuredCount} öne çıkan rüya tabiri
                 </p>
                 <p className="text-xs text-muted-foreground">
                   Editör tarafından seçilen en iyi içerikler
                 </p>
               </div>
+              <ArrowUpRight className="h-4 w-4 text-muted-foreground group-hover:text-amber-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all shrink-0" />
             </motion.div>
           )}
         </section>
 
         {/* Sticky Filter Bar */}
-        <section className="sticky top-16 z-40 bg-background/80 backdrop-blur-xl border-y border-border/60 -mx-4 px-4 mb-8">
+        <section className="sticky top-16 z-40 bg-background/70 backdrop-blur-xl border-y border-border/40 -mx-4 px-4 mb-8 shadow-lg shadow-black/5">
           <div className="container py-4">
             <div className="flex flex-col lg:flex-row gap-4">
               <div className="relative flex-1">
@@ -408,14 +482,14 @@ export default function CategoryDetail() {
                     setSearchQuery(e.target.value);
                     setDisplayCount(ITEMS_PER_PAGE);
                   }}
-                  className="pl-11 h-11 rounded-xl border-border/60 bg-background/50"
+                  className="pl-11 h-11 rounded-xl border-border/50 bg-muted/30 focus-visible:bg-background focus-visible:border-primary/30 transition-all"
                 />
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className="h-11 rounded-xl relative">
+                    <Button variant="outline" className="h-11 rounded-xl relative border-border/50 bg-muted/30">
                       <Filter className="h-4 w-4 mr-2" />
                       Filtrele
                       {activeFilterCount > 0 && (
@@ -478,8 +552,8 @@ export default function CategoryDetail() {
                 </Popover>
 
                 <Select value={sortBy} onValueChange={(value) => handleSortChange(value as SortOption)}>
-                  <SelectTrigger className="h-11 rounded-xl w-[180px]">
-                    <SlidersHorizontal className="h-4 w-4 mr-2" />
+                  <SelectTrigger className="h-11 rounded-xl w-[180px] border-border/50 bg-muted/30">
+                    <SlidersHorizontal className="h-4 w-4 mr-2 text-muted-foreground" />
                     <SelectValue placeholder="Sırala" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
@@ -516,16 +590,28 @@ export default function CategoryDetail() {
                   </SelectContent>
                 </Select>
 
-                <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)} className="hidden md:block">
-                  <TabsList className="h-11 rounded-xl">
-                    <TabsTrigger value="grid" className="rounded-lg">
-                      <Grid3X3 className="h-4 w-4" />
-                    </TabsTrigger>
-                    <TabsTrigger value="list" className="rounded-lg">
-                      <List className="h-4 w-4" />
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
+                <div className="flex items-center border border-border/50 rounded-xl overflow-hidden bg-muted/30">
+                  <Button
+                    variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                    size="icon"
+                    onClick={() => setViewMode('grid')}
+                    className={`h-11 w-11 rounded-none ${
+                      viewMode === 'grid' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground'
+                    }`}
+                  >
+                    <Grid3X3 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant={viewMode === 'list' ? 'default' : 'ghost'}
+                    size="icon"
+                    onClick={() => setViewMode('list')}
+                    className={`h-11 w-11 rounded-none ${
+                      viewMode === 'list' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground'
+                    }`}
+                  >
+                    <List className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
 
@@ -533,9 +619,9 @@ export default function CategoryDetail() {
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-border/60"
+                className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-border/40"
               >
-                <span className="text-xs text-muted-foreground">Aktif:</span>
+                <span className="text-xs text-muted-foreground font-medium">Aktif:</span>
                 {showFeaturedOnly && (
                   <Badge variant="secondary" className="rounded-full gap-1 pr-1">
                     <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
@@ -564,7 +650,7 @@ export default function CategoryDetail() {
                     </button>
                   </Badge>
                 )}
-                <Button variant="ghost" size="sm" onClick={clearAllFilters} className="rounded-lg text-xs h-7">
+                <Button variant="ghost" size="sm" onClick={clearAllFilters} className="rounded-lg text-xs h-7 text-muted-foreground hover:text-foreground">
                   Tümünü Temizle
                 </Button>
               </motion.div>
@@ -599,26 +685,26 @@ export default function CategoryDetail() {
                   : "flex flex-col gap-3"
                 }
               >
-                {displayedDreams.map((dream) => (
-                  <motion.div
+                {displayedDreams.map((dream, index) => (
+                  <DreamCard
                     key={dream.id}
-                    variants={{
-                      hidden: { opacity: 0, y: 16 },
-                      show: { opacity: 1, y: 0 },
-                    }}
-                  >
-                    <DreamCard
-                      dream={dream}
-                      viewMode={viewMode}
-                      gradient={pickGradient(dream.id) ?? ''}
-                    />
-                  </motion.div>
+                    dream={dream}
+                    viewMode={viewMode}
+                    gradient={pickGradient(dream.id) ?? ''}
+                    index={index}
+                  />
                 ))}
               </motion.div>
 
               {hasMore && (
-                <div className="text-center mt-12">
-                  <Button variant="outline" size="lg" onClick={loadMore} className="rounded-xl">
+                <div className="flex justify-center mt-12">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={loadMore}
+                    className="rounded-xl px-8 h-12 border-border hover:border-primary/30 hover:bg-primary/5 hover:text-primary transition-all"
+                  >
+                    <Zap className="h-4 w-4 mr-2" />
                     Daha Fazla Göster
                     <span className="ml-2 text-muted-foreground text-sm">
                       ({filteredAndSortedDreams.length - displayCount} kaldı)
@@ -638,7 +724,7 @@ export default function CategoryDetail() {
               </div>
               {searchQuery ? (
                 <>
-                  <h3 className="text-xl font-semibold mb-2">Sonuç Bulunamadı</h3>
+                  <h3 className="text-xl font-semibold mb-2 text-foreground">Sonuç Bulunamadı</h3>
                   <p className="text-muted-foreground mb-6 max-w-md mx-auto">
                     "{searchQuery}" için bu kategoride sonuç bulunamadı.
                   </p>
@@ -647,7 +733,12 @@ export default function CategoryDetail() {
                   </Button>
                 </>
               ) : (
-                <p className="text-muted-foreground">Bu kategoride henüz rüya tabiri yok.</p>
+                <>
+                  <h3 className="text-xl font-semibold mb-2 text-foreground">Henüz Rüya Yok</h3>
+                  <p className="text-muted-foreground max-w-md mx-auto">
+                    Bu kategoride henüz rüya tabiri bulunmuyor. Kısa süre içinde eklenecektir.
+                  </p>
+                </>
               )}
             </motion.div>
           )}
@@ -663,7 +754,7 @@ export default function CategoryDetail() {
             <Button
               size="icon"
               onClick={scrollToTop}
-              className="rounded-full shadow-2xl h-12 w-12 dream-gradient"
+              className="rounded-full shadow-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground hover:from-primary/90 hover:to-primary/70 h-12 w-12 hover:shadow-2xl hover:shadow-primary/25 transition-all duration-300"
             >
               <ChevronUp className="h-5 w-5" />
             </Button>
@@ -678,112 +769,126 @@ function DreamCard({
   dream,
   viewMode,
   gradient,
+  index,
 }: {
   dream: Dream;
   viewMode: ViewMode;
   gradient: string;
+  index: number;
 }) {
   if (viewMode === 'list') {
     return (
-      <Link
-        to={`/ruya/${dream.slug}`}
-        className="group flex items-stretch gap-3 sm:gap-4 p-4 surface hover:shadow-lg hover:border-primary/30 transition-all duration-300 min-h-[88px]"
-      >
-        <div className={`w-14 h-14 self-center rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shrink-0 shadow-md`}>
-          <Sparkles className="w-6 h-6 text-white" />
-        </div>
-
-        <div className="flex-1 min-w-0 self-center">
-          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-            {dream.is_featured && (
-              <Badge variant="secondary" className="rounded-full text-xs gap-1">
-                <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
-                Öne Çıkan
-              </Badge>
-            )}
-            {dream.keywords && dream.keywords.length > 0 && (
-              <Badge variant="outline" className="rounded-full text-xs">
-                {dream.keywords[0]}
-              </Badge>
-            )}
+      <motion.div variants={cardVariants} custom={index}>
+        <Link
+          to={`/ruya/${dream.slug}`}
+          className="group flex items-center gap-4 bg-card/60 backdrop-blur-sm border border-border/50 rounded-2xl p-4 hover:border-primary/30 hover:bg-card/80 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300"
+        >
+          <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shrink-0 shadow-md group-hover:scale-110 transition-transform`}>
+            <Sparkles className="w-5 h-5 text-white" />
           </div>
-          <h3 className="font-semibold group-hover:text-primary transition-colors line-clamp-1">
-            {dream.title}
-          </h3>
-          <p className="text-sm text-muted-foreground line-clamp-1 mt-0.5">
-            {dream.content}
-          </p>
-        </div>
 
-        <div className="flex flex-col items-end gap-1 text-xs text-muted-foreground shrink-0 self-center">
-          <span className="flex items-center gap-1">
-            <Eye className="h-3.5 w-3.5" />
-            {dream.view_count.toLocaleString('tr-TR')}
-          </span>
-          <span className="flex items-center gap-1">
-            <Heart className="h-3.5 w-3.5" />
-            {dream.like_count.toLocaleString('tr-TR')}
-          </span>
-        </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              {dream.is_featured && (
+                <Badge variant="secondary" className="rounded-full text-xs gap-1">
+                  <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
+                  Öne Çıkan
+                </Badge>
+              )}
+              {dream.keywords && dream.keywords.length > 0 && (
+                <Badge variant="outline" className="rounded-full text-xs">
+                  {dream.keywords[0]}
+                </Badge>
+              )}
+            </div>
+            <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-1">
+              {dream.title}
+            </h3>
+            <p className="text-sm text-muted-foreground line-clamp-1 mt-0.5">
+              {dream.content}
+            </p>
+          </div>
 
-        <ArrowUpRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all shrink-0 self-center" />
-      </Link>
+          <div className="flex items-center gap-3 shrink-0 text-sm text-muted-foreground">
+            <div className="hidden sm:flex items-center gap-1.5">
+              <Eye className="h-3.5 w-3.5" />
+              <span className="font-semibold text-xs">{dream.view_count.toLocaleString('tr-TR')}</span>
+            </div>
+            <div className="hidden sm:flex items-center gap-1.5">
+              <Heart className="h-3.5 w-3.5" />
+              <span className="font-semibold text-xs">{dream.like_count.toLocaleString('tr-TR')}</span>
+            </div>
+            <div className="w-8 h-8 rounded-full bg-primary/5 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+              <ArrowUpRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+            </div>
+          </div>
+        </Link>
+      </motion.div>
     );
   }
 
   return (
-    <Link
-      to={`/ruya/${dream.slug}`}
-      className="group relative surface p-5 hover:shadow-xl hover:-translate-y-1 hover:border-primary/30 transition-all duration-300 overflow-hidden h-full flex flex-col"
-    >
-      <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${gradient}`} />
-      <div className={`absolute -top-12 -right-12 w-32 h-32 rounded-full bg-gradient-to-br ${gradient} opacity-0 group-hover:opacity-10 blur-2xl transition-opacity pointer-events-none`} />
+    <motion.div variants={cardVariants} custom={index}>
+      <Link
+        to={`/ruya/${dream.slug}`}
+        className="group relative block bg-card/60 backdrop-blur-sm border border-border/50 rounded-2xl p-6 overflow-hidden hover:border-primary/30 hover:bg-card/80 hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-1.5 transition-all duration-500 h-full flex flex-col"
+      >
+        <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${gradient}`} />
+        <div className={`absolute -top-12 -right-12 w-32 h-32 rounded-full bg-gradient-to-br ${gradient} opacity-0 group-hover:opacity-[0.08] blur-2xl transition-opacity pointer-events-none`} />
 
-      <div className="relative flex flex-col h-full">
-        <div className="flex items-start justify-between gap-2 mb-3">
-          <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-md shrink-0`}>
-            <Sparkles className="w-5 h-5 text-white" />
-          </div>
-          {dream.is_featured && (
-            <Badge variant="secondary" className="rounded-full text-xs gap-1">
-              <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
-              Öne Çıkan
-            </Badge>
-          )}
-        </div>
+        <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/[0.04] to-transparent pointer-events-none" />
 
-        <h3 className="text-lg font-serif-dream font-semibold group-hover:text-primary transition-colors line-clamp-2 mb-2 min-h-[3.5rem]">
-          {dream.title}
-        </h3>
-
-        <p className="text-sm text-muted-foreground line-clamp-3 mb-4 leading-relaxed flex-1">
-          {dream.content}
-        </p>
-
-        {dream.keywords && dream.keywords.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mb-4">
-            {dream.keywords.slice(0, 3).map((keyword) => (
-              <Badge key={keyword} variant="outline" className="rounded-full text-xs font-normal">
-                {keyword}
+        <div className="relative flex flex-col h-full">
+          <div className="flex items-start justify-between gap-2 mb-4">
+            <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-md shrink-0 group-hover:scale-110 transition-transform duration-300`}>
+              <Sparkles className="w-5 h-5 text-white" />
+            </div>
+            {dream.is_featured && (
+              <Badge variant="secondary" className="rounded-full text-xs gap-1 shrink-0">
+                <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
+                Öne Çıkan
               </Badge>
-            ))}
+            )}
           </div>
-        )}
 
-        <div className="flex items-center justify-between text-xs text-muted-foreground pt-3 border-t border-border/60 mt-auto">
-          <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1">
-              <Eye className="h-3.5 w-3.5" />
-              {dream.view_count.toLocaleString('tr-TR')}
-            </span>
-            <span className="flex items-center gap-1">
-              <Heart className="h-3.5 w-3.5" />
-              {dream.like_count.toLocaleString('tr-TR')}
-            </span>
+          <h3 className="text-lg font-serif-dream font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2 mb-2">
+            {dream.title}
+          </h3>
+
+          <p className="text-sm text-muted-foreground line-clamp-3 mb-4 leading-relaxed flex-1">
+            {dream.content}
+          </p>
+
+          {dream.keywords && dream.keywords.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mb-4">
+              {dream.keywords.slice(0, 3).map((keyword) => (
+                <span
+                  key={keyword}
+                  className="text-xs px-2.5 py-1 rounded-full bg-muted/70 text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                >
+                  #{keyword}
+                </span>
+              ))}
+            </div>
+          )}
+
+          <div className="flex items-center justify-between text-xs text-muted-foreground pt-4 border-t border-border/40 mt-auto">
+            <div className="flex items-center gap-4">
+              <span className="flex items-center gap-1.5 font-semibold">
+                <Eye className="h-3.5 w-3.5" />
+                {dream.view_count.toLocaleString('tr-TR')}
+              </span>
+              <span className="flex items-center gap-1.5 font-semibold">
+                <Heart className="h-3.5 w-3.5" />
+                {dream.like_count.toLocaleString('tr-TR')}
+              </span>
+            </div>
+            <div className="w-8 h-8 rounded-full bg-primary/5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 group-hover:bg-primary/10">
+              <ArrowUpRight className="h-4 w-4 text-primary" />
+            </div>
           </div>
-          <ArrowUpRight className="h-4 w-4 group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
         </div>
-      </div>
-    </Link>
+      </Link>
+    </motion.div>
   );
 }

@@ -1,7 +1,11 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { TrendingUp, Eye, Heart, Star, ChevronUp, Loader2, Flame, Award, Search, Grid3X3, List, Clock, Filter, ArrowUpRight } from 'lucide-react';
+import { motion, useInView } from 'framer-motion';
+import {
+  TrendingUp, Eye, Heart, Star, ChevronUp, Loader2, Flame, Award,
+  Search, Grid3X3, List, Clock, Filter, ArrowUpRight, Sparkles,
+  Trophy, Medal, Zap, BarChart3
+} from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState as PremiumEmptyState } from '@/components/ui/empty-state';
 import { Layout } from '@/components/layout/Layout';
@@ -27,6 +31,38 @@ const ITEMS_PER_PAGE = 12;
 
 type TimeFilter = 'all' | 'today' | 'week' | 'month' | 'year';
 type ViewMode = 'grid' | 'list';
+
+function AnimatedCounter({ value, suffix = '' }: { value: number; suffix?: string }) {
+  const [count, setCount] = useState(0);
+  const ref = useRef<HTMLSpanElement>(null);
+  const inView = useInView(ref, { once: true });
+
+  useEffect(() => {
+    if (!inView) return;
+    const duration = 1500;
+    const startTime = performance.now();
+    let raf: number;
+    const animate = (now: number) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setCount(Math.floor(eased * value));
+      if (progress < 1) raf = requestAnimationFrame(animate);
+    };
+    raf = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(raf);
+  }, [inView, value]);
+
+  return <span ref={ref}>{count.toLocaleString('tr-TR')}{suffix}</span>;
+}
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 24 },
+  visible: (i: number) => ({
+    opacity: 1, y: 0,
+    transition: { duration: 0.45, delay: i * 0.06, ease: [0.25, 0.25, 0, 1] as [number, number, number, number] },
+  }),
+};
 
 export default function Popular() {
   const [mostViewed, setMostViewed] = useState<Dream[]>([]);
@@ -278,35 +314,43 @@ export default function Popular() {
   const stats = [
     {
       icon: Flame,
-      value: totalStats.totalDreams.toLocaleString('tr-TR'),
+      value: totalStats.totalDreams,
       label: 'Toplam Rüya',
-      color: 'from-orange-500 to-red-500',
-      bg: 'bg-orange-500/10',
-      text: 'text-orange-600 dark:text-orange-400',
+      gradient: 'from-orange-500 to-rose-500',
+      bg: 'bg-gradient-to-br from-orange-500/10 to-rose-500/10',
+      iconBg: 'bg-gradient-to-br from-orange-500/20 to-rose-500/20',
+      color: 'text-orange-600 dark:text-orange-400',
+      border: 'hover:border-orange-500/30',
     },
     {
       icon: Eye,
-      value: totalStats.totalViews.toLocaleString('tr-TR'),
+      value: totalStats.totalViews,
       label: 'Görüntülenme',
-      color: 'from-blue-500 to-cyan-500',
-      bg: 'bg-blue-500/10',
-      text: 'text-blue-600 dark:text-blue-400',
+      gradient: 'from-blue-500 to-cyan-500',
+      bg: 'bg-gradient-to-br from-blue-500/10 to-cyan-500/10',
+      iconBg: 'bg-gradient-to-br from-blue-500/20 to-cyan-500/20',
+      color: 'text-blue-600 dark:text-blue-400',
+      border: 'hover:border-blue-500/30',
     },
     {
       icon: Heart,
-      value: totalStats.totalLikes.toLocaleString('tr-TR'),
+      value: totalStats.totalLikes,
       label: 'Beğeni',
-      color: 'from-rose-500 to-pink-500',
-      bg: 'bg-rose-500/10',
-      text: 'text-rose-600 dark:text-rose-400',
+      gradient: 'from-rose-500 to-pink-500',
+      bg: 'bg-gradient-to-br from-rose-500/10 to-pink-500/10',
+      iconBg: 'bg-gradient-to-br from-rose-500/20 to-pink-500/20',
+      color: 'text-rose-600 dark:text-rose-400',
+      border: 'hover:border-rose-500/30',
     },
     {
       icon: Award,
-      value: featured.length.toString(),
+      value: featured.length,
       label: 'Öne Çıkan',
-      color: 'from-amber-500 to-yellow-500',
-      bg: 'bg-amber-500/10',
-      text: 'text-amber-600 dark:text-amber-400',
+      gradient: 'from-amber-500 to-yellow-500',
+      bg: 'bg-gradient-to-br from-amber-500/10 to-yellow-500/10',
+      iconBg: 'bg-gradient-to-br from-amber-500/20 to-yellow-500/20',
+      color: 'text-amber-600 dark:text-amber-400',
+      border: 'hover:border-amber-500/30',
     },
   ];
 
@@ -318,7 +362,6 @@ export default function Popular() {
     year: 'Bu Yıl',
   };
 
-  // Seçili kategorinin bilgisini getir
   const selectedCategoryData = selectedCategory !== 'all' ? categories[selectedCategory] : null;
 
   const DreamCard = ({ dream, index }: { dream: Dream; index: number }) => {
@@ -334,109 +377,100 @@ export default function Popular() {
 
     if (viewMode === 'list') {
       return (
-        <div>
+        <motion.div variants={cardVariants} custom={index}>
           <Link
             to={`/ruya/${dream.slug}`}
-            style={{ animationDelay: `${Math.min(index * 50, 300)}ms` }}
-            className="render-optimize group flex items-center gap-4 bg-card border border-border/50 rounded-2xl p-4 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 animate-fadeIn"
+            className="render-optimize group flex items-center gap-4 bg-card/60 backdrop-blur-sm border border-border/50 rounded-2xl p-4 hover:border-primary/30 hover:bg-card/80 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300"
           >
-            <div className="shrink-0 w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-sm font-bold text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-              #{index + 1}
+            <div className={`shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold transition-all duration-300 ${
+              isTopThree
+                ? `bg-gradient-to-br ${rankGradient} text-white shadow-lg shadow-${rankGradient.split(' ')[0]!.replace('from-', '')}/25`
+                : 'bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary'
+            }`}>
+              {isTopThree ? ['🥇', '🥈', '🥉'][index] : `#${index + 1}`}
             </div>
 
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1.5">
+              <div className="flex items-center gap-2 mb-1">
                 {dream.is_featured && (
                   <Star className="h-3 w-3 text-amber-500 fill-amber-500 shrink-0" />
                 )}
                 {category && (
-                  <Badge variant="secondary" className="text-xs gap-1">
-                    <CategoryIcon icon={category.icon} className="h-3.5 w-3.5" /> {category.name}
+                  <Badge variant="secondary" className="text-xs gap-1 rounded-full">
+                    <CategoryIcon icon={category.icon} className="h-3 w-3" /> {category.name}
                   </Badge>
                 )}
               </div>
               <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-1">
                 {dream.title}
               </h3>
-              <p className="text-sm text-muted-foreground line-clamp-1 mt-0.5">
-                {dream.content}
-              </p>
             </div>
 
-            <div className="flex items-center gap-3 sm:gap-4 shrink-0 text-sm text-muted-foreground">
+            <div className="flex items-center gap-3 shrink-0 text-sm text-muted-foreground">
               <div className="hidden sm:flex items-center gap-1.5">
                 <Eye className="h-3.5 w-3.5" />
-                <span className="font-medium text-xs">
-                  {(dream.view_count || 0).toLocaleString('tr-TR')}
-                </span>
+                <span className="font-semibold text-xs">{(dream.view_count || 0).toLocaleString('tr-TR')}</span>
               </div>
-              <div className="flex items-center gap-1.5">
+              <div className="hidden sm:flex items-center gap-1.5">
                 <Heart className="h-3.5 w-3.5" />
-                <span className="font-medium text-xs">
-                  {(dream.like_count || 0).toLocaleString('tr-TR')}
-                </span>
+                <span className="font-semibold text-xs">{(dream.like_count || 0).toLocaleString('tr-TR')}</span>
               </div>
-              <ArrowUpRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+              <div className="w-8 h-8 rounded-full bg-primary/5 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                <ArrowUpRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+              </div>
             </div>
           </Link>
-        </div>
+        </motion.div>
       );
     }
 
     return (
-      <div className={isTopThree ? 'md:col-span-1' : ''}>
+      <motion.div variants={cardVariants} custom={index} className={isTopThree ? 'md:col-span-1' : ''}>
         <Link
           to={`/ruya/${dream.slug}`}
-          style={{ animationDelay: `${Math.min(index * 50, 300)}ms` }}
-          className={`render-optimize group relative block h-full bg-card border border-border/50 rounded-2xl p-6 overflow-hidden hover:border-primary/30 hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-1 transition-all duration-500 animate-fadeIn`}
+          className={`render-optimize group relative block h-full bg-card/60 backdrop-blur-sm border border-border/50 rounded-2xl p-6 overflow-hidden hover:border-primary/30 hover:bg-card/80 hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-1.5 transition-all duration-500`}
         >
-          {/* Top gradient bar */}
-          <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${rankGradient}`} />
+          <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${rankGradient} opacity-80`} />
 
-          {/* Hover shine */}
           <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/[0.04] to-transparent pointer-events-none" />
 
-          <div className="relative">
-            {/* Top row: rank + category */}
+          <div className="relative z-10">
             <div className="flex items-center justify-between mb-4">
-              <div className={`flex items-center gap-2 ${isTopThree ? '' : ''}`}>
+              <div className={`flex items-center gap-2`}>
                 <div
-                  className={`w-9 h-9 rounded-lg flex items-center justify-center font-bold text-sm ${
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm transition-transform duration-300 group-hover:scale-110 ${
                     isTopThree
-                      ? `bg-gradient-to-br ${rankGradient} text-white shadow-lg`
+                      ? `bg-gradient-to-br ${rankGradient} text-white shadow-lg shadow-${rankGradient.split(' ')[0]!.replace('from-', '')}/30`
                       : 'bg-muted text-muted-foreground'
                   }`}
                 >
                   {isTopThree ? ['🥇', '🥈', '🥉'][index] : `#${index + 1}`}
                 </div>
                 {dream.is_featured && (
-                  <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-500" />
+                  <Star className="h-4 w-4 text-amber-500 fill-amber-500 drop-shadow-sm" />
                 )}
               </div>
               {category && (
-                <Badge variant="secondary" className="text-xs gap-1">
+                <Badge variant="secondary" className="text-xs gap-1 rounded-full shrink-0">
                   <CategoryIcon icon={category.icon} className="h-3.5 w-3.5" /> {category.name}
                 </Badge>
               )}
             </div>
 
-            {/* Title */}
             <h3 className={`font-bold font-serif-dream text-foreground mb-3 group-hover:text-primary transition-colors duration-300 line-clamp-2 ${isTopThree ? 'text-xl' : 'text-lg'}`}>
               {dream.title}
             </h3>
 
-            {/* Excerpt */}
             <p className="text-sm text-muted-foreground line-clamp-3 mb-4 leading-relaxed">
               {dream.content}
             </p>
 
-            {/* Keywords */}
             {dream.keywords && dream.keywords.length > 0 && (
-              <div className="flex flex-wrap gap-1 mb-4">
+              <div className="flex flex-wrap gap-1.5 mb-4">
                 {dream.keywords.slice(0, 3).map((keyword) => (
                   <span
                     key={keyword}
-                    className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground"
+                    className="text-xs px-2.5 py-1 rounded-full bg-muted/70 text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
                   >
                     #{keyword}
                   </span>
@@ -444,31 +478,34 @@ export default function Popular() {
               </div>
             )}
 
-            {/* Footer stats */}
-            <div className="flex items-center justify-between pt-4 border-t border-border/50">
-              <div className="flex items-center gap-3 sm:gap-4 text-xs text-muted-foreground">
-                <div className="flex items-center gap-1">
+            <div className="flex items-center justify-between pt-4 border-t border-border/40">
+              <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                <div className="flex items-center gap-1.5">
                   <Eye className="h-3.5 w-3.5" />
                   <span className="font-semibold">{(dream.view_count || 0).toLocaleString('tr-TR')}</span>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5">
                   <Heart className="h-3.5 w-3.5" />
                   <span className="font-semibold">{(dream.like_count || 0).toLocaleString('tr-TR')}</span>
                 </div>
               </div>
-              <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <ArrowUpRight className="h-3.5 w-3.5 text-primary" />
+              <div className="w-8 h-8 rounded-full bg-primary/5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 group-hover:bg-primary/10">
+                <ArrowUpRight className="h-4 w-4 text-primary" />
               </div>
             </div>
           </div>
         </Link>
-      </div>
+      </motion.div>
     );
   };
 
   const DreamGrid = ({ dreams, type, hasMore }: { dreams: Dream[]; type?: 'viewed' | 'liked' | 'featured'; hasMore?: boolean }) => {
     return (
-      <div className="space-y-8">
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        className="space-y-8"
+      >
         {viewMode === 'grid' ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {dreams.map((dream, index) => (
@@ -490,7 +527,7 @@ export default function Popular() {
               size="lg"
               onClick={() => loadMore(type)}
               disabled={loadingMore}
-              className="rounded-xl px-8 border-border hover:border-primary/30 hover:bg-primary/5"
+              className="rounded-xl px-8 h-12 border-border hover:border-primary/30 hover:bg-primary/5 hover:text-primary transition-all"
             >
               {loadingMore ? (
                 <>
@@ -498,12 +535,15 @@ export default function Popular() {
                   Yükleniyor...
                 </>
               ) : (
-                'Daha Fazla Göster'
+                <>
+                  <Zap className="h-4 w-4 mr-2" />
+                  Daha Fazla Göster
+                </>
               )}
             </Button>
           </div>
         )}
-      </div>
+      </motion.div>
     );
   };
 
@@ -511,10 +551,10 @@ export default function Popular() {
     <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5' : 'space-y-3'}>
       {Array.from({ length: 6 }).map((_, i) =>
         viewMode === 'grid' ? (
-          <div key={i} className="bg-card border border-border/40 rounded-2xl p-5 shadow-sm relative overflow-hidden">
+          <div key={i} className="bg-card/60 backdrop-blur-sm border border-border/40 rounded-2xl p-5 shadow-sm relative overflow-hidden">
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-500/30 via-fuchsia-500/30 to-pink-500/30" />
             <div className="flex items-start justify-between mb-4">
-              <Skeleton className="h-8 w-8 rounded-lg" />
+              <Skeleton className="h-10 w-10 rounded-xl" />
               <Skeleton className="h-5 w-16 rounded-full" />
             </div>
             <Skeleton className="h-6 w-4/5 mb-3" />
@@ -523,14 +563,19 @@ export default function Popular() {
               <Skeleton className="h-3.5 w-11/12" />
               <Skeleton className="h-3.5 w-3/4" />
             </div>
+            <div className="flex gap-1.5 mb-4">
+              <Skeleton className="h-5 w-14 rounded-full" />
+              <Skeleton className="h-5 w-12 rounded-full" />
+              <Skeleton className="h-5 w-16 rounded-full" />
+            </div>
             <div className="flex items-center justify-between pt-3 border-t border-border/40">
               <Skeleton className="h-4 w-20" />
               <Skeleton className="h-4 w-4" />
             </div>
           </div>
         ) : (
-          <div key={i} className="flex items-center gap-3 px-4 py-3.5 bg-card border border-border/40 rounded-xl">
-            <Skeleton className="h-9 w-9 rounded-lg flex-shrink-0" />
+          <div key={i} className="flex items-center gap-3 px-4 py-3.5 bg-card/60 backdrop-blur-sm border border-border/40 rounded-xl">
+            <Skeleton className="h-9 w-9 rounded-xl flex-shrink-0" />
             <div className="flex-1 space-y-1.5">
               <Skeleton className="h-3.5 w-4/5" />
               <Skeleton className="h-3 w-1/2" />
@@ -543,7 +588,7 @@ export default function Popular() {
   );
 
   const EmptyState = ({ message }: { message: string }) => (
-    <div className="bg-card border border-border/40 rounded-2xl">
+    <div className="bg-card/60 backdrop-blur-sm border border-border/40 rounded-2xl p-8">
       <PremiumEmptyState
         icon="search"
         title={message}
@@ -595,31 +640,43 @@ export default function Popular() {
 
         {/* Stats Cards */}
         {!isLoading && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-10">
-            {stats.map((stat, idx) => {
+          <motion.div
+            initial="hidden"
+            animate="show"
+            variants={{
+              hidden: {},
+              show: { transition: { staggerChildren: 0.08 } },
+            }}
+            className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-10"
+          >
+            {stats.map((stat) => {
               const Icon = stat.icon;
               return (
-                <div
+                <motion.div
                   key={stat.label}
-                  className="group bg-card border border-border/50 rounded-2xl p-4 sm:p-5 hover:border-primary/30 hover:shadow-lg transition-all duration-300"
+                  variants={{
+                    hidden: { opacity: 0, y: 20 },
+                    show: { opacity: 1, y: 0 },
+                  }}
+                  className={`group ${stat.bg} border border-border/50 rounded-2xl p-4 sm:p-5 ${stat.border} hover:shadow-lg transition-all duration-300`}
                 >
-                  <div className={`w-9 h-9 rounded-xl ${stat.bg} flex items-center justify-center mb-3`}>
-                    <Icon className={`h-4.5 w-4.5 ${stat.text}`} />
+                  <div className={`w-10 h-10 rounded-xl ${stat.iconBg} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300`}>
+                    <Icon className={`h-5 w-5 ${stat.color}`} />
                   </div>
-                  <div className="text-xl sm:text-2xl md:text-3xl font-bold font-serif-dream text-foreground">
-                    {stat.value}
+                  <div className="text-xl sm:text-2xl md:text-3xl font-bold font-serif-dream text-foreground tracking-tight">
+                    <AnimatedCounter value={stat.value} />
                   </div>
                   <div className="text-xs sm:text-sm text-muted-foreground mt-0.5 font-medium">
                     {stat.label}
                   </div>
-                </div>
+                </motion.div>
               );
             })}
-          </div>
+          </motion.div>
         )}
 
         {/* Sticky Filters Bar */}
-        <div className="sticky top-16 z-30 bg-background/80 backdrop-blur-xl border border-border/50 rounded-2xl p-3 mb-6 shadow-sm">
+        <div className="sticky top-16 z-30 bg-background/70 backdrop-blur-xl border border-border/40 rounded-2xl p-3 mb-6 shadow-lg shadow-black/5">
           <div className="flex flex-col lg:flex-row gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -627,17 +684,17 @@ export default function Popular() {
                 placeholder="Popüler rüyalarda ara..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 h-10 rounded-xl bg-muted/30 border-border/50 focus-visible:bg-background"
+                className="pl-10 h-11 rounded-xl bg-muted/30 border-border/50 focus-visible:bg-background focus-visible:border-primary/30 transition-all"
               />
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
               <Select value={timeFilter} onValueChange={(v) => setTimeFilter(v as TimeFilter)}>
-                <SelectTrigger className="w-[150px] h-10 rounded-xl bg-muted/30 border-border/50">
+                <SelectTrigger className="w-[150px] h-11 rounded-xl bg-muted/30 border-border/50">
                   <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="rounded-xl">
                   {Object.entries(timeFilterLabels).map(([key, label]) => (
                     <SelectItem key={key} value={key}>
                       {label}
@@ -647,7 +704,7 @@ export default function Popular() {
               </Select>
 
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="w-[240px] h-10 rounded-xl bg-muted/30 border-border/50">
+                <SelectTrigger className="w-[240px] h-11 rounded-xl bg-muted/30 border-border/50">
                   <Filter className="h-4 w-4 mr-2 text-muted-foreground shrink-0" />
                   {selectedCategoryData ? (
                     <>
@@ -661,7 +718,7 @@ export default function Popular() {
                     </>
                   )}
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="rounded-xl">
                   <SelectItem value="all">
                     <span className="text-base leading-none mr-2">🌙</span>
                     <span>Tüm Kategoriler</span>
@@ -680,8 +737,8 @@ export default function Popular() {
                   variant={viewMode === 'grid' ? 'default' : 'ghost'}
                   size="icon"
                   onClick={() => setViewMode('grid')}
-                  className={`h-10 w-10 rounded-none ${
-                    viewMode === 'grid' ? 'bg-primary text-primary-foreground' : ''
+                  className={`h-11 w-11 rounded-none ${
+                    viewMode === 'grid' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground'
                   }`}
                 >
                   <Grid3X3 className="h-4 w-4" />
@@ -690,8 +747,8 @@ export default function Popular() {
                   variant={viewMode === 'list' ? 'default' : 'ghost'}
                   size="icon"
                   onClick={() => setViewMode('list')}
-                  className={`h-10 w-10 rounded-none ${
-                    viewMode === 'list' ? 'bg-primary text-primary-foreground' : ''
+                  className={`h-11 w-11 rounded-none ${
+                    viewMode === 'list' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground'
                   }`}
                 >
                   <List className="h-4 w-4" />
@@ -703,20 +760,26 @@ export default function Popular() {
 
         {/* Active filters */}
         {(searchQuery || timeFilter !== 'all' || selectedCategory !== 'all') && (
-          <div className="flex items-center gap-2 mb-6 text-sm text-muted-foreground flex-wrap animate-in fade-in slide-in-from-top-1 duration-200">
-            <span>Filtreler:</span>
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-center gap-2 mb-6 text-sm text-muted-foreground flex-wrap"
+          >
+            <BarChart3 className="h-4 w-4" />
+            <span className="text-xs font-medium">Filtreler:</span>
             {timeFilter !== 'all' && (
-              <Badge variant="secondary" className="rounded-full">
+              <Badge variant="secondary" className="rounded-full text-xs">
                 {timeFilterLabels[timeFilter]}
               </Badge>
             )}
             {selectedCategory !== 'all' && (
-              <Badge variant="secondary" className="rounded-full">
+              <Badge variant="secondary" className="rounded-full text-xs gap-1">
+                <CategoryIcon icon={categories[selectedCategory]?.icon} className="h-3 w-3" />
                 {categories[selectedCategory]?.name}
               </Badge>
             )}
             {searchQuery && (
-              <Badge variant="secondary" className="rounded-full">
+              <Badge variant="secondary" className="rounded-full text-xs">
                 "{searchQuery}"
               </Badge>
             )}
@@ -728,11 +791,11 @@ export default function Popular() {
                 setTimeFilter('all');
                 setSelectedCategory('all');
               }}
-              className="text-xs h-7 rounded-full"
+              className="text-xs h-7 rounded-full text-muted-foreground hover:text-foreground"
             >
               Temizle
             </Button>
-          </div>
+          </motion.div>
         )}
 
         {/* Tabs */}
@@ -740,28 +803,28 @@ export default function Popular() {
           <TabsList className="grid w-full max-w-2xl mx-auto grid-cols-4 mb-8 h-12 p-1 bg-muted/30 rounded-2xl">
             <TabsTrigger
               value="trending"
-              className="rounded-xl data-[state=active]:bg-card data-[state=active]:shadow-sm flex items-center gap-2"
+              className="rounded-xl data-[state=active]:bg-card data-[state=active]:shadow-sm data-[state=active]:text-foreground flex items-center gap-2 text-xs sm:text-sm"
             >
               <Flame className="h-4 w-4" />
               <span className="hidden sm:inline">Trend</span>
             </TabsTrigger>
             <TabsTrigger
               value="viewed"
-              className="rounded-xl data-[state=active]:bg-card data-[state=active]:shadow-sm flex items-center gap-2"
+              className="rounded-xl data-[state=active]:bg-card data-[state=active]:shadow-sm data-[state=active]:text-foreground flex items-center gap-2 text-xs sm:text-sm"
             >
               <Eye className="h-4 w-4" />
               <span className="hidden sm:inline">Görüntülenen</span>
             </TabsTrigger>
             <TabsTrigger
               value="liked"
-              className="rounded-xl data-[state=active]:bg-card data-[state=active]:shadow-sm flex items-center gap-2"
+              className="rounded-xl data-[state=active]:bg-card data-[state=active]:shadow-sm data-[state=active]:text-foreground flex items-center gap-2 text-xs sm:text-sm"
             >
               <Heart className="h-4 w-4" />
               <span className="hidden sm:inline">Beğenilen</span>
             </TabsTrigger>
             <TabsTrigger
               value="featured"
-              className="rounded-xl data-[state=active]:bg-card data-[state=active]:shadow-sm flex items-center gap-2"
+              className="rounded-xl data-[state=active]:bg-card data-[state=active]:shadow-sm data-[state=active]:text-foreground flex items-center gap-2 text-xs sm:text-sm"
             >
               <Star className="h-4 w-4" />
               <span className="hidden sm:inline">Öne Çıkan</span>
@@ -821,81 +884,138 @@ export default function Popular() {
           </TabsContent>
         </Tabs>
 
-        {/* Top 3 Highlights */}
+        {/* Top 3 Podium Section */}
         {!isLoading && trending.length >= 3 && (
-          <section className="mt-16 pt-10 border-t border-border/50">
-            <div className="text-center mb-8">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-semibold mb-3">
-                <Award className="h-3.5 w-3.5" />
+          <motion.section
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="mt-16 pt-12 border-t border-border/40"
+          >
+            <div className="text-center mb-10">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.4 }}
+                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-500/10 to-yellow-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-semibold mb-4"
+              >
+                <Trophy className="h-3.5 w-3.5" />
                 Şampiyonlar
-              </div>
+              </motion.div>
               <h2 className="text-2xl md:text-3xl font-bold font-serif-dream text-foreground">
                 En Popüler 3 Rüya
               </h2>
+              <p className="text-sm text-muted-foreground mt-1.5">
+                Tüm zamanların en çok ilgi gören rüya tabirleri
+              </p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              {trending.slice(0, 3).map((dream, index) => {
+
+            {/* Podium layout: 2nd | 1st | 3rd */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 items-end max-w-5xl mx-auto">
+              {[trending[1]!, trending[0]!, trending[2]!].map((dream, displayIndex) => {
+                const realIndex = displayIndex === 0 ? 1 : displayIndex === 1 ? 0 : 2;
                 const medals = ['🥇', '🥈', '🥉'];
+                const labels = ['Birinci', 'İkinci', 'Üçüncü'];
                 const gradients = [
-                  'from-amber-500/15 to-amber-500/5 border-amber-500/30',
-                  'from-slate-400/15 to-slate-400/5 border-slate-400/30',
-                  'from-orange-500/15 to-orange-500/5 border-orange-500/30',
+                  'from-amber-400 to-yellow-500 shadow-amber-500/20',
+                  'from-slate-300 to-slate-400 shadow-slate-400/20',
+                  'from-orange-400 to-amber-600 shadow-orange-500/20',
                 ];
+                const borderColors = [
+                  'border-amber-500/30 hover:border-amber-400/50',
+                  'border-slate-400/30 hover:border-slate-300/50',
+                  'border-orange-500/30 hover:border-orange-400/50',
+                ];
+                const bgGradients = [
+                  'bg-gradient-to-br from-amber-500/5 to-yellow-500/5',
+                  'bg-gradient-to-br from-slate-400/5 to-slate-300/5',
+                  'bg-gradient-to-br from-orange-500/5 to-amber-500/5',
+                ];
+                const podiumHeight = displayIndex === 1 ? 'md:pb-0' : 'md:pb-6';
                 const category = dream.category_id ? categories[dream.category_id] : null;
 
                 return (
-                  <div key={dream.id}>
+                  <motion.div
+                    key={dream.id}
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.4 + displayIndex * 0.1 }}
+                    className={`${podiumHeight}`}
+                  >
                     <Link
                       to={`/ruya/${dream.slug}`}
-                      className={`group relative block overflow-hidden rounded-2xl bg-card p-6 border ${gradients[index]} hover:shadow-xl hover:-translate-y-1 transition-all duration-500`}
+                      className={`group relative block overflow-hidden rounded-2xl ${bgGradients[realIndex]} p-6 border ${borderColors[realIndex]} hover:shadow-xl hover:-translate-y-1.5 transition-all duration-500`}
                     >
-                      <div className="absolute top-3 right-3 text-3xl group-hover:scale-110 transition-transform">
-                        {medals[index]}
-                      </div>
+                      {/* Top gradient bar */}
+                      <div className={`absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r ${gradients[realIndex]}`} />
 
-                      {category && (
-                        <Badge variant="secondary" className="mb-3 gap-1">
-                          <CategoryIcon icon={category.icon} className="h-3.5 w-3.5" /> {category.name}
-                        </Badge>
-                      )}
+                      {/* Decorative glow */}
+                      <div className={`absolute -top-6 -right-6 w-24 h-24 rounded-full bg-gradient-to-br ${gradients[realIndex]} opacity-[0.08] blur-2xl`} />
 
-                      <h3 className="text-lg font-bold font-serif-dream mb-2 group-hover:text-primary transition-colors pr-10 line-clamp-2">
-                        {dream.title}
-                      </h3>
+                      <div className="relative">
+                        {/* Medal badge */}
+                        <div className="flex items-center justify-between mb-4">
+                          <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r ${gradients[realIndex]} bg-opacity-10 text-xs font-bold text-white`}>
+                            <Medal className="h-3 w-3" />
+                            {labels[realIndex]}
+                          </div>
+                          <span className="text-3xl drop-shadow-lg group-hover:scale-110 transition-transform">
+                            {medals[realIndex]}
+                          </span>
+                        </div>
 
-                      <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
-                        {dream.content}
-                      </p>
+                        {category && (
+                          <Badge variant="secondary" className="mb-3 gap-1 rounded-full">
+                            <CategoryIcon icon={category.icon} className="h-3.5 w-3.5" /> {category.name}
+                          </Badge>
+                        )}
 
-                      <div className="flex items-center gap-4 text-xs font-semibold">
-                        <span className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
-                          <Eye className="h-3.5 w-3.5" />
-                          {(dream.view_count || 0).toLocaleString('tr-TR')}
-                        </span>
-                        <span className="flex items-center gap-1.5 text-rose-600 dark:text-rose-400">
-                          <Heart className="h-3.5 w-3.5" />
-                          {(dream.like_count || 0).toLocaleString('tr-TR')}
-                        </span>
+                        <h3 className="text-lg font-bold font-serif-dream mb-2 group-hover:text-primary transition-colors pr-6 line-clamp-2">
+                          {dream.title}
+                        </h3>
+
+                        <p className="text-sm text-muted-foreground line-clamp-2 mb-4 leading-relaxed">
+                          {dream.content}
+                        </p>
+
+                        <div className="flex items-center gap-4 text-xs font-semibold">
+                          <span className="flex items-center gap-1.5">
+                            <Eye className="h-3.5 w-3.5 text-blue-500" />
+                            <span className="text-blue-600 dark:text-blue-400">{(dream.view_count || 0).toLocaleString('tr-TR')}</span>
+                          </span>
+                          <span className="flex items-center gap-1.5">
+                            <Heart className="h-3.5 w-3.5 text-rose-500" />
+                            <span className="text-rose-600 dark:text-rose-400">{(dream.like_count || 0).toLocaleString('tr-TR')}</span>
+                          </span>
+                          <span className="ml-auto">
+                            <ArrowUpRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+                          </span>
+                        </div>
                       </div>
                     </Link>
-                  </div>
+                  </motion.div>
                 );
               })}
             </div>
-          </section>
+          </motion.section>
         )}
 
         {/* Scroll to Top */}
         {showScrollTop && (
-          <div className="fixed bottom-6 right-6 z-50 animate-in fade-in zoom-in duration-200">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            className="fixed bottom-6 right-6 z-50"
+          >
             <Button
               size="icon"
               onClick={scrollToTop}
-              className="rounded-full shadow-xl bg-primary text-primary-foreground hover:bg-primary/90 h-12 w-12"
+              className="rounded-full shadow-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground hover:from-primary/90 hover:to-primary/70 h-12 w-12 hover:shadow-2xl hover:shadow-primary/25 transition-all duration-300"
             >
               <ChevronUp className="h-5 w-5" />
             </Button>
-          </div>
+          </motion.div>
         )}
       </div>
     </Layout>
