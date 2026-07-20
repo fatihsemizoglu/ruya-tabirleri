@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "@/contexts/AuthProvider";
@@ -133,6 +133,12 @@ function DeferredGlobalUi() {
   );
 }
 
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  return null;
+}
+
 const App = () => {
   const content = (
     <QueryClientProvider client={queryClient}>
@@ -146,6 +152,7 @@ const App = () => {
               <OfflineIndicator />
               <DeferredGlobalUi />
               <MaintenanceModeGuard>
+                <ScrollToTop />
                 <AnimatedRoutes />
               </MaintenanceModeGuard>
             </TooltipProvider>

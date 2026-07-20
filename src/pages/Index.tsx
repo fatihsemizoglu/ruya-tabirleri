@@ -1,6 +1,5 @@
 import { Layout } from '@/components/layout/Layout';
 import { HeroSection } from '@/components/home/HeroSection';
-import { HomeDreamInput } from '@/components/home/HomeDreamInput';
 import { FeaturedDreams } from '@/components/home/FeaturedDreams';
 import { DailyDreamCard } from '@/components/home/DailyDreamCard';
 import { CategoriesSection } from '@/components/home/CategoriesSection';
@@ -38,7 +37,6 @@ const Index = () => {
         ]}
       />
       <HeroSection />
-      <HomeDreamInput />
       <DailyDreamCard />
       <FeaturedDreams />
       <CategoriesSection />
