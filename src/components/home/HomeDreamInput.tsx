@@ -46,9 +46,12 @@ export function HomeDreamInput() {
       setResult(data as InterpretationResult);
       notify.success("Rüyanız yorumlandı!");
     } catch (err) {
-      captureError(err, { tags: { feature: "home-dream-input" } });
+      captureError(err, { tags: { feature: "home-dream-input" }, extra: { body: { dreamText: text.slice(0, 100), mood } } });
+      const isHttpError = err instanceof Error && (err.name === 'FunctionsHttpError' || err.message?.includes('non-2xx'));
       notify.error("Yorumlama başarısız", {
-        description: "AI yorumlama servisi şu anda kullanılamıyor.",
+        description: isHttpError
+          ? "Rüya yorumlama servisi geçici bir sorun yaşıyor. Lütfen daha sonra tekrar deneyin."
+          : "AI yorumlama servisi şu anda kullanılamıyor.",
       });
     } finally {
       setIsInterpreting(false);

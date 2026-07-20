@@ -1,10 +1,11 @@
 import { Component, type ReactNode, type ErrorInfo } from 'react';
 import { captureError } from '@/lib/logger';
+import { RefreshCw, ArrowLeft, AlertTriangle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
-  /** Optional label for Sentry reporting */
   label?: string;
 }
 
@@ -13,12 +14,18 @@ interface State {
   error: Error | null;
 }
 
-/**
- * Route-level error boundary. Catches rendering errors within a route group
- * and shows a recoverable UI instead of crashing the entire app.
- *
- * The top-level Sentry.ErrorBoundary in App.tsx remains as a last-resort fallback.
- */
+function isChunkError(error: Error): boolean {
+  const msg = error.message || '';
+  return (
+    msg.includes('Loading chunk') ||
+    msg.includes('dynamically imported') ||
+    msg.includes('text/html') ||
+    msg.includes('MIME') ||
+    msg.includes('script') ||
+    msg.includes('import()')
+  );
+}
+
 export class RouteErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
@@ -37,46 +44,80 @@ export class RouteErrorBoundary extends Component<Props, State> {
   }
 
   private handleReset = () => {
+    if (this.state.error && isChunkError(this.state.error)) {
+      window.location.reload();
+      return;
+    }
     this.setState({ hasError: false, error: null });
-  };
-
-  private handleGoHome = () => {
-    this.setState({ hasError: false, error: null });
-    window.location.href = '/';
   };
 
   render() {
     if (this.state.hasError) {
       if (this.props.fallback) return this.props.fallback;
 
-      const message = this.state.error?.message || 'Bilinmeyen hata';
+      const error = this.state.error;
+      const isChunk = error ? isChunkError(error) : false;
+      const showDetails = import.meta.env.DEV;
+
       return (
         <div className="min-h-[60vh] flex items-center justify-center p-6">
           <div className="max-w-md w-full bg-card border rounded-2xl p-8 text-center shadow-lg">
-            <div className="text-5xl mb-4">⚠️</div>
-            <h2 className="text-xl font-bold mb-2">Bu sayfa yüklenemedi</h2>
-            <p className="text-muted-foreground mb-4 text-sm">
-              {this.props.label
-                ? `"${this.props.label}" bölümünde bir hata oluştu.`
-                : 'Sayfada beklenmeyen bir hata oluştu.'}
-            </p>
-            <pre className="text-xs bg-muted p-3 rounded text-left overflow-auto max-h-24 mb-4">
-              {message}
-            </pre>
-            <div className="flex gap-3">
-              <button
-                onClick={this.handleReset}
-                className="flex-1 bg-primary text-primary-foreground rounded-lg py-2 font-medium hover:bg-primary/90 transition-colors"
-              >
-                Tekrar Dene
-              </button>
-              <button
-                onClick={this.handleGoHome}
-                className="flex-1 bg-muted text-foreground rounded-lg py-2 font-medium hover:bg-muted/80 transition-colors"
-              >
-                Anasayfa
-              </button>
-            </div>
+            {isChunk ? (
+              <>
+                <div className="w-16 h-16 rounded-2xl bg-amber-500/10 flex items-center justify-center mx-auto mb-5">
+                  <AlertTriangle className="h-8 w-8 text-amber-500" />
+                </div>
+                <h2 className="text-xl font-bold mb-2 text-foreground">Güncelleme Gerekli</h2>
+                <p className="text-muted-foreground mb-2 text-sm leading-relaxed">
+                  Uygulama güncellendi. Sayfayı yenileyerek yeni sürüme geçebilirsiniz.
+                </p>
+                <p className="text-xs text-muted-foreground/70 mb-6">
+                  {this.props.label && `"${this.props.label}" yüklenirken sürüm uyuşmazlığı oluştu.`}
+                </p>
+                <Button
+                  onClick={() => window.location.reload()}
+                  size="lg"
+                  className="w-full rounded-xl h-12"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Sayfayı Yenile
+                </Button>
+              </>
+            ) : (
+              <>
+                <div className="w-16 h-16 rounded-2xl bg-destructive/10 flex items-center justify-center mx-auto mb-5">
+                  <AlertTriangle className="h-8 w-8 text-destructive" />
+                </div>
+                <h2 className="text-xl font-bold mb-2 text-foreground">Bu sayfa yüklenemedi</h2>
+                <p className="text-muted-foreground mb-6 text-sm">
+                  {this.props.label
+                    ? `"${this.props.label}" bölümünde bir hata oluştu.`
+                    : 'Sayfada beklenmeyen bir hata oluştu.'}
+                </p>
+                {showDetails && error && (
+                  <pre className="text-xs bg-muted p-3 rounded text-left overflow-auto max-h-24 mb-4">
+                    {error.message}
+                  </pre>
+                )}
+                <div className="flex gap-3">
+                  <Button
+                    onClick={() => window.location.reload()}
+                    className="flex-1 rounded-xl"
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Tekrar Dene
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => { window.location.href = '/'; }}
+                    className="flex-1 rounded-xl"
+                  >
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Anasayfa
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       );
