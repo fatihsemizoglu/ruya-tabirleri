@@ -3,7 +3,25 @@ import * as Sentry from '@sentry/react';
 import { supabase } from '@/integrations/supabase/client';
 import { captureError } from '@/lib/logger';
 import type { Profile, AppRole } from '@/types/database';
-import { AuthContext, type AuthContextType } from './auth-context';
+import { AuthContext, type AuthContextType, type AuthError, type SocialProvider } from './auth-context';
+
+function translateAuthError(message: string): string {
+  const map: Record<string, string> = {
+    'Invalid login credentials': 'E-posta veya şifre hatalı.',
+    'Email not confirmed': 'E-posta adresiniz henüz doğrulanmamış. Lütfen e-postanızı kontrol edin.',
+    'User already registered': 'Bu e-posta adresi zaten kayıtlı.',
+    'Password should be at least 6 characters': 'Şifre en az 6 karakter olmalıdır.',
+    'Signup requires a valid password': 'Geçerli bir şifre belirleyin.',
+    'Invalid email': 'Geçersiz e-posta adresi.',
+    'Email rate limit exceeded': 'Çok fazla istek gönderdiniz. Lütfen bir süre bekleyin.',
+    'User not found': 'Bu e-posta adresine ait hesap bulunamadı.',
+    'Only an admin can invoke this': 'Bu işlem için yetkiniz bulunmuyor.',
+    'New password should be different from the old password': 'Yeni şifreniz eskisinden farklı olmalıdır.',
+    'Invalid refresh token': 'Oturum süreniz doldu. Lütfen tekrar giriş yapın.',
+    'Session expired': 'Oturum süreniz doldu. Lütfen tekrar giriş yapın.',
+  };
+  return map[message] || message;
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthContextType['user']>(null);
@@ -106,22 +124,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, [loadUserData]);
 
+  const mapError = (error: Error | null): AuthError | null => {
+    if (!error) return null;
+    const message = translateAuthError(error.message);
+    return { message, code: (error as any).code };
+  };
+
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error: error as Error | null };
+    return { error: mapError(error as Error | null) };
   };
 
   const signUp = async (email: string, password: string, metadata?: { username?: string; full_name?: string }) => {
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: metadata ? { data: metadata } : {},
+      options: {
+        data: metadata || {},
+        emailRedirectTo: `${window.location.origin}/giris`,
+      },
     });
-    return { error: error as Error | null };
+    return { error: mapError(error as Error | null) };
+  };
+
+  const signInWithProvider = async (provider: SocialProvider) => {
+    const redirectTo = `${window.location.origin}/auth/callback`;
+    await supabase.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo },
+    });
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
+    if (error) captureError(error, { tags: { feature: 'auth', action: 'sign-out' } });
     if (import.meta.env.VITE_SENTRY_DSN) {
       Sentry.setUser(null);
     }
@@ -143,7 +179,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading,
       signIn,
       signUp,
-      signOut
+      signOut,
+      signInWithProvider,
     }}>
       {children}
     </AuthContext.Provider>

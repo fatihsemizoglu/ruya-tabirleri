@@ -10,6 +10,7 @@ import { OfflineIndicator } from "@/components/pwa/OfflineIndicator";
 import { MaintenanceModeGuard } from "@/components/layout/MaintenanceModeGuard";
 import { WebVitals } from "@/components/perf/WebVitals";
 import { RouteErrorBoundary } from "@/components/RouteErrorBoundary";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 // Eager load: en çok kullanılan sayfalar (initial bundle)
 import Index from "./pages/Index";
@@ -40,6 +41,8 @@ const Blog = lazy(() => import("./pages/Blog"));
 const BlogPost = lazy(() => import("./pages/BlogPost"));
 const BlogTag = lazy(() => import("./pages/BlogTag"));
 const Auth = lazy(() => import("./pages/Auth"));
+const AuthCallback = lazy(() => import("./pages/AuthCallback"));
+const EmailConfirm = lazy(() => import("./pages/EmailConfirm"));
 const Install = lazy(() => import("./pages/Install"));
 const SubscriptionVerify = lazy(() => import("./pages/SubscriptionVerify"));
 const SubscriptionCancel = lazy(() => import("./pages/SubscriptionCancel"));
@@ -71,6 +74,8 @@ function AnimatedRoutes() {
           <Route path="/kayit" element={<Auth mode="register" />} />
           <Route path="/sifremi-unuttum" element={<Auth mode="forgot" />} />
           <Route path="/sifre-sifirla" element={<Auth mode="reset" />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/email-dogrula" element={<EmailConfirm />} />
           <Route path="/ara" element={<RouteErrorBoundary label="Search"><Search /></RouteErrorBoundary>} />
           {/* Content routes - isolated boundary */}
           <Route path="/ruya/:slug" element={<RouteErrorBoundary label="DreamDetail"><DreamDetail /></RouteErrorBoundary>} />
@@ -83,13 +88,13 @@ function AnimatedRoutes() {
           <Route path="/az" element={<AlphabetList />} />
           <Route path="/az/:letter" element={<AlphabetList />} />
           {/* User routes - isolated boundary */}
-          <Route path="/profil" element={<RouteErrorBoundary label="Profile"><Profile /></RouteErrorBoundary>} />
-          <Route path="/ruya-gunlugum" element={<RouteErrorBoundary label="Journal"><DreamJournal /></RouteErrorBoundary>} />
-          <Route path="/ruya-gunlugum/sesli" element={<RouteErrorBoundary label="Journal"><DreamJournalVoice /></RouteErrorBoundary>} />
-          <Route path="/favorilerim" element={<RouteErrorBoundary label="Favorites"><Favorites /></RouteErrorBoundary>} />
-          <Route path="/gecmis" element={<RouteErrorBoundary label="History"><History /></RouteErrorBoundary>} />
+          <Route path="/profil" element={<ProtectedRoute><RouteErrorBoundary label="Profile"><Profile /></RouteErrorBoundary></ProtectedRoute>} />
+          <Route path="/ruya-gunlugum" element={<ProtectedRoute><RouteErrorBoundary label="Journal"><DreamJournal /></RouteErrorBoundary></ProtectedRoute>} />
+          <Route path="/ruya-gunlugum/sesli" element={<ProtectedRoute><RouteErrorBoundary label="Journal"><DreamJournalVoice /></RouteErrorBoundary></ProtectedRoute>} />
+          <Route path="/favorilerim" element={<ProtectedRoute><RouteErrorBoundary label="Favorites"><Favorites /></RouteErrorBoundary></ProtectedRoute>} />
+          <Route path="/gecmis" element={<ProtectedRoute><RouteErrorBoundary label="History"><History /></RouteErrorBoundary></ProtectedRoute>} />
           {/* Admin routes - isolated boundary */}
-          <Route path="/admin/*" element={<RouteErrorBoundary label="Admin"><Admin /></RouteErrorBoundary>} />
+          <Route path="/admin/*" element={<ProtectedRoute roles={['admin', 'moderator']}><RouteErrorBoundary label="Admin"><Admin /></RouteErrorBoundary></ProtectedRoute>} />
           <Route path="/hakkimizda" element={<About />} />
           <Route path="/iletisim" element={<Contact />} />
           <Route path="/gizlilik" element={<Privacy />} />

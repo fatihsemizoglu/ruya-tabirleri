@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Moon, Eye, EyeOff, Mail, Lock, User, Sparkles, KeyRound } from 'lucide-react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Moon, Eye, EyeOff, Mail, Lock, User, Sparkles, KeyRound, Chrome } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Seo } from '@/components/Seo';
@@ -41,18 +42,22 @@ export default function Auth({ mode }: AuthProps) {
   const [fullName, setFullName] = useState('');
   const [username, setUsername] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [socialLoading, setSocialLoading] = useState<'' | 'google'>('');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const { signIn, signUp, user } = useAuth();
+  const { signIn, signUp, user, signInWithProvider } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
     if (user && mode !== 'reset') {
-      navigate('/');
+      const redirectTo = searchParams.get('redirect') || '/';
+      navigate(redirectTo);
     }
-  }, [user, navigate, mode]);
+  }, [user, navigate, mode, searchParams]);
 
   const validateForm = () => {
     try {
@@ -83,7 +88,7 @@ export default function Auth({ mode }: AuthProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     setIsLoading(true);
@@ -92,93 +97,80 @@ export default function Auth({ mode }: AuthProps) {
       if (mode === 'login') {
         const { error } = await signIn(email, password);
         if (error) {
-          toast({
-            variant: 'destructive',
-            title: 'Giriş başarısız',
-            description: error.message === 'Invalid login credentials' 
-              ? 'E-posta veya şifre hatalı'
-              : error.message,
-          });
+          toast({ variant: 'destructive', title: 'Giriş başarısız', description: error.message });
         } else {
-          toast({
-            title: 'Hoş geldiniz!',
-            description: 'Başarıyla giriş yaptınız.',
-          });
-          navigate('/');
+          toast({ title: 'Hoş geldiniz!', description: 'Başarıyla giriş yaptınız.' });
+          const redirectTo = searchParams.get('redirect') || '/';
+          navigate(redirectTo);
         }
       } else if (mode === 'register') {
         const { error } = await signUp(email, password, { username, full_name: fullName });
         if (error) {
-          toast({
-            variant: 'destructive',
-            title: 'Kayıt başarısız',
-            description: error.message === 'User already registered'
-              ? 'Bu e-posta adresi zaten kayıtlı'
-              : error.message,
-          });
+          toast({ variant: 'destructive', title: 'Kayıt başarısız', description: error.message });
         } else {
-          toast({
-            title: 'Kayıt başarılı!',
-            description: 'Hesabınız oluşturuldu. Giriş yapabilirsiniz.',
-          });
-          navigate('/');
+          toast({ title: 'Hesabınız oluşturuldu!', description: 'E-posta adresinize doğrulama bağlantısı gönderildi.' });
+          navigate('/email-dogrula');
         }
       } else if (mode === 'forgot') {
         const redirectTo = `${window.location.origin}/sifre-sifirla`;
         const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
-        if (error) throw error;
-        toast({
-          title: 'Sıfırlama bağlantısı gönderildi',
-          description: 'E-postanızı kontrol edin ve gelen bağlantıyla yeni şifrenizi belirleyin.',
-        });
+        if (error) {
+          toast({ variant: 'destructive', title: 'Hata', description: error.message });
+        } else {
+          toast({ title: 'Sıfırlama bağlantısı gönderildi', description: 'E-postanızı kontrol edin.' });
+        }
       } else {
         const { error } = await supabase.auth.updateUser({ password });
-        if (error) throw error;
-        toast({
-          title: 'Şifreniz güncellendi',
-          description: 'Yeni şifrenizle giriş yapabilirsiniz.',
-        });
-        navigate('/giris');
+        if (error) {
+          toast({ variant: 'destructive', title: 'Hata', description: error.message });
+        } else {
+          toast({ title: 'Şifreniz güncellendi', description: 'Yeni şifrenizle giriş yapabilirsiniz.' });
+          navigate('/giris');
+        }
       }
     } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Bir hata oluştu',
-        description: 'Lütfen tekrar deneyin.',
-      });
+      toast({ variant: 'destructive', title: 'Bir hata oluştu', description: 'Lütfen tekrar deneyin.' });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const title = mode === 'login'
-    ? 'Giriş Yap'
-    : mode === 'register'
-    ? 'Kayıt Ol'
-    : mode === 'forgot'
-    ? 'Şifremi Unuttum'
+  const handleSocialLogin = async (provider: 'google') => {
+    setSocialLoading(provider);
+    try {
+      await signInWithProvider(provider);
+    } catch {
+      toast({ variant: 'destructive', title: 'Giriş başarısız', description: 'Sosyal giriş sırasında bir hata oluştu.' });
+    } finally {
+      setSocialLoading('');
+    }
+  };
+
+  const title = mode === 'login' ? 'Giriş Yap'
+    : mode === 'register' ? 'Kayıt Ol'
+    : mode === 'forgot' ? 'Şifremi Unuttum'
     : 'Yeni Şifre Belirle';
+
   const description = mode === 'forgot'
     ? 'E-posta adresinizi girin, şifre sıfırlama bağlantısını gönderelim.'
     : mode === 'reset'
     ? 'Hesabınız için yeni bir şifre belirleyin.'
     : 'Rüya Tabirleri hesabınıza giriş yapın veya yeni hesap oluşturun.';
 
+  const showSocialLogin = mode === 'login' || mode === 'register';
+
   return (
     <div className="min-h-screen flex relative bg-background text-foreground">
       <Seo
-          title={title}
-          description={description}
-          path={mode === 'login' ? '/giris' : mode === 'register' ? '/kayit' : mode === 'forgot' ? '/sifremi-unuttum' : '/sifre-sifirla'}
+        title={title}
+        description={description}
+        path={mode === 'login' ? '/giris' : mode === 'register' ? '/kayit' : mode === 'forgot' ? '/sifremi-unuttum' : '/sifre-sifirla'}
         noindex
       />
-      {/* Background blobs for the form panel */}
       <PremiumBackground variant="soft" className="hidden sm:block lg:hidden opacity-40" />
 
-      {/* Left Panel - Form */}
       <div className="flex-1 flex items-center justify-center p-4 sm:p-8 relative">
         <div className="w-full max-w-md rounded-3xl border border-border/60 bg-card/95 p-6 text-card-foreground shadow-2xl shadow-primary/10 backdrop-blur-xl sm:p-8 dark:border-white/10 dark:bg-slate-950/95">
-          {/* Logo */}
           <Link to="/" className="flex items-center gap-2 mb-8 group">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 via-fuchsia-500 to-pink-500 flex items-center justify-center shadow-lg shadow-fuchsia-500/25 group-hover:scale-105 transition-transform">
               <Moon className="h-5 w-5 text-white" />
@@ -188,7 +180,6 @@ export default function Auth({ mode }: AuthProps) {
             </span>
           </Link>
 
-          {/* Badge */}
           <div className="mb-4">
             <PremiumBadge>
               <Sparkles className="h-3.5 w-3.5" />
@@ -196,7 +187,6 @@ export default function Auth({ mode }: AuthProps) {
             </PremiumBadge>
           </div>
 
-          {/* Title */}
           <h1 className="text-3xl sm:text-4xl font-bold tracking-[-0.025em] mb-2 text-foreground">
             {mode === 'login' ? (
               <>Tekrar <GradientText>Hoş Geldiniz</GradientText></>
@@ -219,7 +209,32 @@ export default function Auth({ mode }: AuthProps) {
             }
           </p>
 
-          {/* Form */}
+          {showSocialLogin && (
+            <>
+              <div className="flex flex-col gap-3 mb-6">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full h-11 gap-2"
+                  onClick={() => handleSocialLogin('google')}
+                  disabled={socialLoading === 'google'}
+                >
+                  <Chrome className="h-5 w-5" />
+                  {socialLoading === 'google' ? 'Google ile bağlanıyor...' : 'Google ile Devam Et'}
+                </Button>
+              </div>
+
+              <div className="relative mb-6">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground">veya e-posta ile</span>
+                </div>
+              </div>
+            </>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === 'register' && (
               <>
@@ -299,6 +314,22 @@ export default function Auth({ mode }: AuthProps) {
               {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
             </div>}
 
+            {mode === 'login' && (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="rememberMe"
+                    checked={rememberMe}
+                    onCheckedChange={(checked) => setRememberMe(checked === true)}
+                  />
+                  <Label htmlFor="rememberMe" className="text-sm cursor-pointer">Beni hatırla</Label>
+                </div>
+                <Link to="/sifremi-unuttum" className="text-sm font-medium text-primary hover:underline">
+                  Şifremi unuttum
+                </Link>
+              </div>
+            )}
+
             <Button type="submit" className="w-full dream-gradient" disabled={isLoading}>
               {isLoading
                 ? 'Lütfen bekleyin...'
@@ -315,12 +346,11 @@ export default function Auth({ mode }: AuthProps) {
           {mode === 'login' && (
             <div className="mt-4 text-center">
               <Link to="/sifremi-unuttum" className="text-sm font-medium text-primary hover:underline">
-                Parolamı unuttum
+                Şifremi unuttum
               </Link>
             </div>
           )}
 
-          {/* Switch Mode */}
           <p className="text-center text-sm text-muted-foreground mt-6">
             {mode === 'login' ? (
               <>
@@ -348,7 +378,6 @@ export default function Auth({ mode }: AuthProps) {
         </div>
       </div>
 
-      {/* Right Panel - Decorative */}
       <div className="hidden lg:flex flex-1 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-violet-600 via-fuchsia-600 to-pink-600" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-white/15 via-transparent to-transparent" />
@@ -361,7 +390,6 @@ export default function Auth({ mode }: AuthProps) {
           }}
         />
 
-        {/* Floating Elements */}
         <div className="absolute top-20 left-20 w-40 h-40 rounded-full bg-white/10 blur-2xl animate-pulse" />
         <div className="absolute bottom-32 right-20 w-32 h-32 rounded-full bg-white/10 blur-2xl animate-pulse" style={{ animationDelay: '1s' }} />
         <div className="absolute top-1/2 right-1/3 w-24 h-24 rounded-full bg-white/10 blur-2xl animate-pulse" style={{ animationDelay: '2s' }} />

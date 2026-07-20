@@ -364,6 +364,18 @@ export default function Profile() {
     await signOut();
   };
 
+  const handleSignOutAllSessions = async () => {
+    try {
+      const { error } = await supabase.auth.signOut({ scope: 'others' });
+      if (error) throw error;
+      notify.success('Diğer oturumlar kapatıldı', {
+        description: 'Diğer cihazlardaki oturumlarınız sonlandırıldı.',
+      });
+    } catch (error) {
+      notify.error('Oturumlar kapatılamadı', { description: getErrorMessage(error) });
+    }
+  };
+
   if (authLoading) {
     return (
       <Layout>
@@ -758,73 +770,99 @@ export default function Profile() {
                       </div>
                     </form>
 
-                    <form onSubmit={handlePasswordSubmit} className="mt-8 pt-6 border-t border-border/45 space-y-5">
+                    <div className="mt-8 pt-6 border-t border-border/45 space-y-6">
                       <div className="flex items-center gap-3">
                         <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-md">
                           <ShieldCheck className="w-5 h-5 text-white" />
                         </div>
                         <div>
                           <h2 className="text-lg font-serif-dream font-bold">Şifre ve Güvenlik</h2>
-                          <p className="text-sm text-muted-foreground">Hesabınızın giriş şifresini güvenli şekilde güncelleyin.</p>
+                          <p className="text-sm text-muted-foreground">Hesabınızın güvenlik ayarlarını yönetin.</p>
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <div className="space-y-2">
-                          <Label htmlFor="newPassword" className="text-sm font-medium">Yeni Şifre</Label>
-                          <div className="relative">
-                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                            <Input
-                              id="newPassword"
-                              type={showPasswordFields ? 'text' : 'password'}
-                              value={passwordForm.newPassword}
-                              onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                              className="pl-11 pr-11 h-11 rounded-xl border-border/60"
-                              placeholder="En az 6 karakter"
-                              autoComplete="new-password"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => setShowPasswordFields((show) => !show)}
-                              className="absolute right-3 top-1/2 -translate-y-1/2 h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                              aria-label={showPasswordFields ? 'Şifreyi gizle' : 'Şifreyi göster'}
-                            >
-                              {showPasswordFields ? <EyeOff className="h-4 w-4 mx-auto" /> : <Eye className="h-4 w-4 mx-auto" />}
-                            </button>
+                      <form onSubmit={handlePasswordSubmit} className="space-y-5">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                          <div className="space-y-2">
+                            <Label htmlFor="newPassword" className="text-sm font-medium">Yeni Şifre</Label>
+                            <div className="relative">
+                              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                              <Input
+                                id="newPassword"
+                                type={showPasswordFields ? 'text' : 'password'}
+                                value={passwordForm.newPassword}
+                                onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                                className="pl-11 pr-11 h-11 rounded-xl border-border/60"
+                                placeholder="En az 6 karakter"
+                                autoComplete="new-password"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowPasswordFields((show) => !show)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                                aria-label={showPasswordFields ? 'Şifreyi gizle' : 'Şifreyi göster'}
+                              >
+                                {showPasswordFields ? <EyeOff className="h-4 w-4 mx-auto" /> : <Eye className="h-4 w-4 mx-auto" />}
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="confirmPassword" className="text-sm font-medium">Yeni Şifre Tekrar</Label>
+                            <div className="relative">
+                              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                              <Input
+                                id="confirmPassword"
+                                type={showPasswordFields ? 'text' : 'password'}
+                                value={passwordForm.confirmPassword}
+                                onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                                className="pl-11 h-11 rounded-xl border-border/60"
+                                placeholder="Yeni şifreyi tekrar yazın"
+                                autoComplete="new-password"
+                              />
+                            </div>
                           </div>
                         </div>
 
-                        <div className="space-y-2">
-                          <Label htmlFor="confirmPassword" className="text-sm font-medium">Yeni Şifre Tekrar</Label>
-                          <div className="relative">
-                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                            <Input
-                              id="confirmPassword"
-                              type={showPasswordFields ? 'text' : 'password'}
-                              value={passwordForm.confirmPassword}
-                              onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
-                              className="pl-11 h-11 rounded-xl border-border/60"
-                              placeholder="Yeni şifreyi tekrar yazın"
-                              autoComplete="new-password"
-                            />
+                        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/45 bg-muted/30 p-4 dark:border-white/10">
+                          <p className="text-xs text-muted-foreground max-w-xl">
+                            Şifre değişikliği mevcut oturumunuzu korur. Güvenlik için yeni şifrenizi başka sitelerde kullanmadığınız bir şifre olarak seçin.
+                          </p>
+                          <Button
+                            type="submit"
+                            disabled={isPasswordLoading || !passwordForm.newPassword || !passwordForm.confirmPassword}
+                            className="rounded-xl h-10 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white"
+                          >
+                            <ShieldCheck className="h-4 w-4 mr-2" />
+                            {isPasswordLoading ? 'Güncelleniyor...' : 'Şifreyi Güncelle'}
+                          </Button>
+                        </div>
+                      </form>
+
+                      <div className="rounded-xl border border-border/45 p-5 space-y-4 dark:border-white/10">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
+                            <LogOut className="w-4 h-4 text-muted-foreground" />
+                          </div>
+                          <div>
+                            <h3 className="text-sm font-semibold">Oturum Yönetimi</h3>
+                            <p className="text-xs text-muted-foreground">Diğer cihazlardaki aktif oturumları yönetin.</p>
                           </div>
                         </div>
+                        <div className="flex flex-wrap items-center gap-3">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={handleSignOutAllSessions}
+                            className="text-xs"
+                          >
+                            <LogOut className="h-3.5 w-3.5 mr-1.5" />
+                            Diğer Cihazlardan Çıkış Yap
+                          </Button>
+                        </div>
                       </div>
-
-                      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/45 bg-muted/30 p-4 dark:border-white/10">
-                        <p className="text-xs text-muted-foreground max-w-xl">
-                          Şifre değişikliği mevcut oturumunuzu korur. Güvenlik için yeni şifrenizi başka sitelerde kullanmadığınız bir şifre olarak seçin.
-                        </p>
-                        <Button
-                          type="submit"
-                          disabled={isPasswordLoading || !passwordForm.newPassword || !passwordForm.confirmPassword}
-                          className="rounded-xl h-10 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white"
-                        >
-                          <ShieldCheck className="h-4 w-4 mr-2" />
-                          {isPasswordLoading ? 'Güncelleniyor...' : 'Şifreyi Güncelle'}
-                        </Button>
-                      </div>
-                    </form>
+                    </div>
                   </div>
                 </motion.div>
               </div>
