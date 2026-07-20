@@ -819,7 +819,6 @@ export default function DreamDetail() {
           <SimilarDreams
             currentDream={dream}
             categoryId={dream.category_id}
-            keywords={dream.keywords || []}
           />
         </motion.div>
       </section>

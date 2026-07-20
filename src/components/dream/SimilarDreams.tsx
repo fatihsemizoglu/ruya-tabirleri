@@ -25,7 +25,6 @@ const normalizeKeywords = (values: string[]) => values.map(normalizeText).filter
 interface SimilarDreamsProps {
   currentDream: Dream;
   categoryId: string | null;
-  keywords: string[];
 }
 
 interface SimilarDream extends Dream {
@@ -33,7 +32,16 @@ interface SimilarDream extends Dream {
   matchReasons: string[];
 }
 
-export function SimilarDreams({ currentDream, categoryId, keywords }: SimilarDreamsProps) {
+function extractTitleWords(title: string): string[] {
+  return title
+    .toLocaleLowerCase('tr-TR')
+    .split(/[\s,;.:!?()"']+/)
+    .map(w => normalizeText(w))
+    .filter(w => w.length > 2)
+    .slice(0, 6);
+}
+
+export function SimilarDreams({ currentDream, categoryId }: SimilarDreamsProps) {
   const [similarDreams, setSimilarDreams] = useState<SimilarDream[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showAll, setShowAll] = useState(false);
@@ -41,14 +49,12 @@ export function SimilarDreams({ currentDream, categoryId, keywords }: SimilarDre
   const fetchSimilarDreams = useCallback(async () => {
     setIsLoading(true);
     try {
-      const normalizedCurrentKeywords = normalizeKeywords(keywords || []);
-      const searchTerms = normalizedCurrentKeywords.slice(0, 4);
-      const candidateQueries = [currentDream.title, ...searchTerms].filter(Boolean).slice(0, 4);
+      const titleWords = extractTitleWords(currentDream.title);
       const candidateIds = new Set<string>();
 
       const searchResults = await Promise.all(
-        candidateQueries.map((search_query) =>
-          supabase.rpc('search_dreams', { search_query, limit_count: 12 })
+        titleWords.map((word) =>
+          supabase.rpc('search_dreams', { search_query: word, limit_count: 12 })
         )
       );
 
@@ -81,33 +87,29 @@ export function SimilarDreams({ currentDream, categoryId, keywords }: SimilarDre
         .in('id', Array.from(candidateIds))
         .eq('is_published', true);
 
+      const normalizedTitleWords = titleWords;
       const dreamMap = new Map<string, SimilarDream>();
 
       (candidates as Dream[] | null)?.forEach((dream) => {
-        const normalizedDreamKeywords = normalizeKeywords(dream.keywords || []);
-        const matchingKeywordCount = normalizedDreamKeywords.filter((keyword) =>
-          normalizedCurrentKeywords.some((currentKeyword) => keyword === currentKeyword || keyword.includes(currentKeyword) || currentKeyword.includes(keyword))
+        const normalizedDreamTitle = normalizeText(dream.title);
+        const matchingTitleWords = normalizedTitleWords.filter((word) =>
+          normalizedDreamTitle.includes(word)
         ).length;
-        const titleSimilarity = searchTerms.some((term) => normalizeText(dream.title).includes(term)) ? 2 : 0;
         const categoryScore = categoryId && dream.category_id === categoryId ? 2 : 0;
-        const matchScore = matchingKeywordCount * 3 + titleSimilarity + categoryScore;
+        const matchScore = matchingTitleWords * 4 + categoryScore;
 
-        if (matchScore < 3) return;
+        if (matchScore < 2) return;
 
         const matchReasons: string[] = [];
-        if (matchingKeywordCount > 0) matchReasons.push('Ortak Anahtar Kelime');
+        if (matchingTitleWords > 0) matchReasons.push('Başlık Benzerliği');
         if (categoryScore > 0) matchReasons.push('Aynı Kategori');
-        if (titleSimilarity > 0) matchReasons.push('Başlık Benzerliği');
 
         dreamMap.set(dream.id, { ...dream, matchScore, matchReasons });
       });
 
-      // Sort by score and popularity
       const sorted = Array.from(dreamMap.values())
         .sort((a, b) => {
-          if (b.matchScore !== a.matchScore) {
-            return b.matchScore - a.matchScore;
-          }
+          if (b.matchScore !== a.matchScore) return b.matchScore - a.matchScore;
           return (b.view_count || 0) - (a.view_count || 0);
         })
         .slice(0, 8);
@@ -118,7 +120,7 @@ export function SimilarDreams({ currentDream, categoryId, keywords }: SimilarDre
     } finally {
       setIsLoading(false);
     }
-  }, [currentDream.id, currentDream.title, categoryId, keywords]);
+  }, [currentDream.id, currentDream.title, categoryId]);
 
   useEffect(() => {
     fetchSimilarDreams();
