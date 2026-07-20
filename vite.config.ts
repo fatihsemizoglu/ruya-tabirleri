@@ -34,7 +34,7 @@ export default defineConfig(({ mode }) => ({
       telemetry: false,
     }) : false,
     VitePWA({
-      registerType: "autoUpdate",
+      registerType: "prompt",
       workbox: {
         cleanupOutdatedCaches: true,
         skipWaiting: true,
@@ -137,7 +137,43 @@ export default defineConfig(({ mode }) => ({
             purpose: "maskable"
           }
         ],
-        screenshots: []
+        screenshots: [
+          {
+            src: "/pwa-screenshot-wide.png",
+            sizes: "1280x720",
+            type: "image/png",
+            form_factor: "wide"
+          },
+          {
+            src: "/pwa-screenshot-narrow.png",
+            sizes: "720x1280",
+            type: "image/png",
+            form_factor: "narrow"
+          }
+        ],
+        shortcuts: [
+          {
+            name: "Rüya Ara",
+            short_name: "Ara",
+            description: "Rüya tabirlerinde ara",
+            url: "/ara",
+            icons: [{ src: "/pwa-192x192.png", sizes: "192x192" }]
+          },
+          {
+            name: "Rüya Günlüğüm",
+            short_name: "Günlük",
+            description: "Rüya günlüğüme yaz",
+            url: "/ruya-gunlugum",
+            icons: [{ src: "/pwa-192x192.png", sizes: "192x192" }]
+          },
+          {
+            name: "Popüler Rüyalar",
+            short_name: "Popüler",
+            description: "En popüler rüya tabirleri",
+            url: "/populer",
+            icons: [{ src: "/pwa-192x192.png", sizes: "192x192" }]
+          }
+        ]
       },
     })
   ] as PluginOption[],

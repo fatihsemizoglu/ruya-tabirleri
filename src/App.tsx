@@ -7,6 +7,7 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "@/contexts/AuthProvider";
 import { OfflineIndicator } from "@/components/pwa/OfflineIndicator";
+import { SWUpdatePrompt } from "@/components/pwa/SWUpdatePrompt";
 import { MaintenanceModeGuard } from "@/components/layout/MaintenanceModeGuard";
 import { WebVitals } from "@/components/perf/WebVitals";
 import { RouteErrorBoundary } from "@/components/RouteErrorBoundary";
@@ -155,6 +156,7 @@ const App = () => {
               <Toaster />
               <Sonner />
               <OfflineIndicator />
+              <SWUpdatePrompt />
               <DeferredGlobalUi />
               <MaintenanceModeGuard>
                 <ScrollToTop />

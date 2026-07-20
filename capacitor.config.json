@@ -1,0 +1,15 @@
+{
+  "appId": "com.ruyatabirleri.app",
+  "appName": "Rüya Tabirleri",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https",
+    "cleartext": false
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": true,
+      "backgroundColor": "#0f172a"
+    }
+  }
+}
