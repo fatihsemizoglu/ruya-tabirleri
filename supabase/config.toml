@@ -21,9 +21,6 @@ verify_jwt = true
 [functions.generate-internal-links]
 verify_jwt = true
 
-[functions.interpret-dream]
-verify_jwt = false
-
 [functions.ab-test-manager]
 verify_jwt = false
 
