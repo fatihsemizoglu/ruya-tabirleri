@@ -380,115 +380,60 @@ export default function Popular() {
         <motion.div variants={cardVariants} custom={index}>
           <Link
             to={`/ruya/${dream.slug}`}
-            className="render-optimize group flex items-center gap-3 bg-card/60 backdrop-blur-sm border border-border/40 rounded-xl px-3 py-2.5 hover:border-primary/30 hover:bg-card/80 hover:shadow-sm transition-all duration-200"
+            className="group flex items-center gap-2.5 border-b border-border/20 px-1 py-2 hover:bg-accent/20 transition-colors"
           >
-            <div className={`shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-bold ${
+            <span className={`shrink-0 w-5 h-5 rounded flex items-center justify-center text-[9px] font-semibold ${
               isTopThree
-                ? `bg-gradient-to-br ${rankGradient} text-white shadow-sm`
-                : 'bg-muted text-muted-foreground'
+                ? `bg-gradient-to-br ${rankGradient} text-white`
+                : 'text-muted-foreground/40'
             }`}>
-              {isTopThree ? ['🥇', '🥈', '🥉'][index] : `#${index + 1}`}
-            </div>
-
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5 mb-0.5">
-                {dream.is_featured && (
-                  <Star className="h-2.5 w-2.5 text-amber-500 fill-amber-500 shrink-0" />
-                )}
-                {category && (
-                  <Badge variant="secondary" className="text-[10px] gap-1 rounded-full h-4 px-1.5">
-                    <CategoryIcon icon={category.icon} className="h-2 w-2" />
-                    <span className="max-w-[80px] truncate">{category.name}</span>
-                  </Badge>
-                )}
-              </div>
-              <h3 className="text-xs font-medium text-foreground group-hover:text-primary transition-colors line-clamp-1">
-                {dream.title}
-              </h3>
-            </div>
-
-            <div className="flex items-center gap-2 shrink-0 text-muted-foreground">
-              <div className="hidden sm:flex items-center gap-1 text-[10px]">
-                <Eye className="h-2.5 w-2.5" />
-                <span className="font-medium">{(dream.view_count || 0).toLocaleString('tr-TR')}</span>
-              </div>
-              <div className="hidden sm:flex items-center gap-1 text-[10px]">
-                <Heart className="h-2.5 w-2.5" />
-                <span className="font-medium">{(dream.like_count || 0).toLocaleString('tr-TR')}</span>
-              </div>
-              <ArrowUpRight className="h-3 w-3 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
-            </div>
+              {index + 1}
+            </span>
+            <h3 className="flex-1 min-w-0 text-[12px] font-medium text-foreground/85 group-hover:text-primary truncate transition-colors">
+              {dream.title}
+            </h3>
+            {category && (
+              <span className="hidden sm:block text-[10px] text-muted-foreground/50 shrink-0">
+                {category.name}
+              </span>
+            )}
+            {dream.is_featured && (
+              <Star className="h-2.5 w-2.5 text-amber-400 fill-amber-400 shrink-0" />
+            )}
           </Link>
         </motion.div>
       );
     }
 
     return (
-      <motion.div variants={cardVariants} custom={index} className={isTopThree ? 'md:col-span-1' : ''}>
+      <motion.div variants={cardVariants} custom={index}>
         <Link
           to={`/ruya/${dream.slug}`}
-          className={`render-optimize group relative block h-full bg-card/60 backdrop-blur-sm border border-border/40 rounded-xl p-3 overflow-hidden hover:border-primary/30 hover:bg-card/80 hover:shadow-lg hover:shadow-primary/8 hover:-translate-y-1 transition-all duration-300`}
+          className={`group relative block bg-card border border-border/40 rounded-lg p-2.5 hover:border-primary/20 hover:bg-accent/30 transition-all duration-200`}
         >
-          <div className={`absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r ${rankGradient} opacity-70`} />
-
-          <div className="relative z-10">
-            <div className="flex items-start justify-between gap-2 mb-2">
-              <div className="flex items-center gap-1.5">
-                <div
-                  className={`w-6 h-6 rounded-lg flex items-center justify-center font-bold text-[10px] transition-transform duration-200 group-hover:scale-110 ${
-                    isTopThree
-                      ? `bg-gradient-to-br ${rankGradient} text-white shadow-sm`
-                      : 'bg-muted text-muted-foreground'
-                  }`}
-                >
-                  {isTopThree ? ['🥇', '🥈', '🥉'][index] : `#${index + 1}`}
-                </div>
-                {dream.is_featured && (
-                  <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
-                )}
-              </div>
+          <div className="flex items-start gap-2">
+            <div
+              className={`shrink-0 w-5 h-5 rounded flex items-center justify-center text-[9px] font-semibold ${
+                isTopThree
+                  ? `bg-gradient-to-br ${rankGradient} text-white`
+                  : 'bg-muted text-muted-foreground/60'
+              }`}
+            >
+              {index + 1}
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-[11px] font-medium text-foreground/90 group-hover:text-primary leading-snug line-clamp-1 transition-colors">
+                {dream.title}
+              </h3>
               {category && (
-                <Badge variant="secondary" className="text-[10px] gap-1 rounded-full h-5 px-2 shrink-0">
-                  <CategoryIcon icon={category.icon} className="h-2.5 w-2.5" />
-                  <span className="max-w-[60px] truncate">{category.name}</span>
-                </Badge>
+                <span className="text-[9px] text-muted-foreground/50 mt-0.5 block truncate">
+                  {category.name}
+                </span>
               )}
             </div>
-
-            <h3 className="font-semibold text-xs text-foreground mb-1.5 group-hover:text-primary transition-colors line-clamp-2 leading-snug">
-              {dream.title}
-            </h3>
-
-            <p className="text-[11px] text-muted-foreground line-clamp-2 mb-2 leading-relaxed">
-              {dream.content}
-            </p>
-
-            {dream.keywords && dream.keywords.length > 0 && (
-              <div className="flex flex-wrap gap-1 mb-2">
-                {dream.keywords.slice(0, 2).map((keyword) => (
-                  <span
-                    key={keyword}
-                    className="text-[9px] px-1.5 py-0.5 rounded-full bg-muted/70 text-muted-foreground"
-                  >
-                    #{keyword}
-                  </span>
-                ))}
-              </div>
+            {dream.is_featured && (
+              <Star className="h-2.5 w-2.5 text-amber-400 fill-amber-400 shrink-0 mt-0.5" />
             )}
-
-            <div className="flex items-center justify-between pt-2 border-t border-border/30">
-              <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                <div className="flex items-center gap-1">
-                  <Eye className="h-2.5 w-2.5" />
-                  <span className="font-medium">{(dream.view_count || 0).toLocaleString('tr-TR')}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Heart className="h-2.5 w-2.5" />
-                  <span className="font-medium">{(dream.like_count || 0).toLocaleString('tr-TR')}</span>
-                </div>
-              </div>
-              <ArrowUpRight className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-all group-hover:text-primary" />
-            </div>
           </div>
         </Link>
       </motion.div>
@@ -503,13 +448,13 @@ export default function Popular() {
         className="space-y-8"
       >
         {viewMode === 'grid' ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2">
             {dreams.map((dream, index) => (
               <DreamCard key={dream.id} dream={dream} index={index} />
             ))}
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-0">
             {dreams.map((dream, index) => (
               <DreamCard key={dream.id} dream={dream} index={index} />
             ))}
@@ -544,38 +489,23 @@ export default function Popular() {
   };
 
   const LoadingSkeleton = () => (
-    <div className={viewMode === 'grid' ? 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3' : 'space-y-2'}>
-      {Array.from({ length: 10 }).map((_, i) =>
+    <div className={viewMode === 'grid' ? 'grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-2' : 'space-y-1'}>
+      {Array.from({ length: 14 }).map((_, i) =>
         viewMode === 'grid' ? (
-          <div key={i} className="bg-card/60 backdrop-blur-sm border border-border/40 rounded-xl p-3 shadow-sm relative overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-violet-500/30 via-fuchsia-500/30 to-pink-500/30" />
-            <div className="flex items-start justify-between mb-2">
-              <Skeleton className="h-6 w-6 rounded-lg" />
-              <Skeleton className="h-4 w-14 rounded-full" />
-            </div>
-            <Skeleton className="h-3.5 w-full mb-1.5" />
-            <Skeleton className="h-3 w-4/5 mb-1" />
-            <div className="space-y-1 mb-2">
-              <Skeleton className="h-2.5 w-full" />
-              <Skeleton className="h-2.5 w-3/4" />
-            </div>
-            <div className="flex gap-1 mb-2">
-              <Skeleton className="h-3.5 w-12 rounded-full" />
-              <Skeleton className="h-3.5 w-10 rounded-full" />
-            </div>
-            <div className="flex items-center justify-between pt-1.5 border-t border-border/30">
-              <Skeleton className="h-3 w-16" />
-              <Skeleton className="h-3 w-3" />
+          <div key={i} className="bg-card border border-border/30 rounded-lg p-2.5">
+            <div className="flex items-start gap-2">
+              <Skeleton className="h-5 w-5 rounded shrink-0" />
+              <div className="flex-1 space-y-1">
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-2 w-2/3" />
+              </div>
             </div>
           </div>
         ) : (
-          <div key={i} className="flex items-center gap-2 px-3 py-2 bg-card/60 backdrop-blur-sm border border-border/40 rounded-lg">
-            <Skeleton className="h-7 w-7 rounded-lg flex-shrink-0" />
-            <div className="flex-1 space-y-1">
-              <Skeleton className="h-3 w-4/5" />
-              <Skeleton className="h-2.5 w-1/3" />
-            </div>
-            <Skeleton className="h-3 w-3" />
+          <div key={i} className="flex items-center gap-2.5 px-1 py-2 border-b border-border/10">
+            <Skeleton className="h-5 w-5 rounded shrink-0" />
+            <Skeleton className="h-3 flex-1" />
+            <Skeleton className="h-2 w-16 hidden sm:block" />
           </div>
         )
       )}
