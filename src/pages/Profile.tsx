@@ -147,7 +147,7 @@ export default function Profile() {
         .order('created_at', { ascending: false });
 
       const moodDist: Record<string, number> = {};
-      (journalData as unknown as DreamJournalEntry[])?.forEach((entry) => {
+      (journalData as DreamJournalEntry[])?.forEach((entry) => {
         if (entry.mood) {
           moodDist[entry.mood] = (moodDist[entry.mood] || 0) + 1;
         }
@@ -165,7 +165,7 @@ export default function Profile() {
         });
       });
 
-      (journalData as unknown as DreamJournalEntry[])?.slice(0, 3).forEach((entry) => {
+      (journalData as DreamJournalEntry[])?.slice(0, 3).forEach((entry) => {
         recentActivity.push({
           type: 'journal',
           title: t('profile.journalActivity', { title: entry.title }),
@@ -310,7 +310,7 @@ export default function Profile() {
         content: journalForm.content,
         dream_date: journalForm.dream_date || null,
         mood: journalForm.mood || null,
-        tags: (journalForm.tags ? journalForm.tags.split(',').map(t => t.trim()) : []) as unknown as Json,
+        tags: (journalForm.tags ? journalForm.tags.split(',').map(t => t.trim()) : []) as Json,
       };
 
       if (selectedEntry) {

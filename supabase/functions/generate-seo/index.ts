@@ -78,13 +78,13 @@ JSON formatında yanıt ver:
     }
 
     const data = await response.json();
-    const content_response = data.choices?.[0]?.message?.content;
+    const contentResponse = data.choices?.[0]?.message?.content;
 
-    if (!content_response) {
+    if (!contentResponse) {
       throw new Error("No response from AI");
     }
 
-    const seoData = JSON.parse(content_response);
+    const seoData = JSON.parse(contentResponse);
     return jsonResponse(seoData);
   } catch (error) {
     console.error("generate-seo error:", error);

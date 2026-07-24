@@ -12,8 +12,7 @@ type WakeLockApi = {
 
 function getNavigatorWakeLock(): WakeLockApi | null {
   if (typeof navigator === 'undefined') return null;
-  const n = navigator as unknown as { wakeLock?: WakeLockApi };
-  return n.wakeLock ?? null;
+  return navigator.wakeLock ?? null;
 }
 
 interface UseWakeLockResult {

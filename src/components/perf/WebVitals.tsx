@@ -18,8 +18,8 @@ export function WebVitals() {
         console.info(`[vital] ${name}: ${value.toFixed(1)}`);
       }
       // In production: forward to Vercel's web-vitals endpoint if present
-      if (typeof window !== 'undefined' && (window as unknown as { va?: (cb: (a: { name: string; value: number; id: string }) => void) => void }).va) {
-        (window as unknown as { va: (cb: (a: { name: string; value: number; id: string }) => void) => void }).va((a) => {
+      if (typeof window !== 'undefined' && window.va) {
+        window.va((a) => {
           if (a) {
             // Vercel Analytics handles its own send — we just need to call va with a metric
           }

@@ -9,9 +9,10 @@ export function getCorsHeaders(origin: string | null = null): Record<string, str
     ?.split(/[\s,]+/)
     .map((o) => o.trim())
     .filter(Boolean) ?? [];
+  const defaultOrigin = Deno.env.get("SITE_URL") ?? "*";
   const allowOrigin = origin && allowed.length > 0 && allowed.includes(origin)
     ? origin
-    : (allowed[0] ?? "*");
+    : (allowed[0] ?? defaultOrigin);
   return {
     "Access-Control-Allow-Origin": allowOrigin,
     "Access-Control-Allow-Headers": corsHeaders["Access-Control-Allow-Headers"],

@@ -30,7 +30,7 @@ export function ProfileHistoryTab({ userId, locale }: ProfileHistoryTabProps) {
 
       if (error) throw error;
 
-      const uniqueHistory = (data as unknown as (ViewHistory & { dreams: Dream })[] | null)?.reduce((acc, curr) => {
+      const uniqueHistory = (data as (ViewHistory & { dreams: Dream })[] | null)?.reduce((acc, curr) => {
         const exists = acc.find(h => h.dream_id === curr.dream_id);
         if (!exists) acc.push(curr);
         return acc;

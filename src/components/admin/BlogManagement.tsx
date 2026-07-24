@@ -618,14 +618,14 @@ export function BlogManagement() {
                       Görüntüle
                     </button>
                     <button
-                      onClick={() => handleEdit(post as unknown as Parameters<typeof handleEdit>[0])}
+                      onClick={() => handleEdit(post as Parameters<typeof handleEdit>[0])}
                       className="flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
                     >
                       <Pencil className="w-4 h-4" />
                       Düzenle
                     </button>
                     <button
-                      onClick={() => handleDelete(post as unknown as Parameters<typeof handleDelete>[0])}
+                      onClick={() => handleDelete(post as Parameters<typeof handleDelete>[0])}
                       className="flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
                       disabled={deleteMutation.isPending}
                     >

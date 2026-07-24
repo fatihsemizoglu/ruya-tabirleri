@@ -24,6 +24,12 @@ verify_jwt = true
 [functions.ab-test-manager]
 verify_jwt = false
 
+[functions.seo-audit]
+verify_jwt = false
+
+[functions.zero-results]
+verify_jwt = false
+
 # Required Environment Variables (set in Supabase Dashboard > Edge Functions > Secrets):
 # AI_API_KEY=your_openai_compatible_api_key
 # AI_API_URL=https://api.openai.com/v1/chat/completions (optional, defaults to OpenAI)

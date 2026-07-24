@@ -7,9 +7,11 @@ import { Button } from '@/components/ui/button';
 export function SWUpdatePrompt() {
   const options: RegisterSWOptions = {
     onRegistered: (r) => {
-      r && setInterval(() => {
-        r.update();
-      }, 60 * 60 * 1000);
+      if (r) {
+        setInterval(() => {
+          r.update();
+        }, 60 * 60 * 1000);
+      }
     },
   };
   const {

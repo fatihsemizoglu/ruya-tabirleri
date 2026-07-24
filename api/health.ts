@@ -89,7 +89,7 @@ async function checkEdgeFunctions(): Promise<CheckResult> {
     });
     const latency = Date.now() - start;
     if (res.status === 401 || res.status === 404) {
-      return { name: 'edge_functions', status: 'ok', latency_ms: latency, detail: 'reachable (auth-gated)' };
+      return { name: 'edge_functions', status: 'warn', latency_ms: latency, detail: 'reachable but auth-gated (no real health signal)' };
     }
     if (!res.ok && res.status >= 500) {
       return { name: 'edge_functions', status: 'fail', latency_ms: latency, detail: `HTTP ${res.status}` };

@@ -97,7 +97,7 @@ export function UserManagement() {
         role: rolesMap.get(profile.user_id) || ('user' as AppRole),
       }));
 
-      setUsers(usersWithRoles as unknown as UserWithRole[]);
+      setUsers(usersWithRoles as UserWithRole[]);
     } catch (error) {
       captureError(error, { tags: { feature: 'user-management' }, extra: { context: 'fetch-users' } });
       toast.error('Kullanıcılar yüklenirken hata oluştu');

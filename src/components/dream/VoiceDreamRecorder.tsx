@@ -134,7 +134,7 @@ export function VoiceDreamRecorder({ onSave }: VoiceDreamRecorderProps) {
 
   const startWaveform = (stream: MediaStream) => {
     try {
-      const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+      const ctx = new (window.AudioContext ?? window.webkitAudioContext)();
       audioContextRef.current = ctx;
       const source = ctx.createMediaStreamSource(stream);
       const node = ctx.createAnalyser();

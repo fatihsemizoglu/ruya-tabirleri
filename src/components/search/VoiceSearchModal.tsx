@@ -120,9 +120,7 @@ export function VoiceSearchModal({ open, onOpenChange, onResult }: VoiceSearchMo
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       micStreamRef.current = stream;
 
-      const AudioContextClass =
-        (window as unknown as { AudioContext: typeof AudioContext }).AudioContext ||
-        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const AudioContextClass = window.AudioContext ?? window.webkitAudioContext;
       if (!AudioContextClass) return;
 
       const audioContext = new AudioContextClass();

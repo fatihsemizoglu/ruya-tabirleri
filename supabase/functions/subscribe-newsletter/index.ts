@@ -137,7 +137,7 @@ const handler = async (req: Request): Promise<Response> => {
       if (existing.is_verified && !existing.unsubscribed_at) {
         return new Response(
           JSON.stringify({ success: true, message: "Bu e-posta zaten abone listesinde" }),
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          { status: 200, headers: responseHeaders }
         );
       }
 

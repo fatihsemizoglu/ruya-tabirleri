@@ -127,7 +127,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const mapError = (error: Error | null): AuthError | null => {
     if (!error) return null;
     const message = translateAuthError(error.message);
-    return { message, code: (error as any).code };
+    const code = (error as { code?: string }).code;
+    return code ? { message, code } : { message };
   };
 
   const signIn = async (email: string, password: string) => {

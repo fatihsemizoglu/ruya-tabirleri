@@ -10,7 +10,7 @@ export async function fetchDreamBySlug(slug: string): Promise<Dream | null> {
     .single();
 
   if (error || !data) return null;
-  return data as unknown as Dream;
+  return data as Dream;
 }
 
 export async function fetchDreamsByCategory(categoryId: string, limit = 50): Promise<Dream[]> {

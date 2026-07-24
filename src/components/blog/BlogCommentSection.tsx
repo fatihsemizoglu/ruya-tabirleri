@@ -128,7 +128,7 @@ export function BlogCommentSection({ postId }: BlogCommentSectionProps) {
     const queryPromise = supabase
       .from('blog_comment_likes' as never)
       .select('comment_id')
-      .eq('user_id', user.id) as unknown as Promise<{ data: { comment_id: string }[] | null }>;
+      .eq('user_id', user.id) as unknown as Promise<{ data: { comment_id: string }[] | null; error: unknown }>;
     const result = await queryPromise;
     if (result.data) {
       setLikedComments(new Set(result.data.map((l) => l.comment_id)));

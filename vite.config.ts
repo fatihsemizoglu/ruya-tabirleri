@@ -259,7 +259,7 @@ export default defineConfig(({ mode }) => ({
       },
     },
     reportCompressedSize: true,
-    chunkSizeWarningLimit: 800,
+    chunkSizeWarningLimit: 600,
   },
   legacy: {
     skipWebSocketTokenCheck: true,

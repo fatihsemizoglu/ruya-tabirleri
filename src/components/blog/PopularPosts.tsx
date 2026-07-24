@@ -57,7 +57,7 @@ export function PopularPosts() {
     const { data } = await query.limit(5);
 
     if (data) {
-      let sortedData = data as unknown as PopularPost[];
+      let sortedData = data as PopularPost[];
       
       if (sortBy === 'trending') {
         sortedData = sortedData.sort((a, b) => {

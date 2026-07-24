@@ -90,8 +90,7 @@ export async function fallbackSearchDreams(
       .contains("keywords", [safeTerm])
       .order("view_count", { ascending: false })
       .limit(limit) : null,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ] as any[];
+  ] as (Promise<{ data: DreamSearchResult[] | null; error: unknown }> | null)[];
 
   const responses = await Promise.all(queryPromises);
   const rows = responses.flatMap((response) => (response && response.error ? [] : ((response?.data || []) as DreamSearchResult[])));

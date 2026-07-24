@@ -5,10 +5,10 @@
  * - Üretimde (Sentry DSN yapılandırılmışsa) hataları Sentry'ye gönderir.
  *
  * ÖNEMLI: `captureError` / `logger.error`, production'da `console.error` yerine
- * kullanılmalıdır. `vite.config.ts` içindeki `esbuild.drop: ['console','debugger']`
- * production bundle'ından `console.*` çağrılarını kaldırır; bu nedenle doğrudan
- * `console.error(...)` yazılan catch blokları üretimde sessizce yutulur ve hata
- * Sentry'ye ulaşmaz. Bu yardımcı, Sentry import'u tree-shake edilmediği sürece
+ * kullanılmalıdır. Üretim bundle'ında `console.*` çağrıları korunur (yalnızca
+ * `debugger` ifadeleri düşürülür). Ancak `logger.*` helper'ları geliştirme
+ * ortamı dışında no-op'tur; hataların Sentry'ye iletilmesi için `captureError`
+ * kullanılmalıdır. Bu yardımcı, Sentry import'u tree-shake edilmediği sürece
  * (DSN yoksa bile) çağrıyı canlı tutar.
  */
 import * as Sentry from '@sentry/react';

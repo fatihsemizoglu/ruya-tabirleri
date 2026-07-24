@@ -19,7 +19,7 @@ export function usePWA() {
   useEffect(() => {
     // Check if already installed
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches 
-      || !!((window.navigator as unknown as Record<string, unknown>).standalone)
+      || !!(window.navigator.standalone)
       || document.referrer.includes('android-app://');
     
     setIsInstalled(isStandalone);

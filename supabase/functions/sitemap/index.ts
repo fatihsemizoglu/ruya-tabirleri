@@ -25,7 +25,7 @@ async function fetchAllRows<T>(
   const rows: T[] = [];
   for (let from = 0; ; from += PAGE_SIZE) {
     const to = from + PAGE_SIZE - 1;
-    const query = supabase.from(table).select(select).order("updated_at", { ascending: false }).range(from, to);
+    const query = supabase.from(table).select(select).order("updated_at", { ascending: false });
     const { data, error } = await configure(query).range(from, to);
     if (error) throw error;
     rows.push(...((data || []) as T[]));

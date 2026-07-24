@@ -107,7 +107,7 @@ export function Header() {
         .order('created_at', { ascending: false })
         .limit(4);
       if (error) throw error;
-      return (data || []) as unknown as BlogPostPreview[];
+      return (data || []) as BlogPostPreview[];
     },
     staleTime: PUBLIC_MENU_STALE_TIME,
     gcTime: PUBLIC_MENU_GC_TIME,

@@ -170,9 +170,9 @@ type BlogCategoryRow = Database['public']['Tables']['blog_categories']['Row'];
         void _sv;
         const exportItem: Record<string, unknown> = { ...cleanRest };
         if (contentType === 'dreams' && categories) {
-          (exportItem as unknown as DreamExport).category_name = categories.name;
+          exportItem.category_name = categories.name;
         } else if (contentType === 'blog' && blog_categories) {
-          (exportItem as unknown as BlogPostExport).category_name = blog_categories.name;
+          exportItem.category_name = blog_categories.name;
         }
        return exportItem;
      });
@@ -198,7 +198,7 @@ type BlogCategoryRow = Database['public']['Tables']['blog_categories']['Row'];
      data.forEach((item) => {
         const row = headers.map((header: string) => {
           let value: string | number = '';
-          const itemAny = item as unknown as Record<string, unknown> & { categories?: { name: string } | null; blog_categories?: { name: string } | null; keywords?: string[]; tags?: string[] };
+          const itemAny = item as Record<string, unknown> & { categories?: { name: string } | null; blog_categories?: { name: string } | null; keywords?: string[]; tags?: string[] };
           if (header === 'category_name') {
             value = itemAny.categories?.name || itemAny.blog_categories?.name || '';
           } else if (header === 'keywords') {

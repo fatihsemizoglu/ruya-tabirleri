@@ -36,7 +36,7 @@ export default function DreamCompare() {
         .in('id', ids)
         .eq('is_published', true);
       if (error) throw error;
-      return (data || []) as unknown as CompareDream[];
+      return (data || []) as CompareDream[];
     },
     enabled: ids.length > 0,
   });
