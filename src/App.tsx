@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useParams } from "react-router-dom";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "@/contexts/AuthProvider";
@@ -66,6 +66,11 @@ const PageLoader = () => (
   </div>
 );
 
+function DreamDetailPage() {
+  const { slug } = useParams<{ slug: string }>();
+  return <RouteErrorBoundary label="DreamDetail" key={slug}><DreamDetail /></RouteErrorBoundary>;
+}
+
 function AnimatedRoutes() {
   return (
       <Suspense fallback={<PageLoader />}>
@@ -79,7 +84,7 @@ function AnimatedRoutes() {
           <Route path="/email-dogrula" element={<EmailConfirm />} />
           <Route path="/ara" element={<RouteErrorBoundary label="Search"><Search /></RouteErrorBoundary>} />
           {/* Content routes - isolated boundary */}
-          <Route path="/ruya/:slug" element={<RouteErrorBoundary label="DreamDetail"><DreamDetail /></RouteErrorBoundary>} />
+          <Route path="/ruya/:slug" element={<DreamDetailPage />} />
           <Route path="/karsilastir" element={<RouteErrorBoundary label="DreamCompare"><DreamCompare /></RouteErrorBoundary>} />
           <Route path="/ruya-tabirleri" element={<Navigate replace to="/populer" />} />
           <Route path="/kategoriler" element={<Categories />} />

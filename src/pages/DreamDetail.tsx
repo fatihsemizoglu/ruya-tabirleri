@@ -328,7 +328,7 @@ export default function DreamDetail() {
     }
     if (!dream) return;
 
-    const plainContent = dream.content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    const plainContent = (dream.content || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
     const content = `${dream.title}\n\n${plainContent}`.slice(0, 5000);
 
     try {
@@ -512,6 +512,7 @@ export default function DreamDetail() {
     );
   }
 
+  const safeContent = dream.content || '';
   const category = dream.category as Category;
   const heroGradient = pickGradient(dream.id + dream.slug);
   const formattedDate = new Date(dream.created_at).toLocaleDateString('tr-TR', {
@@ -520,21 +521,21 @@ export default function DreamDetail() {
     year: 'numeric',
   });
   const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
-  const wordCount = dream.content.replace(/<[^>]*>/g, ' ').split(/\s+/).filter(Boolean).length;
+  const wordCount = safeContent.replace(/<[^>]*>/g, ' ').split(/\s+/).filter(Boolean).length;
   const readTime = Math.max(1, Math.ceil(wordCount / 200));
   let formattedContent = '';
   try {
-    formattedContent = DOMPurify.sanitize(formatPlainDreamContent(dream.content, dream.title), {
+    formattedContent = DOMPurify.sanitize(formatPlainDreamContent(safeContent, dream.title), {
       ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 's', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'blockquote', 'code', 'pre', 'a', 'img', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'hr', 'figure', 'figcaption'],
       ALLOWED_ATTR: ['href', 'src', 'alt', 'class', 'target', 'rel', 'loading'],
       FORBID_TAGS: ['script', 'style', 'iframe'],
       FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover'],
     });
   } catch {
-    formattedContent = `<p>${dream.content.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim().slice(0, 5000)}</p>`;
+    formattedContent = `<p>${safeContent.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim().slice(0, 5000)}</p>`;
   }
   const dreamPath = `/ruya/${dream.slug}`;
-  const dreamDescription = dream.meta_description || dream.content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160) || `${dream.title} rüya tabiri ve yorumu`;
+  const dreamDescription = dream.meta_description || safeContent.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160) || `${dream.title} rüya tabiri ve yorumu`;
   const dreamJsonLd = [
     {
       '@context': 'https://schema.org',
@@ -791,7 +792,7 @@ export default function DreamDetail() {
           <div className="ml-auto">
             <ShareButton
               title={dream.title}
-              description={dream.content.slice(0, 160)}
+              description={(dream.content || '').slice(0, 160)}
               url={shareUrl}
             />
           </div>
@@ -808,7 +809,7 @@ export default function DreamDetail() {
         >
           <ShareCard
             title={dream.title}
-            description={dream.content.slice(0, 160)}
+            description={(dream.content || '').slice(0, 160)}
           />
         </motion.div>
       </section>
