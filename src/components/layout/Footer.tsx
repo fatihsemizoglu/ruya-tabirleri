@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Moon, Mail, Heart, MapPin, Phone, Instagram, Twitter, Youtube, Linkedin, Facebook, Sparkles, Send } from 'lucide-react';
+import { Moon, Mail, Heart, MapPin, Phone, Instagram, Twitter, Youtube, Linkedin, Facebook, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { FontSizeControl } from '@/components/ui/FontSizeControl';

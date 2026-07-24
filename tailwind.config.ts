@@ -25,8 +25,6 @@ export default {
     extend: {
       fontFamily: {
         sans: ["Inter", "Plus Jakarta Sans", "system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "sans-serif"],
-        serif: ["Inter", "Plus Jakarta Sans", "system-ui", "sans-serif"],
-        'serif-dream': ['Inter', 'Plus Jakarta Sans', 'system-ui', 'sans-serif'],
       },
       fontSize: {
         '4.5': ['1.125rem', { lineHeight: '1.75rem' }],
