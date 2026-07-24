@@ -1,150 +1,131 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { handleOptions, jsonResponse } from "../_shared/cors.ts";
-import { getAiApiKey } from "../_shared/ai.ts";
 
-const AI_API_URL = Deno.env.get("AI_API_URL") || "https://api.openai.com/v1/chat/completions";
-const AI_MODEL = Deno.env.get("AI_MODEL") || "gpt-4o-mini";
+interface DreamMatch {
+  id: string;
+  title: string;
+  slug: string;
+  content: string;
+  islamic_interpretation: string | null;
+  psychological_interpretation: string | null;
+  keywords: string[];
+  category_id: string | null;
+  view_count: number;
+}
+
+function extractWords(text: string): string[] {
+  return text
+    .toLowerCase()
+    .replace(/[^a-zçğıöşü0-9 ]/g, " ")
+    .split(/\s+/)
+    .filter((w) => w.length > 2);
+}
 
 serve(async (req) => {
   const options = handleOptions(req);
   if (options) return options;
 
   try {
-    const authHeader = req.headers.get("Authorization");
-
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
-    if (!supabaseUrl || !supabaseAnonKey) {
+    const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!supabaseUrl || !supabaseKey) {
       return jsonResponse({ error: "Sunucu yapılandırması eksik" }, 500);
     }
 
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader || "" } },
-    });
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
-    let userId: string | null = null;
-    if (authHeader?.startsWith("Bearer ")) {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (!userError && user) {
-        userId = user.id;
-      }
-    }
-
-    const { dreamId, dreamText, dreamTitle, dreamMood, includeSimilar } = await req.json();
-
+    const { dreamText } = await req.json();
     if (!dreamText || dreamText.length < 10) {
       return jsonResponse({ error: "Rüya metni çok kısa (en az 10 karakter)" }, 400);
     }
 
-    const AI_API_KEY = getAiApiKey();
-    if (!AI_API_KEY) {
-      return jsonResponse({ error: "AI yorumlama servisi yapılandırılmamış" }, 500);
+    const words = extractWords(dreamText);
+
+    const seenIds = new Set<string>();
+    const rankedResults: Array<{ id: string; matchCount: number }> = [];
+
+    function addMatch(id: string) {
+      if (seenIds.has(id)) {
+        const existing = rankedResults.find((r) => r.id === id);
+        if (existing) existing.matchCount++;
+      } else {
+        seenIds.add(id);
+        rankedResults.push({ id, matchCount: 1 });
+      }
     }
 
-    const systemPrompt = `Sen bir rüya yorumcusu ve psikolojik danışmansın.
-Kullanıcının rüyasını hem İslami rüya tabiri hem de psikolojik açıdan yorumluyorsun.
+    for (const word of words) {
+      const { data: keywordMatches } = await supabase
+        .from("dreams")
+        .select("id")
+        .eq("is_published", true)
+        .contains("keywords", [word]);
 
-Yanıtını her zaman aşağıdaki JSON formatında ver:
-{
-  "islamic_interpretation": "İslami kaynaklara göre rüyanın anlamı (en fazla 300 kelime, Türkçe)",
-  "psychological_interpretation": "Psikolojik açıdan rüyanın anlamı (en fazla 300 kelime, Türkçe)",
-  "keywords": ["ilgili1", "ilgili2", "ilgili3", "ilgili4", "ilgili5"],
-  "general_meaning": "Rüyanın genel anlamı (en fazla 100 kelime, Türkçe)"
-}
+      if (keywordMatches) {
+        for (const m of keywordMatches) addMatch(m.id);
+      }
 
-Kurallar:
-- İslami yorumlarda Kur'an, hadis ve İslam alimlerinin görüşlerine atıfta bulun
-- Psikolojik yorumlarda modern psikoloji (Freud, Jung, vb.) perspektifinden değerlendir
-- Yanıtlar her zaman Türkçe ve anlaşılır olmalı
-- Kesin yargılardan kaçın, olasılık bildiren ifadeler kullan
-- Rüyayı küçümseme veya korkutma
-- keywords en az 3, en fazla 8 anahtar kelime içermeli
-- Yanıt yalnızca JSON olmalı, ek metin olmamalı`;
+      const { data: titleMatches } = await supabase
+        .from("dreams")
+        .select("id")
+        .eq("is_published", true)
+        .ilike("title", `%${word}%`);
 
-    const userPrompt = `Aşağıdaki rüyayı yorumla:
+      if (titleMatches) {
+        for (const m of titleMatches) addMatch(m.id);
+      }
 
-Başlık: ${dreamTitle || "Rüya"}
-Rüya: ${dreamText}
-${dreamMood ? `Rüya sırasındaki duygu durumu: ${dreamMood}` : ""}`;
+      const { data: contentMatches } = await supabase
+        .from("dreams")
+        .select("id")
+        .eq("is_published", true)
+        .ilike("content", `%${word}%`);
 
-    const response = await fetch(AI_API_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${AI_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: AI_MODEL,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        response_format: { type: "json_object" },
-        max_tokens: 1500,
-        temperature: 0.7,
-      }),
-    });
+      if (contentMatches) {
+        for (const m of contentMatches) addMatch(m.id);
+      }
+    }
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("AI API error:", response.status, errorText);
+    rankedResults.sort((a, b) => b.matchCount - a.matchCount);
+    const topIds = rankedResults.slice(0, 10).map((r) => r.id);
+
+    if (topIds.length === 0) {
       return jsonResponse(
-        { error: response.status === 429 ? "Çok fazla istek. Lütfen biraz bekleyin." : "AI yorumlama servisi şu anda kullanılamıyor." },
-        response.status === 429 ? 429 : 502,
+        { error: "Bu rüya için henüz tabir bulunamadı." },
+        404,
       );
     }
 
-    const data = await response.json();
-    const content = data.choices?.[0]?.message?.content;
+    const { data: dreams } = await supabase
+      .from("dreams")
+      .select("id, title, slug, content, islamic_interpretation, psychological_interpretation, keywords, category_id, view_count")
+      .eq("is_published", true)
+      .in("id", topIds);
 
-    if (!content) {
-      return jsonResponse({ error: "AI yanıt vermedi" }, 502);
+    if (!dreams || dreams.length === 0) {
+      return jsonResponse(
+        { error: "Bu rüya için henüz tabir bulunamadı." },
+        404,
+      );
     }
 
-    let interpretation: Record<string, unknown>;
-    try {
-      interpretation = JSON.parse(content);
-    } catch {
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        return jsonResponse({ error: "AI yanıtı işlenemedi" }, 502);
-      }
-      interpretation = JSON.parse(jsonMatch[0]);
-    }
+    const typedDreams = dreams as DreamMatch[];
+    const idOrder = new Map(topIds.map((id, i) => [id, i]));
+    typedDreams.sort((a, b) => (idOrder.get(a.id) ?? 999) - (idOrder.get(b.id) ?? 999));
 
-    if (dreamId && userId) {
-      const { error: updateError } = await supabase
-        .from("dream_journal")
-        .update({
-          ai_interpretation: interpretation,
-          interpreted_at: new Date().toISOString(),
-        })
-        .eq("id", dreamId)
-        .eq("user_id", userId);
-
-      if (updateError) {
-        console.error("Failed to save interpretation:", updateError);
-      }
-    }
-
-    let similarDreams: Array<{ id: string; title: string; slug: string }> = [];
-    if (includeSimilar !== false && (interpretation.keywords as string[])?.length > 0) {
-      const keywords = interpretation.keywords as string[];
-      const { data: similar } = await supabase
-        .from("dreams")
-        .select("id, title, slug")
-        .eq("is_published", true)
-        .contains("keywords", [keywords[0]])
-        .limit(5);
-
-      if (similar) {
-        similarDreams = similar;
-      }
-    }
+    const bestMatch = typedDreams[0]!;
+    const similarDreams = typedDreams.slice(1, 6).map((d) => ({
+      id: d.id,
+      title: d.title,
+      slug: d.slug,
+    }));
 
     return jsonResponse({
-      ...interpretation,
+      islamic_interpretation: bestMatch.islamic_interpretation || "Bu rüya için İslami tabir bulunmuyor.",
+      psychological_interpretation: bestMatch.psychological_interpretation || "Bu rüya için psikolojik yorum bulunmuyor.",
+      keywords: bestMatch.keywords || [],
+      general_meaning: bestMatch.content.split(".").slice(0, 2).join(".") + ".",
       similarDreams: similarDreams.length > 0 ? similarDreams : undefined,
     });
   } catch (error) {
