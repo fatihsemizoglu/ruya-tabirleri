@@ -24,6 +24,9 @@ verify_jwt = true
 [functions.ab-test-manager]
 verify_jwt = false
 
+[functions.interpret-dream]
+verify_jwt = false
+
 [functions.seo-audit]
 verify_jwt = false
 
