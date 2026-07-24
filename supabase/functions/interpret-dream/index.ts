@@ -25,18 +25,23 @@ const STOP_WORDS = new Set([
 ]);
 
 const TURKISH_SUFFIXES = [
-  "leri", "lar", "ler", "lerim", "larim", "lerin", "larin",
-  "imiz", "iniz", "inizi", "imizi", "imize", "inize",
-  "imda", "inda", "inde", "imde", "imden", "indan", "inden",
+  "leri", "lar", "ler", "leri", "lari",
+  "imiz", "iniz", "imizi", "inizi", "imize", "inize",
   "imizda", "inizda", "imizde", "inizde",
   "imizdan", "inizdan", "imizden", "inizden",
   "imizin", "inizin",
-  "iyla", "iyle", "yla", "yle",
+  "miz", "niz",
+  "im", "in", "in", "imiz", "iniz",
+  "imda", "inda", "inde", "imde",
+  "imden", "indan", "inden",
   "sini", "sina", "sine", "sinin", "sinda", "sinde",
-  "sindan", "sinden", "sinin", "siniz",
-  "miz", "niz", "in", "im", "in", "si",
-  "i", "i", "u", "u", "a", "e", "da", "de",
-  "dan", "den", "in", "nin", "n", "y",
+  "sindan", "sinden",
+  "sin", "sin", "sun", "sun",
+  "in", "in", "un", "un",
+  "i", "i", "u", "u",
+  "a", "e", "da", "de", "dan", "den",
+  "nin", "n",
+  "yla", "yle",
 ];
 
 interface DreamMatch {
@@ -86,14 +91,12 @@ function scoreMatch(
   const lowerTitle = dream.title.toLowerCase();
   const dreamKeywords = (dream.keywords || []).map((k) => k.toLowerCase());
 
-  for (const wordVariants of [wordVariants]) {
-    for (const wv of wordVariants) {
-      if (dreamKeywords.some((k) => k.includes(wv))) {
-        score += 20;
-      }
-      if (lowerTitle.includes(wv)) {
-        score += 5;
-      }
+  for (const wv of wordVariants) {
+    if (dreamKeywords.some((k) => k.includes(wv))) {
+      score += 20;
+    }
+    if (lowerTitle.includes(wv)) {
+      score += 5;
     }
   }
 
