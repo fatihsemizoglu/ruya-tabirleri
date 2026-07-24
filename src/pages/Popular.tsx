@@ -380,44 +380,43 @@ export default function Popular() {
         <motion.div variants={cardVariants} custom={index}>
           <Link
             to={`/ruya/${dream.slug}`}
-            className="render-optimize group flex items-center gap-4 bg-card/60 backdrop-blur-sm border border-border/50 rounded-2xl p-4 hover:border-primary/30 hover:bg-card/80 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300"
+            className="render-optimize group flex items-center gap-3 bg-card/60 backdrop-blur-sm border border-border/40 rounded-xl px-3 py-2.5 hover:border-primary/30 hover:bg-card/80 hover:shadow-sm transition-all duration-200"
           >
-            <div className={`shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold transition-all duration-300 ${
+            <div className={`shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-bold ${
               isTopThree
-                ? `bg-gradient-to-br ${rankGradient} text-white shadow-lg shadow-${rankGradient.split(' ')[0]!.replace('from-', '')}/25`
-                : 'bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary'
+                ? `bg-gradient-to-br ${rankGradient} text-white shadow-sm`
+                : 'bg-muted text-muted-foreground'
             }`}>
               {isTopThree ? ['🥇', '🥈', '🥉'][index] : `#${index + 1}`}
             </div>
 
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex items-center gap-1.5 mb-0.5">
                 {dream.is_featured && (
-                  <Star className="h-3 w-3 text-amber-500 fill-amber-500 shrink-0" />
+                  <Star className="h-2.5 w-2.5 text-amber-500 fill-amber-500 shrink-0" />
                 )}
                 {category && (
-                  <Badge variant="secondary" className="text-xs gap-1 rounded-full">
-                    <CategoryIcon icon={category.icon} className="h-3 w-3" /> {category.name}
+                  <Badge variant="secondary" className="text-[10px] gap-1 rounded-full h-4 px-1.5">
+                    <CategoryIcon icon={category.icon} className="h-2 w-2" />
+                    <span className="max-w-[80px] truncate">{category.name}</span>
                   </Badge>
                 )}
               </div>
-              <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-1">
+              <h3 className="text-xs font-medium text-foreground group-hover:text-primary transition-colors line-clamp-1">
                 {dream.title}
               </h3>
             </div>
 
-            <div className="flex items-center gap-3 shrink-0 text-sm text-muted-foreground">
-              <div className="hidden sm:flex items-center gap-1.5">
-                <Eye className="h-3.5 w-3.5" />
-                <span className="font-semibold text-xs">{(dream.view_count || 0).toLocaleString('tr-TR')}</span>
+            <div className="flex items-center gap-2 shrink-0 text-muted-foreground">
+              <div className="hidden sm:flex items-center gap-1 text-[10px]">
+                <Eye className="h-2.5 w-2.5" />
+                <span className="font-medium">{(dream.view_count || 0).toLocaleString('tr-TR')}</span>
               </div>
-              <div className="hidden sm:flex items-center gap-1.5">
-                <Heart className="h-3.5 w-3.5" />
-                <span className="font-semibold text-xs">{(dream.like_count || 0).toLocaleString('tr-TR')}</span>
+              <div className="hidden sm:flex items-center gap-1 text-[10px]">
+                <Heart className="h-2.5 w-2.5" />
+                <span className="font-medium">{(dream.like_count || 0).toLocaleString('tr-TR')}</span>
               </div>
-              <div className="w-8 h-8 rounded-full bg-primary/5 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-                <ArrowUpRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
-              </div>
+              <ArrowUpRight className="h-3 w-3 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
             </div>
           </Link>
         </motion.div>
@@ -428,49 +427,48 @@ export default function Popular() {
       <motion.div variants={cardVariants} custom={index} className={isTopThree ? 'md:col-span-1' : ''}>
         <Link
           to={`/ruya/${dream.slug}`}
-          className={`render-optimize group relative block h-full bg-card/60 backdrop-blur-sm border border-border/50 rounded-2xl p-6 overflow-hidden hover:border-primary/30 hover:bg-card/80 hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-1.5 transition-all duration-500`}
+          className={`render-optimize group relative block h-full bg-card/60 backdrop-blur-sm border border-border/40 rounded-xl p-3 overflow-hidden hover:border-primary/30 hover:bg-card/80 hover:shadow-lg hover:shadow-primary/8 hover:-translate-y-1 transition-all duration-300`}
         >
-          <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${rankGradient} opacity-80`} />
-
-          <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/[0.04] to-transparent pointer-events-none" />
+          <div className={`absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r ${rankGradient} opacity-70`} />
 
           <div className="relative z-10">
-            <div className="flex items-center justify-between mb-4">
-              <div className={`flex items-center gap-2`}>
+            <div className="flex items-start justify-between gap-2 mb-2">
+              <div className="flex items-center gap-1.5">
                 <div
-                  className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm transition-transform duration-300 group-hover:scale-110 ${
+                  className={`w-6 h-6 rounded-lg flex items-center justify-center font-bold text-[10px] transition-transform duration-200 group-hover:scale-110 ${
                     isTopThree
-                      ? `bg-gradient-to-br ${rankGradient} text-white shadow-lg shadow-${rankGradient.split(' ')[0]!.replace('from-', '')}/30`
+                      ? `bg-gradient-to-br ${rankGradient} text-white shadow-sm`
                       : 'bg-muted text-muted-foreground'
                   }`}
                 >
                   {isTopThree ? ['🥇', '🥈', '🥉'][index] : `#${index + 1}`}
                 </div>
                 {dream.is_featured && (
-                  <Star className="h-4 w-4 text-amber-500 fill-amber-500 drop-shadow-sm" />
+                  <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
                 )}
               </div>
               {category && (
-                <Badge variant="secondary" className="text-xs gap-1 rounded-full shrink-0">
-                  <CategoryIcon icon={category.icon} className="h-3.5 w-3.5" /> {category.name}
+                <Badge variant="secondary" className="text-[10px] gap-1 rounded-full h-5 px-2 shrink-0">
+                  <CategoryIcon icon={category.icon} className="h-2.5 w-2.5" />
+                  <span className="max-w-[60px] truncate">{category.name}</span>
                 </Badge>
               )}
             </div>
 
-            <h3 className={`font-bold font-serif-dream text-foreground mb-3 group-hover:text-primary transition-colors duration-300 line-clamp-2 ${isTopThree ? 'text-xl' : 'text-lg'}`}>
+            <h3 className="font-semibold text-xs text-foreground mb-1.5 group-hover:text-primary transition-colors line-clamp-2 leading-snug">
               {dream.title}
             </h3>
 
-            <p className="text-sm text-muted-foreground line-clamp-3 mb-4 leading-relaxed">
+            <p className="text-[11px] text-muted-foreground line-clamp-2 mb-2 leading-relaxed">
               {dream.content}
             </p>
 
             {dream.keywords && dream.keywords.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mb-4">
-                {dream.keywords.slice(0, 3).map((keyword) => (
+              <div className="flex flex-wrap gap-1 mb-2">
+                {dream.keywords.slice(0, 2).map((keyword) => (
                   <span
                     key={keyword}
-                    className="text-xs px-2.5 py-1 rounded-full bg-muted/70 text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                    className="text-[9px] px-1.5 py-0.5 rounded-full bg-muted/70 text-muted-foreground"
                   >
                     #{keyword}
                   </span>
@@ -478,20 +476,18 @@ export default function Popular() {
               </div>
             )}
 
-            <div className="flex items-center justify-between pt-4 border-t border-border/40">
-              <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                <div className="flex items-center gap-1.5">
-                  <Eye className="h-3.5 w-3.5" />
-                  <span className="font-semibold">{(dream.view_count || 0).toLocaleString('tr-TR')}</span>
+            <div className="flex items-center justify-between pt-2 border-t border-border/30">
+              <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                <div className="flex items-center gap-1">
+                  <Eye className="h-2.5 w-2.5" />
+                  <span className="font-medium">{(dream.view_count || 0).toLocaleString('tr-TR')}</span>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <Heart className="h-3.5 w-3.5" />
-                  <span className="font-semibold">{(dream.like_count || 0).toLocaleString('tr-TR')}</span>
+                <div className="flex items-center gap-1">
+                  <Heart className="h-2.5 w-2.5" />
+                  <span className="font-medium">{(dream.like_count || 0).toLocaleString('tr-TR')}</span>
                 </div>
               </div>
-              <div className="w-8 h-8 rounded-full bg-primary/5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 group-hover:bg-primary/10">
-                <ArrowUpRight className="h-4 w-4 text-primary" />
-              </div>
+              <ArrowUpRight className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-all group-hover:text-primary" />
             </div>
           </div>
         </Link>
@@ -507,13 +503,13 @@ export default function Popular() {
         className="space-y-8"
       >
         {viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
             {dreams.map((dream, index) => (
               <DreamCard key={dream.id} dream={dream} index={index} />
             ))}
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {dreams.map((dream, index) => (
               <DreamCard key={dream.id} dream={dream} index={index} />
             ))}
@@ -548,39 +544,38 @@ export default function Popular() {
   };
 
   const LoadingSkeleton = () => (
-    <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5' : 'space-y-3'}>
-      {Array.from({ length: 6 }).map((_, i) =>
+    <div className={viewMode === 'grid' ? 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3' : 'space-y-2'}>
+      {Array.from({ length: 10 }).map((_, i) =>
         viewMode === 'grid' ? (
-          <div key={i} className="bg-card/60 backdrop-blur-sm border border-border/40 rounded-2xl p-5 shadow-sm relative overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-500/30 via-fuchsia-500/30 to-pink-500/30" />
-            <div className="flex items-start justify-between mb-4">
-              <Skeleton className="h-10 w-10 rounded-xl" />
-              <Skeleton className="h-5 w-16 rounded-full" />
+          <div key={i} className="bg-card/60 backdrop-blur-sm border border-border/40 rounded-xl p-3 shadow-sm relative overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-violet-500/30 via-fuchsia-500/30 to-pink-500/30" />
+            <div className="flex items-start justify-between mb-2">
+              <Skeleton className="h-6 w-6 rounded-lg" />
+              <Skeleton className="h-4 w-14 rounded-full" />
             </div>
-            <Skeleton className="h-6 w-4/5 mb-3" />
-            <div className="space-y-2 mb-5">
-              <Skeleton className="h-3.5 w-full" />
-              <Skeleton className="h-3.5 w-11/12" />
-              <Skeleton className="h-3.5 w-3/4" />
+            <Skeleton className="h-3.5 w-full mb-1.5" />
+            <Skeleton className="h-3 w-4/5 mb-1" />
+            <div className="space-y-1 mb-2">
+              <Skeleton className="h-2.5 w-full" />
+              <Skeleton className="h-2.5 w-3/4" />
             </div>
-            <div className="flex gap-1.5 mb-4">
-              <Skeleton className="h-5 w-14 rounded-full" />
-              <Skeleton className="h-5 w-12 rounded-full" />
-              <Skeleton className="h-5 w-16 rounded-full" />
+            <div className="flex gap-1 mb-2">
+              <Skeleton className="h-3.5 w-12 rounded-full" />
+              <Skeleton className="h-3.5 w-10 rounded-full" />
             </div>
-            <div className="flex items-center justify-between pt-3 border-t border-border/40">
-              <Skeleton className="h-4 w-20" />
-              <Skeleton className="h-4 w-4" />
+            <div className="flex items-center justify-between pt-1.5 border-t border-border/30">
+              <Skeleton className="h-3 w-16" />
+              <Skeleton className="h-3 w-3" />
             </div>
           </div>
         ) : (
-          <div key={i} className="flex items-center gap-3 px-4 py-3.5 bg-card/60 backdrop-blur-sm border border-border/40 rounded-xl">
-            <Skeleton className="h-9 w-9 rounded-xl flex-shrink-0" />
-            <div className="flex-1 space-y-1.5">
-              <Skeleton className="h-3.5 w-4/5" />
-              <Skeleton className="h-3 w-1/2" />
+          <div key={i} className="flex items-center gap-2 px-3 py-2 bg-card/60 backdrop-blur-sm border border-border/40 rounded-lg">
+            <Skeleton className="h-7 w-7 rounded-lg flex-shrink-0" />
+            <div className="flex-1 space-y-1">
+              <Skeleton className="h-3 w-4/5" />
+              <Skeleton className="h-2.5 w-1/3" />
             </div>
-            <Skeleton className="h-4 w-4" />
+            <Skeleton className="h-3 w-3" />
           </div>
         )
       )}
