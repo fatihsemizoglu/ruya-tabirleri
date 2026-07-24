@@ -20,19 +20,44 @@ const STOP_WORDS = new Set([
   "gorup", "gorunce", "gordugunu", "gordugum", "gordugun",
   "ruyamda", "ruyada", "ruyam", "ruyasi", "ruyalar",
   "sanki", "aniden", "birden", "sonunda", "nihayet",
-  "acaba", "belki", "sanki", "tam", "hemen", "yine",
-  "yine de", "zaten", "bile", "ise", "degil", "mi", "mu",
+  "acaba", "belki", "tam", "hemen", "yine", "zaten",
+  "bile", "ise", "degil", "mi", "mu", "cok", "daha",
 ]);
+
+const TURKISH_SUFFIXES = [
+  "leri", "lar", "ler", "lerim", "larim", "lerin", "larin",
+  "imiz", "iniz", "inizi", "imizi", "imize", "inize",
+  "imda", "inda", "inde", "imde", "imden", "indan", "inden",
+  "imizda", "inizda", "imizde", "inizde",
+  "imizdan", "inizdan", "imizden", "inizden",
+  "imizin", "inizin",
+  "iyla", "iyle", "yla", "yle",
+  "sini", "sina", "sine", "sinin", "sinda", "sinde",
+  "sindan", "sinden", "sinin", "siniz",
+  "miz", "niz", "in", "im", "in", "si",
+  "i", "i", "u", "u", "a", "e", "da", "de",
+  "dan", "den", "in", "nin", "n", "y",
+];
 
 interface DreamMatch {
   id: string;
   title: string;
   slug: string;
-  content: string;
   islamic_interpretation: string | null;
   psychological_interpretation: string | null;
   keywords: string[];
   view_count: number;
+}
+
+function removeTurkishSuffixes(word: string): string[] {
+  const variants = [word];
+  for (const suffix of TURKISH_SUFFIXES) {
+    if (word.length > suffix.length + 2 && word.endsWith(suffix)) {
+      const root = word.slice(0, -suffix.length);
+      if (root.length >= 3) variants.push(root);
+    }
+  }
+  return variants;
 }
 
 function extractKeywords(text: string): string[] {
@@ -44,23 +69,40 @@ function extractKeywords(text: string): string[] {
   return [...new Set(words)];
 }
 
-function scoreMatch(words: string[], dream: DreamMatch): number {
+function buildKeywordVariants(words: string[]): Set<string> {
+  const all = new Set<string>();
+  for (const w of words) {
+    for (const v of removeTurkishSuffixes(w)) all.add(v);
+  }
+  return all;
+}
+
+function scoreMatch(
+  words: string[],
+  wordVariants: Set<string>,
+  dream: DreamMatch,
+): number {
   let score = 0;
   const lowerTitle = dream.title.toLowerCase();
-  const lowerContent = dream.content.toLowerCase();
   const dreamKeywords = (dream.keywords || []).map((k) => k.toLowerCase());
 
-  for (const word of words) {
-    if (dreamKeywords.includes(word)) {
-      score += 10;
-    } else if (lowerTitle.includes(word)) {
-      score += 5;
+  for (const wordVariants of [wordVariants]) {
+    for (const wv of wordVariants) {
+      if (dreamKeywords.some((k) => k.includes(wv))) {
+        score += 20;
+      }
+      if (lowerTitle.includes(wv)) {
+        score += 5;
+      }
     }
   }
 
   for (const word of words) {
-    if (word.length >= 4 && lowerContent.includes(word)) {
-      score += 1;
+    if (dreamKeywords.some((k) => k.includes(word))) {
+      score += 15;
+    }
+    if (lowerTitle.includes(word)) {
+      score += 3;
     }
   }
 
@@ -90,9 +132,11 @@ serve(async (req) => {
       return jsonResponse({ error: "Rüya metninden anlamlı kelimeler çıkarılamadı." }, 400);
     }
 
+    const wordVariants = buildKeywordVariants(words);
+
     const { data: allDreams } = await supabase
       .from("dreams")
-      .select("id, title, slug, content, islamic_interpretation, psychological_interpretation, keywords, view_count")
+      .select("id, title, slug, islamic_interpretation, psychological_interpretation, keywords, view_count")
       .eq("is_published", true);
 
     if (!allDreams || allDreams.length === 0) {
@@ -102,7 +146,7 @@ serve(async (req) => {
     const typedDreams = allDreams as DreamMatch[];
 
     const scored = typedDreams
-      .map((d) => ({ dream: d, score: scoreMatch(words, d) }))
+      .map((d) => ({ dream: d, score: scoreMatch(words, wordVariants, d) }))
       .filter((s) => s.score > 0);
 
     scored.sort((a, b) => b.score - a.score);
@@ -122,7 +166,9 @@ serve(async (req) => {
       islamic_interpretation: bestMatch.islamic_interpretation || "Bu rüya için İslami tabir bulunmuyor.",
       psychological_interpretation: bestMatch.psychological_interpretation || "Bu rüya için psikolojik yorum bulunmuyor.",
       keywords: bestMatch.keywords || [],
-      general_meaning: bestMatch.content.split(".").slice(0, 2).join(".") + ".",
+      general_meaning: bestMatch.islamic_interpretation
+        ? bestMatch.islamic_interpretation.split(".").slice(0, 2).join(".") + "."
+        : bestMatch.title + " hakkında detaylı yorum.",
       similarDreams: similarDreams.length > 0 ? similarDreams : undefined,
     });
   } catch (error) {
