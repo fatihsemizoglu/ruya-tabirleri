@@ -522,12 +522,17 @@ export default function DreamDetail() {
   const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
   const wordCount = dream.content.replace(/<[^>]*>/g, ' ').split(/\s+/).filter(Boolean).length;
   const readTime = Math.max(1, Math.ceil(wordCount / 200));
-  const formattedContent = DOMPurify.sanitize(formatPlainDreamContent(dream.content, dream.title), {
-    ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 's', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'blockquote', 'code', 'pre', 'a', 'img', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'hr', 'figure', 'figcaption'],
-    ALLOWED_ATTR: ['href', 'src', 'alt', 'class', 'target', 'rel', 'loading'],
-    FORBID_TAGS: ['script', 'style', 'iframe'],
-    FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover'],
-  });
+  let formattedContent = '';
+  try {
+    formattedContent = DOMPurify.sanitize(formatPlainDreamContent(dream.content, dream.title), {
+      ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 's', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'blockquote', 'code', 'pre', 'a', 'img', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'hr', 'figure', 'figcaption'],
+      ALLOWED_ATTR: ['href', 'src', 'alt', 'class', 'target', 'rel', 'loading'],
+      FORBID_TAGS: ['script', 'style', 'iframe'],
+      FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover'],
+    });
+  } catch {
+    formattedContent = `<p>${dream.content.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim().slice(0, 5000)}</p>`;
+  }
   const dreamPath = `/ruya/${dream.slug}`;
   const dreamDescription = dream.meta_description || dream.content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160) || `${dream.title} rüya tabiri ve yorumu`;
   const dreamJsonLd = [
