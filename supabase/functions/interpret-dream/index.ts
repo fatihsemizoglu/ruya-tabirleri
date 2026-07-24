@@ -2,6 +2,28 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { handleOptions, jsonResponse } from "../_shared/cors.ts";
 
+const STOP_WORDS = new Set([
+  "bir", "ve", "ile", "icin", "ama", "veya", "bu", "o", "da", "de",
+  "den", "dan", "a", "e", "cok", "daha", "en", "gibi", "kadar",
+  "sonra", "once", "altinda", "ustunde", "icinde", "disinda",
+  "arasinda", "uzerinde", "karsi", "yani", "ancak", "fakat",
+  "lakin", "cunku", "ayrica", "hatta", "ozellikle", "genelde",
+  "sadece", "hep", "hic", "biraz", "tum", "her", "kendi",
+  "ben", "sen", "o", "biz", "siz", "onlar", "bana", "sana",
+  "ona", "bize", "size", "onlara", "benim", "senin", "onun",
+  "bizim", "sizin", "onlarin", "buraya", "oraya", "orada",
+  "burada", "suraya", "surada", "oyle", "boyle", "seyle",
+  "bunu", "sunu", "onu", "buna", "suna", "ona",
+  "oldu", "oldugunu", "oluyor", "olmus", "olacak", "olan",
+  "olarak", "olunca", "olup", "olsa", "olsun", "olma",
+  "gordu", "goruyor", "gormus", "gormek", "gorulen",
+  "gorup", "gorunce", "gordugunu", "gordugum", "gordugun",
+  "ruyamda", "ruyada", "ruyam", "ruyasi", "ruyalar",
+  "sanki", "aniden", "birden", "sonunda", "nihayet",
+  "acaba", "belki", "sanki", "tam", "hemen", "yine",
+  "yine de", "zaten", "bile", "ise", "degil", "mi", "mu",
+]);
+
 interface DreamMatch {
   id: string;
   title: string;
@@ -10,16 +32,39 @@ interface DreamMatch {
   islamic_interpretation: string | null;
   psychological_interpretation: string | null;
   keywords: string[];
-  category_id: string | null;
   view_count: number;
 }
 
-function extractWords(text: string): string[] {
-  return text
+function extractKeywords(text: string): string[] {
+  const words = text
     .toLowerCase()
     .replace(/[^a-zçğıöşü0-9 ]/g, " ")
     .split(/\s+/)
-    .filter((w) => w.length > 2);
+    .filter((w) => w.length >= 3 && !STOP_WORDS.has(w));
+  return [...new Set(words)];
+}
+
+function scoreMatch(words: string[], dream: DreamMatch): number {
+  let score = 0;
+  const lowerTitle = dream.title.toLowerCase();
+  const lowerContent = dream.content.toLowerCase();
+  const dreamKeywords = (dream.keywords || []).map((k) => k.toLowerCase());
+
+  for (const word of words) {
+    if (dreamKeywords.includes(word)) {
+      score += 10;
+    } else if (lowerTitle.includes(word)) {
+      score += 5;
+    }
+  }
+
+  for (const word of words) {
+    if (word.length >= 4 && lowerContent.includes(word)) {
+      score += 1;
+    }
+  }
+
+  return score;
 }
 
 serve(async (req) => {
@@ -40,85 +85,37 @@ serve(async (req) => {
       return jsonResponse({ error: "Rüya metni çok kısa (en az 10 karakter)" }, 400);
     }
 
-    const words = extractWords(dreamText);
-
-    const seenIds = new Set<string>();
-    const rankedResults: Array<{ id: string; matchCount: number }> = [];
-
-    function addMatch(id: string) {
-      if (seenIds.has(id)) {
-        const existing = rankedResults.find((r) => r.id === id);
-        if (existing) existing.matchCount++;
-      } else {
-        seenIds.add(id);
-        rankedResults.push({ id, matchCount: 1 });
-      }
+    const words = extractKeywords(dreamText);
+    if (words.length === 0) {
+      return jsonResponse({ error: "Rüya metninden anlamlı kelimeler çıkarılamadı." }, 400);
     }
 
-    for (const word of words) {
-      const { data: keywordMatches } = await supabase
-        .from("dreams")
-        .select("id")
-        .eq("is_published", true)
-        .contains("keywords", [word]);
-
-      if (keywordMatches) {
-        for (const m of keywordMatches) addMatch(m.id);
-      }
-
-      const { data: titleMatches } = await supabase
-        .from("dreams")
-        .select("id")
-        .eq("is_published", true)
-        .ilike("title", `%${word}%`);
-
-      if (titleMatches) {
-        for (const m of titleMatches) addMatch(m.id);
-      }
-
-      const { data: contentMatches } = await supabase
-        .from("dreams")
-        .select("id")
-        .eq("is_published", true)
-        .ilike("content", `%${word}%`);
-
-      if (contentMatches) {
-        for (const m of contentMatches) addMatch(m.id);
-      }
-    }
-
-    rankedResults.sort((a, b) => b.matchCount - a.matchCount);
-    const topIds = rankedResults.slice(0, 10).map((r) => r.id);
-
-    if (topIds.length === 0) {
-      return jsonResponse(
-        { error: "Bu rüya için henüz tabir bulunamadı." },
-        404,
-      );
-    }
-
-    const { data: dreams } = await supabase
+    const { data: allDreams } = await supabase
       .from("dreams")
-      .select("id, title, slug, content, islamic_interpretation, psychological_interpretation, keywords, category_id, view_count")
-      .eq("is_published", true)
-      .in("id", topIds);
+      .select("id, title, slug, content, islamic_interpretation, psychological_interpretation, keywords, view_count")
+      .eq("is_published", true);
 
-    if (!dreams || dreams.length === 0) {
-      return jsonResponse(
-        { error: "Bu rüya için henüz tabir bulunamadı." },
-        404,
-      );
+    if (!allDreams || allDreams.length === 0) {
+      return jsonResponse({ error: "Veritabanında henüz rüya tabiri bulunmuyor." }, 404);
     }
 
-    const typedDreams = dreams as DreamMatch[];
-    const idOrder = new Map(topIds.map((id, i) => [id, i]));
-    typedDreams.sort((a, b) => (idOrder.get(a.id) ?? 999) - (idOrder.get(b.id) ?? 999));
+    const typedDreams = allDreams as DreamMatch[];
 
-    const bestMatch = typedDreams[0]!;
-    const similarDreams = typedDreams.slice(1, 6).map((d) => ({
-      id: d.id,
-      title: d.title,
-      slug: d.slug,
+    const scored = typedDreams
+      .map((d) => ({ dream: d, score: scoreMatch(words, d) }))
+      .filter((s) => s.score > 0);
+
+    scored.sort((a, b) => b.score - a.score);
+
+    if (scored.length === 0) {
+      return jsonResponse({ error: "Bu rüya ile eşleşen tabir bulunamadı." }, 404);
+    }
+
+    const bestMatch = scored[0]!.dream;
+    const similarDreams = scored.slice(1, 6).map((s) => ({
+      id: s.dream.id,
+      title: s.dream.title,
+      slug: s.dream.slug,
     }));
 
     return jsonResponse({
