@@ -50,10 +50,9 @@ export function DailyDreamCard() {
       <div className="mx-auto max-w-md">
         <Link
           to={`/ruya/${dream.slug}`}
-          className="group relative block overflow-hidden rounded-2xl border border-violet-500/20 bg-gradient-to-br from-violet-600/20 via-fuchsia-600/10 to-background p-6 transition-all duration-300 hover:border-violet-500/40 hover:shadow-lg hover:shadow-violet-500/10"
+          className="group relative block rounded-2xl border border-violet-500/20 bg-gray-800 p-5 transition-all duration-300 hover:border-violet-500/40 hover:shadow-lg hover:shadow-violet-500/10"
         >
-          <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-violet-500/20 blur-2xl" />
-          <div className="relative flex items-start gap-4">
+          <div className="flex items-start gap-4">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 shadow-lg shadow-violet-500/20">
               <Sparkles className="h-5 w-5 text-white" />
             </div>
@@ -62,10 +61,10 @@ export function DailyDreamCard() {
                 <CalendarDays className="h-3 w-3" />
                 Günün Rüyası
               </p>
-              <h3 className="text-base font-semibold text-gray-100 transition-colors group-hover:text-white line-clamp-2">
+              <h3 className="text-base font-semibold text-white transition-colors group-hover:text-violet-300 line-clamp-2">
                 {dream.title}
               </h3>
-              <p className="mt-1.5 text-xs text-gray-500">{dream.view_count.toLocaleString('tr-TR')} görüntülenme</p>
+              <p className="mt-1.5 text-xs text-gray-400">{dream.view_count.toLocaleString('tr-TR')} görüntülenme</p>
             </div>
           </div>
         </Link>
