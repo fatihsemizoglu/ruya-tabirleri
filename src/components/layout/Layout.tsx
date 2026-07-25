@@ -4,6 +4,7 @@ import { Footer } from './Footer';
 import { PremiumBackground } from './PremiumBackground';
 import { MobileBottomNav } from './MobileBottomNav';
 import { BackToTop } from './BackToTop';
+import { SwipeNav } from '@/components/SwipeNav';
 
 interface LayoutProps {
   children: ReactNode;
@@ -38,7 +39,7 @@ export function Layout({
 
       {!hideHeader && <Header />}
       <main id="main-content" className={`flex-1 relative z-10 ${!hideBottomNav ? 'pb-24 lg:pb-0' : ''}`}>
-        {children}
+        <SwipeNav>{children}</SwipeNav>
       </main>
       {!hideFooter && <Footer />}
       {!hideBottomNav && <MobileBottomNav />}

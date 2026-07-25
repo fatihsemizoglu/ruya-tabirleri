@@ -1,5 +1,6 @@
 import { createRoot } from "react-dom/client";
 import * as Sentry from "@sentry/react";
+import { onLCP, onCLS, onINP, onTTFB } from "web-vitals";
 import App from "./App.tsx";
 import "./index.css";
 
@@ -63,6 +64,19 @@ if (SENTRY_DSN) {
     }
   });
 }
+
+onLCP((metric) => {
+  if (metric.value > 2500) Sentry.captureMessage(`LCP: ${metric.value}ms`, { level: 'warning', extra: { metric } });
+});
+onTTFB((metric) => {
+  if (metric.value > 800) Sentry.captureMessage(`TTFB: ${metric.value}ms`, { level: 'warning', extra: { metric } });
+});
+onCLS((metric) => {
+  if (metric.value > 0.1) Sentry.captureMessage(`CLS: ${metric.value}`, { level: 'warning', extra: { metric } });
+});
+onINP((metric) => {
+  if (metric.value > 200) Sentry.captureMessage(`INP: ${metric.value}ms`, { level: 'warning', extra: { metric } });
+});
 
 const rootEl = document.getElementById("root");
 if (!rootEl) throw new Error("Root element not found");
