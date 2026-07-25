@@ -62,8 +62,69 @@ export interface DreamJournalEntry {
   mood: DreamMood | null;
   tags: string[];
   is_private: boolean;
+  ai_analysis: Record<string, unknown> | null;
+  audio_url: string | null;
+  series_id: string | null;
+  symbols: string[];
+  emotion: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface DreamAnalysis {
+  id: string;
+  dream_id: string;
+  user_id: string;
+  symbols: string[];
+  emotion: string | null;
+  psychological_interpretation: string | null;
+  keywords: string[];
+  confidence_score: number;
+  model_version: string;
+  created_at: string;
+}
+
+export interface PublicDreamPool {
+  id: string;
+  original_dream_id: string | null;
+  content_hash: string | null;
+  short_content: string | null;
+  symbols: string[];
+  emotion: string | null;
+  category: string | null;
+  created_date: string;
+  created_at: string;
+}
+
+export interface DreamMatch {
+  id: string;
+  user_id: string;
+  dream_id: string;
+  matched_dream_id: string;
+  similarity_score: number;
+  match_type: string | null;
+  is_read: boolean;
+  created_at: string;
+}
+
+export interface UserReminderPrefs {
+  user_id: string;
+  is_enabled: boolean;
+  preferred_time: string;
+  preferred_days: string[];
+  avg_dreams_per_week: number;
+  most_active_day: string | null;
+  streak_count: number;
+  last_reminder_sent: string | null;
+  updated_at: string;
+}
+
+export interface GlobalDreamStats {
+  total_dreams: number;
+  active_users: number;
+  unique_symbols: number;
+  top_symbols: string[] | null;
+  emotion_distribution: Record<string, number> | null;
 }
 
 export interface Favorite {
