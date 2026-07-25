@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { PullToRefresh } from '@/components/PullToRefresh';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { getErrorMessage, notify } from '@/lib/notify';
@@ -858,6 +859,7 @@ export default function DreamJournal() {
             ))}
           </div>
         ) : entries.length > 0 ? (
+          <PullToRefresh onRefresh={fetchEntries}>
           <div>
             {Array.from(seriesMap.entries()).map(([seriesId, seriesEntries]) => (
               <div key={seriesId} className="mb-10">
@@ -896,6 +898,7 @@ export default function DreamJournal() {
               </div>
             )}
           </div>
+          </PullToRefresh>
         ) : (
           <div className="text-center py-16">
             <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mx-auto mb-6">

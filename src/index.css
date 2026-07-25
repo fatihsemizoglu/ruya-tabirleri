@@ -317,3 +317,13 @@
     opacity: 1 !important;
   }
 }
+
+@supports (touch-action: manipulation) {
+  button, a, input, select, textarea, [role="button"], [tabindex]:not([tabindex="-1"]) {
+    min-height: 48px;
+    min-width: 48px;
+  }
+  button:has(span), a:has(span) {
+    min-height: auto;
+  }
+}
