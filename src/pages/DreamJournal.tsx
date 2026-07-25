@@ -611,7 +611,20 @@ export default function DreamJournal() {
               <Plus className="mr-2 h-4 w-4" />
               Elle Yaz
             </Button>
-          <Dialog open={isDialogOpen} onOpenChange={(open) => {
+          </div>
+        </div>
+
+        {user && (
+          <div className="mb-6 flex flex-wrap items-center gap-4 rounded-2xl border border-border/50 bg-card/50 p-4 dark:border-white/10">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span>{entries.length} rüya</span>
+              <span className="text-border">|</span>
+              <span>{userSeries.length} seri</span>
+            </div>
+          </div>
+        )}
+
+        <Dialog open={isDialogOpen} onOpenChange={(open) => {
             setIsDialogOpen(open);
             if (!open) {
               resetJournalForm();
@@ -812,8 +825,6 @@ export default function DreamJournal() {
               </form>
             </DialogContent>
           </Dialog>
-          </div>
-        </div>
 
         <div className="mb-8 rounded-3xl border border-violet-500/20 bg-gradient-to-br from-violet-500/10 via-fuchsia-500/5 to-background p-5 shadow-sm md:p-6">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
