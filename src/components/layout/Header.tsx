@@ -245,7 +245,7 @@ export function Header() {
             onMouseEnter={cancelClose}
             aria-current={isActiveLink('/') ? 'page' : undefined}
             className={cn(
-              'px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 shrink-0',
+              'inline-flex h-9 items-center px-3 text-sm font-medium rounded-lg transition-all duration-200 shrink-0',
               isActiveLink('/')
                 ? 'text-primary bg-primary/5'
                 : 'text-muted-foreground hover:text-foreground hover:bg-muted'
@@ -270,7 +270,7 @@ export function Header() {
                 setOpenBlogMega(false);
               }}
               className={cn(
-                'px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 shrink-0 flex items-center gap-1',
+                'inline-flex h-9 items-center gap-1 px-3 text-sm font-medium rounded-lg transition-all duration-200 shrink-0',
                 openCategoryMenu ||
                   isActiveLink('/kategoriler') ||
                   location.pathname.startsWith('/kategori/')
@@ -340,7 +340,7 @@ export function Header() {
             onMouseEnter={cancelClose}
             aria-current={isActiveLink('/populer') ? 'page' : undefined}
             className={cn(
-              'px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 shrink-0',
+              'inline-flex h-9 items-center px-3 text-sm font-medium rounded-lg transition-all duration-200 shrink-0',
               isActiveLink('/populer')
                 ? 'text-primary bg-primary/5'
                 : 'text-muted-foreground hover:text-foreground hover:bg-muted'
@@ -355,13 +355,13 @@ export function Header() {
             onMouseEnter={cancelClose}
             aria-current={isActiveLink('/akis') ? 'page' : undefined}
             className={cn(
-              'px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 shrink-0',
+              'inline-flex h-9 items-center gap-1 px-3 text-sm font-medium rounded-lg transition-all duration-200 shrink-0',
               isActiveLink('/akis')
                 ? 'text-primary bg-primary/5'
                 : 'text-muted-foreground hover:text-foreground hover:bg-muted'
             )}
           >
-            <Radio className="h-3.5 w-3.5 inline mr-1" />
+            <Radio className="h-3.5 w-3.5" />
             Akış
           </Link>
 
@@ -381,7 +381,7 @@ export function Header() {
                 setOpenCategoryMenu(false);
               }}
               className={cn(
-                'px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 shrink-0 flex items-center gap-1',
+                'inline-flex h-9 items-center gap-1 px-3 text-sm font-medium rounded-lg transition-all duration-200 shrink-0',
                 openBlogMega || isBlogActive
                   ? 'text-primary bg-primary/5'
                   : 'text-muted-foreground hover:text-foreground hover:bg-muted'
@@ -524,7 +524,7 @@ export function Header() {
             onMouseEnter={cancelClose}
             aria-current={isActiveLink('/iletisim') ? 'page' : undefined}
             className={cn(
-              'px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 shrink-0',
+              'inline-flex h-9 items-center px-3 text-sm font-medium rounded-lg transition-all duration-200 shrink-0',
               isActiveLink('/iletisim')
                 ? 'text-primary bg-primary/5'
                 : 'text-muted-foreground hover:text-foreground hover:bg-muted'
