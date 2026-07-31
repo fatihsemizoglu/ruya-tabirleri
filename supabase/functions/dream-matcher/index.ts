@@ -18,7 +18,9 @@ Deno.serve(async (req) => {
     const { data: dreams, error } = await supabase
       .from("dream_journal")
       .select("id, user_id, symbols, tags, content")
-      .not("symbols", "is", null);
+      .not("symbols", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(2000);
 
     if (error) throw error;
     if (!dreams || dreams.length === 0) {

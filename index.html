@@ -7,18 +7,20 @@
     <!-- Preconnect for performance -->
     <link rel="preconnect" href="https://dagjpitlouekbnwdcpbz.supabase.co" />
     <link rel="dns-prefetch" href="https://dagjpitlouekbnwdcpbz.supabase.co" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <!-- Warm up the social share image without competing with critical page assets -->
     <link rel="prefetch" as="image" href="/og-image.png" />
     <link rel="prefetch" href="/populer" as="document" />
     <link rel="prefetch" href="/ara" as="document" />
-    
+
     <!-- Primary Meta Tags -->
     <title>Rüya Tabirleri - En Kapsamlı Rüya Yorumları Sitesi</title>
     <meta name="title" content="Rüya Tabirleri - En Kapsamlı Rüya Yorumları Sitesi" />
     <meta name="description" content="Binlerce rüya tabiri arasında arama yapın. İslami ve psikolojik yorumlarla rüyalarınızın anlamını keşfedin. Ücretsiz rüya günlüğü tutun." />
     <meta name="author" content="Mistik Günlük" />
     <meta name="keywords" content="rüya tabiri, rüya yorumu, rüya tabirleri, islami rüya tabiri, psikolojik rüya yorumu, rüya günlüğü" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta name="language" content="Turkish" />
+    <meta name="revisit-after" content="1 day" />
 
     <!-- Canonical URL -->
     <link rel="canonical" href="%VITE_SITE_URL%/" />
@@ -29,7 +31,10 @@
     <meta property="og:title" content="Rüya Tabirleri - En Kapsamlı Rüya Yorumları Sitesi" />
     <meta property="og:description" content="Binlerce rüya tabiri arasında arama yapın. İslami ve psikolojik yorumlarla rüyalarınızın anlamını keşfedin." />
     <meta property="og:image" content="%VITE_SITE_URL%/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     <meta property="og:locale" content="tr_TR" />
+    <meta property="og:site_name" content="Rüya Tabirleri" />
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
@@ -37,6 +42,25 @@
     <meta name="twitter:title" content="Rüya Tabirleri - En Kapsamlı Rüya Yorumları Sitesi" />
     <meta name="twitter:description" content="Binlerce rüya tabiri arasında arama yapın. İslami ve psikolojik yorumlarla rüyalarınızın anlamını keşfedin." />
     <meta name="twitter:image" content="%VITE_SITE_URL%/og-image.png" />
+
+    <!-- Structured Data: WebSite + SearchAction (rich result for sitelinks search box) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Rüya Tabirleri",
+      "url": "%VITE_SITE_URL%/",
+      "inLanguage": "tr-TR",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "%VITE_SITE_URL%/ara?q={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
 
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#6366f1" />
@@ -52,7 +76,6 @@
     <!-- Favicon & Icons -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-    <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#6366f1" />
 
     <!-- iOS uses apple-touch-icon as splash when no startup-image links are present -->
 

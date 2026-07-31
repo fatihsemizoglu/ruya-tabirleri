@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export type RecordingState = 'idle' | 'recording' | 'uploading' | 'done' | 'error';
@@ -10,6 +10,31 @@ export function useAudioRecorder(userId: string | undefined) {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
+
+  const handleUpload = useCallback(async () => {
+    if (!userId || chunksRef.current.length === 0) return;
+
+    setState('uploading');
+    const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+    const fileName = `${userId}/${Date.now()}.webm`;
+    const file = new File([blob], fileName, { type: 'audio/webm' });
+
+    const { error } = await supabase.storage
+      .from('dream-audio')
+      .upload(fileName, file, { contentType: 'audio/webm' });
+
+    if (error) {
+      setState('error');
+      return;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('dream-audio')
+      .getPublicUrl(fileName);
+
+    setAudioUrl(publicUrl);
+    setState('done');
+  }, [userId]);
 
   const startRecording = useCallback(async () => {
     chunksRef.current = [];
@@ -41,7 +66,7 @@ export function useAudioRecorder(userId: string | undefined) {
     } catch {
       setState('error');
     }
-  }, []);
+  }, [handleUpload]);
 
   const stopRecording = useCallback(() => {
     clearInterval(timerRef.current);
@@ -51,31 +76,6 @@ export function useAudioRecorder(userId: string | undefined) {
     }
   }, []);
 
-  const handleUpload = useCallback(async () => {
-    if (!userId || chunksRef.current.length === 0) return;
-
-    setState('uploading');
-    const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
-    const fileName = `${userId}/${Date.now()}.webm`;
-    const file = new File([blob], fileName, { type: 'audio/webm' });
-
-    const { data, error } = await supabase.storage
-      .from('dream-audio')
-      .upload(fileName, file, { contentType: 'audio/webm' });
-
-    if (error) {
-      setState('error');
-      return;
-    }
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('dream-audio')
-      .getPublicUrl(fileName);
-
-    setAudioUrl(publicUrl);
-    setState('done');
-  }, [userId]);
-
   const reset = useCallback(() => {
     clearInterval(timerRef.current);
     chunksRef.current = [];
@@ -83,6 +83,16 @@ export function useAudioRecorder(userId: string | undefined) {
     setState('idle');
     setAudioUrl(null);
     setDuration(0);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      clearInterval(timerRef.current);
+      const recorder = mediaRecorderRef.current;
+      if (recorder?.state === 'recording') {
+        recorder.stream.getTracks().forEach((t) => t.stop());
+      }
+    };
   }, []);
 
   return { state, audioUrl, duration, startRecording, stopRecording, reset };

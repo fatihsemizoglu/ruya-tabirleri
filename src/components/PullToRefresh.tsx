@@ -19,13 +19,17 @@ export function PullToRefresh({ onRefresh, children, threshold = 80 }: PullToRef
   const onTouchStart = useCallback((e: React.TouchEvent) => {
     if (state === 'refreshing') return;
     if ((containerRef.current?.scrollTop ?? 0) > 0) return;
-    startY.current = e.touches[0].clientY;
+    const touch = e.touches[0];
+    if (!touch) return;
+    startY.current = touch.clientY;
   }, [state]);
 
   const onTouchMove = useCallback((e: React.TouchEvent) => {
     if (state === 'refreshing') return;
     if ((containerRef.current?.scrollTop ?? 0) > 0) return;
-    const dy = Math.max(0, e.touches[0].clientY - startY.current);
+    const touch = e.touches[0];
+    if (!touch) return;
+    const dy = Math.max(0, touch.clientY - startY.current);
     pullY.set(Math.min(dy * 0.5, threshold * 1.5));
     if (dy > 10) setState('pulling');
   }, [state, pullY, threshold]);

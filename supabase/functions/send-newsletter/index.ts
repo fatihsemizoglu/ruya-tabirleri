@@ -160,6 +160,7 @@ const handler = async (req: Request): Promise<Response> => {
             });
             successCount++;
           } catch (e) {
+            console.error("Failed to send to subscriber:", e);
             errors.push(sub.email);
           }
         }

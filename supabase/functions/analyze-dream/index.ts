@@ -1,7 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { handleOptions, jsonResponse } from "../_shared/cors.ts";
 
-const HF_API_TOKEN = Deno.env.get("VITE_HF_TOKEN") || Deno.env.get("HF_TOKEN") || "";
+// NOTE: VITE_ prefixed env vars are build-time client-bundle only and are NOT
+// available to Supabase Edge Functions at runtime. Use HF_TOKEN (no VITE_ prefix).
+const HF_API_TOKEN = Deno.env.get("HF_TOKEN") || "";
 
 const MODELS = [
   { name: "microsoft/Phi-3-mini-4k-instruct", format: "phi3" },
@@ -105,6 +107,7 @@ serve(async (req) => {
     }
 
     if (!HF_API_TOKEN) {
+      console.warn("HF_TOKEN not configured — AI analysis disabled, using keyword fallback");
       const fallback = keywordAnalysis(content);
       return jsonResponse({ ...fallback, note: "AI token yapılandırılmamış, anahtar kelime bazlı analiz yapıldı" });
     }

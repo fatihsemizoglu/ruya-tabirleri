@@ -60,7 +60,7 @@ async function getKv() {
 // In-memory fallback
 const memTests = new Map<string, ABTest>();
 const memEvents = new Map<string, Event[]>();
-const ADMIN_ACTIONS = new Set(["create", "update", "delete", "list", "stats"]);
+const ADMIN_ACTIONS = new Set(["create", "get", "update", "delete", "list", "stats"]);
 
 async function listTests(kv: Deno.Kv | null): Promise<ABTest[]> {
   if (kv) {

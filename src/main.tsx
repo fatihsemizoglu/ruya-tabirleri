@@ -5,16 +5,28 @@ import App from "./App.tsx";
 import "./index.css";
 
 // Self-hosted fonts (replaces Google Fonts for better privacy/performance)
-import "@fontsource/inter/400.css";
-import "@fontsource/inter/500.css";
-import "@fontsource/inter/600.css";
-import "@fontsource/inter/700.css";
-import "@fontsource/inter/800.css";
-import "@fontsource/plus-jakarta-sans/400.css";
-import "@fontsource/plus-jakarta-sans/500.css";
-import "@fontsource/plus-jakarta-sans/600.css";
-import "@fontsource/plus-jakarta-sans/700.css";
-import "@fontsource/plus-jakarta-sans/800.css";
+// Türkçe site için sadece latin ve latin-ext subset'leri yeterli;
+// vietnamese/greek/cyrillic subset'leri gereksiz yere bundle'ı büyütüyor.
+import "@fontsource/inter/latin-400.css";
+import "@fontsource/inter/latin-500.css";
+import "@fontsource/inter/latin-600.css";
+import "@fontsource/inter/latin-700.css";
+import "@fontsource/inter/latin-800.css";
+import "@fontsource/inter/latin-ext-400.css";
+import "@fontsource/inter/latin-ext-500.css";
+import "@fontsource/inter/latin-ext-600.css";
+import "@fontsource/inter/latin-ext-700.css";
+import "@fontsource/inter/latin-ext-800.css";
+import "@fontsource/plus-jakarta-sans/latin-400.css";
+import "@fontsource/plus-jakarta-sans/latin-500.css";
+import "@fontsource/plus-jakarta-sans/latin-600.css";
+import "@fontsource/plus-jakarta-sans/latin-700.css";
+import "@fontsource/plus-jakarta-sans/latin-800.css";
+import "@fontsource/plus-jakarta-sans/latin-ext-400.css";
+import "@fontsource/plus-jakarta-sans/latin-ext-500.css";
+import "@fontsource/plus-jakarta-sans/latin-ext-600.css";
+import "@fontsource/plus-jakarta-sans/latin-ext-700.css";
+import "@fontsource/plus-jakarta-sans/latin-ext-800.css";
 
 const SENTRY_DSN = import.meta.env.VITE_SENTRY_DSN as string | undefined;
 const APP_VERSION = (import.meta.env.VITE_APP_VERSION as string) || "dev";

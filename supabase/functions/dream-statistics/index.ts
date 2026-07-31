@@ -1,9 +1,13 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { handleOptions, jsonResponse } from "../_shared/cors.ts";
+import { requireAdmin } from "../_shared/auth.ts";
 
 Deno.serve(async (req) => {
   const options = handleOptions(req);
   if (options) return options;
+
+  const authResult = await requireAdmin(req);
+  if (authResult instanceof Response) return authResult;
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;

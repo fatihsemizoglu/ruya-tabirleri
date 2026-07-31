@@ -162,7 +162,6 @@ export default function DreamJournal() {
   const [analysisEntry, setAnalysisEntry] = useState<DreamJournalEntry | null>(null);
   const [isAnalysisOpen, setIsAnalysisOpen] = useState(false);
   const audioRecorder = useAudioRecorder(user?.id);
-  const [selectedSeriesId, setSelectedSeriesId] = useState<string | null>(null);
 
   const seriesMap = useMemo(() => {
     const map = new Map<string, DreamJournalEntry[]>();
@@ -423,7 +422,7 @@ export default function DreamJournal() {
       setVoiceDraft('');
       voiceBaseContentRef.current = null;
       setSelectedEntry(null);
-      setFormData({ title: '', content: '', dream_date: new Date().toISOString().split('T')[0], mood: '', tags: '' });
+      setFormData({ title: '', content: '', dream_date: new Date().toISOString().split('T')[0], mood: '', tags: '', series_id: '' });
       fetchEntries();
     } catch (error: unknown) {
       notify.error('Hata', { description: getErrorMessage(error) });
@@ -449,7 +448,6 @@ export default function DreamJournal() {
 
   const openEditDialog = (entry: DreamJournalEntry) => {
     setSelectedEntry(entry);
-    setSelectedSeriesId(entry.series_id);
     setFormData({
       title: entry.title,
       content: entry.content,
@@ -467,7 +465,6 @@ export default function DreamJournal() {
     voiceBaseContentRef.current = null;
     setSelectedEntry(null);
     audioRecorder.reset();
-    setSelectedSeriesId(null);
     setFormData({ title: '', content: '', dream_date: new Date().toISOString().split('T')[0], mood: '', tags: '', series_id: '' });
   };
 
@@ -481,12 +478,13 @@ export default function DreamJournal() {
       setIsAnalysisOpen(true);
 
       if (typeof navigator === 'undefined' || navigator.onLine) {
+        const updatePayload: Record<string, unknown> = { ai_analysis: result };
         await supabase
           .from('dream_journal')
-          .update({ ai_analysis: result as never })
+          .update(updatePayload as never)
           .eq('id', entry.id);
         setEntries((prev) =>
-          prev.map((e) => (e.id === entry.id ? { ...e, ai_analysis: result as never } : e))
+          prev.map((e) => (e.id === entry.id ? { ...e, ai_analysis: result as unknown as Record<string, unknown> } : e))
         );
       }
     } catch (error) {
@@ -514,7 +512,7 @@ export default function DreamJournal() {
 
   const openNewDreamDialog = () => {
     setSelectedEntry(null);
-    setFormData({ title: '', content: '', dream_date: new Date().toISOString().split('T')[0], mood: '', tags: '' });
+    setFormData({ title: '', content: '', dream_date: new Date().toISOString().split('T')[0], mood: '', tags: '', series_id: '' });
     setVoiceDraft('');
     voiceBaseContentRef.current = '';
     setIsDialogOpen(true);
@@ -870,7 +868,7 @@ export default function DreamJournal() {
                   <div>
                     <h3 className="font-semibold text-sm">{seriesEntries[0]?.title || 'Seri'}</h3>
                     <p className="text-xs text-muted-foreground">
-                      {seriesEntries.length} rüya · {new Date(seriesEntries[seriesEntries.length - 1]?.dream_date).toLocaleDateString('tr-TR')} - {new Date(seriesEntries[0]?.dream_date).toLocaleDateString('tr-TR')}
+                      {seriesEntries.length} rüya · {new Date(seriesEntries[seriesEntries.length - 1]?.dream_date || new Date().toISOString()).toLocaleDateString('tr-TR')} - {new Date(seriesEntries[0]?.dream_date || new Date().toISOString()).toLocaleDateString('tr-TR')}
                     </p>
                   </div>
                 </div>

@@ -150,20 +150,6 @@ export default defineConfig(({ mode }) => ({
             purpose: "maskable"
           }
         ],
-        screenshots: [
-          {
-            src: "/pwa-screenshot-wide.png",
-            sizes: "1280x720",
-            type: "image/png",
-            form_factor: "wide"
-          },
-          {
-            src: "/pwa-screenshot-narrow.png",
-            sizes: "720x1280",
-            type: "image/png",
-            form_factor: "narrow"
-          }
-        ],
         shortcuts: [
           {
             name: "Rüya Ara",

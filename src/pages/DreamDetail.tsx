@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, useScroll, useSpring } from 'framer-motion';
 import DOMPurify from 'dompurify';
-import { Eye, Heart, Bookmark, ArrowLeft, Calendar, BookOpen, Clock, ChevronRight, Share2, Tag, Folder, Check, Moon, Type, PenLine, Sparkles, ArrowLeftRight, Glasses, Rows3, Sun } from 'lucide-react';
+import { Eye, Heart, Bookmark, ArrowLeft, Calendar, BookOpen, Clock, ChevronRight, Share2, Tag, Folder, Check, Moon, Type, PenLine, Sparkles, ArrowLeftRight, Glasses, Rows3, Sun, Volume2, Pause, Square } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,6 +22,7 @@ import { formatPlainDreamContent } from '@/lib/dreamContent';
 import { useDreamCompare } from '@/hooks/useDreamCompare';
 import { useReadingMode } from '@/hooks/useReadingMode';
 import { useWakeLock } from '@/hooks/useWakeLock';
+import { useSpeechSynthesis } from '@/hooks/useSpeechSynthesis';
 
 const gradientPalette = [
   'from-violet-500 to-fuchsia-500',
@@ -54,6 +55,14 @@ const lineSpacingClasses: Record<LineSpacing, string> = {
   relaxed: 'prose-p:leading-[1.95] prose-li:leading-[1.9]',
   loose: 'prose-p:leading-[2.15] prose-li:leading-[2.05]',
 };
+
+const escapeHtml = (value: string) =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 
 function TextSizeControls({ value, onChange }: { value: TextSize; onChange: (value: TextSize) => void }) {
   return (
@@ -124,6 +133,13 @@ function ReadingControls({
   onToggleReadingMode,
   wakeLockActive,
   onToggleWakeLock,
+  speechSupported,
+  isSpeaking,
+  isPaused,
+  onSpeak,
+  onPause,
+  onResume,
+  onStop,
 }: {
   textSize: TextSize;
   onTextSizeChange: (value: TextSize) => void;
@@ -133,6 +149,13 @@ function ReadingControls({
   onToggleReadingMode: () => void;
   wakeLockActive: boolean;
   onToggleWakeLock: () => void;
+  speechSupported: boolean;
+  isSpeaking: boolean;
+  isPaused: boolean;
+  onSpeak: () => void;
+  onPause: () => void;
+  onResume: () => void;
+  onStop: () => void;
 }) {
   return (
     <div className="flex flex-wrap items-center justify-end gap-2">
@@ -153,15 +176,37 @@ function ReadingControls({
         <Sun className="mr-2 h-4 w-4" />
         Ekranı Açık Tut
       </Button>
+      {speechSupported && (
+        <div className="flex items-center gap-1 rounded-xl border border-border/45 bg-muted/30 p-1">
+          {!isSpeaking && !isPaused ? (
+            <Button type="button" variant="outline" size="sm" onClick={onSpeak} className="h-8 rounded-lg px-2.5">
+              <Volume2 className="mr-2 h-4 w-4" />
+              Dinle
+            </Button>
+          ) : isPaused ? (
+            <Button type="button" variant="secondary" size="sm" onClick={onResume} className="h-8 rounded-lg px-2.5">
+              <Volume2 className="mr-2 h-4 w-4" />
+              Devam
+            </Button>
+          ) : (
+            <Button type="button" variant="secondary" size="sm" onClick={onPause} className="h-8 rounded-lg px-2.5">
+              <Pause className="mr-2 h-4 w-4" />
+              Duraklat
+            </Button>
+          )}
+          {(isSpeaking || isPaused) && (
+            <Button type="button" variant="ghost" size="sm" onClick={onStop} className="h-8 rounded-lg px-2.5" aria-label="Sesli okumayı durdur">
+              <Square className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
-async function incrementDreamViewCount(dreamId: string, currentViewCount: number | null) {
-  return supabase
-    .from('dreams')
-    .update({ view_count: (currentViewCount || 0) + 1 })
-    .eq('id', dreamId);
+async function incrementDreamViewCount(dreamId: string) {
+  return (supabase.rpc as unknown as (name: string, args?: Record<string, unknown>) => Promise<{ error: unknown }>)("increment_view_count", { dream_id: dreamId });
 }
 
 export default function DreamDetail() {
@@ -183,6 +228,7 @@ export default function DreamDetail() {
   const compare = useDreamCompare();
   const readingMode = useReadingMode();
   const wakeLock = useWakeLock();
+  const speech = useSpeechSynthesis();
 
   const fetchComments = useCallback(async (dreamId: string) => {
     setCommentsLoading(true);
@@ -236,9 +282,8 @@ export default function DreamDetail() {
       }
 
       setDream(dreamData as Dream);
-      setIsLoading(false);
 
-      const viewPromise = incrementDreamViewCount(dreamData.id, dreamData.view_count);
+      const viewPromise = incrementDreamViewCount(dreamData.id);
       if (window.requestIdleCallback) {
         window.requestIdleCallback(() => fetchComments(dreamData.id), { timeout: 2000 });
       } else {
@@ -447,6 +492,12 @@ export default function DreamDetail() {
     else await wakeLock.request();
   };
 
+  const speakDream = () => {
+    if (!dream) return;
+    const text = `${dream.title}. ${safeContent.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()}`;
+    speech.speak(text.slice(0, 12000));
+  };
+
   if (isLoading) {
     return (
       <Layout>
@@ -532,7 +583,8 @@ export default function DreamDetail() {
       FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover'],
     });
   } catch {
-    formattedContent = `<p>${safeContent.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim().slice(0, 5000)}</p>`;
+    const plainFallback = safeContent.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim().slice(0, 5000);
+    formattedContent = `<p>${escapeHtml(plainFallback)}</p>`;
   }
   const dreamPath = `/ruya/${dream.slug}`;
   const dreamDescription = dream.meta_description || safeContent.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160) || `${dream.title} rüya tabiri ve yorumu`;
@@ -685,6 +737,13 @@ export default function DreamDetail() {
                 onToggleReadingMode={readingMode.toggle}
                 wakeLockActive={wakeLock.isActive}
                 onToggleWakeLock={toggleWakeLock}
+                speechSupported={speech.isSupported}
+                isSpeaking={speech.isSpeaking}
+                isPaused={speech.isPaused}
+                onSpeak={speakDream}
+                onPause={speech.pause}
+                onResume={speech.resume}
+                onStop={speech.stop}
               />
             </div>
             <div

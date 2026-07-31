@@ -46,12 +46,11 @@ Deno.serve(async (req) => {
 
       if (countError) continue;
 
-      await supabase.from("user_reminder_prefs").upsert({
-        user_id: pref.user_id,
+      await supabase.from("user_reminder_prefs").update({
         last_reminder_sent: now.toISOString(),
         avg_dreams_per_week: Math.round(((recentDreams?.length || 0) / 7) * 10) / 10,
         most_active_day: todayName,
-      });
+      }).eq("user_id", pref.user_id);
 
       console.log(`Reminder sent to user ${pref.user_id} (streak: ${pref.streak_count})`);
       sentCount++;
