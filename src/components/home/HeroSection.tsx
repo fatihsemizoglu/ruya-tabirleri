@@ -38,7 +38,7 @@ export function HeroSection() {
       ref={sectionRef}
       className="relative overflow-hidden bg-background"
       style={{
-        minHeight: viewportHeight ? `${viewportHeight}px` : '100vh',
+        minHeight: viewportHeight ? `${Math.max(viewportHeight - 64, 680)}px` : 'calc(100vh - 64px)',
       }}
     >
       {/* Background gradient mesh */}
@@ -51,9 +51,9 @@ export function HeroSection() {
         <div className="absolute bottom-1/4 left-1/3 w-64 h-64 bg-blue-500/8 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
       </div>
 
-      <div className="relative z-20 flex min-h-[inherit] flex-col px-4 pb-8 pt-24 sm:pt-28 lg:pb-10">
-        {/* Top: Badge */}
-        <div className="container mx-auto px-0">
+      {/* Top: Badge */}
+      <div className="absolute top-24 sm:top-28 left-0 right-0 z-10">
+        <div className="container px-4">
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -66,10 +66,13 @@ export function HeroSection() {
             </div>
           </motion.div>
         </div>
+      </div>
 
-        {/* Main area: Title + Search bar */}
-        <div className="flex flex-1 items-center justify-center py-10 sm:py-12 lg:py-14">
-          <div className="w-full max-w-3xl mx-auto">
+      {/* Center area: Title + Search bar (search is at exact viewport center) */}
+      <div
+        className="absolute left-0 right-0 top-[45%] z-20 -translate-y-1/2 px-4 sm:top-1/2"
+      >
+        <div className="max-w-3xl mx-auto">
           {/* Title above search */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -118,11 +121,12 @@ export function HeroSection() {
               </Link>
             ))}
           </motion.div>
-          </div>
         </div>
+      </div>
 
-        {/* Bottom: Alphabet + stats */}
-        <div className="container mx-auto px-0">
+      {/* Bottom: Alphabet + stats */}
+      <div className="absolute bottom-4 left-0 right-0 z-10 sm:bottom-8">
+        <div className="container px-4">
           {/* Alphabet navigation */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
