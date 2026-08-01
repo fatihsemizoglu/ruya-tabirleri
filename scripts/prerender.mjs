@@ -341,6 +341,17 @@ function staticPageHtml(template, opts) {
 async function main() {
   console.log('🌙 Prerender başlıyor...');
 
+  // robots.txt: resolve %VITE_SITE_URL% placeholder so sitemap URL matches the
+  // actual deployment domain (vite build only copies public/ verbatim).
+  const robotsPath = join(DIST_DIR, 'robots.txt');
+  if (existsSync(robotsPath)) {
+    const robots = await readFile(robotsPath, 'utf-8');
+    if (robots.includes('%VITE_SITE_URL%')) {
+      await writeFile(robotsPath, robots.replaceAll('%VITE_SITE_URL%', SITE_URL), 'utf-8');
+      console.log(`  🤖 robots.txt sitemap URL: ${SITE_URL}`);
+    }
+  }
+
   if (!SUPABASE_ANON_KEY) {
     console.warn('  ⚠ SUPABASE_ANON_KEY yok — prerender atlanıyor (SPA fallback kullanılacak)');
     return;

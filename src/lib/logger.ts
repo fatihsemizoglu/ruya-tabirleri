@@ -82,6 +82,8 @@ export function captureError(error: unknown, context: CaptureContext = {}): void
       ...(context.tags ? { tags: context.tags } : {}),
       extra: normalizedExtra,
     });
+    // Prod'da Sentry aktifken hata ayrıntısını console'a basma (bilgi sızıntısı önlemi).
+    if (!isDev) return;
   }
 
   const tag = context.tags?.feature ? `[${context.tags.feature}]` : '[error]';
@@ -95,6 +97,7 @@ export function captureMessage(message: string, context: CaptureContext = {}): v
       ...(context.tags ? { tags: context.tags } : {}),
       ...(context.extra ? { extra: context.extra } : {}),
     });
+    if (!isDev) return;
   }
 
   const tag = context.tags?.feature ? `[${context.tags.feature}]` : '[info]';

@@ -16,4 +16,4 @@ Disallow: /email-dogrula
 Disallow: /abonelik-dogrula
 Disallow: /abonelik-iptal
 
-Sitemap: https://ruya-tabirleri.vercel.app/api/sitemap
+Sitemap: %VITE_SITE_URL%/api/sitemap
