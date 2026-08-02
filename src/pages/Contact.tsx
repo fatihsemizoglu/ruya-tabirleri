@@ -11,7 +11,6 @@ import {
   Instagram,
   Linkedin,
   Mail,
-  Map as MapIcon,
   MapPin,
   MessageCircle,
   MessageSquare,
@@ -44,42 +43,14 @@ const contactReasons = [
   { value: 'isbirligi', label: 'İş birliği', icon: MessageSquare },
 ];
 
-type MapProvider = 'openstreetmap' | 'google' | 'yandex';
-
-const mapProviders: Array<{ id: MapProvider; name: string; shortName: string }> = [
-  { id: 'openstreetmap', name: 'OpenStreetMap', shortName: 'OSM' },
-  { id: 'google', name: 'Google Maps', shortName: 'Google' },
-  { id: 'yandex', name: 'Yandex Maps', shortName: 'Yandex' },
-];
-
 const fieldClassName =
   'h-12 rounded-2xl border-violet-200/70 bg-white/70 px-4 shadow-none transition-all duration-200 placeholder:text-slate-400 hover:border-violet-300 focus-visible:border-violet-500 focus-visible:ring-4 focus-visible:ring-violet-500/10 dark:border-white/10 dark:bg-white/[0.04] dark:hover:border-violet-400/40';
-
-function ProviderMark({ provider }: { provider: MapProvider }) {
-  if (provider === 'google') {
-    return (
-      <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
-        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.1 5.1 0 0 1-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09Z" />
-        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23Z" />
-        <path fill="#FBBC05" d="M5.84 14.09A6.6 6.6 0 0 1 5.49 12c0-.73.13-1.43.35-2.09V7.07H2.18A11 11 0 0 0 1 12c0 1.78.43 3.45 1.18 4.93l3.66-2.84Z" />
-        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15A10.6 10.6 0 0 0 12 1a11 11 0 0 0-9.82 6.07l3.66 2.84A6.54 6.54 0 0 1 12 5.38Z" />
-      </svg>
-    );
-  }
-
-  if (provider === 'yandex') {
-    return <span className="text-sm font-black text-red-500" aria-hidden="true">Я</span>;
-  }
-
-  return <MapIcon className="h-4 w-4" aria-hidden="true" />;
-}
 
 export default function Contact() {
   const { toast } = useToast();
   const { settings } = useSiteSettings();
   const reduceMotion = useReducedMotion();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [mapProvider, setMapProvider] = useState<MapProvider>('openstreetmap');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -104,28 +75,11 @@ export default function Contact() {
     : undefined;
   const emailHref = `mailto:${settings.contactEmail}`;
 
-  const mapLinks: Record<MapProvider, { view: string; directions: string }> = {
-    openstreetmap: {
-      view: `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=12/${lat}/${lng}`,
-      directions: `https://www.openstreetmap.org/directions?from=&to=${lat}%2C${lng}`,
-    },
-    google: {
-      view: `https://www.google.com/maps?q=${lat},${lng}&z=12`,
-      directions: `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`,
-    },
-    yandex: {
-      view: `https://yandex.com.tr/maps/?ll=${lng},${lat}&z=12&pt=${lng},${lat},pm2rdl`,
-      directions: `https://yandex.com.tr/maps/?rtext=~${lat},${lng}&rtt=auto`,
-    },
-  };
-
-  const mapEmbedLinks: Record<MapProvider, string> = {
-    openstreetmap: `https://www.openstreetmap.org/export/embed.html?bbox=${lng - 0.035}%2C${lat - 0.022}%2C${lng + 0.035}%2C${lat + 0.022}&layer=mapnik&marker=${lat}%2C${lng}`,
-    google: `https://www.google.com/maps?q=${lat},${lng}&z=14&output=embed`,
-    yandex: `https://yandex.com.tr/map-widget/v1/?ll=${lng}%2C${lat}&z=14&pt=${lng}%2C${lat}%2Cpm2rdl`,
-  };
-
-  const currentProvider = mapProviders.find((provider) => provider.id === mapProvider)!;
+  const encodedAddress = encodeURIComponent(settings.contactAddress || `${lat},${lng}`);
+  const googleMapsEmbedKey = import.meta.env.VITE_GOOGLE_MAPS_EMBED_KEY || 'AIzaSyAOVYRIgupAurZup5y1PRh8Ismb1A3lLao';
+  const mapEmbedUrl = `https://www.google.com/maps/embed/v1/place?key=${googleMapsEmbedKey}&q=${encodedAddress}&zoom=12`;
+  const mapViewUrl = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+  const mapDirectionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodedAddress}`;
   const reveal = {
     initial: { opacity: 0, y: reduceMotion ? 0 : 22 },
     whileInView: { opacity: 1, y: 0 },
@@ -399,39 +353,20 @@ export default function Contact() {
               <div>
                 <p className="text-sm font-semibold text-fuchsia-600 dark:text-fuchsia-300">Konum bilgisi</p>
                 <h2 className="mt-2 text-3xl font-bold tracking-[-0.03em] sm:text-4xl">Bizi haritada bulun</h2>
-                <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">Tercih ettiğiniz harita sağlayıcısını seçin ve konumu tek dokunuşla açın.</p>
+                <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">Konumumuzu Google Maps üzerinde inceleyin veya tek dokunuşla yol tarifi alın.</p>
               </div>
-
-              <div className="inline-flex w-full items-center gap-1 rounded-full border border-violet-200/80 bg-white/80 p-1.5 shadow-sm backdrop-blur-xl sm:w-auto dark:border-white/10 dark:bg-white/[0.05]" aria-label="Harita sağlayıcısı">
-                {mapProviders.map((provider) => {
-                  const active = provider.id === mapProvider;
-                  return (
-                    <button
-                      key={provider.id}
-                      type="button"
-                      aria-pressed={active}
-                      onClick={() => setMapProvider(provider.id)}
-                      className={cn(
-                        'relative flex min-h-10 flex-1 items-center justify-center gap-2 rounded-full px-3 text-xs font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-500/20 sm:flex-none sm:px-4',
-                        active ? 'text-white' : 'text-muted-foreground hover:bg-violet-50 hover:text-violet-700 dark:hover:bg-violet-500/10 dark:hover:text-violet-200',
-                      )}
-                    >
-                      {active && <motion.span layoutId="active-map-provider" className="absolute inset-0 rounded-full bg-gradient-to-r from-violet-600 via-fuchsia-600 to-pink-600 shadow-md shadow-fuchsia-500/20" transition={{ duration: reduceMotion ? 0 : 0.25 }} />}
-                      <span className="relative flex items-center gap-1.5"><ProviderMark provider={provider.id} /><span>{provider.shortName}</span></span>
-                    </button>
-                  );
-                })}
-              </div>
+              <span className="inline-flex w-fit items-center gap-2 rounded-full border border-violet-200/80 bg-white/80 px-4 py-2 text-xs font-semibold text-violet-700 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.05] dark:text-violet-200">
+                <MapPin className="h-3.5 w-3.5" /> Google Maps
+              </span>
             </div>
 
             <div className="relative overflow-hidden rounded-[2.25rem] border border-violet-200/70 bg-violet-950 shadow-[0_38px_100px_-42px_rgba(168,85,247,0.55)] dark:border-white/10">
               <motion.iframe
-                key={mapProvider}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: reduceMotion ? 0 : 0.35 }}
-                src={mapEmbedLinks[mapProvider]}
-                title={`${currentProvider.name} üzerinde ${settings.contactAddress} konumu`}
+                src={mapEmbedUrl}
+                title={`Google Maps üzerinde ${settings.contactAddress} konumu`}
                 className="h-[440px] w-full border-0 sm:h-[520px]"
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
@@ -450,7 +385,7 @@ export default function Contact() {
                       <div className="flex flex-wrap items-center gap-2">
                         <h3 className="font-bold tracking-tight">{settings.contactAddress}</h3>
                         <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-[10px] font-semibold text-violet-100">
-                          <ProviderMark provider={mapProvider} /> {currentProvider.shortName}
+                          <MapPin className="h-3 w-3" /> Google Maps
                         </span>
                       </div>
                       <button
@@ -465,10 +400,10 @@ export default function Contact() {
 
                   <div className="flex flex-col gap-2 sm:flex-row">
                     <Button asChild className="h-11 rounded-full bg-white px-5 text-violet-950 shadow-lg transition-colors hover:bg-violet-50">
-                      <a href={mapLinks[mapProvider].view} target="_blank" rel="noopener noreferrer"><ExternalLink className="mr-2 h-4 w-4" /> Büyük haritada aç</a>
+                      <a href={mapViewUrl} target="_blank" rel="noopener noreferrer"><ExternalLink className="mr-2 h-4 w-4" /> Büyük haritada aç</a>
                     </Button>
                     <Button asChild variant="outline" className="h-11 rounded-full border-white/20 bg-white/10 px-5 text-white hover:bg-white/20 hover:text-white">
-                      <a href={mapLinks[mapProvider].directions} target="_blank" rel="noopener noreferrer"><Compass className="mr-2 h-4 w-4" /> Yol tarifi</a>
+                      <a href={mapDirectionsUrl} target="_blank" rel="noopener noreferrer"><Compass className="mr-2 h-4 w-4" /> Yol tarifi</a>
                     </Button>
                   </div>
                 </div>
