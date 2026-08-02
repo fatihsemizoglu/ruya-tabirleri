@@ -1,144 +1,151 @@
-import { useState, useMemo } from 'react';
-import { Layout } from '@/components/layout/Layout';
-import { PremiumBackground, PremiumBadge, GradientText } from '@/components/layout/PremiumBackground';
+import { useMemo, useState } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 import {
-  Mail, MessageSquare, Send, MapPin, Clock, Phone, Globe, Sparkles,
-  CheckCircle2, Heart, ShieldCheck, Map as MapIcon,
-  Compass, Copy, ExternalLink, Car, Star, Zap, Users,
+  ArrowRight,
+  Check,
+  Clock3,
+  Compass,
+  Copy,
+  ExternalLink,
+  Facebook,
+  Instagram,
+  Linkedin,
+  Mail,
+  Map as MapIcon,
+  MapPin,
+  MessageCircle,
+  MessageSquare,
+  Music2,
+  Phone,
+  Send,
+  ShieldCheck,
+  Sparkles,
+  Twitter,
+  Youtube,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { Layout } from '@/components/layout/Layout';
 import { Seo } from '@/components/Seo';
-import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
-import { cn } from '@/lib/utils';
-import { copyToClipboard } from '@/lib/share';
+import { supabase } from '@/integrations/supabase/client';
 import { haptic } from '@/lib/haptics';
+import { copyToClipboard } from '@/lib/share';
+import { cn } from '@/lib/utils';
 import { contactMessageSchema, getFirstValidationMessage } from '@/lib/validation/forms';
 
 const contactReasons = [
-  { value: 'genel', label: 'Genel Bilgi', icon: MessageSquare, color: 'from-blue-500 to-cyan-500' },
-  { value: 'oneri', label: 'Öneri & İstek', icon: Sparkles, color: 'from-amber-500 to-orange-500' },
-  { value: 'hata', label: 'Hata Bildirimi', icon: ShieldCheck, color: 'from-rose-500 to-pink-500' },
-  { value: 'isbirligi', label: 'İş Birliği', icon: Heart, color: 'from-violet-500 to-fuchsia-500' },
+  { value: 'genel', label: 'Genel bilgi', icon: MessageCircle },
+  { value: 'oneri', label: 'Öneri & istek', icon: Sparkles },
+  { value: 'hata', label: 'Hata bildirimi', icon: ShieldCheck },
+  { value: 'isbirligi', label: 'İş birliği', icon: MessageSquare },
 ];
 
 type MapProvider = 'openstreetmap' | 'google' | 'yandex';
 
-const mapProviders: Array<{
-  id: MapProvider;
-  name: string;
-  shortName: string;
-  description: string;
-  color: string;
-  ringColor: string;
-  bg: string;
-  textColor: string;
-  badgeBg: string;
-  initial: string;
-}> = [
-  {
-    id: 'openstreetmap',
-    name: 'OpenStreetMap',
-    shortName: 'OSM',
-    description: 'Topluluk destekli açık harita',
-    color: 'from-emerald-500 to-green-600',
-    ringColor: 'ring-emerald-500/40',
-    bg: 'bg-emerald-500/10',
-    textColor: 'text-emerald-700 dark:text-emerald-400',
-    badgeBg: 'bg-emerald-500',
-    initial: 'OSM',
-  },
-  {
-    id: 'google',
-    name: 'Google Maps',
-    shortName: 'Google',
-    description: 'Google’ın detaylı haritaları',
-    color: 'from-blue-500 via-blue-600 to-emerald-500',
-    ringColor: 'ring-blue-500/40',
-    bg: 'bg-blue-500/10',
-    textColor: 'text-blue-700 dark:text-blue-400',
-    badgeBg: 'bg-blue-500',
-    initial: 'G',
-  },
-  {
-    id: 'yandex',
-    name: 'Yandex Maps',
-    shortName: 'Yandex',
-    description: 'Yandex’in detaylı haritaları',
-    color: 'from-red-500 to-amber-500',
-    ringColor: 'ring-red-500/40',
-    bg: 'bg-red-500/10',
-    textColor: 'text-red-700 dark:text-red-400',
-    badgeBg: 'bg-red-500',
-    initial: 'Я',
-  },
+const mapProviders: Array<{ id: MapProvider; name: string; shortName: string }> = [
+  { id: 'openstreetmap', name: 'OpenStreetMap', shortName: 'OSM' },
+  { id: 'google', name: 'Google Maps', shortName: 'Google' },
+  { id: 'yandex', name: 'Yandex Maps', shortName: 'Yandex' },
 ];
+
+const fieldClassName =
+  'h-12 rounded-2xl border-violet-200/70 bg-white/70 px-4 shadow-none transition-all duration-200 placeholder:text-slate-400 hover:border-violet-300 focus-visible:border-violet-500 focus-visible:ring-4 focus-visible:ring-violet-500/10 dark:border-white/10 dark:bg-white/[0.04] dark:hover:border-violet-400/40';
+
+function ProviderMark({ provider }: { provider: MapProvider }) {
+  if (provider === 'google') {
+    return (
+      <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.1 5.1 0 0 1-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09Z" />
+        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23Z" />
+        <path fill="#FBBC05" d="M5.84 14.09A6.6 6.6 0 0 1 5.49 12c0-.73.13-1.43.35-2.09V7.07H2.18A11 11 0 0 0 1 12c0 1.78.43 3.45 1.18 4.93l3.66-2.84Z" />
+        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15A10.6 10.6 0 0 0 12 1a11 11 0 0 0-9.82 6.07l3.66 2.84A6.54 6.54 0 0 1 12 5.38Z" />
+      </svg>
+    );
+  }
+
+  if (provider === 'yandex') {
+    return <span className="text-sm font-black text-red-500" aria-hidden="true">Я</span>;
+  }
+
+  return <MapIcon className="h-4 w-4" aria-hidden="true" />;
+}
 
 export default function Contact() {
   const { toast } = useToast();
   const { settings } = useSiteSettings();
+  const reduceMotion = useReducedMotion();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mapProvider, setMapProvider] = useState<MapProvider>('openstreetmap');
   const [formData, setFormData] = useState({
-    name: '', email: '', subject: '', reason: 'genel', message: '',
+    name: '',
+    email: '',
+    subject: '',
+    reason: 'genel',
+    message: '',
   });
 
-  // Dinamik sosyal medya (sadece URL girilmiş olanlar)
-  const dynamicSocials = useMemo(() => {
-    const list = [
-      { name: 'Instagram', url: settings.socialInstagram, color: 'from-pink-500 via-rose-500 to-fuchsia-500', icon: 'IG' },
-      { name: 'Twitter / X', url: settings.socialTwitter, color: 'from-sky-400 to-slate-900', icon: 'X' },
-      { name: 'YouTube', url: settings.socialYoutube, color: 'from-red-500 to-red-700', icon: 'YT' },
-      { name: 'Facebook', url: settings.socialFacebook, color: 'from-blue-500 to-blue-700', icon: 'FB' },
-      { name: 'LinkedIn', url: settings.socialLinkedin, color: 'from-sky-600 to-indigo-700', icon: 'IN' },
-      { name: 'TikTok', url: settings.socialTiktok, color: 'from-slate-800 via-pink-500 to-cyan-400', icon: 'TT' },
-    ];
-    return list.filter((s) => s.url && s.url.trim() !== '');
-  }, [settings]);
+  const dynamicSocials = useMemo(() => [
+    { name: 'Instagram', url: settings.socialInstagram, icon: Instagram },
+    { name: 'Twitter / X', url: settings.socialTwitter, icon: Twitter },
+    { name: 'YouTube', url: settings.socialYoutube, icon: Youtube },
+    { name: 'Facebook', url: settings.socialFacebook, icon: Facebook },
+    { name: 'LinkedIn', url: settings.socialLinkedin, icon: Linkedin },
+    { name: 'TikTok', url: settings.socialTiktok, icon: Music2 },
+  ].filter((social) => social.url?.trim()), [settings]);
 
-  // Harita URL'leri koordinatlardan
   const lat = parseFloat(settings.mapLatitude) || 41.0082;
   const lng = parseFloat(settings.mapLongitude) || 28.9784;
-  const zoom = 12;
+  const phoneHref = settings.contactPhone
+    ? `tel:${settings.contactPhone.replace(/[^\d+]/g, '')}`
+    : undefined;
+  const emailHref = `mailto:${settings.contactEmail}`;
 
-  const getMapExternalLinks = (provider: MapProvider) => {
-    const links: Record<MapProvider, { view: string; directions: string }> = {
-      openstreetmap: {
-        view: `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=${zoom}/${lat}/${lng}`,
-        directions: `https://www.openstreetmap.org/directions?from=&to=${lat}%2C${lng}`,
-      },
-      google: {
-        view: `https://www.google.com/maps?q=${lat},${lng}&z=${zoom}`,
-        directions: `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`,
-      },
-      yandex: {
-        view: `https://yandex.com.tr/maps/?ll=${lng},${lat}&z=${zoom}&pt=${lng},${lat},pm2rdl`,
-        directions: `https://yandex.com.tr/maps/?rtext=~${lat},${lng}&rtt=auto`,
-      },
-    };
-    return links[provider];
+  const mapLinks: Record<MapProvider, { view: string; directions: string }> = {
+    openstreetmap: {
+      view: `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=12/${lat}/${lng}`,
+      directions: `https://www.openstreetmap.org/directions?from=&to=${lat}%2C${lng}`,
+    },
+    google: {
+      view: `https://www.google.com/maps?q=${lat},${lng}&z=12`,
+      directions: `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`,
+    },
+    yandex: {
+      view: `https://yandex.com.tr/maps/?ll=${lng},${lat}&z=12&pt=${lng},${lat},pm2rdl`,
+      directions: `https://yandex.com.tr/maps/?rtext=~${lat},${lng}&rtt=auto`,
+    },
+  };
+
+  const currentProvider = mapProviders.find((provider) => provider.id === mapProvider)!;
+  const reveal = {
+    initial: { opacity: 0, y: reduceMotion ? 0 : 22 },
+    whileInView: { opacity: 1, y: 0 },
+    viewport: { once: true, amount: 0.18 },
+    transition: { duration: reduceMotion ? 0 : 0.5, ease: 'easeOut' as const },
   };
 
   const handleCopyCoords = async () => {
-    const ok = await copyToClipboard(`${lat}, ${lng}`);
-    if (ok) {
-      toast({ title: 'Kopyalandı ✓', description: 'Koordinatlar panoya kopyalandı.' });
+    const copied = await copyToClipboard(`${lat}, ${lng}`);
+    if (copied) {
+      toast({ title: 'Koordinatlar kopyalandı', description: `${lat}, ${lng}` });
       haptic('light');
-    } else {
-      toast({ title: 'Hata', description: 'Kopyalanamadı.', variant: 'destructive' });
+      return;
     }
+    toast({ title: 'Kopyalanamadı', description: 'Lütfen tekrar deneyin.', variant: 'destructive' });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     const validation = contactMessageSchema.safeParse(formData);
     if (!validation.success) {
-      toast({ title: 'Formu kontrol edin', description: getFirstValidationMessage(validation.error), variant: 'destructive' });
+      toast({
+        title: 'Formu kontrol edin',
+        description: getFirstValidationMessage(validation.error),
+        variant: 'destructive',
+      });
       return;
     }
 
@@ -151,43 +158,13 @@ export default function Contact() {
         message: validation.data.message,
       });
       if (error) throw error;
-      toast({ title: 'Mesajınız Gönderildi ✓', description: 'En kısa sürede size dönüş yapacağız.' });
+      toast({ title: 'Mesajınız ulaştı', description: 'En kısa sürede size dönüş yapacağız.' });
       setFormData({ name: '', email: '', subject: '', reason: 'genel', message: '' });
-    } catch (error) {
-      toast({ title: 'Hata', description: 'Mesaj gönderilirken bir hata oluştu.', variant: 'destructive' });
+    } catch {
+      toast({ title: 'Mesaj gönderilemedi', description: 'Lütfen daha sonra tekrar deneyin.', variant: 'destructive' });
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const currentProvider = mapProviders.find((p) => p.id === mapProvider)!;
-  const externalLinks = getMapExternalLinks(mapProvider);
-
-  // MapProvider logo rendering helper
-  const ProviderLogo = ({ provider }: { provider: typeof mapProviders[number] }) => {
-    if (provider.id === 'google') {
-      return (
-        <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden>
-          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-        </svg>
-      );
-    }
-    if (provider.id === 'yandex') {
-      return (
-        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="#FF0000" aria-hidden>
-          <path d="M2 12c0-.31.02-.62.06-.92C2.6 5.97 6.97 2 12 2c5.52 0 10 4.48 10 10s-4.48 10-10 10c-5.03 0-9.4-3.97-9.94-9.08C2.02 12.62 2 12.31 2 12zm6.5-3.5h1.8v3.6L13.9 8.5h2.3l-3.7 4.1 4.1 4.9h-2.5l-3.8-4.6v4.6H8.5v-9z" />
-        </svg>
-      );
-    }
-    // OpenStreetMap
-    return (
-      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.553 2.276A1 1 0 0022 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-      </svg>
-    );
   };
 
   return (
@@ -197,411 +174,291 @@ export default function Contact() {
         description="Rüya Tabirleri ile iletişime geçin. Sorularınız, önerileriniz ve geri bildirimleriniz için bize ulaşın."
         path="/iletisim"
       />
-      <div className="relative overflow-hidden bg-mesh">
-        <div className="absolute -top-44 right-0 h-96 w-96 rounded-full bg-primary/10 blur-3xl" />
-        <div className="absolute top-[520px] -left-40 h-96 w-96 rounded-full bg-fuchsia-500/10 blur-3xl" />
-        <PremiumBackground variant="soft" className="h-[460px]" />
-        <div className="container py-12 md:py-20 relative">
-          {/* Hero */}
-          <div className="max-w-3xl mx-auto text-center mb-16 relative">
-            <div className="mb-6 flex justify-center">
-              <PremiumBadge><MessageSquare className="h-3.5 w-3.5" /> İletişim</PremiumBadge>
+
+      <main className="relative isolate overflow-hidden bg-background">
+        <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[760px] bg-[radial-gradient(circle_at_18%_12%,rgba(139,92,246,0.17),transparent_31%),radial-gradient(circle_at_82%_18%,rgba(217,70,239,0.14),transparent_28%),radial-gradient(circle_at_52%_45%,rgba(236,72,153,0.09),transparent_35%)]" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[760px] bg-[linear-gradient(to_right,rgba(139,92,246,0.045)_1px,transparent_1px),linear-gradient(to_bottom,rgba(139,92,246,0.045)_1px,transparent_1px)] bg-[size:56px_56px] [mask-image:linear-gradient(to_bottom,black,transparent)]" />
+
+        <section className="container pb-14 pt-14 sm:pt-20 lg:pb-20 lg:pt-24">
+          <motion.div
+            initial={{ opacity: 0, y: reduceMotion ? 0 : 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: reduceMotion ? 0 : 0.55 }}
+            className="mx-auto max-w-3xl text-center"
+          >
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-violet-200/80 bg-white/70 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-violet-700 shadow-sm backdrop-blur-xl dark:border-violet-400/20 dark:bg-violet-500/10 dark:text-violet-200">
+              <Sparkles className="h-3.5 w-3.5" /> İletişim merkezi
             </div>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-[-0.025em] mb-6 text-foreground">
-              Bizimle <GradientText>İletişime</GradientText> Geçin
+            <h1 className="text-balance text-4xl font-bold leading-[1.08] tracking-[-0.04em] text-slate-950 sm:text-5xl lg:text-6xl dark:text-white">
+              Aklınızdakileri birlikte{' '}
+              <span className="bg-gradient-to-r from-violet-600 via-fuchsia-600 to-pink-600 bg-clip-text text-transparent">
+                anlamlandıralım.
+              </span>
             </h1>
-            <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              Sorularınız, önerileriniz veya geri bildirimleriniz için bize ulaşın. Mesajlarınızı dikkatle okuyor, en kısa sürede dönüş yapıyoruz.
+            <p className="mx-auto mt-6 max-w-2xl text-balance text-base leading-7 text-muted-foreground sm:text-lg">
+              Bir sorunuz, fikriniz ya da paylaşmak istediğiniz bir deneyim mi var? Mesajınızı bırakın; özenle okuyup en kısa sürede yanıtlayalım.
             </p>
-
-            {/* Hızlı istatistikler */}
-            <div className="mt-8 grid grid-cols-3 gap-3 sm:gap-4 max-w-2xl mx-auto">
-              {[
-                { icon: Zap, label: 'Hızlı Yanıt', value: '< 24 saat', color: 'text-amber-500' },
-                { icon: Users, label: 'Mutlu Kullanıcı', value: '10K+', color: 'text-violet-500' },
-                { icon: Star, label: 'Memnuniyet', value: '%98', color: 'text-rose-500' },
-              ].map((stat) => (
-                <div
-                  key={stat.label}
-                  className="flex flex-col items-center gap-1.5 p-3 sm:p-4 rounded-2xl bg-card/60 backdrop-blur border border-border/60 shadow-sm hover:shadow-md transition-shadow"
-                >
-                  <stat.icon className={cn('h-4 w-4 sm:h-5 sm:w-5', stat.color)} />
-                  <div className="text-base sm:text-lg font-bold">{stat.value}</div>
-                  <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider">{stat.label}</div>
-                </div>
-              ))}
+            <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+              <Button asChild size="lg" className="h-12 rounded-full bg-gradient-to-r from-violet-600 via-fuchsia-600 to-pink-600 px-6 text-white shadow-lg shadow-fuchsia-500/20 transition-all duration-200 hover:brightness-110 hover:shadow-xl hover:shadow-fuchsia-500/25">
+                <a href="#contact-form"><Send className="mr-2 h-4 w-4" /> Mesaj gönder</a>
+              </Button>
+              <Button asChild size="lg" variant="outline" className="h-12 rounded-full border-violet-200/80 bg-white/70 px-6 backdrop-blur-xl transition-all duration-200 hover:border-violet-300 hover:bg-violet-50 dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-violet-500/10">
+                <a href={phoneHref ?? emailHref}>
+                  {phoneHref ? <Phone className="mr-2 h-4 w-4" /> : <Mail className="mr-2 h-4 w-4" />}
+                  Hızlı ulaşın <ArrowRight className="ml-2 h-4 w-4" />
+                </a>
+              </Button>
             </div>
-          </div>
+          </motion.div>
+        </section>
 
-          <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-5 gap-6 lg:gap-8 mb-14 items-start">
-            {/* İletişim bilgi kartları (dinamik) */}
-            <div className="lg:col-span-2 space-y-4">
-              <Card className="border-border/60 hover:border-primary/40 transition-all hover:shadow-xl hover:shadow-primary/10 group overflow-hidden relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                <CardContent className="p-6 relative">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-3 transition-all">
-                      <Mail className="h-5 w-5 text-primary" />
+        <section className="container pb-20">
+          <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[0.82fr_1.18fr] lg:gap-8">
+            <motion.aside {...reveal} className="space-y-6">
+              <div className="rounded-[2rem] border border-violet-200/70 bg-white/75 p-6 shadow-[0_24px_70px_-38px_rgba(126,34,206,0.35)] backdrop-blur-xl sm:p-8 dark:border-white/10 dark:bg-white/[0.045]">
+                <p className="text-sm font-semibold text-violet-600 dark:text-violet-300">Doğrudan iletişim</p>
+                <h2 className="mt-2 text-2xl font-bold tracking-tight">Size uygun kanalı seçin</h2>
+                <p className="mt-3 text-sm leading-6 text-muted-foreground">Sorunuz ne olursa olsun doğru kişiye ulaşmasını sağlayacağız.</p>
+
+                <div className="mt-7 divide-y divide-violet-100 dark:divide-white/10">
+                  <a href={emailHref} className="group flex items-center gap-4 py-5 first:pt-0">
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-violet-100 text-violet-700 transition-colors duration-200 group-hover:bg-violet-600 group-hover:text-white dark:bg-violet-500/15 dark:text-violet-300">
+                      <Mail className="h-5 w-5" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">E-posta</span>
+                      <span className="mt-1 block truncate text-sm font-semibold group-hover:text-violet-600 dark:group-hover:text-violet-300">{settings.contactEmail}</span>
+                    </span>
+                    <ExternalLink className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-violet-600" />
+                  </a>
+
+                  {settings.contactPhone && (
+                    <a href={phoneHref} className="group flex items-center gap-4 py-5">
+                      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-fuchsia-100 text-fuchsia-700 transition-colors duration-200 group-hover:bg-fuchsia-600 group-hover:text-white dark:bg-fuchsia-500/15 dark:text-fuchsia-300">
+                        <Phone className="h-5 w-5" />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Telefon</span>
+                        <span className="mt-1 block text-sm font-semibold group-hover:text-fuchsia-600 dark:group-hover:text-fuchsia-300">{settings.contactPhone}</span>
+                      </span>
+                      <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform duration-200 group-hover:translate-x-1 group-hover:text-fuchsia-600" />
+                    </a>
+                  )}
+
+                  {settings.contactAddress && (
+                    <div className="flex items-center gap-4 py-5">
+                      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-pink-100 text-pink-700 dark:bg-pink-500/15 dark:text-pink-300">
+                        <MapPin className="h-5 w-5" />
+                      </span>
+                      <span>
+                        <span className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Konum</span>
+                        <span className="mt-1 block whitespace-pre-line text-sm font-semibold">{settings.contactAddress}</span>
+                      </span>
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <h3 className="font-semibold mb-1.5">E-posta</h3>
-                      <a href={`mailto:${settings.contactEmail}`} className="text-muted-foreground hover:text-primary transition-colors text-sm break-all inline-flex items-center gap-1.5 group/email">
-                        {settings.contactEmail}
-                        <ExternalLink className="h-3 w-3 opacity-0 group-hover/email:opacity-100 transition-opacity" />
-                      </a>
-                      <p className="text-xs text-muted-foreground mt-1">7/24 e-posta gönderebilirsiniz</p>
+                  )}
+
+                  {settings.contactWorkingHours && (
+                    <div className="flex items-center gap-4 pt-5">
+                      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300">
+                        <Clock3 className="h-5 w-5" />
+                      </span>
+                      <span>
+                        <span className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Çalışma saatleri</span>
+                        <span className="mt-1 block whitespace-pre-line text-sm font-semibold">{settings.contactWorkingHours}</span>
+                      </span>
                     </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="rounded-[2rem] border border-violet-200/70 bg-gradient-to-br from-violet-50 via-fuchsia-50 to-pink-50 p-6 sm:p-7 dark:border-white/10 dark:from-violet-950/40 dark:via-fuchsia-950/30 dark:to-pink-950/30">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <h3 className="font-bold">Bizi takip edin</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">Yeni tabirler ve ilham veren içerikler.</p>
                   </div>
-                </CardContent>
-              </Card>
-
-              {settings.contactPhone && (
-                <Card className="border-border/60 hover:border-emerald-500/40 transition-all hover:shadow-xl hover:shadow-emerald-500/10 group overflow-hidden relative">
-                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-teal-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <CardContent className="p-6 relative">
-                    <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-3 transition-all">
-                        <Phone className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <h3 className="font-semibold mb-1.5">Telefon</h3>
-                        <a href={`tel:${settings.contactPhone.replace(/[^\d+]/g, '')}`} className="text-muted-foreground hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors text-sm inline-flex items-center gap-1.5 group/phone">
-                          {settings.contactPhone}
-                          <ExternalLink className="h-3 w-3 opacity-0 group-hover/phone:opacity-100 transition-opacity" />
-                        </a>
-                        <p className="text-xs text-muted-foreground mt-1">Hafta içi 09:00 - 18:00</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {settings.contactWorkingHours && (
-                <Card className="border-border/60 hover:border-amber-500/40 transition-all hover:shadow-xl hover:shadow-amber-500/10 group overflow-hidden relative">
-                  <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-orange-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <CardContent className="p-6 relative">
-                    <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-3 transition-all">
-                        <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <h3 className="font-semibold mb-1.5">Çalışma Saatleri</h3>
-                        <p className="text-muted-foreground text-sm whitespace-pre-line">{settings.contactWorkingHours}</p>
-                        <div className="flex items-center gap-1.5 mt-2 text-xs text-emerald-600 dark:text-emerald-400 font-medium">
-                          <span className="relative flex h-2 w-2">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-                          </span>
-                          Şu anda çevrimiçiyiz
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {settings.contactAddress && (
-                <Card className="border-border/60 hover:border-rose-500/40 transition-all hover:shadow-xl hover:shadow-rose-500/10 group overflow-hidden relative">
-                  <div className="absolute inset-0 bg-gradient-to-br from-rose-500/5 via-transparent to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <CardContent className="p-6 relative">
-                    <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-rose-500/20 to-pink-500/20 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-3 transition-all">
-                        <MapPin className="h-5 w-5 text-rose-600 dark:text-rose-400" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <h3 className="font-semibold mb-1.5">Konum</h3>
-                        <p className="text-muted-foreground text-sm whitespace-pre-line">{settings.contactAddress}</p>
-                        <p className="text-xs text-muted-foreground mt-1">Tüm dünyadan hizmet</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Sosyal Medya */}
-              <Card className="border-border/60 overflow-hidden">
-                <CardContent className="p-4 sm:p-5">
-                  <div className="mb-3 flex items-center justify-between gap-3">
-                    <h3 className="font-semibold flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center">
-                        <Globe className="h-4 w-4 text-primary" />
-                      </div>
-                      Bizi Takip Edin
-                    </h3>
-                    <span className="text-[11px] font-medium text-muted-foreground">{dynamicSocials.length} kanal</span>
-                  </div>
-                  {dynamicSocials.length > 0 ? (
-                    <div className="grid grid-cols-3 sm:grid-cols-6 lg:grid-cols-3 gap-2">
-                      {dynamicSocials.map((s) => (
+                  <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-semibold text-violet-700 dark:bg-white/10 dark:text-violet-200">{dynamicSocials.length} kanal</span>
+                </div>
+                {dynamicSocials.length > 0 ? (
+                  <div className="mt-5 flex flex-wrap gap-3">
+                    {dynamicSocials.map((social) => {
+                      const Icon = social.icon;
+                      return (
                         <a
-                          key={s.name}
-                          href={s.url}
+                          key={social.name}
+                          href={social.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          aria-label={`${s.name} hesabını aç`}
-                          title={s.name}
-                          className="group flex min-h-[4.25rem] flex-col items-center justify-center gap-1.5 rounded-xl border border-border/50 bg-muted/35 px-2 py-2.5 text-center transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:bg-card hover:shadow-sm"
+                          aria-label={`${social.name} hesabımızı aç`}
+                          title={social.name}
+                          className="flex h-12 w-12 items-center justify-center rounded-full border border-violet-200/80 bg-white/80 text-violet-700 shadow-sm transition-all duration-200 hover:border-fuchsia-300 hover:bg-gradient-to-br hover:from-violet-600 hover:via-fuchsia-600 hover:to-pink-600 hover:text-white hover:shadow-lg hover:shadow-fuchsia-500/20 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-500/20 dark:border-white/10 dark:bg-white/[0.06] dark:text-violet-200"
                         >
-                          <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${s.color} flex items-center justify-center text-white text-[10px] font-bold shadow-sm transition-transform group-hover:scale-105`}>
-                            {s.icon}
-                          </div>
-                          <span className="max-w-full truncate text-[11px] font-medium leading-none">{s.name}</span>
+                          <Icon className="h-5 w-5" />
                         </a>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground text-center py-3">Sosyal medya hesapları yakında eklenecek.</p>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="mt-5 text-sm text-muted-foreground">Sosyal medya hesaplarımız yakında burada.</p>
+                )}
+              </div>
+            </motion.aside>
 
-            {/* Mesaj Formu */}
-            <Card className="lg:col-span-3 self-start border-border/60 shadow-xl shadow-primary/5 overflow-hidden">
-              <div className="h-1 dream-gradient" />
-              <CardHeader className="border-b border-border/60 bg-gradient-to-br from-primary/5 via-transparent to-purple-500/5">
-                <CardTitle className="flex items-center gap-2 text-xl">
-                  <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center">
-                    <Send className="h-4 w-4 text-primary" />
+            <motion.div
+              {...reveal}
+              transition={{ ...reveal.transition, delay: reduceMotion ? 0 : 0.08 }}
+              id="contact-form"
+              className="scroll-mt-24 overflow-hidden rounded-[2rem] border border-violet-200/70 bg-white/80 shadow-[0_32px_90px_-42px_rgba(126,34,206,0.4)] backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.045]"
+            >
+              <div className="border-b border-violet-100 bg-gradient-to-r from-violet-50/90 via-fuchsia-50/70 to-pink-50/90 px-6 py-7 sm:px-8 dark:border-white/10 dark:from-violet-950/40 dark:via-fuchsia-950/30 dark:to-pink-950/30">
+                <div className="flex items-start gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-600 via-fuchsia-600 to-pink-600 text-white shadow-lg shadow-fuchsia-500/20">
+                    <Send className="h-5 w-5" />
                   </div>
-                  Mesaj Gönderin
-                </CardTitle>
-                <p className="text-sm text-muted-foreground mt-1.5">Formu doldurun, en kısa sürede size dönüş yapalım.</p>
-              </CardHeader>
-              <CardContent className="pt-5 sm:pt-6">
-                <form onSubmit={handleSubmit} className="space-y-5">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="name">Adınız *</Label>
-                      <Input id="name" placeholder="Adınızı girin" value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })} required className="h-11" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="email">E-posta *</Label>
-                      <Input id="email" type="email" placeholder="ornek@email.com" value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })} required className="h-11" />
-                    </div>
+                  <div>
+                    <h2 className="text-2xl font-bold tracking-tight">Bize bir mesaj bırakın</h2>
+                    <p className="mt-1.5 text-sm leading-6 text-muted-foreground">Formu doldurmanız yalnızca birkaç dakika sürer.</p>
+                  </div>
+                </div>
+              </div>
+
+              <form onSubmit={handleSubmit} className="p-6 sm:p-8">
+                <fieldset className="mb-7">
+                  <legend className="mb-3 text-sm font-semibold">Size nasıl yardımcı olabiliriz?</legend>
+                  <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="İletişim nedeni">
+                    {contactReasons.map((reason) => {
+                      const Icon = reason.icon;
+                      const active = formData.reason === reason.value;
+                      return (
+                        <button
+                          key={reason.value}
+                          type="button"
+                          role="radio"
+                          aria-checked={active}
+                          onClick={() => setFormData({ ...formData, reason: reason.value })}
+                          className={cn(
+                            'inline-flex min-h-11 items-center gap-2 rounded-full border px-4 text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-500/20',
+                            active
+                              ? 'border-violet-600 bg-gradient-to-r from-violet-600 via-fuchsia-600 to-pink-600 text-white shadow-md shadow-fuchsia-500/15'
+                              : 'border-violet-200/80 bg-white/70 text-muted-foreground hover:border-violet-400 hover:bg-violet-50 hover:text-violet-700 dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-violet-500/10 dark:hover:text-violet-200',
+                          )}
+                        >
+                          <Icon className="h-4 w-4" /> {reason.label}
+                          {active && <Check className="h-3.5 w-3.5" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </fieldset>
+
+                <div className="grid gap-x-5 gap-y-5 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="name" className="text-sm font-semibold">Adınız <span className="text-fuchsia-600">*</span></Label>
+                    <Input id="name" autoComplete="name" placeholder="Adınız ve soyadınız" value={formData.name} onChange={(event) => setFormData({ ...formData, name: event.target.value })} required className={fieldClassName} />
                   </div>
                   <div className="space-y-2">
-                    <Label>Konu *</Label>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                      {contactReasons.map((r) => {
-                        const Icon = r.icon;
-                        const active = formData.reason === r.value;
-                        return (
-                          <button key={r.value} type="button"
-                            onClick={() => setFormData({ ...formData, reason: r.value })}
-                            className={cn(
-                              'flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all text-xs font-medium relative overflow-hidden',
-                              active
-                                ? 'border-primary bg-primary/5 text-primary shadow-md shadow-primary/10'
-                                : 'border-border/60 hover:border-primary/30 text-muted-foreground hover:bg-muted/30'
-                            )}>
-                            {active && <div className={cn('absolute inset-0 bg-gradient-to-br opacity-10', r.color)} />}
-                            <Icon className="h-4 w-4 relative" />
-                            <span className="relative">{r.label}</span>
-                          </button>
-                        );
-                      })}
+                    <Label htmlFor="email" className="text-sm font-semibold">E-posta <span className="text-fuchsia-600">*</span></Label>
+                    <Input id="email" type="email" autoComplete="email" placeholder="ornek@email.com" value={formData.email} onChange={(event) => setFormData({ ...formData, email: event.target.value })} required className={fieldClassName} />
+                  </div>
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label htmlFor="subject" className="text-sm font-semibold">Konu <span className="text-fuchsia-600">*</span></Label>
+                    <Input id="subject" placeholder="Kısaca mesajınızın konusu" value={formData.subject} onChange={(event) => setFormData({ ...formData, subject: event.target.value })} required className={fieldClassName} />
+                  </div>
+                  <div className="space-y-2 sm:col-span-2">
+                    <div className="flex items-center justify-between gap-4">
+                      <Label htmlFor="message" className="text-sm font-semibold">Mesajınız <span className="text-fuchsia-600">*</span></Label>
+                      <span className="text-xs tabular-nums text-muted-foreground">{formData.message.length}/1000</span>
                     </div>
+                    <Textarea id="message" placeholder="Düşüncelerinizi bizimle paylaşın..." rows={7} maxLength={1000} value={formData.message} onChange={(event) => setFormData({ ...formData, message: event.target.value })} required className={cn(fieldClassName, 'h-auto min-h-40 resize-none py-3.5')} />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="subject">Başlık *</Label>
-                    <Input id="subject" placeholder="Mesajınızın konusu" value={formData.subject}
-                      onChange={(e) => setFormData({ ...formData, subject: e.target.value })} required className="h-11" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="message">Mesajınız *</Label>
-                    <Textarea id="message" placeholder="Mesajınızı buraya yazın..." rows={6}
-                      value={formData.message} maxLength={1000}
-                      onChange={(e) => setFormData({ ...formData, message: e.target.value })} required className="resize-none" />
-                    <p className="text-xs text-muted-foreground text-right">{formData.message.length} / 1000 karakter</p>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/40 p-3 rounded-lg">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                    <span>Bilgileriniz gizli tutulur, sadece size dönüş için kullanılır.</span>
-                  </div>
-                  <Button type="submit" className="w-full h-12 text-base dream-gradient shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all" disabled={isSubmitting}>
-                    {isSubmitting ? 'Gönderiliyor...' : <><Send className="h-4 w-4 mr-2" />Mesajı Gönder</>}
+                </div>
+
+                <div className="mt-6 flex flex-col gap-4 border-t border-violet-100 pt-6 sm:flex-row sm:items-center sm:justify-between dark:border-white/10">
+                  <p className="flex max-w-sm items-start gap-2 text-xs leading-5 text-muted-foreground">
+                    <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-violet-600 dark:text-violet-300" />
+                    Bilgileriniz yalnızca size dönüş yapmak amacıyla güvenle saklanır.
+                  </p>
+                  <Button type="submit" disabled={isSubmitting} className="h-12 rounded-full bg-gradient-to-r from-violet-600 via-fuchsia-600 to-pink-600 px-7 text-white shadow-lg shadow-fuchsia-500/20 transition-all duration-200 hover:brightness-110 hover:shadow-xl disabled:opacity-60">
+                    {isSubmitting ? 'Gönderiliyor…' : <><Send className="mr-2 h-4 w-4" /> Mesajı gönder</>}
                   </Button>
-                </form>
-              </CardContent>
-            </Card>
+                </div>
+              </form>
+            </motion.div>
           </div>
+        </section>
 
-          {/* Harita Bölümü */}
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-8">
-              <div className="mb-3 flex justify-center">
-                <PremiumBadge><MapPin className="h-3.5 w-3.5" /> Konum</PremiumBadge>
+        <motion.section {...reveal} className="container pb-20 sm:pb-28">
+          <div className="mx-auto max-w-6xl">
+            <div className="mb-7 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-fuchsia-600 dark:text-fuchsia-300">Konum bilgisi</p>
+                <h2 className="mt-2 text-3xl font-bold tracking-[-0.03em] sm:text-4xl">Bizi haritada bulun</h2>
+                <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">Tercih ettiğiniz harita sağlayıcısını seçin ve konumu tek dokunuşla açın.</p>
               </div>
-              <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight mb-2">Bize <GradientText>Ulaşın</GradientText></h2>
-              <p className="text-muted-foreground text-sm md:text-base max-w-xl mx-auto">{settings.contactAddress} merkezli hizmet veriyoruz. Aşağıdan tercih ettiğiniz harita servisini seçebilirsiniz.</p>
+
+              <div className="inline-flex w-full items-center gap-1 rounded-full border border-violet-200/80 bg-white/80 p-1.5 shadow-sm backdrop-blur-xl sm:w-auto dark:border-white/10 dark:bg-white/[0.05]" aria-label="Harita sağlayıcısı">
+                {mapProviders.map((provider) => {
+                  const active = provider.id === mapProvider;
+                  return (
+                    <button
+                      key={provider.id}
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => setMapProvider(provider.id)}
+                      className={cn(
+                        'relative flex min-h-10 flex-1 items-center justify-center gap-2 rounded-full px-3 text-xs font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-500/20 sm:flex-none sm:px-4',
+                        active ? 'text-white' : 'text-muted-foreground hover:bg-violet-50 hover:text-violet-700 dark:hover:bg-violet-500/10 dark:hover:text-violet-200',
+                      )}
+                    >
+                      {active && <motion.span layoutId="active-map-provider" className="absolute inset-0 rounded-full bg-gradient-to-r from-violet-600 via-fuchsia-600 to-pink-600 shadow-md shadow-fuchsia-500/20" transition={{ duration: reduceMotion ? 0 : 0.25 }} />}
+                      <span className="relative flex items-center gap-1.5"><ProviderMark provider={provider.id} /><span>{provider.shortName}</span></span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
-            <Card className="overflow-hidden border-border/60 shadow-xl shadow-primary/5">
-              {/* Harita Sağlayıcı Seçici */}
-              <div className="border-b border-border/60 bg-gradient-to-r from-muted/30 via-muted/10 to-muted/30 p-3 sm:p-4">
-                <div className="flex items-center gap-2 mb-2.5 px-1">
-                  <MapIcon className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Haritada Aç</span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  {mapProviders.map((provider) => {
-                    const active = mapProvider === provider.id;
-                    return (
-                      <button
-                        key={provider.id}
-                        type="button"
-                        onClick={() => setMapProvider(provider.id)}
-                        className={cn(
-                          'group relative flex items-center gap-2.5 p-2.5 sm:p-3 rounded-xl border-2 transition-all text-left',
-                          active
-                            ? `border-primary ${provider.bg} shadow-md ring-2 ${provider.ringColor}`
-                            : 'border-border/60 hover:border-primary/30 bg-card/50 hover:bg-card'
-                        )}
-                        aria-pressed={active}
-                      >
-                        <div className={cn(
-                          'w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center shrink-0 transition-transform group-hover:scale-110',
-                          provider.bg, provider.textColor
-                        )}>
-                          <ProviderLogo provider={provider} />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className={cn('text-xs sm:text-sm font-semibold truncate', active && provider.textColor)}>
-                            {provider.name}
-                          </div>
-                          <div className="text-[10px] sm:text-xs text-muted-foreground truncate hidden sm:block">
-                            {provider.description}
-                          </div>
-                        </div>
-                        {active && (
-                          <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md">
-                            <CheckCircle2 className="h-3 w-3" />
-                          </div>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+            <div className="relative min-h-[430px] overflow-hidden rounded-[2.25rem] border border-violet-200/70 bg-gradient-to-br from-violet-950 via-fuchsia-950 to-pink-950 p-6 text-white shadow-[0_38px_100px_-42px_rgba(168,85,247,0.55)] sm:p-10 lg:min-h-[500px] lg:p-14 dark:border-white/10">
+              <div className="absolute inset-0 opacity-35 [background-image:linear-gradient(rgba(255,255,255,.12)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.12)_1px,transparent_1px)] [background-size:54px_54px]" />
+              <div className="absolute -left-24 top-16 h-72 w-72 rounded-full bg-violet-500/40 blur-3xl" />
+              <div className="absolute -right-20 bottom-0 h-80 w-80 rounded-full bg-pink-500/35 blur-3xl" />
+              <div className="absolute left-[22%] top-[24%] h-24 w-24 rounded-full border border-white/15" />
+              <div className="absolute bottom-[18%] right-[25%] h-40 w-40 rounded-full border border-white/10" />
 
-              {/* Harita Alanı */}
-              <div className="relative">
-                <div className="relative overflow-hidden bg-gradient-to-br from-violet-500/10 via-background to-fuchsia-500/10 p-6 md:p-10">
-                  <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-primary/15 blur-3xl" />
-                  <div className="absolute -bottom-20 left-10 h-56 w-56 rounded-full bg-fuchsia-500/10 blur-3xl" />
-                  <div className="relative grid gap-6 lg:grid-cols-[1fr_320px] lg:items-center">
-                    <div>
-                      <div className={cn('mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl', currentProvider.bg, currentProvider.textColor)}>
-                        <ProviderLogo provider={currentProvider} />
-                      </div>
-                      <h3 className="text-2xl font-bold tracking-tight text-foreground">Konumu {currentProvider.name} ile açın</h3>
-                      <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-                        Gömülü haritalar bazı tarayıcılar ve gizlilik ayarlarında engellenebiliyor. Bu nedenle konumu doğrudan seçtiğiniz harita servisinde açıyoruz.
-                      </p>
-                      <div className="mt-5 flex flex-col gap-2 sm:flex-row">
-                        <Button asChild className="rounded-xl dream-gradient shadow-md shadow-primary/20">
-                          <a href={externalLinks.view} target="_blank" rel="noopener noreferrer">
-                            <ExternalLink className="mr-2 h-4 w-4" /> Haritada Aç
-                          </a>
-                        </Button>
-                        <Button asChild variant="outline" className="rounded-xl">
-                          <a href={externalLinks.directions} target="_blank" rel="noopener noreferrer">
-                            <Car className="mr-2 h-4 w-4" /> Yol Tarifi Al
-                          </a>
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="rounded-3xl border border-border/60 bg-card/80 p-5 shadow-sm backdrop-blur dark:border-white/10 dark:bg-slate-950/70">
-                      <div className="flex items-start gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                          <MapPin className="h-5 w-5" />
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Adres</p>
-                          <p className="mt-1 text-sm font-medium text-foreground whitespace-pre-line">{settings.contactAddress}</p>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={handleCopyCoords}
-                        className="mt-4 flex w-full items-start gap-3 rounded-xl border border-border/50 bg-muted/30 p-3 text-left transition-colors hover:bg-muted/50"
-                      >
-                        <Compass className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
-                        <span>
-                          <span className="block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Koordinat</span>
-                          <span className="block font-mono text-sm font-medium text-foreground">{lat}, {lng}</span>
-                        </span>
-                      </button>
-                    </div>
-                  </div>
+              <div className="relative z-10 flex min-h-[360px] flex-col justify-between lg:min-h-[390px]">
+                <div className="flex items-center justify-between gap-4">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-semibold backdrop-blur-xl">
+                    <span className="h-2 w-2 rounded-full bg-pink-400 shadow-[0_0_0_5px_rgba(244,114,182,0.15)]" /> {currentProvider.name}
+                  </span>
+                  <button type="button" onClick={handleCopyCoords} className="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition-colors duration-200 hover:bg-white/20 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/20" aria-label="Koordinatları kopyala" title="Koordinatları kopyala">
+                    <Copy className="h-4 w-4" />
+                  </button>
                 </div>
 
-                {/* Harita Alt Bilgi Kartı */}
-                <div className="bg-card border-t border-border/60 p-5 md:p-6">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                        <MapPin className="h-5 w-5 text-primary" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">Adres</p>
-                        <p className="text-sm font-medium whitespace-pre-line">{settings.contactAddress}</p>
-                      </div>
+                <div className="grid items-end gap-8 lg:grid-cols-[1fr_auto]">
+                  <div className="max-w-2xl">
+                    <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-white/15 bg-white/10 backdrop-blur-xl">
+                      <MapPin className="h-7 w-7" />
                     </div>
-                    <button
-                      type="button"
-                      onClick={handleCopyCoords}
-                      className="flex items-start gap-3 text-left hover:bg-muted/40 -m-2 p-2 rounded-lg transition-colors group"
-                    >
-                      <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                        <Compass className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1 flex items-center gap-1">
-                          Koordinat
-                          <Copy className="h-2.5 w-2.5 opacity-50" />
-                        </p>
-                        <p className="text-sm font-medium font-mono">{lat}° N, {lng}° E</p>
-                        <p className="text-[10px] text-muted-foreground mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity">Kopyalamak için tıkla</p>
-                      </div>
-                    </button>
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0">
-                        <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-                      </div>
-                      <div>
-                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">Çalışma Saatleri</p>
-                        <p className="text-sm font-medium whitespace-pre-line">{settings.contactWorkingHours}</p>
-                      </div>
-                    </div>
+                    <h3 className="text-balance text-3xl font-bold tracking-[-0.035em] sm:text-4xl">Konumu {currentProvider.name} ile keşfedin.</h3>
+                    <p className="mt-4 max-w-xl text-sm leading-6 text-violet-100/75 sm:text-base">{settings.contactAddress}. Yol tarifini alın veya koordinatları navigasyon uygulamanızda kullanın.</p>
+                    <div className="mt-5 flex items-center gap-2 font-mono text-xs text-violet-100/70"><Compass className="h-4 w-4" /> {lat}, {lng}</div>
                   </div>
-                  <div className="mt-5 pt-5 border-t border-border/60 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-                    <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                      <Globe className="h-3 w-3" />
-                      Harita: {currentProvider.name} üzerinden görüntüleniyor
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      <Button asChild size="sm" variant="outline" className="rounded-lg">
-                        <a href={externalLinks.view} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink className="h-3.5 w-3.5 mr-1.5" /> {currentProvider.shortName}'da Aç
-                        </a>
-                      </Button>
-                      <Button asChild size="sm" className="rounded-lg dream-gradient shadow-md shadow-primary/20">
-                        <a href={externalLinks.directions} target="_blank" rel="noopener noreferrer">
-                          <Car className="h-3.5 w-3.5 mr-1.5" /> Yol Tarifi Al
-                        </a>
-                      </Button>
-                    </div>
+
+                  <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
+                    <Button asChild size="lg" className="h-12 rounded-full bg-white px-6 text-violet-950 shadow-xl transition-colors hover:bg-violet-50">
+                      <a href={mapLinks[mapProvider].view} target="_blank" rel="noopener noreferrer"><ExternalLink className="mr-2 h-4 w-4" /> Haritada aç</a>
+                    </Button>
+                    <Button asChild size="lg" variant="outline" className="h-12 rounded-full border-white/20 bg-white/10 px-6 text-white backdrop-blur hover:bg-white/20 hover:text-white">
+                      <a href={mapLinks[mapProvider].directions} target="_blank" rel="noopener noreferrer"><Compass className="mr-2 h-4 w-4" /> Yol tarifi al</a>
+                    </Button>
                   </div>
                 </div>
               </div>
-            </Card>
+            </div>
           </div>
-        </div>
-      </div>
+        </motion.section>
+      </main>
     </Layout>
   );
 }

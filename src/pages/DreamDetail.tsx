@@ -2,9 +2,11 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, useScroll, useSpring } from 'framer-motion';
 import DOMPurify from 'dompurify';
-import { Eye, Heart, Bookmark, ArrowLeft, Calendar, BookOpen, Clock, ChevronRight, Share2, Tag, Folder, Check, Moon, Type, PenLine, Sparkles, ArrowLeftRight, Glasses, Rows3, Sun, Volume2, Pause, Square } from 'lucide-react';
+import { Eye, Heart, Bookmark, ArrowLeft, Calendar, BookOpen, Clock, ChevronRight, Share2, Tag, Folder, Check, Moon, Type, PenLine, Sparkles, ArrowLeftRight, Glasses, Rows3, Sun, Volume2, Pause, Square, HelpCircle } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { captureError } from '@/lib/logger';
@@ -588,6 +590,40 @@ export default function DreamDetail() {
   }
   const dreamPath = `/ruya/${dream.slug}`;
   const dreamDescription = dream.meta_description || safeContent.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160) || `${dream.title} rüya tabiri ve yorumu`;
+
+  const islamicSnippet = (dream.islamic_interpretation || safeContent).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 300);
+  const psychSnippet = (dream.psychological_interpretation || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 300);
+  const dreamFaqs = [
+    {
+      q: `${dream.title} görmek ne anlama gelir?`,
+      a: islamicSnippet ? `${islamicSnippet}…` : `${dream.title} rüyası, rüya sahibinin yaşamındaki sembolik işaretlere dair yorumlanır. Detaylı açıklamayı sayfada inceleyebilirsiniz.`,
+    },
+    {
+      q: `${dream.title} görmek dinen nasıl yorumlanır?`,
+      a: dream.islamic_interpretation
+        ? `${islamicSnippet}…`
+        : `${dream.title} rüyasının dinî yorumu için uzman görüşüne başvurulması tavsiye edilir; genel açıklama sayfada yer almaktadır.`,
+    },
+    ...(psychSnippet
+      ? [{
+          q: `${dream.title} görmek psikolojik açıdan ne ifade eder?`,
+          a: `${psychSnippet}…`,
+        }]
+      : []),
+    {
+      q: `Rüyada ${dream.title.toLocaleLowerCase('tr-TR')} görmek hayırlı mıdır?`,
+      a: `Rüya yorumu bağlama göre değişir. ${dream.title} rüyasının anlamını kişisel durumunuzu göz önünde bulundurarak değerlendirmeniz önerilir.`,
+    },
+  ];
+  const faqJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: dreamFaqs.map((f) => ({
+      '@type': 'Question',
+      name: f.q,
+      acceptedAnswer: { '@type': 'Answer', text: f.a },
+    })),
+  };
   const dreamJsonLd = [
     {
       '@context': 'https://schema.org',
@@ -616,6 +652,7 @@ export default function DreamDetail() {
         { '@type': 'ListItem', position: category ? 3 : 2, name: dream.title, item: absoluteUrl(dreamPath) },
       ],
     },
+    faqJsonLd,
   ];
 
   return (
@@ -870,6 +907,35 @@ export default function DreamDetail() {
             title={dream.title}
             description={(dream.content || '').slice(0, 160)}
           />
+        </motion.div>
+      </section>
+
+      {/* FAQ — Sıkça Sorulan Sorular */}
+      <section className="container pb-12" aria-label="Sıkça sorulan sorular">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.56 }}
+          className="max-w-3xl mx-auto surface p-6 md:p-8"
+        >
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 flex items-center justify-center">
+              <HelpCircle className="w-4 h-4 text-primary" />
+            </div>
+            <h2 className="text-lg font-semibold">Sıkça Sorulan Sorular</h2>
+          </div>
+          <Accordion type="single" collapsible className="w-full">
+            {dreamFaqs.map((faq, idx) => (
+              <AccordionItem key={idx} value={`faq-${idx}`}>
+                <AccordionTrigger className="text-left text-sm md:text-base font-medium">
+                  {faq.q}
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground text-sm leading-relaxed">
+                  {faq.a}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
         </motion.div>
       </section>
 

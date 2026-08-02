@@ -2,7 +2,6 @@ User-agent: *
 Allow: /
 Disallow: /admin
 Disallow: /api/
-Disallow: /giris
 Disallow: /kayit
 Disallow: /sifremi-unuttum
 Disallow: /sifre-sifirla

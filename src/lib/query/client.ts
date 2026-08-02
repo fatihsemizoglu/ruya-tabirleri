@@ -50,7 +50,11 @@ export const queryKeys = {
     favorites: ['user', 'favorites'],
     history: ['user', 'history'],
     journal: ['user', 'journal'],
-    likes: ['user', 'likes'],
+  },
+  symbols: {
+    all: ['symbols'],
+    index: ['symbols', 'index'],
+    detail: (slug: string) => ['symbols', slug],
   },
   comments: {
     all: ['comments'],

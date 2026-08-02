@@ -56,6 +56,16 @@ const DEFAULT_DESCRIPTION =
   'Binlerce rüya tabiri arasında arama yapın. İslami ve psikolojik yorumlarla rüyalarınızın anlamını keşfedin.';
 const PAGE_SIZE = 1000;
 
+// Minimal Turkish slugify (mirrors src/lib/slug.ts — kept local to avoid build deps)
+function generateSlug(name) {
+  return String(name)
+    .toLowerCase()
+    .replace(/ğ/g, 'g').replace(/ü/g, 'u').replace(/ş/g, 's')
+    .replace(/ı/g, 'i').replace(/ö/g, 'o').replace(/ç/g, 'c')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
 // ── Helpers ──────────────────────────────────────────────────────────
 
 function absoluteUrl(path = '/') {
@@ -336,6 +346,77 @@ function staticPageHtml(template, opts) {
   return injectSeo(template, opts);
 }
 
+// ── Symbol glossary ──────────────────────────────────────────────────
+
+function buildSymbolGlossaryFromDreams(dreams) {
+  const stopWords = new Set(['rüya','ruya','görmek','gormek','ne','demek','anlamı','anlami','nedir','hakkında','tabiri']);
+  const map = new Map();
+  for (const dream of dreams) {
+    const keywords = Array.isArray(dream.keywords) ? dream.keywords : [];
+    for (const kw of keywords) {
+      const term = String(kw).trim();
+      if (term.length < 2 || term.length > 40) continue;
+      if (stopWords.has(term.toLocaleLowerCase('tr-TR'))) continue;
+      if (/^\d+$/.test(term)) continue;
+      const key = term.toLocaleLowerCase('tr-TR');
+      const existing = map.get(key);
+      if (existing) existing.count++;
+      else map.set(key, { term, slug: generateSlug(term), count: 1 });
+    }
+  }
+  return [...map.values()].sort((a, b) => a.term.localeCompare(b.term, 'tr-TR'));
+}
+
+function symbolIndexHtml(template, symbols) {
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'DefinedTermSet',
+    name: 'Rüya Sembolleri Sözlüğü',
+    url: absoluteUrl('/semboller'),
+    inLanguage: 'tr-TR',
+    description: 'Rüya tabirlerinde geçen sembollerin alfabetik sözlüğü.',
+    hasDefinedTerm: symbols.slice(0, 300).map((s) => ({
+      '@type': 'DefinedTerm',
+      name: s.term,
+      url: absoluteUrl(`/sembol/${s.slug}`),
+      inDefinedTermSet: absoluteUrl('/semboller'),
+    })),
+  };
+  return injectSeo(template, {
+    title: 'Rüya Sembolleri Sözlüğü',
+    description: `Rüyalardaki ${symbols.length} sembolün tabirlerine alfabetik sözlükten ulaşın.`,
+    path: '/semboller',
+    jsonLd,
+  });
+}
+
+function symbolPageHtml(template, symbol) {
+  const title = `Rüyada ${symbol.term} Görmek Ne Anlama Gelir?`;
+  const description = `Rüyada ${symbol.term} görmek: İslami ve psikolojik tabirlerle ${symbol.term} rüyasının anlamı ve ${symbol.count} farklı yorum.`;
+  const path = `/sembol/${symbol.slug}`;
+  const jsonLd = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'DefinedTerm',
+      name: symbol.term,
+      url: absoluteUrl(path),
+      inDefinedTermSet: absoluteUrl('/semboller'),
+      inLanguage: 'tr-TR',
+      description,
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Ana Sayfa', item: absoluteUrl('/') },
+        { '@type': 'ListItem', position: 2, name: 'Sembol Sözlüğü', item: absoluteUrl('/semboller') },
+        { '@type': 'ListItem', position: 3, name: symbol.term, item: absoluteUrl(path) },
+      ],
+    },
+  ];
+  return injectSeo(template, { title, description, path, jsonLd });
+}
+
 // ── Main ─────────────────────────────────────────────────────────────
 
 async function main() {
@@ -346,9 +427,10 @@ async function main() {
   const robotsPath = join(DIST_DIR, 'robots.txt');
   if (existsSync(robotsPath)) {
     const robots = await readFile(robotsPath, 'utf-8');
+    const resolvedSiteUrl = process.env.VITE_SITE_URL || 'https://ruya-tabirleri.com';
     if (robots.includes('%VITE_SITE_URL%')) {
-      await writeFile(robotsPath, robots.replaceAll('%VITE_SITE_URL%', SITE_URL), 'utf-8');
-      console.log(`  🤖 robots.txt sitemap URL: ${SITE_URL}`);
+      await writeFile(robotsPath, robots.replaceAll('%VITE_SITE_URL%', resolvedSiteUrl), 'utf-8');
+      console.log(`  🤖 robots.txt sitemap URL: ${resolvedSiteUrl}`);
     }
   }
 
@@ -420,6 +502,16 @@ async function main() {
       if (!dream.slug) continue;
       const html = dreamPageHtml(template, dream);
       await writePage(`/ruya/${dream.slug}`, html);
+      count++;
+    }
+
+    // ── Symbol glossary (derived from dreams) ──
+    const symbols = buildSymbolGlossaryFromDreams(dreams);
+    console.log(`  🔮 ${symbols.length} sembol çıkarıldı`);
+    await writePage('/semboller', symbolIndexHtml(template, symbols));
+    count++;
+    for (const s of symbols) {
+      await writePage(`/sembol/${s.slug}`, symbolPageHtml(template, s));
       count++;
     }
   } catch (err) {
