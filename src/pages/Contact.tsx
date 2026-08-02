@@ -119,6 +119,12 @@ export default function Contact() {
     },
   };
 
+  const mapEmbedLinks: Record<MapProvider, string> = {
+    openstreetmap: `https://www.openstreetmap.org/export/embed.html?bbox=${lng - 0.035}%2C${lat - 0.022}%2C${lng + 0.035}%2C${lat + 0.022}&layer=mapnik&marker=${lat}%2C${lng}`,
+    google: `https://www.google.com/maps?q=${lat},${lng}&z=14&output=embed`,
+    yandex: `https://yandex.com.tr/map-widget/v1/?ll=${lng}%2C${lat}&z=14&pt=${lng}%2C${lat}%2Cpm2rdl`,
+  };
+
   const currentProvider = mapProviders.find((provider) => provider.id === mapProvider)!;
   const reveal = {
     initial: { opacity: 0, y: reduceMotion ? 0 : 22 },
@@ -418,39 +424,51 @@ export default function Contact() {
               </div>
             </div>
 
-            <div className="relative min-h-[430px] overflow-hidden rounded-[2.25rem] border border-violet-200/70 bg-gradient-to-br from-violet-950 via-fuchsia-950 to-pink-950 p-6 text-white shadow-[0_38px_100px_-42px_rgba(168,85,247,0.55)] sm:p-10 lg:min-h-[500px] lg:p-14 dark:border-white/10">
-              <div className="absolute inset-0 opacity-35 [background-image:linear-gradient(rgba(255,255,255,.12)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.12)_1px,transparent_1px)] [background-size:54px_54px]" />
-              <div className="absolute -left-24 top-16 h-72 w-72 rounded-full bg-violet-500/40 blur-3xl" />
-              <div className="absolute -right-20 bottom-0 h-80 w-80 rounded-full bg-pink-500/35 blur-3xl" />
-              <div className="absolute left-[22%] top-[24%] h-24 w-24 rounded-full border border-white/15" />
-              <div className="absolute bottom-[18%] right-[25%] h-40 w-40 rounded-full border border-white/10" />
+            <div className="relative overflow-hidden rounded-[2.25rem] border border-violet-200/70 bg-violet-950 shadow-[0_38px_100px_-42px_rgba(168,85,247,0.55)] dark:border-white/10">
+              <motion.iframe
+                key={mapProvider}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: reduceMotion ? 0 : 0.35 }}
+                src={mapEmbedLinks[mapProvider]}
+                title={`${currentProvider.name} üzerinde ${settings.contactAddress} konumu`}
+                className="h-[440px] w-full border-0 sm:h-[520px]"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                allowFullScreen
+              />
 
-              <div className="relative z-10 flex min-h-[360px] flex-col justify-between lg:min-h-[390px]">
-                <div className="flex items-center justify-between gap-4">
-                  <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-semibold backdrop-blur-xl">
-                    <span className="h-2 w-2 rounded-full bg-pink-400 shadow-[0_0_0_5px_rgba(244,114,182,0.15)]" /> {currentProvider.name}
-                  </span>
-                  <button type="button" onClick={handleCopyCoords} className="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition-colors duration-200 hover:bg-white/20 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/20" aria-label="Koordinatları kopyala" title="Koordinatları kopyala">
-                    <Copy className="h-4 w-4" />
-                  </button>
-                </div>
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-52 bg-gradient-to-t from-violet-950/90 via-violet-950/45 to-transparent" />
 
-                <div className="grid items-end gap-8 lg:grid-cols-[1fr_auto]">
-                  <div className="max-w-2xl">
-                    <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-white/15 bg-white/10 backdrop-blur-xl">
-                      <MapPin className="h-7 w-7" />
+              <div className="absolute inset-x-3 bottom-3 z-10 rounded-[1.6rem] border border-white/20 bg-violet-950/85 p-4 text-white shadow-2xl backdrop-blur-xl sm:inset-x-6 sm:bottom-6 sm:p-5">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="flex min-w-0 items-start gap-3.5">
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 via-fuchsia-500 to-pink-500 shadow-lg shadow-fuchsia-950/30">
+                      <MapPin className="h-5 w-5" />
+                    </span>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="font-bold tracking-tight">{settings.contactAddress}</h3>
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-[10px] font-semibold text-violet-100">
+                          <ProviderMark provider={mapProvider} /> {currentProvider.shortName}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleCopyCoords}
+                        className="mt-1.5 inline-flex items-center gap-1.5 rounded-md text-left font-mono text-xs text-violet-100/70 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+                      >
+                        <Copy className="h-3.5 w-3.5" /> {lat}, {lng}
+                      </button>
                     </div>
-                    <h3 className="text-balance text-3xl font-bold tracking-[-0.035em] sm:text-4xl">Konumu {currentProvider.name} ile keşfedin.</h3>
-                    <p className="mt-4 max-w-xl text-sm leading-6 text-violet-100/75 sm:text-base">{settings.contactAddress}. Yol tarifini alın veya koordinatları navigasyon uygulamanızda kullanın.</p>
-                    <div className="mt-5 flex items-center gap-2 font-mono text-xs text-violet-100/70"><Compass className="h-4 w-4" /> {lat}, {lng}</div>
                   </div>
 
-                  <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
-                    <Button asChild size="lg" className="h-12 rounded-full bg-white px-6 text-violet-950 shadow-xl transition-colors hover:bg-violet-50">
-                      <a href={mapLinks[mapProvider].view} target="_blank" rel="noopener noreferrer"><ExternalLink className="mr-2 h-4 w-4" /> Haritada aç</a>
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <Button asChild className="h-11 rounded-full bg-white px-5 text-violet-950 shadow-lg transition-colors hover:bg-violet-50">
+                      <a href={mapLinks[mapProvider].view} target="_blank" rel="noopener noreferrer"><ExternalLink className="mr-2 h-4 w-4" /> Büyük haritada aç</a>
                     </Button>
-                    <Button asChild size="lg" variant="outline" className="h-12 rounded-full border-white/20 bg-white/10 px-6 text-white backdrop-blur hover:bg-white/20 hover:text-white">
-                      <a href={mapLinks[mapProvider].directions} target="_blank" rel="noopener noreferrer"><Compass className="mr-2 h-4 w-4" /> Yol tarifi al</a>
+                    <Button asChild variant="outline" className="h-11 rounded-full border-white/20 bg-white/10 px-5 text-white hover:bg-white/20 hover:text-white">
+                      <a href={mapLinks[mapProvider].directions} target="_blank" rel="noopener noreferrer"><Compass className="mr-2 h-4 w-4" /> Yol tarifi</a>
                     </Button>
                   </div>
                 </div>
