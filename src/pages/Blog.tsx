@@ -171,11 +171,11 @@ export default function Blog() {
       />
       <div className="min-h-screen bg-mesh relative overflow-hidden">
         {/* Decorative orbs */}
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-br from-violet-500/10 to-fuchsia-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-        <div className="absolute top-1/2 left-0 w-[400px] h-[400px] bg-gradient-to-br from-indigo-500/10 to-purple-500/10 rounded-full blur-3xl -translate-x-1/2 pointer-events-none" />
+        <div className="absolute top-0 right-0 h-72 w-72 translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-br from-violet-500/10 to-fuchsia-500/10 blur-3xl pointer-events-none sm:h-[500px] sm:w-[500px]" />
+        <div className="absolute top-1/2 left-0 h-72 w-72 -translate-x-1/2 rounded-full bg-gradient-to-br from-indigo-500/10 to-purple-500/10 blur-3xl pointer-events-none sm:h-[400px] sm:w-[400px]" />
 
         {/* Hero Section */}
-        <section className="relative pt-16 pb-12 md:pt-24 md:pb-16">
+        <section className="relative pt-10 pb-8 md:pt-24 md:pb-16">
           <div className="container">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -187,7 +187,7 @@ export default function Blog() {
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.1 }}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-6"
+                className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-2 text-xs font-medium text-primary sm:px-4 sm:text-sm mb-5 sm:mb-6"
               >
                 <BookOpen className="w-4 h-4" />
                 Rüya Dünyası Blog
@@ -197,7 +197,7 @@ export default function Blog() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15, duration: 0.6 }}
-                className="text-5xl md:text-6xl lg:text-7xl font-serif-dream font-bold leading-[1.05] mb-6 tracking-tight"
+                className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-serif-dream font-bold leading-[1.05] mb-4 sm:mb-6 tracking-tight"
               >
                 Rüyaların{' '}
                 <span className="relative inline-block">
@@ -234,7 +234,7 @@ export default function Blog() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.25, duration: 0.6 }}
-                className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed"
+                className="text-base md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed"
               >
                 Rüyalar, bilinçaltı, psikoloji ve rüya tabirleri üzerine derinlemesine yazılar, rehberler ve uzman görüşleri.
               </motion.p>
@@ -244,7 +244,7 @@ export default function Blog() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.35, duration: 0.6 }}
-                className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mt-8 text-sm text-muted-foreground"
+                className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 mt-6 sm:mt-8 text-xs sm:text-sm text-muted-foreground"
               >
                 <span className="flex items-center gap-2">
                   <FileText className="w-4 h-4 text-primary" />
@@ -264,7 +264,7 @@ export default function Blog() {
         </section>
 
         {/* Sticky Filter Bar */}
-        <div className="sticky top-16 z-30 bg-background/80 backdrop-blur-xl border border-border/50 rounded-2xl p-3 mb-6 shadow-sm -mx-4 px-4 sm:mx-0 sm:px-0">
+        <div className="sticky top-16 z-30 mb-6 -mx-4 rounded-none border-y border-border/50 bg-background/90 p-3 shadow-sm backdrop-blur-xl sm:mx-0 sm:rounded-2xl sm:border sm:px-3">
           <div className="flex flex-col lg:flex-row gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -276,9 +276,9 @@ export default function Blog() {
               />
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
               <Select value={timeFilter} onValueChange={(v) => setTimeFilter(v as TimeFilter)}>
-                <SelectTrigger className="w-[150px] h-10 rounded-xl bg-muted/30 border-border/50">
+                <SelectTrigger className="h-10 w-full rounded-xl border-border/50 bg-muted/30 sm:w-[150px]">
                   <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
                   <SelectValue />
                 </SelectTrigger>
@@ -292,7 +292,7 @@ export default function Blog() {
               </Select>
 
               <Select value={selectedCategory || 'all'} onValueChange={(v) => handleCategoryClick(v === 'all' ? null : v)}>
-                <SelectTrigger className="w-[170px] h-10 rounded-xl bg-muted/30 border-border/50">
+                <SelectTrigger className="h-10 w-full rounded-xl border-border/50 bg-muted/30 sm:w-[170px]">
                   <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
                   <SelectValue placeholder="Kategori" />
                 </SelectTrigger>
@@ -306,7 +306,7 @@ export default function Blog() {
                 </SelectContent>
               </Select>
 
-              <div className="flex items-center border border-border/50 rounded-xl overflow-hidden bg-muted/30">
+              <div className="col-span-2 grid grid-cols-2 overflow-hidden rounded-xl border border-border/50 bg-muted/30 sm:col-span-1 sm:flex sm:items-center">
                 <Button
                   variant={viewMode === 'grid' ? 'default' : 'ghost'}
                   size="icon"
@@ -368,7 +368,7 @@ export default function Blog() {
         )}
 
         {/* Featured Post + Grid */}
-        <section className="container py-12">
+        <section className="container py-8 sm:py-12">
           {activeCategory && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
@@ -485,7 +485,7 @@ export default function Blog() {
 
             {/* Sidebar */}
             <aside className="lg:col-span-1">
-              <div className="sticky top-32 space-y-6">
+              <div className="space-y-6 lg:sticky lg:top-32">
                 <motion.div
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}

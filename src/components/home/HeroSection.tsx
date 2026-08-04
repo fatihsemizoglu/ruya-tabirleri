@@ -7,11 +7,11 @@ import { SearchWithDropdown } from '@/components/search/SearchWithDropdown';
 const alphabet = 'ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ'.split('');
 
 const popularSearches = [
-  { label: 'Yılan', icon: '🐍' },
-  { label: 'Su', icon: '💧' },
-  { label: 'Uçmak', icon: '🕊️' },
-  { label: 'Düşmek', icon: '⬇️' },
-  { label: 'Düğün', icon: '💍' },
+  { label: 'Yılan' },
+  { label: 'Su' },
+  { label: 'Uçmak' },
+  { label: 'Düşmek' },
+  { label: 'Düğün' },
 ];
 
 const stats = [
@@ -38,7 +38,7 @@ export function HeroSection() {
       ref={sectionRef}
       className="relative overflow-hidden bg-background"
       style={{
-        minHeight: viewportHeight ? `${Math.max(viewportHeight - 64, 680)}px` : 'calc(100vh - 64px)',
+        minHeight: viewportHeight ? `${Math.max(viewportHeight - 64, 620)}px` : 'calc(100dvh - 64px)',
       }}
     >
       {/* Background gradient mesh */}
@@ -52,7 +52,7 @@ export function HeroSection() {
       </div>
 
       {/* Top: Badge */}
-      <div className="absolute top-24 sm:top-28 left-0 right-0 z-10">
+      <div className="absolute top-8 left-0 right-0 z-10 sm:top-16 md:top-24">
         <div className="container px-4">
           <motion.div
             initial={{ opacity: 0, y: -10 }}
@@ -60,9 +60,9 @@ export function HeroSection() {
             transition={{ duration: 0.5 }}
             className="text-center"
           >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/5 border border-primary/10 text-primary text-xs sm:text-sm font-semibold backdrop-blur-sm">
+            <div className="inline-flex max-w-[calc(100vw-2rem)] items-center justify-center gap-2 rounded-full bg-primary/5 border border-primary/10 px-3 py-2 text-center text-[11px] font-semibold text-primary backdrop-blur-sm sm:px-4 sm:text-sm">
               <Sparkles className="h-3.5 w-3.5" />
-              Türkiye'nin en kapsamlı rüya tabirleri sitesi
+              <span className="truncate sm:whitespace-normal">Türkiye'nin en kapsamlı rüya tabirleri sitesi</span>
             </div>
           </motion.div>
         </div>
@@ -70,7 +70,7 @@ export function HeroSection() {
 
       {/* Center area: Title + Search bar (search is at exact viewport center) */}
       <div
-        className="absolute left-0 right-0 top-[45%] z-20 -translate-y-1/2 px-4 sm:top-1/2"
+        className="absolute left-0 right-0 top-[42%] z-20 -translate-y-1/2 px-4 sm:top-[46%] md:top-1/2"
       >
         <div className="max-w-3xl mx-auto">
           {/* Title above search */}
@@ -78,13 +78,13 @@ export function HeroSection() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-center mb-6"
+            className="text-center mb-4 sm:mb-6"
           >
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-foreground leading-[1.05] mb-4">
+            <h1 className="text-[2rem] sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-foreground leading-[1.05] mb-3 sm:mb-4">
               <span className="block">Rüyalarınızın</span>
               <span className="text-gradient">Anlamını Keşfedin</span>
             </h1>
-            <p className="text-sm sm:text-base text-muted-foreground max-w-md mx-auto leading-relaxed">
+            <p className="text-sm sm:text-base text-muted-foreground max-w-md mx-auto leading-relaxed px-1">
               Binlerce rüya tabiri arasında arama yapın, İslami ve psikolojik yorumlarla rüyalarınızın anlamını öğrenin.
             </p>
           </motion.div>
@@ -104,7 +104,7 @@ export function HeroSection() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.5 }}
-            className="flex flex-wrap items-center justify-center gap-2 mt-5"
+            className="mt-4 flex flex-wrap items-center justify-center gap-1.5 sm:mt-5 sm:gap-2"
           >
             <span className="text-xs text-muted-foreground hidden sm:inline-flex items-center gap-1.5">
               <TrendingUp className="h-3 w-3" />
@@ -114,9 +114,8 @@ export function HeroSection() {
               <Link
                 key={item.label}
                 to={`/ara?q=${encodeURIComponent(item.label)}`}
-                className="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card/80 border border-border/60 hover:border-primary/30 hover:bg-primary/5 text-xs sm:text-sm text-muted-foreground hover:text-primary transition-all duration-200 backdrop-blur-sm"
+                className="group inline-flex min-h-9 items-center gap-1.5 rounded-full border border-border/60 bg-card/80 px-3 py-1.5 text-xs text-muted-foreground backdrop-blur-sm transition-all duration-200 hover:border-primary/30 hover:bg-primary/5 hover:text-primary sm:text-sm"
               >
-                <span className="text-base leading-none">{item.icon}</span>
                 <span className="font-medium">{item.label}</span>
               </Link>
             ))}
@@ -125,16 +124,16 @@ export function HeroSection() {
       </div>
 
       {/* Bottom: Alphabet + stats */}
-      <div className="absolute bottom-4 left-0 right-0 z-10 sm:bottom-8">
+      <div className="absolute bottom-3 left-0 right-0 z-10 sm:bottom-8">
         <div className="container px-4">
           {/* Alphabet navigation */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.6 }}
-            className="mb-5"
+            className="mb-3 sm:mb-5"
           >
-            <div className="flex flex-wrap justify-center gap-1 sm:gap-1.5 max-w-3xl mx-auto">
+            <div className="mx-auto grid max-w-[21rem] grid-cols-9 justify-center gap-1 sm:flex sm:max-w-3xl sm:flex-wrap sm:gap-1.5">
               {alphabet.map((letter, idx) => (
                 <motion.div
                   key={letter}
@@ -144,7 +143,7 @@ export function HeroSection() {
                 >
                   <Link
                     to={`/az/${letter.toLowerCase()}`}
-                    className="w-7 h-7 sm:w-8 sm:h-8 rounded-md bg-card/70 border border-border/50 flex items-center justify-center text-[10px] sm:text-xs font-bold text-foreground transition-all hover:bg-primary hover:text-primary-foreground hover:border-primary hover:scale-110 hover:shadow-md hover:shadow-primary/20 backdrop-blur-sm"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/50 bg-card/70 text-[11px] font-bold text-foreground backdrop-blur-sm transition-all hover:border-primary hover:bg-primary hover:text-primary-foreground hover:shadow-md hover:shadow-primary/20 sm:h-8 sm:w-8 sm:text-xs"
                   >
                     {letter}
                   </Link>
@@ -158,10 +157,10 @@ export function HeroSection() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.8 }}
-            className="flex flex-wrap items-center justify-center gap-6 sm:gap-12"
+            className="grid grid-cols-3 items-center justify-center gap-2 sm:flex sm:flex-wrap sm:gap-12"
           >
             {stats.map((stat) => (
-              <div key={stat.label} className="text-center flex items-baseline gap-1.5">
+              <div key={stat.label} className="text-center flex flex-col items-center gap-0.5 sm:flex-row sm:items-baseline sm:gap-1.5">
                 <span className="text-base sm:text-lg font-bold text-gradient">
                   {stat.value}
                 </span>

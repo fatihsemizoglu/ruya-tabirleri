@@ -384,10 +384,10 @@ export default function Search() {
         description="Binlerce rüya tabiri arasında arama yapın. Gelişmiş filtrelerle rüyalarınızın anlamını keşfedin."
         path="/ara"
       />
-      <div className="container py-8 md:py-12 relative">
+      <div className="container py-7 md:py-12 relative">
         {/* Search Header */}
-        <div className="max-w-3xl mx-auto mb-10">
-          <div className="text-center mb-8">
+        <div className="max-w-3xl mx-auto mb-8 sm:mb-10">
+          <div className="text-center mb-6 sm:mb-8">
             <div className="mb-4">
               <PremiumBadge>
                 <Sparkles className="h-3.5 w-3.5" />
@@ -424,7 +424,7 @@ export default function Search() {
                   <Link
                     key={category.id}
                     to={`/kategori/${category.slug}`}
-                    className="px-4 py-2 text-sm rounded-xl bg-muted hover:bg-primary hover:text-primary-foreground transition-colors flex items-center gap-2"
+                    className="min-h-10 rounded-xl bg-muted px-3 py-2 text-sm transition-colors hover:bg-primary hover:text-primary-foreground flex items-center gap-2 sm:px-4"
                   >
                     <CategoryIcon icon={category.icon} className="h-4 w-4" />
                     <span>{category.name}</span>
@@ -446,7 +446,7 @@ export default function Search() {
                   <button
                     key={term}
                     onClick={() => handlePopularSearch(term)}
-                    className="px-3 py-1.5 text-sm rounded-full bg-muted hover:bg-primary hover:text-primary-foreground transition-colors"
+                    className="min-h-9 rounded-full bg-muted px-3 py-1.5 text-sm transition-colors hover:bg-primary hover:text-primary-foreground"
                   >
                     {term}
                   </button>
@@ -458,7 +458,7 @@ export default function Search() {
 
         {/* Results Section */}
         {query && (
-          <div className="flex flex-col lg:flex-row gap-8">
+          <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
             {/* Sidebar Filters */}
             <aside className="lg:w-72 shrink-0">
               <AdvancedFilters
@@ -492,7 +492,7 @@ export default function Search() {
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
                   {/* Infinite Scroll Toggle */}
                   <TooltipProvider>
                     <Tooltip>
@@ -555,7 +555,7 @@ export default function Search() {
               ) : filteredResults.length > 0 ? (
                 <>
                   {viewMode === 'grid' ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2.5 md:gap-3">
+                    <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2 md:gap-3 xl:grid-cols-3">
                       {paginatedResults.map((dream, index) => (
                         <Link
                           key={dream.id}
@@ -659,7 +659,7 @@ export default function Search() {
 
                   {/* Pagination */}
                   {totalPages > 1 && (
-                    <div className="mt-10 flex items-center justify-center gap-2">
+                   <div className="mt-10 flex flex-wrap items-center justify-center gap-2">
                       <Button
                         variant="outline"
                         size="sm"
@@ -787,23 +787,23 @@ export default function Search() {
         {!query && (
           <div className="mt-8">
             {/* Stats Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
-              <div className="text-center p-6 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border">
+             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-10 sm:mb-12">
+              <div className="text-center p-4 sm:p-6 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border">
                 <BookOpen className="h-8 w-8 mx-auto mb-2 text-primary" />
                 <div className="text-2xl font-bold text-primary">1000+</div>
                 <div className="text-sm text-muted-foreground">Rüya Tabiri</div>
               </div>
-              <div className="text-center p-6 rounded-xl bg-gradient-to-br from-accent/10 to-accent/5 border">
+              <div className="text-center p-4 sm:p-6 rounded-xl bg-gradient-to-br from-accent/10 to-accent/5 border">
                 <Layers className="h-8 w-8 mx-auto mb-2 text-accent-foreground" />
                 <div className="text-2xl font-bold">{categories.length}</div>
                 <div className="text-sm text-muted-foreground">Kategori</div>
               </div>
-              <div className="text-center p-6 rounded-xl bg-gradient-to-br from-muted to-muted/50 border">
+              <div className="text-center p-4 sm:p-6 rounded-xl bg-gradient-to-br from-muted to-muted/50 border">
                 <Eye className="h-8 w-8 mx-auto mb-2" />
                 <div className="text-2xl font-bold">10K+</div>
                 <div className="text-sm text-muted-foreground">Görüntüleme</div>
               </div>
-              <div className="text-center p-6 rounded-xl bg-gradient-to-br from-muted to-muted/50 border">
+              <div className="text-center p-4 sm:p-6 rounded-xl bg-gradient-to-br from-muted to-muted/50 border">
                 <Heart className="h-8 w-8 mx-auto mb-2" />
                 <div className="text-2xl font-bold">5K+</div>
                 <div className="text-sm text-muted-foreground">Beğeni</div>
@@ -850,7 +850,7 @@ export default function Search() {
         {showScrollTop && (
           <button
             onClick={scrollToTop}
-            className="fixed bottom-6 right-6 p-3 rounded-full dream-gradient text-white shadow-lg hover:shadow-xl transition-all z-50"
+            className="fixed right-4 mobile-floating-action lg:bottom-6 lg:right-6 p-3 rounded-full dream-gradient text-white shadow-lg hover:shadow-xl transition-all z-50"
             aria-label="Yukarı çık"
           >
             <ArrowUp className="h-5 w-5" />

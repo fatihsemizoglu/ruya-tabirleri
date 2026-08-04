@@ -222,13 +222,13 @@ export function Header() {
           'bg-white/85 dark:bg-slate-950/85 md:bg-white/70 md:dark:bg-slate-950/70 shadow-[0_1px_0_0_rgba(255,255,255,0.4)_inset,0_-1px_0_0_rgba(0,0,0,0.04)_inset,0_4px_24px_-12px_rgba(0,0,0,0.12)]'
       )}
     >
-      <div className="container flex h-16 items-center justify-between gap-4">
+      <div className="container flex h-16 items-center justify-between gap-2 sm:gap-4 pt-[env(safe-area-inset-top,0px)]">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2.5 group flex-shrink-0">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center shadow-lg shadow-primary/20 group-hover:shadow-primary/30 transition-shadow">
             <Moon className="h-4.5 w-4.5 text-white" />
           </div>
-          <span className="text-lg font-bold hidden sm:inline-block">
+          <span className="text-base font-bold xs:inline-block hidden sm:text-lg">
             <span className="text-foreground">Rüya</span>
             <span className="text-gradient"> Tabirleri</span>
           </span>
@@ -550,7 +550,7 @@ export function Header() {
         </nav>
 
         {/* Actions */}
-        <div className="flex items-center gap-1">
+        <div className="flex min-w-0 items-center gap-1">
           <Button
             variant="ghost"
             size="icon"
@@ -564,7 +564,7 @@ export function Header() {
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center gap-2 rounded-lg px-3 h-9">
+                <Button variant="ghost" className="flex items-center gap-2 rounded-lg px-2 sm:px-3 h-10 sm:h-9 min-w-10">
                   <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-purple-500 flex items-center justify-center text-white text-xs font-semibold">
                     {profile?.full_name?.charAt(0) || profile?.username?.charAt(0) || 'U'}
                   </div>
@@ -622,7 +622,7 @@ export function Header() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <Button
                 variant="ghost"
                 size="sm"
@@ -634,7 +634,7 @@ export function Header() {
               <Button
                 size="sm"
                 asChild
-                className="rounded-lg bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-white shadow-lg shadow-primary/20 h-9"
+                className="rounded-lg bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-white shadow-lg shadow-primary/20 h-10 sm:h-9 px-3 sm:px-4 text-xs sm:text-sm"
               >
                 <Link to="/kayit">Kayıt Ol</Link>
               </Button>
@@ -644,7 +644,7 @@ export function Header() {
           <Button
             variant="ghost"
             size="icon"
-            className="lg:hidden rounded-lg h-9 w-9"
+            className="lg:hidden rounded-lg h-10 w-10"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-label="Menüyü aç/kapat"
           >
@@ -660,10 +660,10 @@ export function Header() {
           'bg-white/85 dark:bg-slate-950/85',
           'md:bg-white/70 md:dark:bg-slate-950/70 md:backdrop-blur-2xl md:backdrop-saturate-150',
           'border-t border-white/30 dark:border-white/10',
-          isMenuOpen ? 'max-h-[80vh]' : 'max-h-0'
+          isMenuOpen ? 'max-h-[calc(100dvh-4rem)]' : 'max-h-0'
         )}
       >
-        <div className="container py-4 space-y-2 max-h-[80vh] overflow-y-auto">
+        <div className="container py-3 space-y-2 max-h-[calc(100dvh-4rem-env(safe-area-inset-top,0px))] overflow-y-auto overscroll-contain pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
           <nav className="flex flex-col gap-1">
             {/* Anasayfa */}
             <MobileNavLink to="/" label="Anasayfa" onClose={() => setIsMenuOpen(false)} />
@@ -693,7 +693,7 @@ export function Header() {
                 />
               </button>
               {mobileCategoryOpen && (
-                <div className="mt-1 ml-3 pl-3 border-l border-border space-y-0.5 animate-in fade-in slide-in-from-top-1 duration-200">
+                <div className="mt-1 ml-1 max-h-[42dvh] overflow-y-auto overscroll-contain border-l border-border pl-3 space-y-0.5 animate-in fade-in slide-in-from-top-1 duration-200 sm:ml-3">
                   {categories.length === 0 ? (
                     <div className="px-3 py-2 text-xs text-muted-foreground">Yükleniyor...</div>
                   ) : (
@@ -754,7 +754,7 @@ export function Header() {
                 />
               </button>
               {mobileBlogOpen && (
-                <div className="mt-1 ml-3 pl-3 border-l border-border space-y-0.5 animate-in fade-in slide-in-from-top-1 duration-200">
+                <div className="mt-1 ml-1 max-h-[42dvh] overflow-y-auto overscroll-contain border-l border-border pl-3 space-y-0.5 animate-in fade-in slide-in-from-top-1 duration-200 sm:ml-3">
                   {blogCategories.length === 0 ? (
                     <div className="px-3 py-2 text-xs text-muted-foreground">Yükleniyor...</div>
                   ) : (
@@ -790,21 +790,21 @@ export function Header() {
 
           <div className="flex items-center justify-between px-4 py-3 rounded-lg bg-muted">
             <span className="font-medium text-sm text-foreground">Tema</span>
-            <Button variant="outline" size="sm" onClick={toggleTheme} className="rounded-lg h-8">
+            <Button variant="outline" size="sm" onClick={toggleTheme} className="rounded-lg h-10 sm:h-8">
               {isDark ? <Sun className="h-3.5 w-3.5 mr-2" /> : <Moon className="h-3.5 w-3.5 mr-2" />}
               {isDark ? 'Açık' : 'Koyu'}
             </Button>
           </div>
 
           {!user && (
-            <div className="flex gap-2 px-4">
-              <Button variant="outline" size="sm" asChild className="flex-1 rounded-lg h-9">
+            <div className="grid grid-cols-2 gap-2 px-4">
+              <Button variant="outline" size="sm" asChild className="rounded-lg h-11">
                 <Link to="/giris">Giriş Yap</Link>
               </Button>
               <Button
                 size="sm"
                 asChild
-                className="flex-1 rounded-lg bg-gradient-to-r from-primary to-purple-600 text-white h-9"
+                className="rounded-lg bg-gradient-to-r from-primary to-purple-600 text-white h-11"
               >
                 <Link to="/kayit">Kayıt Ol</Link>
               </Button>
@@ -833,7 +833,7 @@ function MobileNavLink({
       onClick={onClose}
       aria-current={isActive ? 'page' : undefined}
       className={cn(
-        'px-4 py-3 rounded-lg font-medium transition-colors text-sm flex items-center gap-2',
+        'px-4 py-3.5 rounded-lg font-medium transition-colors text-sm flex items-center gap-2 min-h-12',
         isActive ? 'bg-primary/5 text-primary' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
       )}
     >

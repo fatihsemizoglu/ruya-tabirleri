@@ -35,6 +35,7 @@ interface NavItem {
   tab: string;
   colorClass: string;
   bgClass: string;
+  gradientClass: string;
 }
 
 const mainNavItems: NavItem[] = [
@@ -44,7 +45,8 @@ const mainNavItems: NavItem[] = [
     icon: LayoutDashboard, 
     tab: 'overview',
     colorClass: 'text-blue-500 dark:text-blue-400',
-    bgClass: 'bg-blue-500/10 dark:bg-blue-500/15'
+    bgClass: 'bg-blue-500/10 dark:bg-blue-500/15',
+    gradientClass: 'from-blue-600 to-indigo-600'
   },
   { 
     title: 'Rüya Tabirleri', 
@@ -52,7 +54,8 @@ const mainNavItems: NavItem[] = [
     icon: BookOpen, 
     tab: 'dreams',
     colorClass: 'text-purple-500 dark:text-purple-400',
-    bgClass: 'bg-purple-500/10 dark:bg-purple-500/15'
+    bgClass: 'bg-purple-500/10 dark:bg-purple-500/15',
+    gradientClass: 'from-violet-600 to-purple-600'
   },
   { 
     title: 'Kategoriler', 
@@ -60,7 +63,8 @@ const mainNavItems: NavItem[] = [
     icon: FolderOpen, 
     tab: 'categories',
     colorClass: 'text-emerald-500 dark:text-emerald-400',
-    bgClass: 'bg-emerald-500/10 dark:bg-emerald-500/15'
+    bgClass: 'bg-emerald-500/10 dark:bg-emerald-500/15',
+    gradientClass: 'from-emerald-600 to-teal-600'
   },
   { 
     title: 'Yorumlar', 
@@ -68,7 +72,8 @@ const mainNavItems: NavItem[] = [
     icon: MessageSquare, 
     tab: 'comments',
     colorClass: 'text-amber-500 dark:text-amber-400',
-    bgClass: 'bg-amber-500/10 dark:bg-amber-500/15'
+    bgClass: 'bg-amber-500/10 dark:bg-amber-500/15',
+    gradientClass: 'from-amber-600 to-orange-600'
   },
 ];
 
@@ -79,7 +84,8 @@ const blogNavItems: NavItem[] = [
     icon: FileText, 
     tab: 'blog',
     colorClass: 'text-sky-500 dark:text-sky-400',
-    bgClass: 'bg-sky-500/10 dark:bg-sky-500/15'
+    bgClass: 'bg-sky-500/10 dark:bg-sky-500/15',
+    gradientClass: 'from-indigo-600 to-blue-600'
   },
   { 
     title: 'Blog Kategorileri', 
@@ -87,7 +93,8 @@ const blogNavItems: NavItem[] = [
     icon: Tag, 
     tab: 'blog-categories',
     colorClass: 'text-cyan-500 dark:text-cyan-400',
-    bgClass: 'bg-cyan-500/10 dark:bg-cyan-500/15'
+    bgClass: 'bg-cyan-500/10 dark:bg-cyan-500/15',
+    gradientClass: 'from-cyan-600 to-blue-600'
   },
   { 
     title: 'Blog Yorumları', 
@@ -95,7 +102,8 @@ const blogNavItems: NavItem[] = [
     icon: MessageCircle, 
     tab: 'blog-comments',
     colorClass: 'text-orange-500 dark:text-orange-400',
-    bgClass: 'bg-orange-500/10 dark:bg-orange-500/15'
+    bgClass: 'bg-orange-500/10 dark:bg-orange-500/15',
+    gradientClass: 'from-orange-600 to-amber-600'
   },
 ];
 
@@ -106,7 +114,8 @@ const secondaryNavItems: NavItem[] = [
     icon: Mail, 
     tab: 'messages',
     colorClass: 'text-rose-500 dark:text-rose-400',
-    bgClass: 'bg-rose-500/10 dark:bg-rose-500/15'
+    bgClass: 'bg-rose-500/10 dark:bg-rose-500/15',
+    gradientClass: 'from-rose-600 to-pink-600'
   },
   { 
     title: 'Aboneler', 
@@ -114,7 +123,8 @@ const secondaryNavItems: NavItem[] = [
     icon: UserPlus, 
     tab: 'subscribers',
     colorClass: 'text-teal-500 dark:text-teal-400',
-    bgClass: 'bg-teal-500/10 dark:bg-teal-500/15'
+    bgClass: 'bg-teal-500/10 dark:bg-teal-500/15',
+    gradientClass: 'from-teal-600 to-emerald-600'
   },
   { 
     title: 'Kullanıcılar', 
@@ -122,7 +132,8 @@ const secondaryNavItems: NavItem[] = [
     icon: Users, 
     tab: 'users',
     colorClass: 'text-indigo-500 dark:text-indigo-400',
-    bgClass: 'bg-indigo-500/10 dark:bg-indigo-500/15'
+    bgClass: 'bg-indigo-500/10 dark:bg-indigo-500/15',
+    gradientClass: 'from-blue-600 to-cyan-600'
   },
   {
     title: 'Arama Analitiği',
@@ -130,7 +141,8 @@ const secondaryNavItems: NavItem[] = [
     icon: Search,
     tab: 'analytics',
     colorClass: 'text-yellow-500 dark:text-yellow-400',
-    bgClass: 'bg-yellow-500/10 dark:bg-yellow-500/15'
+    bgClass: 'bg-yellow-500/10 dark:bg-yellow-500/15',
+    gradientClass: 'from-yellow-600 to-amber-600'
   },
   {
     title: 'Gelişmiş Analitik',
@@ -138,7 +150,8 @@ const secondaryNavItems: NavItem[] = [
     icon: BarChart3,
     tab: 'analytics-dashboard',
     colorClass: 'text-violet-500 dark:text-violet-400',
-    bgClass: 'bg-violet-500/10 dark:bg-violet-500/15'
+    bgClass: 'bg-violet-500/10 dark:bg-violet-500/15',
+    gradientClass: 'from-violet-600 to-fuchsia-600'
   },
   { 
     title: 'Gamification', 
@@ -146,7 +159,8 @@ const secondaryNavItems: NavItem[] = [
     icon: Trophy, 
     tab: 'gamification',
     colorClass: 'text-amber-500 dark:text-amber-400',
-    bgClass: 'bg-amber-500/10 dark:bg-amber-500/15'
+    bgClass: 'bg-amber-500/10 dark:bg-amber-500/15',
+    gradientClass: 'from-amber-600 to-orange-600'
   },
   {
     title: 'Abone Yönetimi+',
@@ -154,7 +168,8 @@ const secondaryNavItems: NavItem[] = [
     icon: Mail,
     tab: 'subscribers-advanced',
     colorClass: 'text-emerald-500 dark:text-emerald-400',
-    bgClass: 'bg-emerald-500/10 dark:bg-emerald-500/15'
+    bgClass: 'bg-emerald-500/10 dark:bg-emerald-500/15',
+    gradientClass: 'from-emerald-600 to-green-600'
   },
   {
     title: 'A/B Testler',
@@ -162,7 +177,8 @@ const secondaryNavItems: NavItem[] = [
     icon: FlaskConical,
     tab: 'ab-tests',
     colorClass: 'text-pink-500 dark:text-pink-400',
-    bgClass: 'bg-pink-500/10 dark:bg-pink-500/15'
+    bgClass: 'bg-pink-500/10 dark:bg-pink-500/15',
+    gradientClass: 'from-pink-600 to-rose-600'
   },
   { 
     title: 'Medya', 
@@ -170,7 +186,8 @@ const secondaryNavItems: NavItem[] = [
     icon: Image, 
     tab: 'media',
     colorClass: 'text-pink-500 dark:text-pink-400',
-    bgClass: 'bg-pink-500/10 dark:bg-pink-500/15'
+    bgClass: 'bg-pink-500/10 dark:bg-pink-500/15',
+    gradientClass: 'from-fuchsia-600 to-pink-600'
   },
   {
     title: 'İçe/Dışa Aktar',
@@ -178,7 +195,8 @@ const secondaryNavItems: NavItem[] = [
     icon: ArrowUpDown,
     tab: 'import-export',
     colorClass: 'text-emerald-500 dark:text-emerald-400',
-    bgClass: 'bg-emerald-500/10 dark:bg-emerald-500/15'
+    bgClass: 'bg-emerald-500/10 dark:bg-emerald-500/15',
+    gradientClass: 'from-emerald-600 to-teal-600'
   },
   {
     title: 'Aktivite Geçmişi',
@@ -186,7 +204,8 @@ const secondaryNavItems: NavItem[] = [
     icon: History, 
     tab: 'audit-log',
     colorClass: 'text-slate-500 dark:text-slate-400',
-    bgClass: 'bg-slate-500/10 dark:bg-slate-500/15'
+    bgClass: 'bg-slate-500/10 dark:bg-slate-500/15',
+    gradientClass: 'from-slate-600 to-zinc-600'
   },
   { 
     title: 'Ayarlar', 
@@ -194,7 +213,8 @@ const secondaryNavItems: NavItem[] = [
     icon: Settings, 
     tab: 'settings',
     colorClass: 'text-zinc-500 dark:text-zinc-400',
-    bgClass: 'bg-zinc-500/10 dark:bg-zinc-500/15'
+    bgClass: 'bg-zinc-500/10 dark:bg-zinc-500/15',
+    gradientClass: 'from-violet-600 to-indigo-600'
   },
 ];
 
@@ -215,10 +235,10 @@ export function AdminSidebar({ activeTab, onTabChange, collapsed, onCollapsedCha
         key={item.tab}
         onClick={() => onTabChange(item.tab)}
         className={cn(
-          "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-all duration-200 group outline-none",
+          "w-full flex items-center justify-between rounded-lg px-4 py-3 text-left transition-all duration-200 group outline-none",
           isActive
-            ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-indigo-600/20"
-            : "text-slate-300 hover:bg-white/5 hover:text-white"
+            ? `bg-gradient-to-r ${item.gradientClass} text-white shadow-lg shadow-black/20`
+            : "text-slate-300 hover:bg-slate-700/50 hover:text-white hover:translate-x-1"
         )}
       >
         <div className="flex items-center gap-3 min-w-0">
@@ -226,7 +246,7 @@ export function AdminSidebar({ activeTab, onTabChange, collapsed, onCollapsedCha
             "w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 flex-shrink-0",
             isActive 
               ? "bg-white/20 text-white" 
-              : cn(item.bgClass, item.colorClass)
+              : cn(item.bgClass, item.colorClass, "group-hover:bg-white/10")
           )}>
             <item.icon className="h-5 w-5" />
           </div>
@@ -262,28 +282,34 @@ export function AdminSidebar({ activeTab, onTabChange, collapsed, onCollapsedCha
   return (
     <aside 
       className={cn(
-        "fixed left-0 top-0 z-40 h-screen bg-[#0b0f19] border-r border-slate-800/40 text-white transition-all duration-300 flex flex-col shadow-xl shadow-black/30",
-        collapsed ? "w-[70px]" : "w-[260px]"
+        "fixed left-0 top-0 z-40 h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 border-r border-slate-700/60 text-white transition-all duration-300 flex flex-col shadow-xl shadow-black/30",
+        collapsed ? "w-[74px]" : "w-72"
       )}
+      role="navigation"
+      aria-label="Yönetim menüsü"
     >
       {/* Logo Area */}
       <div className={cn(
-        "flex items-center gap-3 px-4 h-16 border-b border-slate-800/40",
+        "relative flex items-center gap-3 px-6 h-[76px] border-b border-slate-700/50 bg-gradient-to-r from-slate-800/55 to-transparent",
         collapsed && "justify-center px-2"
       )}>
-        <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-indigo-500/20">
-          <Moon className="h-5 w-5 text-white animate-float" />
+        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-violet-500 via-fuchsia-500 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-violet-500/25">
+          <Moon className="h-6 w-6 text-white animate-float" />
         </div>
         {!collapsed && (
           <div className="overflow-hidden">
-            <h1 className="font-bold text-base leading-tight bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">Rüya Tabirleri</h1>
-            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold">Admin Panel</p>
+            <h1 className="font-bold text-lg leading-tight text-white">Rüya Tabirleri</h1>
+            <p className="text-xs text-violet-300 font-semibold flex items-center gap-1">
+              <LayoutDashboard className="h-3 w-3" />
+              Yönetim Paneli
+            </p>
           </div>
         )}
+        <div className="absolute bottom-0 left-6 right-6 h-0.5 bg-gradient-to-r from-transparent via-violet-500/60 to-transparent" />
       </div>
 
       {/* Main Navigation */}
-      <nav className="flex-1 py-4 px-3 space-y-1.5 overflow-y-auto bg-[#0b0f19] scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-[#0b0f19]">
+      <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-slate-950/40 pb-8">
         <div className={cn("text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 px-3", collapsed && "text-center px-0")}>
           {!collapsed ? "MENÜ" : "•"}
         </div>
@@ -301,7 +327,7 @@ export function AdminSidebar({ activeTab, onTabChange, collapsed, onCollapsedCha
       </nav>
 
       {/* Bottom Section */}
-      <div className="border-t border-slate-800/50 p-3 space-y-1.5 bg-[#090d16]">
+      <div className="sticky bottom-0 border-t border-slate-700/50 p-3 space-y-2 bg-gradient-to-t from-slate-950 via-slate-950 to-slate-900/95 backdrop-blur-sm z-10">
         {/* Back to Site */}
         <Link
           to="/"

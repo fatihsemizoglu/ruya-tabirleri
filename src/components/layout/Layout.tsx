@@ -24,7 +24,7 @@ export function Layout({
   backgroundVariant = 'default',
 }: LayoutProps) {
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground relative overflow-x-hidden">
+    <div className="min-h-screen min-h-[100dvh] flex flex-col bg-background text-foreground relative overflow-x-hidden">
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-background focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-foreground focus:shadow-lg focus:ring-2 focus:ring-primary"
@@ -38,7 +38,7 @@ export function Layout({
       )}
 
       {!hideHeader && <Header />}
-      <main id="main-content" className={`flex-1 relative z-10 ${!hideBottomNav ? 'pb-24 lg:pb-0' : ''}`}>
+      <main id="main-content" className={`flex-1 relative z-10 min-w-0 ${!hideBottomNav ? 'pb-[calc(6rem+env(safe-area-inset-bottom,0px))] lg:pb-0' : ''}`}>
         <SwipeNav>{children}</SwipeNav>
       </main>
       {!hideFooter && <Footer />}

@@ -71,7 +71,7 @@ export function AdminLayout({ children, activeTab, onTabChange, title, descripti
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#070b13] text-slate-900 dark:text-slate-100 transition-colors duration-200 relative">
+    <div className="min-h-screen bg-slate-100 dark:bg-[#070b13] text-slate-900 dark:text-slate-100 transition-colors duration-200 relative overflow-x-hidden">
       {/* Decorative background */}
       <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute -top-32 left-1/4 w-[480px] h-[480px] bg-violet-500/8 rounded-full blur-[120px]" />
@@ -114,11 +114,11 @@ export function AdminLayout({ children, activeTab, onTabChange, title, descripti
       <main
         className={cn(
           "min-h-screen transition-all duration-300 relative z-10",
-          collapsed ? "lg:pl-[70px]" : "lg:pl-[260px]"
+          collapsed ? "lg:pl-[74px]" : "lg:pl-72"
         )}
       >
         {/* Top Header - Glassmorphism */}
-        <header className="sticky top-0 z-20 bg-white/70 dark:bg-[#070b13]/70 backdrop-blur-md border-b border-border/60 px-4 lg:px-8 h-16 flex items-center justify-between transition-all">
+        <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-slate-200/70 bg-white/80 px-4 shadow-sm shadow-slate-950/5 backdrop-blur-xl transition-all dark:border-white/10 dark:bg-[#070b13]/80 lg:px-8">
           <div className="flex items-center gap-4">
             {/* Mobile Menu Toggle */}
             <Button 
@@ -132,7 +132,7 @@ export function AdminLayout({ children, activeTab, onTabChange, title, descripti
             
             {/* Breadcrumbs */}
             <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground select-none">
-              <span className="font-semibold text-slate-400 dark:text-slate-500">Yönetim Paneli</span>
+              <span className="font-semibold text-slate-500 dark:text-slate-400">Yönetim Paneli</span>
               <span className="text-slate-300 dark:text-slate-700">/</span>
               <span className="font-bold text-slate-800 dark:text-slate-200">{title}</span>
             </div>
@@ -148,10 +148,10 @@ export function AdminLayout({ children, activeTab, onTabChange, title, descripti
         </header>
 
         {/* Page Content */}
-        <div className="p-4 lg:p-8 max-w-[1600px] mx-auto">
+        <div className="mx-auto max-w-[1600px] p-4 lg:p-8">
           {/* Glowing Premium Header Banner */}
           {!hideHeaderBanner && (
-            <div className="relative overflow-hidden bg-gradient-to-r from-violet-600/15 via-fuchsia-600/15 to-pink-600/15 border border-white/10 dark:border-white/5 rounded-2xl p-6 md:p-8 mb-8 shadow-xl shadow-violet-950/10 backdrop-blur-xl">
+            <div className="relative mb-8 overflow-hidden rounded-2xl border border-violet-500/20 bg-gradient-to-r from-violet-600/15 via-fuchsia-600/15 to-pink-600/15 p-6 shadow-xl shadow-violet-950/10 backdrop-blur-xl dark:border-white/5 md:p-8">
               {/* Decorative Grid Overlay */}
               <div className="absolute inset-0 bg-[radial-gradient(#ffffff10_1px,transparent_1px)] [background-size:20px_20px] pointer-events-none opacity-60" />
 

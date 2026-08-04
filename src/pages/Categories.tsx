@@ -185,9 +185,9 @@ export default function Categories() {
         description="A'dan Z'ye tüm rüya tabirleri kategorileri. İlgilendiğiniz kategoriye tıklayarak rüya tabirlerini keşfedin."
         path="/kategoriler"
       />
-      <div className="container py-8 md:py-12 relative">
+      <div className="container py-7 md:py-12 relative">
         {/* Header */}
-        <div className="text-center mb-10">
+        <div className="text-center mb-8 sm:mb-10">
           <div className="mb-4">
             <PremiumBadge>
               <Folder className="h-3.5 w-3.5" />
@@ -203,38 +203,38 @@ export default function Categories() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 gap-3 mb-6 xs:grid-cols-3 sm:gap-4 sm:mb-8">
           <Card className="border-none shadow-sm bg-gradient-to-br from-violet-500/10 to-purple-600/5">
-            <CardContent className="p-4 text-center">
-              <div className="flex items-center justify-center gap-2 mb-1">
+            <CardContent className="p-3 text-center sm:p-4">
+              <div className="flex items-center justify-center gap-1.5 mb-1 sm:gap-2">
                 <Grid3X3 className="h-4 w-4 text-violet-600" />
                 <span className="text-xs text-muted-foreground">Kategori</span>
               </div>
-              <p className="text-2xl font-bold">{totalCategories}</p>
+              <p className="text-xl font-bold sm:text-2xl">{totalCategories}</p>
             </CardContent>
           </Card>
           <Card className="border-none shadow-sm bg-gradient-to-br from-blue-500/10 to-indigo-600/5">
-            <CardContent className="p-4 text-center">
+            <CardContent className="p-3 text-center sm:p-4">
               <div className="flex items-center justify-center gap-2 mb-1">
                 <BookOpen className="h-4 w-4 text-blue-600" />
                 <span className="text-xs text-muted-foreground">Rüya Tabiri</span>
               </div>
-              <p className="text-2xl font-bold">{totalDreams.toLocaleString('tr-TR')}</p>
+              <p className="text-xl font-bold sm:text-2xl">{totalDreams.toLocaleString('tr-TR')}</p>
             </CardContent>
           </Card>
           <Card className="border-none shadow-sm bg-gradient-to-br from-emerald-500/10 to-teal-600/5">
-            <CardContent className="p-4 text-center">
+            <CardContent className="p-3 text-center sm:p-4">
               <div className="flex items-center justify-center gap-2 mb-1">
                 <Eye className="h-4 w-4 text-emerald-600" />
                 <span className="text-xs text-muted-foreground">Görüntülenme</span>
               </div>
-              <p className="text-2xl font-bold">{totalViews.toLocaleString('tr-TR')}</p>
+              <p className="text-xl font-bold sm:text-2xl">{totalViews.toLocaleString('tr-TR')}</p>
             </CardContent>
           </Card>
         </div>
 
         {/* Search & Filters */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-8">
+        <div className="flex flex-col gap-3 mb-8 sm:flex-row sm:gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -244,9 +244,9 @@ export default function Categories() {
               className="pl-10"
             />
           </div>
-          <div className="flex gap-2">
+          <div className="grid grid-cols-1 gap-2 xs:grid-cols-[1fr_auto] sm:flex">
             <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-full sm:w-[180px]">
                 <SlidersHorizontal className="h-4 w-4 mr-2" />
                 <SelectValue placeholder="Sırala" />
               </SelectTrigger>
@@ -302,12 +302,12 @@ export default function Categories() {
         {/* Categories Grid/List */}
         {isLoading ? (
           <div className={viewMode === 'grid'
-            ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
+            ? "grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5 lg:gap-6"
             : "flex flex-col gap-4"
           }>
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
               viewMode === 'grid' ? (
-                <div key={i} className="bg-card border border-border/40 rounded-2xl p-6 relative overflow-hidden shadow-sm">
+                <div key={i} className="bg-card border border-border/40 rounded-2xl p-4 sm:p-6 relative overflow-hidden shadow-sm">
                   <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-500/30 via-fuchsia-500/30 to-pink-500/30" />
                   <Skeleton className="h-14 w-14 rounded-xl mb-4" />
                   <Skeleton className="h-5 w-3/4 mb-2" />
@@ -329,7 +329,7 @@ export default function Categories() {
           </div>
         ) : filteredCategories.length > 0 ? (
           <div className={viewMode === 'grid' 
-            ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6" 
+            ? "grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5 lg:gap-6" 
             : "flex flex-col gap-4"
           }>
             {filteredCategories.map((category, index) => {
@@ -339,19 +339,19 @@ export default function Categories() {
                 <Link
                   key={category.id}
                   to={`/kategori/${category.slug}`}
-                  className="group relative overflow-hidden rounded-2xl p-6 bg-card border border-border hover:border-primary/50 transition-all duration-300 hover:shadow-lg animate-fade-in"
+                  className="group relative overflow-hidden rounded-2xl p-4 sm:p-6 bg-card border border-border hover:border-primary/50 transition-all duration-300 hover:shadow-lg animate-fade-in"
                   style={{ animationDelay: `${index * 30}ms` }}
                 >
                   <div className={`absolute inset-0 bg-gradient-to-br ${colors.bg} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
 
                   <div className="relative">
                     {/* Icon */}
-                    <div className="w-14 h-14 rounded-xl bg-muted flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-muted flex items-center justify-center mb-3 sm:mb-4 group-hover:scale-110 transition-transform duration-300">
                       <CategoryIcon icon={category.icon} className="h-7 w-7 text-foreground" />
                     </div>
 
                     {/* Name */}
-                    <h3 className="font-serif font-semibold text-lg mb-1 group-hover:text-primary transition-colors">
+                    <h3 className="font-serif font-semibold text-base sm:text-lg mb-1 group-hover:text-primary transition-colors">
                       {category.name}
                     </h3>
 
@@ -363,7 +363,7 @@ export default function Categories() {
                     )}
 
                     {/* Stats */}
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <BookOpen className="h-3 w-3" />
                         <span>{category.dream_count} rüya</span>
@@ -383,7 +383,7 @@ export default function Categories() {
                 <Link
                   key={category.id}
                   to={`/kategori/${category.slug}`}
-                  className="group flex items-center gap-4 p-4 rounded-xl border bg-card hover:border-primary/50 hover:shadow-md transition-all animate-fade-in"
+                  className="group flex flex-col items-start gap-3 rounded-xl border bg-card p-4 transition-all hover:border-primary/50 hover:shadow-md sm:flex-row sm:items-center sm:gap-4 animate-fade-in"
                   style={{ animationDelay: `${index * 30}ms` }}
                 >
                   {/* Icon */}
@@ -404,7 +404,7 @@ export default function Categories() {
                   </div>
 
                   {/* Stats */}
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground shrink-0">
+                  <div className="flex w-full flex-wrap items-center gap-3 text-sm text-muted-foreground sm:w-auto sm:shrink-0 sm:gap-4">
                     <Badge variant="secondary">
                       <BookOpen className="h-3 w-3 mr-1" />
                       {category.dream_count}
@@ -441,7 +441,7 @@ export default function Categories() {
           <Button
             variant="outline"
             size="icon"
-            className="fixed bottom-6 right-6 rounded-full shadow-lg z-50 animate-fade-in"
+            className="fixed right-4 mobile-floating-action lg:bottom-6 lg:right-6 rounded-full shadow-lg z-50 animate-fade-in"
             onClick={scrollToTop}
           >
             <ArrowUp className="h-4 w-4" />

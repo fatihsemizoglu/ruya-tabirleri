@@ -200,8 +200,11 @@ export default defineConfig(({ mode }) => ({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            if (id.includes('node_modules/scheduler/')) {
+            if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/') || id.includes('node_modules/scheduler/')) {
               return 'react-vendor';
+            }
+            if (id.includes('@sentry')) {
+              return 'sentry-vendor';
             }
             if (id.includes('node_modules/react-router')) {
               return 'router-vendor';
@@ -236,7 +239,23 @@ export default defineConfig(({ mode }) => ({
             if (id.includes('framer-motion')) {
               return 'motion-vendor';
             }
-            return 'vendor';
+            const packagePath = id.split('node_modules/')[1];
+            const packageName = packagePath?.startsWith('@')
+              ? packagePath.split('/').slice(0, 2).join('/')
+              : packagePath?.split('/')[0];
+
+            if (
+              packageName &&
+              ['@babel/runtime', 'detect-node-es', 'dom-helpers'].includes(packageName)
+            ) {
+              return;
+            }
+
+            if (packageName) {
+              return `vendor-${packageName.replace('@', '').replace('/', '-')}`;
+            }
+
+            return 'vendor-misc';
           }
         },
         chunkFileNames: 'assets/[name]-[hash].js',

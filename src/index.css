@@ -3,6 +3,16 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    scroll-padding-top: calc(4rem + env(safe-area-inset-top, 0px));
+  }
+
+  *, *::before, *::after {
+    min-width: 0;
+  }
+
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
@@ -110,8 +120,27 @@
     font-family: 'Inter', 'Plus Jakarta Sans', system-ui, sans-serif;
     font-size: var(--app-font-size, 16px);
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    min-width: 320px;
+    overflow-x: hidden;
+    text-size-adjust: 100%;
+    -webkit-text-size-adjust: 100%;
+    touch-action: manipulation;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    background: hsl(var(--background));
+  }
+
+  img, video, canvas, svg, iframe {
+    max-width: 100%;
+  }
+
+  input, textarea, select, button {
+    font: inherit;
+  }
+
+  input, textarea, select {
+    font-size: max(16px, 1rem);
   }
 
   ::selection {
@@ -145,6 +174,39 @@
   .surface {
     @apply rounded-2xl border border-border/45 bg-card/95 text-card-foreground backdrop-blur-xl;
     box-shadow: var(--shadow-sm);
+  }
+
+  .mobile-safe-bottom {
+    padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .mobile-floating-action {
+    bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .mobile-page-pad {
+    @apply px-4 sm:px-6 lg:px-8;
+  }
+
+  .responsive-section {
+    @apply py-10 sm:py-14 md:py-20;
+  }
+
+  .mobile-card-pad {
+    @apply p-4 sm:p-5 md:p-6;
+  }
+
+  .safe-bottom-pad {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+  }
+
+  .safe-top-pad {
+    padding-top: max(1rem, env(safe-area-inset-top, 0px));
+  }
+
+  .mobile-scroll-x {
+    @apply -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0;
+    -webkit-overflow-scrolling: touch;
   }
 
   .surface:hover {
@@ -297,6 +359,40 @@
   }
 }
 
+@media (max-width: 640px) {
+  .container {
+    width: 100%;
+  }
+
+  .prose {
+    font-size: 1rem;
+    line-height: 1.78;
+  }
+
+  .prose h1 {
+    font-size: 1.875rem;
+  }
+
+  .prose h2 {
+    font-size: 1.45rem;
+  }
+
+  .prose h3 {
+    font-size: 1.22rem;
+  }
+
+  .prose table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  [data-radix-popper-content-wrapper] {
+    max-width: calc(100vw - 1rem) !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -311,6 +407,7 @@
 @media (hover: none) and (pointer: coarse) {
   .hover\:scale-105:hover,
   .hover\:scale-110:hover,
+  .hover\:-translate-y-0\.5:hover,
   .group:hover .group-hover\:translate-x-full,
   .group:hover .group-hover\:opacity-100 {
     transform: none !important;
@@ -318,12 +415,30 @@
   }
 }
 
+@media (max-width: 640px) {
+  .surface,
+  .admin-panel-surface,
+  .admin-list-surface {
+    border-radius: 1rem;
+  }
+
+  .prose {
+    font-size: 1rem;
+    line-height: 1.75;
+  }
+
+  [data-radix-popper-content-wrapper] {
+    max-width: calc(100vw - 1rem) !important;
+  }
+}
+
 @supports (touch-action: manipulation) {
   button, a, input, select, textarea, [role="button"], [tabindex]:not([tabindex="-1"]) {
+    touch-action: manipulation;
+  }
+
+  button, a, [role="button"], [tabindex]:not([tabindex="-1"]) {
     min-height: 48px;
     min-width: 48px;
-  }
-  button:has(span), a:has(span) {
-    min-height: auto;
   }
 }

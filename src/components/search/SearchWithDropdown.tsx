@@ -308,8 +308,8 @@ export function SearchWithDropdown({
             className={cn(
               isHero
                 ? voiceSupported
-                  ? 'w-full h-14 pl-5 pr-28 text-lg rounded-2xl bg-background/80 backdrop-blur border-2 border-primary/20 focus:border-primary shadow-lg shadow-primary/5'
-                  : 'w-full h-14 pl-5 pr-14 text-lg rounded-2xl bg-background/80 backdrop-blur border-2 border-primary/20 focus:border-primary shadow-lg shadow-primary/5'
+                  ? 'w-full h-13 sm:h-14 pl-4 sm:pl-5 pr-24 sm:pr-28 text-base sm:text-lg rounded-2xl bg-background/85 backdrop-blur border-2 border-primary/20 focus:border-primary shadow-lg shadow-primary/5'
+                  : 'w-full h-13 sm:h-14 pl-4 sm:pl-5 pr-14 text-base sm:text-lg rounded-2xl bg-background/85 backdrop-blur border-2 border-primary/20 focus:border-primary shadow-lg shadow-primary/5'
                 : isMobile
                 ? voiceSupported
                   ? 'w-full pr-22'
@@ -354,9 +354,9 @@ export function SearchWithDropdown({
 
         {/* Dropdown */}
         {showDropdownContent && (
-          <div
+            <div
             className={cn(
-              'absolute top-full left-0 right-0 mt-2 bg-background border rounded-xl shadow-lg z-[100] overflow-hidden max-h-[70vh] overflow-y-auto',
+              'absolute top-full left-0 right-0 mt-2 bg-background border rounded-xl shadow-lg z-[100] overflow-hidden max-h-[min(70vh,28rem)] overflow-y-auto overscroll-contain',
               isHero && 'shadow-xl border-primary/20'
             )}
           >
