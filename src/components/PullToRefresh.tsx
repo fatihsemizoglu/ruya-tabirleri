@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
 import { Loader2, RefreshCw } from 'lucide-react';
 
@@ -11,6 +11,18 @@ interface PullToRefreshProps {
 export function PullToRefresh({ onRefresh, children, threshold = 80 }: PullToRefreshProps) {
   const [state, setState] = useState<'idle' | 'pulling' | 'refreshing'>('idle');
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Chrome Android'de native pull-to-refresh'i bastır ki özel PTR ile
+  // çift tetiklenme olmasın. Kaydırma kök scroller (html) üzerinde yapıldığı
+  // için overscroll-behavior sarmalayıcıya değil kök öğeye uygulanır.
+  useEffect(() => {
+    const root = document.documentElement;
+    const previous = root.style.overscrollBehaviorY;
+    root.style.overscrollBehaviorY = 'contain';
+    return () => {
+      root.style.overscrollBehaviorY = previous;
+    };
+  }, []);
   const pullY = useMotionValue(0);
   const rotate = useTransform(pullY, [0, threshold], [0, 360]);
   const opacity = useTransform(pullY, [0, threshold / 2], [0, 1]);
@@ -52,7 +64,7 @@ export function PullToRefresh({ onRefresh, children, threshold = 80 }: PullToRef
   }, [pullY, threshold, state, onRefresh]);
 
   return (
-    <div ref={containerRef} className="relative overflow-hidden touch-pan-y">
+    <div ref={containerRef} className="relative overflow-hidden touch-pan-y overscroll-contain">
       <motion.div
         style={{ y: pullY, opacity, position: 'absolute', left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 50, top: -50 }}
       >

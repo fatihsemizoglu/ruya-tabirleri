@@ -139,6 +139,7 @@ export function CommentForm({ dreamId, onSuccess }: CommentFormProps) {
         rows={4}
         maxLength={1000}
         className="resize-none"
+        aria-label="Yorumunuz"
         required
       />
 

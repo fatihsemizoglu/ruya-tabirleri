@@ -405,7 +405,7 @@ export function VoiceDreamRecorder({ onSave }: VoiceDreamRecorderProps) {
                     Oynat
                   </Button>
                 )}
-                <Button onClick={deleteAudio} variant="ghost" size="lg">
+                <Button onClick={deleteAudio} variant="ghost" size="lg" aria-label="Ses kaydını sil">
                   <Trash2 className="w-4 h-4 text-rose-500" />
                 </Button>
               </>
@@ -427,6 +427,7 @@ export function VoiceDreamRecorder({ onSave }: VoiceDreamRecorderProps) {
               value={transcript + (interim ? ' ' + interim : '')}
               onChange={(e) => setTranscript(e.target.value)}
               placeholder="Konuşmaya başlayın veya yazın..."
+              aria-label="Rüya transkripsiyonu"
               rows={4}
               className="resize-none"
             />
@@ -448,7 +449,7 @@ export function VoiceDreamRecorder({ onSave }: VoiceDreamRecorderProps) {
                 key={m.value}
                 onClick={() => setMood(mood === m.value ? '' : m.value)}
                 className={cn(
-                  "p-2 rounded-xl border-2 transition-all text-center",
+                  "min-h-11 p-2 rounded-xl border-2 transition-all text-center",
                   mood === m.value
                     ? "border-violet-500 scale-105 shadow-md"
                     : "border-transparent hover:border-violet-200",

@@ -1,130 +1,28 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
-import { Search as SearchIcon, Sparkles, Layers, TrendingUp, Grid3X3, List, Eye, Heart, X, SlidersHorizontal, ChevronDown, Star, BookOpen, ArrowUp, RotateCw } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { ArrowUp } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
-import { CategoryIcon } from '@/components/ui/CategoryIcon';
-import { PremiumBackground, PremiumBadge, GradientText } from '@/components/layout/PremiumBackground';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { EmptyState } from '@/components/ui/empty-state';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
-import { SearchAutocomplete } from '@/components/search/SearchAutocomplete';
-import { AdvancedFilters, type AdvancedFilterState } from '@/components/search/AdvancedFilters';
+import { AdvancedFilters } from '@/components/search/AdvancedFilters';
+import { SearchHeader } from '@/components/search/SearchHeader';
+import { SearchResultsHeader } from '@/components/search/SearchResultsHeader';
+import { SearchResults } from '@/components/search/SearchResults';
+import { SearchLanding } from '@/components/search/SearchLanding';
+import { DEFAULT_FILTERS } from '@/lib/search-filters';
+import type { AdvancedFilterState } from '@/lib/search-filters';
+import { searchDreamsPage, RESULTS_PER_PAGE } from '@/lib/search-data';
+import type { ViewMode } from '@/lib/search-data';
 import type { DreamSearchResult, Category } from '@/types/database';
 import { Seo } from '@/components/Seo';
 import { useRecentSearches } from '@/hooks/useRecentSearches';
 import { captureError } from '@/lib/logger';
 import { useQuery } from '@tanstack/react-query';
-
-type ViewMode = 'grid' | 'list';
-
-const popularSearches = [
-  'yılan', 'su', 'ölüm', 'uçmak', 'düşmek', 'altın', 'köpek', 'at',
-  'bebek', 'ev', 'araba', 'para', 'diş', 'saç', 'kan'
-];
-
-const MAX_RECENT_SEARCHES = 10;
-const RESULTS_PER_PAGE = 24;
-
-const escapeSupabaseOrValue = (value: string) => value.replace(/[%,(){}]/g, '');
-
-const normalizeSearchTerm = (value: string) => value
-  .trim()
-  .toLocaleLowerCase('tr-TR')
-  .replace(/ı/g, 'i')
-  .replace(/ğ/g, 'g')
-  .replace(/ü/g, 'u')
-  .replace(/ş/g, 's')
-  .replace(/ö/g, 'o')
-  .replace(/ç/g, 'c')
-  .normalize('NFD')
-  .replace(/[\u0300-\u036f]/g, '');
-
-const toSlugTerm = (value: string) => normalizeSearchTerm(value).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-
-const uniqueDreamResults = (items: DreamSearchResult[]) => {
-  const seen = new Set<string>();
-  return items.filter((item) => {
-    if (seen.has(item.id)) return false;
-    seen.add(item.id);
-    return true;
-  });
-};
-
-const fallbackSearchDreams = async (searchTerm: string, limit = RESULTS_PER_PAGE): Promise<DreamSearchResult[]> => {
-  const trimmed = searchTerm.trim();
-  const safeTerm = escapeSupabaseOrValue(trimmed);
-  const normalizedTerm = escapeSupabaseOrValue(normalizeSearchTerm(trimmed));
-  const slugTerm = toSlugTerm(trimmed);
-
-  if (!safeTerm) return [];
-
-  const selectFields = 'id, title, slug, content, category_id, keywords, view_count, like_count, is_featured, created_at';
-  const titleQueries = [safeTerm, normalizedTerm]
-    .filter(Boolean)
-    .flatMap((term) => [term, `Rüyada ${term}`, `Ruyada ${term}`]);
-
-  const queryPromises = [
-    ...titleQueries.map((term) => supabase
-      .from('dreams')
-      .select(selectFields)
-      .eq('is_published', true)
-      .ilike('title', `%${term}%`)
-      .order('view_count', { ascending: false })
-      .limit(limit)),
-    slugTerm ? supabase
-      .from('dreams')
-      .select(selectFields)
-      .eq('is_published', true)
-      .ilike('slug', `%${slugTerm}%`)
-      .order('view_count', { ascending: false })
-      .limit(limit) : null,
-    safeTerm ? supabase
-      .from('dreams')
-      .select(selectFields)
-      .eq('is_published', true)
-      .contains('keywords', [safeTerm])
-      .order('view_count', { ascending: false })
-      .limit(limit) : null,
-  ].filter(Boolean);
-
-  const responses = await Promise.all(queryPromises);
-  const rows = responses.flatMap((response) => (response && response.error ? [] : (response?.data || [])));
-  const results = uniqueDreamResults(rows.map((dream) => ({ ...dream, rank: 1, total_count: rows.length })) as DreamSearchResult[])
-    .sort((a, b) => (b.view_count || 0) - (a.view_count || 0))
-    .slice(0, limit);
-
-  return results.map((dream) => ({ ...dream, total_count: results.length }));
-};
-
-const searchDreamsPage = async (searchTerm: string, page: number): Promise<{ rows: DreamSearchResult[]; total: number }> => {
-  const offset = (page - 1) * RESULTS_PER_PAGE;
-  const [{ data, error }, { data: countData, error: countError }] = await Promise.all([
-    supabase.rpc('search_dreams', {
-      search_query: searchTerm,
-      limit_count: RESULTS_PER_PAGE,
-      offset_count: offset,
-    }),
-    supabase.rpc('count_search_dreams', { search_query: searchTerm }),
-  ]);
-
-  if (error || countError) {
-    const fallbackRows = await fallbackSearchDreams(searchTerm, RESULTS_PER_PAGE);
-    return { rows: fallbackRows, total: fallbackRows.length };
-  }
-
-  return {
-    rows: (data || []) as DreamSearchResult[],
-    total: typeof countData === 'number' ? countData : 0,
-  };
-};
+import { AnimatePresence, motion } from 'framer-motion';
 
 export default function Search() {
   const [searchParams, setSearchParams] = useSearchParams();
   const query = searchParams.get('q') || '';
-  
+
   const [results, setResults] = useState<DreamSearchResult[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -177,16 +75,10 @@ export default function Search() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
-  // Advanced filters state
-  const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilterState>({
-    showFeaturedOnly: false,
-    selectedCategories: [],
-    minViews: 0,
-    minLikes: 0,
-    sortBy: 'relevance'
-  });
+  // Advanced filters state (DEFAULT_FILTERS'i mutasyondan korumak için klonla başlat)
+  const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilterState>(() => ({ ...DEFAULT_FILTERS }));
 
-// Scroll listener for scroll-to-top button (throttled with requestAnimationFrame)
+  // Scroll listener for scroll-to-top button (throttled with requestAnimationFrame)
   useEffect(() => {
     let ticking = false;
     const handleScroll = () => {
@@ -202,6 +94,17 @@ export default function Search() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Query veya filtre değişince sayfa 1'e dön. Sayfa değişimi aynı commit'teki
+  // fetch effect'ine yansımadığı için ref ile bir sonraki fetch atlanır —
+  // böylece eski sayfa için gereksiz (hatta append'li) istek atılmaz.
+  const pendingPageResetRef = useRef(false);
+  useEffect(() => {
+    setCurrentPage((prev) => {
+      if (prev !== 1) pendingPageResetRef.current = true;
+      return 1;
+    });
+  }, [query, advancedFilters]);
+
   const fetchSearchPage = useCallback(async (searchTerm: string, page: number, append = false) => {
     if (append) {
       setLoadMoreLoading(true);
@@ -209,8 +112,8 @@ export default function Search() {
       setIsLoading(true);
     }
     try {
-      const { rows: newResults, total: nextTotalCount } = await searchDreamsPage(searchTerm, page);
-      
+      const { rows: newResults, total: nextTotalCount } = await searchDreamsPage(searchTerm, page, advancedFilters);
+
       if (append) {
         setResults(prev => [...prev, ...newResults]);
       } else {
@@ -231,7 +134,7 @@ export default function Search() {
       setIsLoading(false);
       setLoadMoreLoading(false);
     }
-  }, [addRecentSearch]);
+  }, [addRecentSearch, advancedFilters]);
 
   const fetchRelatedDreams = useCallback(async (_searchTerm: string) => {
     try {
@@ -241,7 +144,7 @@ export default function Search() {
         .eq('is_published', true)
         .order('view_count', { ascending: false })
         .limit(6);
-      
+
       if (data) {
         setRelatedDreams(data.map(d => ({ ...d, rank: 0 })) as DreamSearchResult[]);
       }
@@ -274,72 +177,29 @@ export default function Search() {
     return () => observer.disconnect();
   }, [infiniteScroll, query, currentPage, totalCount, loadMoreLoading, isLoading]);
 
-  // Sunucu tarafı arama: sorgu veya sayfa değişince
+  // Sunucu tarafı arama: sorgu, sayfa veya filtre değişince
   useEffect(() => {
-    if (query) {
-      const append = infiniteScroll && currentPage > 1;
-      fetchSearchPage(query, currentPage, append);
-      if (currentPage === 1) {
-        fetchRelatedDreams(query);
-      }
-    } else {
+    if (!query) {
       setResults([]);
       setRelatedDreams([]);
       setTotalCount(0);
+      return;
+    }
+    // Sayfa 1'e sıfırlama bekliyorsa bu commit'i atla; sayfa 1 render'ı fetch edecek
+    if (pendingPageResetRef.current) {
+      pendingPageResetRef.current = false;
+      return;
+    }
+    const append = infiniteScroll && currentPage > 1;
+    fetchSearchPage(query, currentPage, append);
+    if (currentPage === 1) {
+      fetchRelatedDreams(query);
     }
   }, [query, currentPage, fetchSearchPage, fetchRelatedDreams, infiniteScroll]);
 
-  // Apply filters and sorting
-  const filteredResults = useMemo(() => {
-    let filtered = [...results];
-
-    // Featured filter
-    if (advancedFilters.showFeaturedOnly) {
-      filtered = filtered.filter(dream => dream.is_featured === true);
-    }
-
-    // Category filter
-    if (advancedFilters.selectedCategories.length > 0) {
-      filtered = filtered.filter(dream => 
-        dream.category_id && advancedFilters.selectedCategories.includes(dream.category_id)
-      );
-    }
-
-    // Popularity filters
-    if (advancedFilters.minViews > 0) {
-      filtered = filtered.filter(dream => (dream.view_count || 0) >= advancedFilters.minViews);
-    }
-    if (advancedFilters.minLikes > 0) {
-      filtered = filtered.filter(dream => (dream.like_count || 0) >= advancedFilters.minLikes);
-    }
-
-    // Sort results
-    switch (advancedFilters.sortBy) {
-      case 'views':
-        filtered.sort((a, b) => (b.view_count || 0) - (a.view_count || 0));
-        break;
-      case 'likes':
-        filtered.sort((a, b) => (b.like_count || 0) - (a.like_count || 0));
-        break;
-      case 'newest':
-        filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-        break;
-      case 'relevance':
-      default:
-        filtered.sort((a, b) => (b.rank || 0) - (a.rank || 0));
-        break;
-    }
-
-    return filtered;
-  }, [results, advancedFilters]);
-
-  const paginatedResults = filteredResults;
+  // Filtreler ve sıralama artık server tarafında (search_dreams RPC) uygulanır;
+  // totalCount filtrelenmiş toplamı döndüğü için sayfalama tutarlıdır.
   const totalPages = Math.ceil(totalCount / RESULTS_PER_PAGE);
-
-  // Query değişince sayfa 1'e dön
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [query, advancedFilters]);
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -351,18 +211,6 @@ export default function Search() {
       newParams.set('q', searchQuery.trim());
       setSearchParams(newParams);
     }
-  };
-
-  const handlePopularSearch = (term: string) => {
-    handleSearch(term);
-  };
-
-  const getCategoryName = (categoryId: string) => {
-    return categories.find(c => c.id === categoryId)?.name || '';
-  };
-
-  const getCategoryIconValue = (categoryId: string) => {
-    return categories.find(c => c.id === categoryId)?.icon || '📖';
   };
 
   const activeFilterCount = useMemo(() => {
@@ -386,75 +234,15 @@ export default function Search() {
       />
       <div className="container py-7 md:py-12 relative">
         {/* Search Header */}
-        <div className="max-w-3xl mx-auto mb-8 sm:mb-10">
-          <div className="text-center mb-6 sm:mb-8">
-            <div className="mb-4">
-              <PremiumBadge>
-                <Sparkles className="h-3.5 w-3.5" />
-                Gelişmiş Arama
-              </PremiumBadge>
-            </div>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-[-0.025em] mb-3 text-foreground">
-              Rüya <GradientText>Ara</GradientText>
-            </h1>
-            <p className="text-muted-foreground">
-              Binlerce rüya tabiri arasında arayın
-            </p>
-          </div>
-          
-          {/* Search Form with Autocomplete */}
-          <SearchAutocomplete
-            ref={searchInputRef}
-            initialQuery={query}
-            onSearch={handleSearch}
-            recentSearches={recentSearches}
-            onClearRecentSearches={clearRecentSearches}
-            onRemoveRecentSearch={removeRecentSearch}
-          />
-
-          {/* Quick Category Filters */}
-          {!query && categories.length > 0 && (
-            <div className="mt-6">
-              <div className="flex items-center gap-2 mb-3 text-sm text-muted-foreground">
-                <Layers className="h-4 w-4" />
-                <span>Kategorilere Göre Ara</span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {categories.slice(0, 8).map((category) => (
-                  <Link
-                    key={category.id}
-                    to={`/kategori/${category.slug}`}
-                    className="min-h-10 rounded-xl bg-muted px-3 py-2 text-sm transition-colors hover:bg-primary hover:text-primary-foreground flex items-center gap-2 sm:px-4"
-                  >
-                    <CategoryIcon icon={category.icon} className="h-4 w-4" />
-                    <span>{category.name}</span>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Popular Searches */}
-          {!query && (
-            <div className="mt-6">
-              <div className="flex items-center gap-2 mb-3 text-sm text-muted-foreground">
-                <TrendingUp className="h-4 w-4" />
-                <span>Popüler Aramalar</span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {popularSearches.map((term) => (
-                  <button
-                    key={term}
-                    onClick={() => handlePopularSearch(term)}
-                    className="min-h-9 rounded-full bg-muted px-3 py-1.5 text-sm transition-colors hover:bg-primary hover:text-primary-foreground"
-                  >
-                    {term}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+        <SearchHeader
+          query={query}
+          categories={categories}
+          searchInputRef={searchInputRef}
+          onSearch={handleSearch}
+          recentSearches={recentSearches}
+          onClearRecentSearches={clearRecentSearches}
+          onRemoveRecentSearch={removeRecentSearch}
+        />
 
         {/* Results Section */}
         {query && (
@@ -473,389 +261,61 @@ export default function Search() {
             {/* Results */}
             <div className="flex-1 min-w-0">
               {/* Results Header */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                <div>
-                  <p className="text-muted-foreground">
-                    {isLoading ? (
-                      'Aranıyor...'
-                    ) : (
-                      <>
-                        <span className="font-medium text-foreground">"{query}"</span> için{' '}
-                        <span className="font-medium text-foreground">{totalCount}</span> sonuç
-                        {hasActiveFilters && (
-                          <span className="text-primary">
-                            {' '}({activeFilterCount} filtre aktif — bu sayfada {filteredResults.length} eşleşme)
-                          </span>
-                        )}
-                      </>
-                    )}
-                  </p>
-                </div>
-
-                <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
-                  {/* Infinite Scroll Toggle */}
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant={infiniteScroll ? 'secondary' : 'ghost'}
-                          size="icon"
-                          className="rounded-lg h-9 w-9"
-                          onClick={() => setInfiniteScroll(!infiniteScroll)}
-                          aria-label={infiniteScroll ? 'Sayfalama moduna geç' : 'Sonsuz kaydırmayı etkinleştir'}
-                        >
-                          <RotateCw className={`h-4 w-4 ${infiniteScroll ? 'text-primary' : ''}`} />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom" align="center">
-                        {infiniteScroll ? 'Sayfalama modu' : 'Sonsuz kaydırma'}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-
-                  {/* View Mode Toggle */}
-                  <div className="hidden sm:flex border rounded-lg overflow-hidden">
-                    <Button
-                      variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
-                      size="icon"
-                      className="rounded-none h-9 w-9"
-                      onClick={() => setViewMode('grid')}
-                    >
-                      <Grid3X3 className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant={viewMode === 'list' ? 'secondary' : 'ghost'}
-                      size="icon"
-                      className="rounded-none h-9 w-9"
-                      onClick={() => setViewMode('list')}
-                    >
-                      <List className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
+              <SearchResultsHeader
+                isLoading={isLoading}
+                query={query}
+                totalCount={totalCount}
+                hasActiveFilters={hasActiveFilters}
+                activeFilterCount={activeFilterCount}
+                infiniteScroll={infiniteScroll}
+                onToggleInfiniteScroll={() => setInfiniteScroll(!infiniteScroll)}
+                viewMode={viewMode}
+                onViewModeChange={setViewMode}
+              />
 
               {/* Results */}
-              {isLoading ? (
-                <div className={viewMode === 'grid'
-                  ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4"
-                  : "space-y-2.5"
-                }>
-                  {[1, 2, 3, 4, 5, 6].map((i) => (
-                    <div key={i} className="rounded-2xl border bg-card/80 p-4 shadow-sm">
-                      <div className="flex items-center justify-between gap-3 mb-3">
-                        <Skeleton className="h-5 w-24 rounded-full" />
-                        <Skeleton className="h-5 w-12 rounded-full" />
-                      </div>
-                      <Skeleton className="h-6 w-full mb-2" />
-                      <Skeleton className="h-5 w-2/3" />
-                    </div>
-                  ))}
-                </div>
-              ) : filteredResults.length > 0 ? (
-                <>
-                  {viewMode === 'grid' ? (
-                    <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2 md:gap-3 xl:grid-cols-3">
-                      {paginatedResults.map((dream, index) => (
-                        <Link
-                          key={dream.id}
-                          to={`/ruya/${dream.slug}`}
-                          className="group relative flex min-h-[104px] flex-col rounded-xl border border-border/60 bg-card/80 p-3 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/35 hover:bg-card hover:shadow-md hover:shadow-primary/5 render-optimize animate-fadeIn"
-                          style={{ animationDelay: `${Math.min(index * 50, 300)}ms` }}
-                        >
-                          <div className="mb-2 flex items-start justify-between gap-2">
-                            {dream.category_id && (
-                              <Badge variant="secondary" className="max-w-[70%] truncate text-[11px]">
-                                <CategoryIcon icon={getCategoryIconValue(dream.category_id)} className="h-3.5 w-3.5" />
-                                {getCategoryName(dream.category_id)}
-                              </Badge>
-                            )}
-                            {index < 3 && (
-                              <Badge className="dream-gradient text-white">
-                                Top {index + 1}
-                              </Badge>
-                            )}
-                          </div>
-                          <h3 className="text-[15px] font-semibold leading-snug tracking-[-0.01em] transition-colors line-clamp-2 group-hover:text-primary sm:text-base">
-                            {dream.title}
-                          </h3>
-
-                          <div className="mt-auto flex items-center justify-between gap-3 pt-3 text-xs text-muted-foreground">
-                            <div className="flex min-w-0 items-center gap-3">
-                              <span className="flex items-center gap-1 tabular-nums">
-                                <Eye className="h-3.5 w-3.5" />
-                                {(dream.view_count || 0).toLocaleString('tr-TR')}
-                              </span>
-                              <span className="flex items-center gap-1 tabular-nums">
-                                <Heart className="h-3.5 w-3.5" />
-                                {(dream.like_count || 0).toLocaleString('tr-TR')}
-                              </span>
-                            </div>
-                            <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
-                              Oku
-                            </span>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {paginatedResults.map((dream, index) => (
-                        <Link
-                          key={dream.id}
-                          to={`/ruya/${dream.slug}`}
-                          style={{ animationDelay: `${Math.min(index * 50, 300)}ms` }}
-                          className="group block rounded-xl border border-border/60 bg-card/80 p-3 shadow-sm transition-all duration-200 hover:border-primary/35 hover:bg-card hover:shadow-md render-optimize animate-fadeIn"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="min-w-0 flex-1">
-                              <div className="mb-1.5 flex items-center gap-2">
-                                {index < 3 && (
-                                  <Badge className="dream-gradient text-white">
-                                    #{index + 1}
-                                  </Badge>
-                                )}
-                                {dream.category_id && (
-                                  <Badge variant="secondary">
-                                    <CategoryIcon icon={getCategoryIconValue(dream.category_id)} className="h-3.5 w-3.5" />
-                                    {getCategoryName(dream.category_id)}
-                                  </Badge>
-                                )}
-                              </div>
-                              <h3 className="text-[15px] font-semibold leading-snug transition-colors line-clamp-2 group-hover:text-primary sm:text-base">
-                                {dream.title}
-                              </h3>
-                            </div>
-                            <div className="flex shrink-0 flex-col items-end gap-2 text-xs text-muted-foreground">
-                              <div className="flex items-center gap-1 tabular-nums">
-                                <Eye className="h-4 w-4" />
-                                <span>{(dream.view_count || 0).toLocaleString('tr-TR')}</span>
-                              </div>
-                              <div className="flex items-center gap-1 tabular-nums">
-                                <Heart className="h-4 w-4" />
-                                <span>{(dream.like_count || 0).toLocaleString('tr-TR')}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Infinite Scroll Load More Trigger */}
-                  {infiniteScroll && totalPages > 1 && currentPage < totalPages && (
-                    <div
-                      ref={loadMoreRef}
-                      className="mt-10 flex items-center justify-center gap-3"
-                    >
-                      {loadMoreLoading && (
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <RotateCw className="h-5 w-5 animate-spin" />
-                          <span>Daha fazla yükleniyor...</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Pagination */}
-                  {totalPages > 1 && (
-                   <div className="mt-10 flex flex-wrap items-center justify-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={currentPage === 1}
-                        onClick={() => {
-                          setCurrentPage(p => Math.max(1, p - 1));
-                          window.scrollTo({ top: 0, behavior: 'smooth' });
-                        }}
-                        className="rounded-lg"
-                      >
-                        Önceki
-                      </Button>
-                      <div className="flex items-center gap-1">
-                        {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
-                          let page = i + 1;
-                          if (totalPages > 7) {
-                            if (currentPage > 4) page = currentPage - 3 + i;
-                            if (currentPage > totalPages - 4) page = totalPages - 6 + i;
-                          }
-                          if (page < 1 || page > totalPages) return null;
-                          return (
-                            <Button
-                              key={page}
-                              variant={page === currentPage ? 'default' : 'outline'}
-                              size="sm"
-                              onClick={() => {
-                                setCurrentPage(page);
-                                window.scrollTo({ top: 0, behavior: 'smooth' });
-                              }}
-                              className="rounded-lg min-w-9"
-                            >
-                              {page}
-                            </Button>
-                          );
-                        })}
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={currentPage === totalPages}
-                        onClick={() => {
-                          setCurrentPage(p => Math.min(totalPages, p + 1));
-                          window.scrollTo({ top: 0, behavior: 'smooth' });
-                        }}
-                        className="rounded-lg"
-                      >
-                        Sonraki
-                      </Button>
-                      <span className="text-xs text-muted-foreground ml-2 hidden sm:inline">
-                        Sayfa {currentPage} / {totalPages}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Related Dreams Section */}
-                  {relatedDreams.length > 0 && paginatedResults.length < 6 && currentPage === 1 && (
-                    <div className="mt-12 pt-8 border-t">
-                      <div className="flex items-center gap-2 mb-6">
-                        <Star className="h-5 w-5 text-primary" />
-                        <h2 className="text-xl font-serif font-semibold">Popüler Rüyalar</h2>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {relatedDreams.filter(d => !filteredResults.some(r => r.id === d.id)).slice(0, 3).map((dream) => (
-                          <Link
-                            key={dream.id}
-                            to={`/ruya/${dream.slug}`}
-                            className="group p-4 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
-                          >
-                            <h4 className="font-medium mb-2 group-hover:text-primary transition-colors line-clamp-1">
-                              {dream.title}
-                            </h4>
-                            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                              <span className="flex items-center gap-1">
-                                <Eye className="h-3 w-3" />
-                                {(dream.view_count || 0).toLocaleString('tr-TR')}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Heart className="h-3 w-3" />
-                                {(dream.like_count || 0).toLocaleString('tr-TR')}
-                              </span>
-                            </div>
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <EmptyState
-                  icon="search"
-                  title="Sonuç bulunamadı"
-                  description={`"${query}" için eşleşen rüya tabiri bulunamadı.${activeFilterCount > 0 ? ' Filtreleri temizlemeyi deneyin.' : ''}`}
-                  action={activeFilterCount > 0 ? {
-                    label: 'Filtreleri Temizle',
-                    onClick: () => setAdvancedFilters({
-                      showFeaturedOnly: false,
-                      selectedCategories: [],
-                      minViews: 0,
-                      minLikes: 0,
-                      sortBy: 'relevance'
-                    })
-                  } : undefined}
-                >
-                  <div className="max-w-md mx-auto">
-                    <p className="text-sm text-muted-foreground mb-3">Bunları da deneyebilirsiniz:</p>
-                    <div className="flex flex-wrap justify-center gap-2">
-                      {popularSearches.slice(0, 6).map((term) => (
-                        <button
-                          key={term}
-                          onClick={() => handlePopularSearch(term)}
-                          className="px-3 py-1.5 text-sm rounded-full bg-muted hover:bg-primary hover:text-primary-foreground transition-colors"
-                        >
-                          {term}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </EmptyState>
-              )}
+              <SearchResults
+                results={results}
+                viewMode={viewMode}
+                isLoading={isLoading}
+                query={query}
+                currentPage={currentPage}
+                totalPages={totalPages}
+                infiniteScroll={infiniteScroll}
+                loadMoreLoading={loadMoreLoading}
+                loadMoreRef={loadMoreRef}
+                relatedDreams={relatedDreams}
+                categories={categories}
+                activeFilterCount={activeFilterCount}
+                onPageChange={setCurrentPage}
+                onClearFilters={() => setAdvancedFilters(DEFAULT_FILTERS)}
+                onPopularSearch={handleSearch}
+              />
             </div>
           </div>
         )}
 
         {/* Empty State - No Query */}
         {!query && (
-          <div className="mt-8">
-            {/* Stats Cards */}
-             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-10 sm:mb-12">
-              <div className="text-center p-4 sm:p-6 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border">
-                <BookOpen className="h-8 w-8 mx-auto mb-2 text-primary" />
-                <div className="text-2xl font-bold text-primary">1000+</div>
-                <div className="text-sm text-muted-foreground">Rüya Tabiri</div>
-              </div>
-              <div className="text-center p-4 sm:p-6 rounded-xl bg-gradient-to-br from-accent/10 to-accent/5 border">
-                <Layers className="h-8 w-8 mx-auto mb-2 text-accent-foreground" />
-                <div className="text-2xl font-bold">{categories.length}</div>
-                <div className="text-sm text-muted-foreground">Kategori</div>
-              </div>
-              <div className="text-center p-4 sm:p-6 rounded-xl bg-gradient-to-br from-muted to-muted/50 border">
-                <Eye className="h-8 w-8 mx-auto mb-2" />
-                <div className="text-2xl font-bold">10K+</div>
-                <div className="text-sm text-muted-foreground">Görüntüleme</div>
-              </div>
-              <div className="text-center p-4 sm:p-6 rounded-xl bg-gradient-to-br from-muted to-muted/50 border">
-                <Heart className="h-8 w-8 mx-auto mb-2" />
-                <div className="text-2xl font-bold">5K+</div>
-                <div className="text-sm text-muted-foreground">Beğeni</div>
-              </div>
-            </div>
-
-            {/* Browse by Letter */}
-            <div className="text-center mb-8">
-              <h2 className="text-xl font-serif font-semibold mb-4">Alfabetik Arama</h2>
-              <div className="flex flex-wrap justify-center gap-1">
-                {'ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ'.split('').map((letter) => (
-                  <Link
-                    key={letter}
-                    to={`/az/${letter}`}
-                    className="w-9 h-9 flex items-center justify-center rounded-lg bg-muted hover:bg-primary hover:text-primary-foreground transition-colors font-medium"
-                  >
-                    {letter}
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            {/* Quick Links */}
-            <div className="flex flex-wrap justify-center gap-4">
-              <Link
-                to="/populer"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-muted hover:bg-primary hover:text-primary-foreground transition-colors"
-              >
-                <TrendingUp className="h-4 w-4" />
-                Popüler Rüyalar
-              </Link>
-              <Link
-                to="/kategoriler"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-muted hover:bg-primary hover:text-primary-foreground transition-colors"
-              >
-                <Layers className="h-4 w-4" />
-                Tüm Kategoriler
-              </Link>
-            </div>
-          </div>
+          <SearchLanding categoryCount={categories.length} />
         )}
 
         {/* Scroll to Top Button */}
-        {showScrollTop && (
-          <button
-            onClick={scrollToTop}
-            className="fixed right-4 mobile-floating-action lg:bottom-6 lg:right-6 p-3 rounded-full dream-gradient text-white shadow-lg hover:shadow-xl transition-all z-50"
-            aria-label="Yukarı çık"
-          >
-            <ArrowUp className="h-5 w-5" />
-          </button>
-        )}
+        <AnimatePresence>
+          {showScrollTop && (
+            <motion.button
+              onClick={scrollToTop}
+              initial={{ opacity: 0, y: 12, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 12, scale: 0.9 }}
+              transition={{ type: 'spring', damping: 24, stiffness: 320 }}
+              className="fixed right-4 mobile-floating-action lg:bottom-6 lg:right-6 p-3 rounded-full dream-gradient text-white shadow-lg hover:shadow-xl active:scale-95 transition-all z-50"
+              aria-label="Yukarı çık"
+            >
+              <ArrowUp className="h-5 w-5" />
+            </motion.button>
+          )}
+        </AnimatePresence>
       </div>
     </Layout>
   );

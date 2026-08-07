@@ -3,6 +3,7 @@ import { PremiumBadge, GradientText } from '@/components/layout/PremiumBackgroun
 import { FileText, Scale, AlertTriangle, UserRoundCheck, Ban, Mail, CheckCircle2, BookOpen, ShieldCheck } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Seo } from '@/components/Seo';
+import { SITE_EMAIL } from '@/lib/config';
 
 const rules = [
   { icon: AlertTriangle, title: 'Bilgilendirme amaçlıdır', text: 'Rüya yorumları profesyonel tıbbi, psikolojik veya dini danışmanlık yerine geçmez.' },
@@ -93,7 +94,7 @@ export default function Terms() {
                   </div>
                 ))}
               </div>
-              <a href="mailto:info@ruyatabirleri.com" className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">
+              <a href={`mailto:${SITE_EMAIL}`} className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">
                 <Mail className="h-4 w-4" />
                 Koşullar hakkında yazın
               </a>

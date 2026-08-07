@@ -296,6 +296,7 @@ export function ABTestManager() {
                   <div className="space-y-2">
                     <Label>Test Adı</Label>
                     <Input
+                      aria-label="Test adı"
                       value={editing.name || ''}
                       onChange={(e) => setEditing({ ...editing, name: e.target.value })}
                       placeholder="örn: Yeni Başlık Testi"
@@ -304,6 +305,7 @@ export function ABTestManager() {
                   <div className="space-y-2">
                     <Label>Hipotez</Label>
                     <Textarea
+                      aria-label="Hipotez"
                       value={editing.hypothesis || ''}
                       onChange={(e) => setEditing({ ...editing, hypothesis: e.target.value })}
                       placeholder="örn: Daha kısa başlık tıklama oranını artırır"
@@ -326,6 +328,7 @@ export function ABTestManager() {
                             variants: editing.variants!.map((vv, i) => i === idx ? { ...vv, name: e.target.value } : vv),
                           })}
                           placeholder={`Varyant ${idx + 1}`}
+                          aria-label={`Varyant ${idx + 1} adı`}
                         />
                         <Input
                           type="number"
@@ -343,6 +346,7 @@ export function ABTestManager() {
                           <Button
                             size="icon"
                             variant="ghost"
+                            aria-label={`Varyantı kaldır (${v.name})`}
                             onClick={() => setEditing({
                               ...editing,
                               variants: editing.variants!.filter((_, i) => i !== idx),
@@ -366,6 +370,7 @@ export function ABTestManager() {
                           }
                         }}
                         placeholder='{"title": "...", "cta": "..."}'
+                        aria-label="Varyant JSON yapılandırması"
                         rows={3}
                         className="font-mono text-xs"
                       />
@@ -396,6 +401,7 @@ export function ABTestManager() {
                       <label key={m} className="flex items-center gap-2 p-2 border rounded cursor-pointer">
                         <input
                           type="checkbox"
+                          aria-label={m}
                           checked={(editing.metrics || []).includes(m)}
                           onChange={(e) => {
                             const current = editing.metrics || [];
@@ -558,10 +564,10 @@ function TestCard({ test, onStart, onPause, onComplete, onDelete, onExport, onVi
             <BarChart3 className="w-3 h-3 mr-1" />
             Detay
           </Button>
-          <Button size="sm" variant="ghost" onClick={onExport}>
+          <Button size="sm" variant="ghost" aria-label="Testi CSV olarak dışa aktar" onClick={onExport}>
             <Download className="w-3 h-3" />
           </Button>
-          <Button size="sm" variant="ghost" onClick={onDelete}>
+          <Button size="sm" variant="ghost" aria-label={`${test.name} testini sil`} onClick={onDelete}>
             <Trash2 className="w-3 h-3 text-rose-500" />
           </Button>
         </div>

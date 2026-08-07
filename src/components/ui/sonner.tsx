@@ -1,12 +1,12 @@
-import { useTheme } from "next-themes";
-import { Toaster as Sonner, toast } from "sonner";
+import { Toaster as Sonner } from "sonner";
+import { useTheme } from "@/hooks/useTheme";
 
 const Toaster = (props: Record<string, unknown>) => {
-  const { theme = "system" } = useTheme();
+  const { theme } = useTheme();
 
   return (
     <Sonner
-      theme={theme as "light" | "dark" | "system"}
+      theme={theme}
       className="toaster group"
       position="top-right"
       richColors
@@ -15,6 +15,7 @@ const Toaster = (props: Record<string, unknown>) => {
       visibleToasts={4}
       duration={4500}
       mobileOffset={16}
+      style={{ marginTop: 'env(safe-area-inset-top, 0px)' }}
       toastOptions={{
         classNames: {
           toast:

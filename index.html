@@ -2,11 +2,11 @@
 <html lang="tr">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5.0, user-scalable=yes" />
 
     <!-- Preconnect for performance -->
-    <link rel="preconnect" href="https://dagjpitlouekbnwdcpbz.supabase.co" />
-    <link rel="dns-prefetch" href="https://dagjpitlouekbnwdcpbz.supabase.co" />
+    <link rel="preconnect" href="%VITE_SUPABASE_URL%" />
+    <link rel="dns-prefetch" href="%VITE_SUPABASE_URL%" />
     <!-- Warm up the social share image without competing with critical page assets -->
     <link rel="prefetch" as="image" href="/og-image.png" />
     <link rel="prefetch" href="/populer" as="document" />
@@ -70,6 +70,7 @@
 
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#6366f1" />
+    <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Rüya Tabirleri" />

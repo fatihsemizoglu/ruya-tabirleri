@@ -78,6 +78,7 @@ export function BlogCategoryForm({ form: formProp, defaultValues, onSubmit, onCa
                     <FormLabel>Kategori Adı</FormLabel>
                     <FormControl>
                       <Input
+                        aria-label="Kategori adı"
                         {...field}
                         onChange={(e) => {
                           field.onChange(e);
@@ -100,7 +101,7 @@ export function BlogCategoryForm({ form: formProp, defaultValues, onSubmit, onCa
                   <FormItem>
                     <FormLabel>URL Slug</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="ruya-rehberleri" className="h-11 rounded-xl font-mono text-sm" />
+                      <Input aria-label="URL slug" {...field} placeholder="ruya-rehberleri" className="h-11 rounded-xl font-mono text-sm" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -116,7 +117,7 @@ export function BlogCategoryForm({ form: formProp, defaultValues, onSubmit, onCa
                   <FormItem>
                     <FormLabel>Açıklama</FormLabel>
                     <FormControl>
-                      <Textarea {...field} placeholder="Bu kategori hakkında kısa açıklama..." className="min-h-[90px] rounded-xl" />
+                      <Textarea aria-label="Açıklama" {...field} placeholder="Bu kategori hakkında kısa açıklama..." className="min-h-[90px] rounded-xl" />
                     </FormControl>
                     <FormDescription>{(field.value?.length || 0)}/500 karakter</FormDescription>
                     <FormMessage />
@@ -137,7 +138,7 @@ export function BlogCategoryForm({ form: formProp, defaultValues, onSubmit, onCa
                   <FormItem>
                     <FormLabel>Emoji İkon</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="📚" className="h-11 rounded-xl text-2xl text-center" maxLength={4} />
+                      <Input aria-label="Emoji ikon" {...field} placeholder="📚" className="h-11 rounded-xl text-2xl text-center" maxLength={4} />
                     </FormControl>
                     <FormDescription>Tek bir emoji girin veya aşağıdan seçin</FormDescription>
                     <div className="flex flex-wrap gap-1.5 mt-2">
@@ -147,7 +148,7 @@ export function BlogCategoryForm({ form: formProp, defaultValues, onSubmit, onCa
                           type="button"
                           onClick={() => form.setValue('icon', emoji)}
                           className={cn(
-                            'w-9 h-9 rounded-lg border text-lg flex items-center justify-center transition-all',
+                            'h-11 w-11 rounded-lg border text-lg flex items-center justify-center transition-all',
                             selectedIcon === emoji
                               ? 'bg-gradient-to-br from-violet-500/15 to-fuchsia-500/15 border-violet-500/40 scale-105'
                               : 'bg-card border-border/60 hover:border-border hover:bg-muted'
@@ -173,6 +174,7 @@ export function BlogCategoryForm({ form: formProp, defaultValues, onSubmit, onCa
                     <FormControl>
                       <Input
                         type="number"
+                        aria-label="Sıra no"
                         {...field}
                         onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)}
                         className="h-11 rounded-xl"

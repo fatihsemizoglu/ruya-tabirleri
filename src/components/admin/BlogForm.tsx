@@ -352,6 +352,7 @@ export function BlogForm({
                     <FormControl>
                       <Input
                         {...field}
+                        aria-label="Başlık"
                         placeholder="Örn: Rüya Tabiri Nasıl Yapılır?"
                         className="h-11 rounded-xl"
                       />

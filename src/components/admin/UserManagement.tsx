@@ -271,6 +271,7 @@ export function UserManagement() {
           <div className="flex-1 relative">
             <Input
               placeholder="İsim veya kullanıcı adı ara..."
+              aria-label="İsim veya kullanıcı adı ara"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="admin-filter-surface pl-10"
@@ -338,7 +339,7 @@ export function UserManagement() {
                 <div className="flex items-center gap-4 self-end sm:self-auto">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">
+                      <Button variant="ghost" size="icon" className="rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800" aria-label={`${user.full_name || user.username || user.email || 'kullanıcı'} için işlemler`}>
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>

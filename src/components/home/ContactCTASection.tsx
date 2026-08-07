@@ -9,33 +9,31 @@ import {
   Clock,
   Sparkles,
 } from 'lucide-react';
-import { useSiteSettings } from '@/hooks/useSiteSettings';
+import { useContactSettings } from '@/hooks/useContactSettings';
 
 export function ContactCTASection() {
-  const { settings } = useSiteSettings();
-
-  // Format phone for WhatsApp: remove spaces, parentheses, dashes, leading +
-  const phoneDigits = settings.contactPhone.replace(/[^\d]/g, '').replace(/^0+/, '');
-  const waUrl = `https://wa.me/${phoneDigits}?text=${encodeURIComponent('Merhaba, rüya tabirleri hakkında bilgi almak istiyorum.')}`;
+  const { settings, emailHref, phoneHref, waUrl } = useContactSettings();
 
   const contactCards = [
-    {
-      icon: MessageCircle,
-      label: 'WhatsApp',
-      description: 'Hızlı iletişim',
-      href: waUrl,
-      external: true,
-      gradient: 'from-green-500 to-emerald-500',
-      softGradient: 'from-green-500/15 to-emerald-500/5',
-      hoverBorder: 'hover:border-green-500/40',
-      hoverShadow: 'hover:shadow-green-500/10',
-      textColor: 'text-green-600 dark:text-green-400',
-    },
+    ...(waUrl
+      ? [{
+          icon: MessageCircle,
+          label: 'WhatsApp',
+          description: 'Hızlı iletişim',
+          href: waUrl,
+          external: true,
+          gradient: 'from-green-500 to-emerald-500',
+          softGradient: 'from-green-500/15 to-emerald-500/5',
+          hoverBorder: 'hover:border-green-500/40',
+          hoverShadow: 'hover:shadow-green-500/10',
+          textColor: 'text-green-600 dark:text-green-400',
+        }]
+      : []),
     {
       icon: Mail,
       label: 'E-posta',
-      description: settings.contactEmail || 'info@ruyatabirleri.com',
-      href: `mailto:${settings.contactEmail}`,
+      description: settings.contactEmail,
+      href: emailHref,
       external: false,
       gradient: 'from-blue-500 to-cyan-500',
       softGradient: 'from-blue-500/15 to-cyan-500/5',
@@ -46,8 +44,8 @@ export function ContactCTASection() {
     {
       icon: Phone,
       label: 'Telefon',
-      description: settings.contactPhone || '+90 (212) 123 45 67',
-      href: `tel:${settings.contactPhone.replace(/[^\d+]/g, '')}`,
+      description: settings.contactPhone,
+      href: phoneHref,
       external: false,
       gradient: 'from-violet-500 to-fuchsia-500',
       softGradient: 'from-violet-500/15 to-fuchsia-500/5',
@@ -129,14 +127,14 @@ export function ContactCTASection() {
                     href={card.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`group relative flex flex-col items-center gap-3 p-5 rounded-xl bg-card border border-border/50 overflow-hidden transition-all duration-300 ${card.hoverBorder} hover:shadow-lg ${card.hoverShadow} hover:-translate-y-0.5 text-center`}
+                    className={`group relative flex flex-col items-center gap-3 p-4 sm:p-5 rounded-xl bg-card border border-border/50 overflow-hidden transition-all duration-300 ${card.hoverBorder} hover:shadow-lg ${card.hoverShadow} hover:-translate-y-0.5 text-center`}
                   >
                     <CardInner card={card} Icon={Icon} />
                   </a>
                 ) : (
                   <a
                     href={card.href}
-                    className={`group relative flex flex-col items-center gap-3 p-5 rounded-xl bg-card border border-border/50 overflow-hidden transition-all duration-300 ${card.hoverBorder} hover:shadow-lg ${card.hoverShadow} hover:-translate-y-0.5 text-center`}
+                    className={`group relative flex flex-col items-center gap-3 p-4 sm:p-5 rounded-xl bg-card border border-border/50 overflow-hidden transition-all duration-300 ${card.hoverBorder} hover:shadow-lg ${card.hoverShadow} hover:-translate-y-0.5 text-center`}
                   >
                     <CardInner card={card} Icon={Icon} />
                   </a>
@@ -191,19 +189,21 @@ function CardInner({
     <>
       {/* Background gradient on hover */}
       <div
-        className={`absolute inset-0 bg-gradient-to-br ${card.softGradient} opacity-0 group-hover:opacity-100 transition-opacity duration-400`}
+        className={`absolute inset-0 bg-gradient-to-br ${card.softGradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
       />
-      <div className="relative flex flex-col items-center gap-2">
+      {/* Mobilde yatay (ikon solda, metin sağda), sm+ da dikey ortalanmış düzen */}
+      <div className="relative flex w-full items-center gap-3.5 text-left sm:w-auto sm:flex-col sm:gap-2.5 sm:text-center">
         <div
-          className={`w-12 h-12 rounded-xl bg-gradient-to-br ${card.gradient} flex items-center justify-center shadow-md group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${card.gradient} shadow-md transition-all duration-300 group-hover:rotate-3 group-hover:scale-110 sm:h-12 sm:w-12`}
         >
           <Icon className="h-5 w-5 text-white" />
         </div>
-        <div>
-          <h3 className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors">
+        <div className="min-w-0">
+          <h3 className="font-semibold text-sm text-foreground transition-colors group-hover:text-primary">
             {card.label}
           </h3>
-          <p className={`text-[11px] font-medium ${card.textColor} mt-0.5`}>
+          {/* break-words: uzun e-posta adresleri kart dışına taşmasın */}
+          <p className={`mt-0.5 break-words text-[11px] font-medium ${card.textColor}`}>
             {card.description}
           </p>
         </div>

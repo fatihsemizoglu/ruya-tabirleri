@@ -40,6 +40,7 @@ const Privacy = lazy(() => import("./pages/Privacy"));
 const Terms = lazy(() => import("./pages/Terms"));
 const Kvkk = lazy(() => import("./pages/Kvkk"));
 const CookiePolicy = lazy(() => import("./pages/CookiePolicy"));
+const Faq = lazy(() => import("./pages/Faq"));
 const Blog = lazy(() => import("./pages/Blog"));
 const BlogPost = lazy(() => import("./pages/BlogPost"));
 const BlogTag = lazy(() => import("./pages/BlogTag"));
@@ -111,6 +112,7 @@ function AnimatedRoutes() {
           <Route path="/kullanim-kosullari" element={<Terms />} />
           <Route path="/kvkk" element={<Kvkk />} />
           <Route path="/cerez-politikasi" element={<CookiePolicy />} />
+          <Route path="/sss" element={<Faq />} />
           {/* Blog routes - isolated boundary */}
           <Route path="/blog" element={<RouteErrorBoundary label="Blog"><Blog /></RouteErrorBoundary>} />
           <Route path="/blog/etiket/:tag" element={<RouteErrorBoundary label="Blog"><BlogTag /></RouteErrorBoundary>} />
@@ -209,7 +211,7 @@ function ErrorFallback({ error }: { error: unknown }) {
         )}
         <button
           onClick={() => window.location.reload()}
-          className="w-full bg-primary text-primary-foreground rounded-lg py-2 font-medium hover:bg-primary/90"
+          className="w-full min-h-11 bg-primary text-primary-foreground rounded-lg py-2 font-medium hover:bg-primary/90"
         >
           Sayfayı Yenile
         </button>

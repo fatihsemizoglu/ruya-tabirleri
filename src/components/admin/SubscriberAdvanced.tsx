@@ -415,13 +415,13 @@ export function SubscriberAdvanced() {
                     <p className="text-sm text-muted-foreground line-clamp-2">{c.description}</p>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => { setEditing(c); setDialogOpen(true); }}>
+                    <Button variant="ghost" size="icon" aria-label={`${c.name} kampanyasını düzenle`} onClick={() => { setEditing(c); setDialogOpen(true); }}>
                       <Edit className="w-4 h-4" />
                     </Button>
                     <Button variant="ghost" size="icon" onClick={() => handleToggleActive(c.id, c.active)}>
                       {c.active ? <PauseCircle className="w-4 h-4 text-amber-500" /> : <PlayCircle className="w-4 h-4 text-emerald-500" />}
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(c.id)}>
+                    <Button variant="ghost" size="icon" aria-label={`${c.name} kampanyasını sil`} onClick={() => handleDelete(c.id)}>
                       <Trash2 className="w-4 h-4 text-rose-500" />
                     </Button>
                   </div>
@@ -519,11 +519,11 @@ export function SubscriberAdvanced() {
             <div className="space-y-4 py-2">
               <div className="space-y-2">
                 <Label>Kampanya Adı</Label>
-                <Input value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} />
+                <Input aria-label="Kampanya adı" value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} />
               </div>
               <div className="space-y-2">
                 <Label>Açıklama</Label>
-                <Textarea value={editing.description ?? ''} onChange={(e) => setEditing({ ...editing, description: e.target.value })} rows={2} />
+                <Textarea aria-label="Açıklama" value={editing.description ?? ''} onChange={(e) => setEditing({ ...editing, description: e.target.value })} rows={2} />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
@@ -578,6 +578,7 @@ export function SubscriberAdvanced() {
                       <Button
                         size="icon"
                         variant="ghost"
+                        aria-label={`${idx + 1}. e-posta adımını sil`}
                         onClick={() => setEditing({ ...editing,                           steps: (editing.steps ?? []).filter(s => s.id !== step.id) })}
                       >
                         <Trash2 className="w-3 h-3 text-rose-500" />
@@ -586,6 +587,7 @@ export function SubscriberAdvanced() {
                     <div className="grid grid-cols-[80px,1fr] gap-2">
                       <Input
                         type="number"
+                        aria-label="Gün"
                         value={step.dayOffset}
                         onChange={(e) => setEditing({
                           ...editing,
@@ -594,6 +596,7 @@ export function SubscriberAdvanced() {
                         placeholder="Gün"
                       />
                       <Input
+                        aria-label="E-posta konusu"
                         value={step.subject}
                         onChange={(e) => setEditing({
                           ...editing,
@@ -603,6 +606,7 @@ export function SubscriberAdvanced() {
                       />
                     </div>
                     <Textarea
+                      aria-label="E-posta içeriği"
                       value={step.body}
                       onChange={(e) => setEditing({
                         ...editing,

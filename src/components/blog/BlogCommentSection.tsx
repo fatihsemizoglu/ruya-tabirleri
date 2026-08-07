@@ -297,7 +297,7 @@ export function BlogCommentSection({ postId }: BlogCommentSectionProps) {
               )}
               
               {isOwner && (
-                <button onClick={() => handleDeleteComment(comment.id)} className="flex items-center gap-1 text-sm text-slate-500 hover:text-red-500 transition-colors">
+                <button onClick={() => handleDeleteComment(comment.id)} aria-label="Yorumu sil" className="-m-1.5 flex h-11 w-11 items-center justify-center rounded-full text-slate-500 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/30 transition-colors">
                   <Trash2 className="w-4 h-4" />
                 </button>
               )}
@@ -307,8 +307,8 @@ export function BlogCommentSection({ postId }: BlogCommentSectionProps) {
               {replyingTo === comment.id && user && (
                 <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mt-3">
                   <div className="flex gap-2">
-                    <Textarea value={replyContent} onChange={(e) => setReplyContent(e.target.value)} placeholder="Yanıtınızı yazın..." className="min-h-[80px] resize-none" />
-                    <Button onClick={() => handleSubmitComment(comment.id)} disabled={isSubmitting || !replyContent.trim()} size="sm" className="shrink-0">
+                    <Textarea value={replyContent} onChange={(e) => setReplyContent(e.target.value)} placeholder="Yanıtınızı yazın..." aria-label="Yanıtınız" className="min-h-[80px] resize-none" />
+                    <Button onClick={() => handleSubmitComment(comment.id)} disabled={isSubmitting || !replyContent.trim()} size="sm" className="shrink-0" aria-label="Yanıtı gönder">
                       <Send className="w-4 h-4" />
                     </Button>
                   </div>
@@ -373,7 +373,7 @@ export function BlogCommentSection({ postId }: BlogCommentSectionProps) {
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <Textarea value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="Düşüncelerinizi paylaşın..." className="min-h-[100px] resize-none mb-3" />
+              <Textarea value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="Düşüncelerinizi paylaşın..." aria-label="Yorumunuz" className="min-h-[100px] resize-none mb-3" />
               <Button onClick={() => handleSubmitComment()} disabled={isSubmitting || !newComment.trim()} className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700">
                 <Send className="w-4 h-4 mr-2" />
                 Yorum Yap
@@ -382,7 +382,7 @@ export function BlogCommentSection({ postId }: BlogCommentSectionProps) {
           </div>
         ) : (
           <div>
-            <Textarea value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="Düşüncelerinizi yazın..." className="min-h-[100px] resize-none mb-3" />
+            <Textarea value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="Düşüncelerinizi yazın..." aria-label="Yorumunuz" className="min-h-[100px] resize-none mb-3" />
             <div className="flex items-center justify-between">
               <span className="text-xs text-slate-500">{newComment.length}/1000 karakter</span>
               <Button onClick={() => handleSubmitComment()} disabled={isSubmitting || !canSubmitGuest} className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700">

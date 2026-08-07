@@ -1,8 +1,10 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { Fragment } from 'react';
+import { motion } from 'framer-motion';
 import { Home, Compass, Heart, User, BookOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
+import { haptic } from '@/lib/haptics';
 
 interface NavItem {
   to: string;
@@ -32,6 +34,8 @@ export function MobileBottomNav() {
   const showJournalFab = !!user;
   const journalActive = location.pathname === '/ruya-gunlugum' || location.pathname.startsWith('/ruya-gunlugum/');
 
+  const handleTap = () => haptic('light');
+
   return (
     <nav
       aria-label="Alt navigasyon"
@@ -58,6 +62,7 @@ export function MobileBottomNav() {
                         to="/ruya-gunlugum"
                         aria-label="Rüya Günlüğü"
                         aria-current={journalActive ? 'page' : undefined}
+                        onClick={() => { if (!journalActive) handleTap(); }}
                         className="group relative -mt-6 flex flex-col items-center gap-1 text-[9px] font-bold text-primary active:scale-95 xs:-mt-7 xs:text-[10px]"
                       >
                         <span className={cn(
@@ -75,6 +80,7 @@ export function MobileBottomNav() {
                       to={target}
                       aria-label={item.label}
                       aria-current={active ? 'page' : undefined}
+                      onClick={() => { if (!active) handleTap(); }}
                       className={cn(
                         'relative flex-1 flex flex-col items-center justify-center gap-1 rounded-2xl text-[10px] font-semibold transition-all duration-200 active:scale-[0.97] xs:text-[11px]',
                         active
@@ -83,7 +89,10 @@ export function MobileBottomNav() {
                       )}
                     >
                       {active && (
-                        <span
+                        <motion.span
+                          layoutId="mobile-bottom-nav-active"
+                          aria-hidden
+                          transition={{ type: 'spring', stiffness: 420, damping: 34 }}
                           className="absolute inset-0 rounded-2xl border border-primary/15 bg-primary/10 dark:bg-primary/15"
                         />
                       )}

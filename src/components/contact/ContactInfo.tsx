@@ -1,124 +1,134 @@
+import { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Clock, Phone, Mail, MapPin } from 'lucide-react';
+import {
+  ArrowRight,
+  Clock3,
+  ExternalLink,
+  Facebook,
+  Instagram,
+  Linkedin,
+  Mail,
+  MapPin,
+  Music2,
+  Phone,
+  Twitter,
+  Youtube,
+} from 'lucide-react';
+import { useContactSettings } from '@/hooks/useContactSettings';
+import { useReveal } from '@/hooks/useReveal';
+import { normalizeSocialUrl } from '@/lib/social';
 
-const contactItems = [
-  {
-    icon: Clock,
-    title: 'Yanıt Süresi',
-    description: 'Mesajlarınıza genellikle bu sürede dönüş yapıyoruz',
-    value: 'Pazartesi - Cuma: 09:00 - 18:00\nCumartesi: 10:00 - 14:00',
-    href: '#',
-    color: 'from-amber-500 to-orange-500',
-    bgColor: 'bg-amber-100',
-    hoverColor: 'hover:border-amber-300',
-    isWorkingHours: true,
-  },
-  {
-    icon: Phone,
-    title: 'Telefon',
-    description: 'Hızlı destek için arayın',
-    value: '+90 545 123 45 67',
-    href: 'tel:+905451234567',
-    color: 'from-emerald-500 to-green-500',
-    bgColor: 'bg-emerald-100',
-    hoverColor: 'hover:border-emerald-300',
-  },
-  {
-    icon: Mail,
-    title: 'E-posta',
-    description: 'Detaylı sorularınız için',
-    value: 'info@ruyatabirleri.com',
-    href: 'mailto:info@ruyatabirleri.com',
-    color: 'from-blue-500 to-cyan-500',
-    bgColor: 'bg-blue-100',
-    hoverColor: 'hover:border-blue-300',
-  },
-  {
-    icon: MapPin,
-    title: 'Konum',
-    description: 'Ziyaret edin',
-    value: 'İstanbul, Türkiye',
-    href: '#map',
-    color: 'from-purple-500 to-violet-500',
-    bgColor: 'bg-purple-100',
-    hoverColor: 'hover:border-purple-300',
-  },
-];
+const socialIcons = {
+  Instagram,
+  Twitter,
+  Youtube,
+  Facebook,
+  Linkedin,
+  TikTok: Music2,
+} as const;
 
 export function ContactInfo() {
-  const featured = contactItems[0];
-  const rest = contactItems.slice(1);
-  if (!featured) return null;
-  const FeaturedIcon = featured.icon;
+  const { settings, phoneHref, emailHref } = useContactSettings();
+  const motionProps = useReveal();
+
+  const dynamicSocials = useMemo(() => [
+    { name: 'Instagram', url: normalizeSocialUrl(settings.socialInstagram), icon: socialIcons.Instagram },
+    { name: 'Twitter / X', url: normalizeSocialUrl(settings.socialTwitter), icon: socialIcons.Twitter },
+    { name: 'YouTube', url: normalizeSocialUrl(settings.socialYoutube), icon: socialIcons.Youtube },
+    { name: 'Facebook', url: normalizeSocialUrl(settings.socialFacebook), icon: socialIcons.Facebook },
+    { name: 'LinkedIn', url: normalizeSocialUrl(settings.socialLinkedin), icon: socialIcons.Linkedin },
+    { name: 'TikTok', url: normalizeSocialUrl(settings.socialTiktok), icon: socialIcons.TikTok },
+  ].filter((social) => social.url?.trim()), [settings]);
 
   return (
-    <section className="relative py-10">
-      <div className="container mx-auto px-4">
-        <motion.div
-          className="mb-6 max-w-5xl mx-auto"
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          viewport={{ once: true }}
-        >
-          <div className="bg-gradient-to-br from-amber-50 via-white to-orange-50/30 backdrop-blur-xl rounded-3xl p-6 sm:p-8 border-2 border-amber-200/50 shadow-xl hover:shadow-2xl transition-all">
-            <div className="flex flex-col md:flex-row gap-6 items-start">
-              <div className={`w-16 h-16 ${featured.bgColor} rounded-2xl flex items-center justify-center shrink-0`}>
-                <div className={`bg-gradient-to-br ${featured.color} p-4 rounded-xl shadow-lg`}>
-                  <FeaturedIcon className="h-8 w-8 text-white" />
-                </div>
-              </div>
-              <div className="flex-1 w-full">
-                <h3 className="text-2xl font-bold text-slate-900 mb-2">{featured.title}</h3>
-                <p className="text-slate-500 text-base mb-4">{featured.description}</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {featured.value.split('\n').map((line, idx) => {
-                    const [day, hours] = line.split(': ');
-                    return (
-                      <div key={idx} className="flex items-center gap-3 bg-white/60 rounded-xl p-3">
-                        <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center shrink-0">
-                          <Clock className="h-5 w-5 text-amber-600" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-sm text-slate-500">{day}</p>
-                          <p className="text-slate-800 font-semibold">{hours}</p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          </div>
-        </motion.div>
+    <motion.aside {...motionProps} className="space-y-6">
+      <div className="rounded-[2rem] border border-violet-200/70 bg-white/75 p-6 shadow-[0_24px_70px_-38px_rgba(126,34,206,0.35)] backdrop-blur-xl sm:p-8 dark:border-white/10 dark:bg-white/[0.045]">
+        <p className="text-sm font-semibold text-violet-600 dark:text-violet-300">Doğrudan iletişim</p>
+        <h2 className="mt-2 text-2xl font-bold tracking-tight">Size uygun kanalı seçin</h2>
+        <p className="mt-3 text-sm leading-6 text-muted-foreground">Sorunuz ne olursa olsun doğru kişiye ulaşmasını sağlayacağız.</p>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          {rest.map((item, idx) => {
-            const Icon = item.icon;
-            return (
-              <motion.a
-                key={item.title}
-                href={item.href}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 + idx * 0.1 }}
-                viewport={{ once: true }}
-                whileHover={{ y: -5, scale: 1.02 }}
-                className={`group bg-white/80 backdrop-blur-xl rounded-2xl p-6 border-2 border-transparent ${item.hoverColor} shadow-lg hover:shadow-xl transition-all cursor-pointer block`}
-              >
-                <div className={`w-14 h-14 ${item.bgColor} rounded-2xl flex items-center justify-center mb-4`}>
-                  <div className={`bg-gradient-to-br ${item.color} p-3 rounded-xl shadow-lg`}>
-                    <Icon className="h-6 w-6 text-white" />
-                  </div>
-                </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-2">{item.title}</h3>
-                <p className="text-slate-500 text-sm mb-3">{item.description}</p>
-                <p className="text-slate-700 font-medium break-words">{item.value}</p>
-              </motion.a>
-            );
-          })}
+        <div className="mt-7 divide-y divide-violet-100 dark:divide-white/10">
+          <a href={emailHref} className="group flex items-center gap-4 py-5 first:pt-0">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-violet-100 text-violet-700 transition-colors duration-200 group-hover:bg-violet-600 group-hover:text-white dark:bg-violet-500/15 dark:text-violet-300">
+              <Mail className="h-5 w-5" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">E-posta</span>
+              <span className="mt-1 block truncate text-sm font-semibold group-hover:text-violet-600 dark:group-hover:text-violet-300">{settings.contactEmail}</span>
+            </span>
+            <ExternalLink className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-violet-600" />
+          </a>
+
+          {settings.contactPhone && (
+            <a href={phoneHref} className="group flex items-center gap-4 py-5">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-fuchsia-100 text-fuchsia-700 transition-colors duration-200 group-hover:bg-fuchsia-600 group-hover:text-white dark:bg-fuchsia-500/15 dark:text-fuchsia-300">
+                <Phone className="h-5 w-5" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Telefon</span>
+                <span className="mt-1 block text-sm font-semibold group-hover:text-fuchsia-600 dark:group-hover:text-fuchsia-300">{settings.contactPhone}</span>
+              </span>
+              <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform duration-200 group-hover:translate-x-1 group-hover:text-fuchsia-600" />
+            </a>
+          )}
+
+          {settings.contactAddress && (
+            <div className="flex items-center gap-4 py-5">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-pink-100 text-pink-700 dark:bg-pink-500/15 dark:text-pink-300">
+                <MapPin className="h-5 w-5" />
+              </span>
+              <span>
+                <span className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Konum</span>
+                <span className="mt-1 block whitespace-pre-line text-sm font-semibold">{settings.contactAddress}</span>
+              </span>
+            </div>
+          )}
+
+          {settings.contactWorkingHours && (
+            <div className="flex items-center gap-4 pt-5">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300">
+                <Clock3 className="h-5 w-5" />
+              </span>
+              <span>
+                <span className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Çalışma saatleri</span>
+                <span className="mt-1 block whitespace-pre-line text-sm font-semibold">{settings.contactWorkingHours}</span>
+              </span>
+            </div>
+          )}
         </div>
       </div>
-    </section>
+
+      <div className="rounded-[2rem] border border-violet-200/70 bg-gradient-to-br from-violet-50 via-fuchsia-50 to-pink-50 p-6 sm:p-7 dark:border-white/10 dark:from-violet-950/40 dark:via-fuchsia-950/30 dark:to-pink-950/30">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h3 className="font-bold">Bizi takip edin</h3>
+            <p className="mt-1 text-sm text-muted-foreground">Yeni tabirler ve ilham veren içerikler.</p>
+          </div>
+          <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-semibold text-violet-700 dark:bg-white/10 dark:text-violet-200">{dynamicSocials.length} kanal</span>
+        </div>
+        {dynamicSocials.length > 0 ? (
+          <div className="mt-5 flex flex-wrap gap-3">
+            {dynamicSocials.map((social) => {
+              const Icon = social.icon;
+              return (
+                <a
+                  key={social.name}
+                  href={social.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`${social.name} hesabımızı aç`}
+                  title={social.name}
+                  className="flex h-12 w-12 items-center justify-center rounded-full border border-violet-200/80 bg-white/80 text-violet-700 shadow-sm transition-all duration-200 hover:border-fuchsia-300 hover:bg-gradient-to-br hover:from-violet-600 hover:via-fuchsia-600 hover:to-pink-600 hover:text-white hover:shadow-lg hover:shadow-fuchsia-500/20 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-500/20 dark:border-white/10 dark:bg-white/[0.06] dark:text-violet-200"
+                >
+                  <Icon className="h-5 w-5" />
+                </a>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="mt-5 text-sm text-muted-foreground">Sosyal medya hesaplarımız yakında burada.</p>
+        )}
+      </div>
+    </motion.aside>
   );
 }

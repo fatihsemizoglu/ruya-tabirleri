@@ -133,7 +133,7 @@ export function PopularPosts() {
           >
             <Link
               to={`/blog/${post.slug}`}
-              className="flex items-start gap-3 p-2.5 -mx-2 rounded-xl hover:bg-muted/50 transition-all duration-200 group"
+              className="flex min-h-11 items-start gap-3 p-2.5 -mx-2 rounded-xl hover:bg-muted/50 transition-all duration-200 group"
             >
               <span className="flex-shrink-0 w-7 h-7 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 text-primary flex items-center justify-center text-xs font-bold border border-primary/10">
                 {index + 1}

@@ -215,7 +215,15 @@ export function ContentSuggestionsGenerator({
               {relatedSuggestions.map((suggestion, index) => (
                 <div
                   key={index}
-                  className="p-3 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer group"
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      onRelatedDreamSelected?.(suggestion.title);
+                    }
+                  }}
+                  className="p-3 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   onClick={() => onRelatedDreamSelected?.(suggestion.title)}
                 >
                   <div className="flex items-start justify-between gap-2">
@@ -231,7 +239,8 @@ export function ContentSuggestionsGenerator({
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      aria-label={`${suggestion.title} önerisini kullan`}
                       onClick={(e) => {
                         e.stopPropagation();
                         onRelatedDreamSelected?.(suggestion.title);

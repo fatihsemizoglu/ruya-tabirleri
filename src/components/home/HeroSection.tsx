@@ -114,7 +114,7 @@ export function HeroSection() {
               <Link
                 key={item.label}
                 to={`/ara?q=${encodeURIComponent(item.label)}`}
-                className="group inline-flex min-h-9 items-center gap-1.5 rounded-full border border-border/60 bg-card/80 px-3 py-1.5 text-xs text-muted-foreground backdrop-blur-sm transition-all duration-200 hover:border-primary/30 hover:bg-primary/5 hover:text-primary sm:text-sm"
+                className="group inline-flex min-h-11 items-center gap-1.5 rounded-full border border-border/60 bg-card/80 px-3 py-1.5 text-xs text-muted-foreground backdrop-blur-sm transition-all duration-200 hover:border-primary/30 hover:bg-primary/5 hover:text-primary sm:text-sm"
               >
                 <span className="font-medium">{item.label}</span>
               </Link>
@@ -141,9 +141,14 @@ export function HeroSection() {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.2, delay: 0.6 + idx * 0.012 }}
                 >
+                  {/* Dokunmatik cihazlarda global min-width:48px kuralı bu 9 sütunlu
+                      klavye-benzeri ızgarayı taşırabiliyor; min boyutları sıfırlayıp
+                      yoğun ızgaralar için kompakt boyutta tutuyoruz.
+                      data-audit-ignore: bilinçli olarak yoğun ızgara (klavye deseni). */}
                   <Link
                     to={`/az/${letter.toLowerCase()}`}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/50 bg-card/70 text-[11px] font-bold text-foreground backdrop-blur-sm transition-all hover:border-primary hover:bg-primary hover:text-primary-foreground hover:shadow-md hover:shadow-primary/20 sm:h-8 sm:w-8 sm:text-xs"
+                    data-audit-ignore
+                    className="flex h-8 w-8 min-w-0 min-h-0 items-center justify-center rounded-lg border border-border/50 bg-card/70 text-[11px] font-bold text-foreground backdrop-blur-sm transition-all active:scale-90 hover:border-primary hover:bg-primary hover:text-primary-foreground hover:shadow-md hover:shadow-primary/20 sm:h-8 sm:w-8 sm:text-xs"
                   >
                     {letter}
                   </Link>

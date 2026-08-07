@@ -481,6 +481,7 @@ export function BlogManagement() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Başlık veya özet ile ara..."
+              aria-label="Başlık veya özet ile ara"
               className="admin-filter-surface"
             />
           </div>

@@ -2,51 +2,26 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { t } from '@/constants/translations';
 import { Navigate, Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { User, Mail, Camera, Heart, Clock, Book, Plus, Trash2, Edit, Eye, Calendar, Settings, LogOut, BarChart3, MessageCircle, TrendingUp, Award, Sparkles, Save, Activity, Hash, ArrowRight, Bookmark, ShieldCheck, Lock, EyeOff } from 'lucide-react';
+import { User, Mail, Camera, Heart, Clock, Book, Eye, Calendar, Settings, LogOut, BarChart3, MessageCircle, Award, Sparkles, Save, Activity, ArrowRight, Bookmark, ShieldCheck, Lock, EyeOff } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import type { Json } from '@/integrations/supabase/types';
 import { getErrorMessage, notify } from '@/lib/notify';
 import { captureError } from '@/lib/logger';
-import type { Dream, DreamJournalEntry, DreamMood, Comment } from '@/types/database';
+import type { Dream, DreamJournalEntry, Comment } from '@/types/database';
 import { ProfileFavoritesTab } from '@/components/profile/ProfileFavoritesTab';
 import { ProfileHistoryTab } from '@/components/profile/ProfileHistoryTab';
+import { ProfileStatsTab, type UserComment } from '@/components/profile/ProfileStatsTab';
+import { ProfileJournalTab } from '@/components/profile/ProfileJournalTab';
 import { GamificationPanel } from '@/components/gamification/GamificationPanel';
 
-type MoodValue = DreamMood | '';
-type UserComment = Comment & { dreams?: Dream };
-
-const moodOptions: { value: DreamMood; key: string; emoji: string }[] = [
-  { value: 'happy', key: 'moodHappy', emoji: '😊' },
-  { value: 'sad', key: 'moodSad', emoji: '😢' },
-  { value: 'scared', key: 'moodScared', emoji: '😨' },
-  { value: 'confused', key: 'moodConfused', emoji: '😕' },
-  { value: 'peaceful', key: 'moodPeaceful', emoji: '😌' },
-  { value: 'anxious', key: 'moodAnxious', emoji: '😰' },
-  { value: 'excited', key: 'moodExcited', emoji: '🤩' },
-  { value: 'neutral', key: 'moodNeutral', emoji: '😐' },
-];
-
-const moodColors: Record<string, { ring: string; text: string; bg: string }> = {
-  happy: { ring: 'stroke-amber-400', text: 'text-amber-500', bg: 'bg-amber-500/10' },
-  sad: { ring: 'stroke-blue-400', text: 'text-blue-500', bg: 'bg-blue-500/10' },
-  scared: { ring: 'stroke-purple-500', text: 'text-purple-500', bg: 'bg-purple-500/10' },
-  confused: { ring: 'stroke-orange-400', text: 'text-orange-500', bg: 'bg-orange-500/10' },
-  peaceful: { ring: 'stroke-emerald-400', text: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-  anxious: { ring: 'stroke-rose-400', text: 'text-rose-500', bg: 'bg-rose-500/10' },
-  excited: { ring: 'stroke-pink-500', text: 'text-pink-500', bg: 'bg-pink-500/10' },
-  neutral: { ring: 'stroke-slate-400', text: 'text-slate-500', bg: 'bg-slate-500/10' },
-};
 
 export default function Profile() {
   const locale = 'tr-TR'; // Always Turkish (Türkçe)
@@ -76,15 +51,6 @@ export default function Profile() {
 
   const [entries, setEntries] = useState<DreamJournalEntry[]>([]);
   const [entriesLoading, setEntriesLoading] = useState(true);
-  const [isJournalDialogOpen, setIsJournalDialogOpen] = useState(false);
-  const [selectedEntry, setSelectedEntry] = useState<DreamJournalEntry | null>(null);
-  const [journalForm, setJournalForm] = useState({
-    title: '',
-    content: '',
-    dream_date: new Date().toISOString().split('T')[0],
-    mood: '' as MoodValue,
-    tags: '',
-  });
 
   const [stats, setStats] = useState({
     totalFavorites: 0,
@@ -300,17 +266,15 @@ export default function Profile() {
     }
   };
 
-  const handleJournalSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const handleJournalSubmit = async (form: { title: string; content: string; dream_date: string; mood: string; tags: string }, selectedEntry: DreamJournalEntry | null) => {
     try {
       const entryData = {
         user_id: user!.id,
-        title: journalForm.title,
-        content: journalForm.content,
-        dream_date: journalForm.dream_date || null,
-        mood: journalForm.mood || null,
-        tags: (journalForm.tags ? journalForm.tags.split(',').map(t => t.trim()) : []) as Json,
+        title: form.title,
+        content: form.content,
+        dream_date: form.dream_date || null,
+        mood: (form.mood || null) as DreamJournalEntry['mood'],
+        tags: (form.tags ? form.tags.split(',').map(t => t.trim()) : []) as Json,
       };
 
       if (selectedEntry) {
@@ -326,25 +290,10 @@ export default function Profile() {
         notify.success(t('profile.journalAdded'));
       }
 
-      setIsJournalDialogOpen(false);
-      setSelectedEntry(null);
-      setJournalForm({ title: '', content: '', dream_date: new Date().toISOString().split('T')[0], mood: '', tags: '' });
       fetchEntries();
     } catch (error) {
       notify.error(error instanceof Error ? error.message : t('favorites.error'));
     }
-  };
-
-  const openEditJournal = (entry: DreamJournalEntry) => {
-    setSelectedEntry(entry);
-    setJournalForm({
-      title: entry.title,
-      content: entry.content,
-      dream_date: entry.dream_date,
-      mood: entry.mood || '',
-      tags: entry.tags?.join(', ') || '',
-    });
-    setIsJournalDialogOpen(true);
   };
 
   const deleteJournalEntry = async (id: string) => {
@@ -422,10 +371,6 @@ export default function Profile() {
     !!user.email,
   ].filter(Boolean).length * 25;
 
-  const getMoodLabel = (moodValue: string) => {
-    const opt = moodOptions.find(m => m.value === moodValue);
-    return opt ? t(`profile.${opt.key}`) : moodValue;
-  };
 
   return (
     <Layout>
@@ -458,7 +403,7 @@ export default function Profile() {
                   <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-3xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center text-4xl md:text-5xl font-serif-dream font-bold text-white shadow-2xl">
                     {userInitial}
                   </div>
-                  <button className="absolute -bottom-2 -right-2 w-9 h-9 rounded-full bg-foreground text-background flex items-center justify-center shadow-lg hover:scale-110 transition-all border-4 border-card">
+                  <button aria-label="Profil fotoğrafını değiştir" className="absolute -bottom-2 -right-2 flex h-11 w-11 items-center justify-center rounded-full bg-foreground text-background shadow-lg hover:scale-110 transition-all border-4 border-card">
                     <Camera className="h-3.5 w-3.5" />
                   </button>
                 </motion.div>
@@ -536,7 +481,7 @@ export default function Profile() {
                   <Button
                     variant="outline"
                     onClick={handleSignOut}
-                    className="rounded-xl h-10 hover:bg-rose-500/10 hover:text-rose-600 hover:border-rose-500/30"
+                    className="rounded-xl hover:bg-rose-500/10 hover:text-rose-600 hover:border-rose-500/30"
                   >
                     <LogOut className="h-4 w-4 mr-2" />
                     {t('profile.signOut')}
@@ -689,11 +634,11 @@ export default function Profile() {
                     <form onSubmit={handleProfileSubmit} className="space-y-5">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div className="space-y-2">
-                          <Label htmlFor="fullName" className="text-sm font-medium">{t('auth.fullName')}</Label>
+                          <Label htmlFor="profile-fullName" className="text-sm font-medium">{t('auth.fullName')}</Label>
                           <div className="relative">
                             <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                             <Input
-                              id="fullName"
+                              id="profile-fullName"
                               value={formData.fullName}
                               onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                               className="pl-11 h-11 rounded-xl border-border/60"
@@ -703,11 +648,11 @@ export default function Profile() {
                         </div>
 
                         <div className="space-y-2">
-                          <Label htmlFor="username" className="text-sm font-medium">{t('auth.username')}</Label>
+                          <Label htmlFor="profile-username" className="text-sm font-medium">{t('auth.username')}</Label>
                           <div className="relative">
                             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold">@</span>
                             <Input
-                              id="username"
+                              id="profile-username"
                               value={formData.username}
                               onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                               className="pl-11 h-11 rounded-xl border-border/60"
@@ -718,11 +663,11 @@ export default function Profile() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="email" className="text-sm font-medium">{t('auth.email')}</Label>
+                        <Label htmlFor="profile-email" className="text-sm font-medium">{t('auth.email')}</Label>
                         <div className="relative">
                           <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                           <Input
-                            id="email"
+                            id="profile-email"
                             value={user.email || ''}
                             disabled
                             className="pl-11 h-11 rounded-xl bg-muted/50 border-border/60 cursor-not-allowed"
@@ -799,7 +744,7 @@ export default function Profile() {
                               <button
                                 type="button"
                                 onClick={() => setShowPasswordFields((show) => !show)}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                                className="absolute right-3 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                                 aria-label={showPasswordFields ? 'Şifreyi gizle' : 'Şifreyi göster'}
                               >
                                 {showPasswordFields ? <EyeOff className="h-4 w-4 mx-auto" /> : <Eye className="h-4 w-4 mx-auto" />}
@@ -831,7 +776,7 @@ export default function Profile() {
                           <Button
                             type="submit"
                             disabled={isPasswordLoading || !passwordForm.newPassword || !passwordForm.confirmPassword}
-                            className="rounded-xl h-10 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white"
+                            className="rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white"
                           >
                             <ShieldCheck className="h-4 w-4 mr-2" />
                             {isPasswordLoading ? 'Güncelleniyor...' : 'Şifreyi Güncelle'}
@@ -870,233 +815,12 @@ export default function Profile() {
 
             {/* Statistics Tab */}
             <TabsContent value="stats" className="mt-0">
-              {statsLoading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {[1, 2, 3, 4].map((i) => <div key={i} className="h-48 surface rounded-2xl animate-pulse" />)}
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Activity Summary */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="surface p-6"
-                  >
-                    <div className="flex items-center gap-3 mb-5">
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-md">
-                        <TrendingUp className="h-5 h-5 text-white" />
-                      </div>
-                      <h3 className="text-lg font-serif-dream font-bold">{t('profile.activitySummary')}</h3>
-                    </div>
-                    <div className="space-y-4">
-                      {[
-                        { label: t('profile.statFavoritesLabel'), value: stats.totalFavorites, max: 100 },
-                        { label: t('profile.statViewsLabel'), value: stats.totalViews, max: 50 },
-                        { label: t('profile.statCommentsLabel'), value: stats.totalComments, max: 100 },
-                        { label: t('profile.statLikesLabel'), value: stats.totalLikes, max: 20 },
-                      ].map((item) => (
-                        <div key={item.label}>
-                          <div className="flex justify-between text-sm mb-1.5">
-                            <span className="text-muted-foreground">{item.label}</span>
-                            <span className="font-semibold">{item.value}</span>
-                          </div>
-                          <Progress value={Math.min(item.value * item.max / 100 * 100, 100)} className="h-2 rounded-full" />
-                        </div>
-                      ))}
-                    </div>
-                  </motion.div>
-
-                  {/* Mood Distribution */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                    className="surface p-6"
-                  >
-                    <div className="flex items-center gap-3 mb-5">
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center shadow-md">
-                        <Award className="h-5 h-5 text-white" />
-                      </div>
-                      <h3 className="text-lg font-serif-dream font-bold">{t('profile.moodDistribution')}</h3>
-                    </div>
-                    {Object.keys(stats.moodDistribution).length > 0 ? (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                        {Object.entries(stats.moodDistribution).map(([mood, count]) => {
-                          const moodOption = moodOptions.find(m => m.value === mood);
-                          const percentage = Math.round((count / stats.journalEntries) * 100);
-                          const radius = 24;
-                          const circumference = 2 * Math.PI * radius;
-                          const strokeDashoffset = circumference - (percentage / 100) * circumference;
-                          const colors = moodColors[mood] ?? moodColors.neutral ?? { ring: 'stroke-slate-400', text: 'text-slate-500', bg: 'bg-slate-500/10' };
-
-                          return (
-                            <div key={mood} className="flex flex-col items-center p-3 rounded-xl bg-muted/30 border border-border/60 hover:border-primary/30 transition-all text-center">
-                              <div className="relative w-16 h-16 flex items-center justify-center mb-2">
-                                <svg className="w-full h-full transform -rotate-90">
-                                  <circle
-                                    className="text-muted/40"
-                                    strokeWidth="3"
-                                    stroke="currentColor"
-                                    fill="transparent"
-                                    r={radius}
-                                    cx="32"
-                                    cy="32"
-                                  />
-                                  <circle
-                                    className={`${colors.ring} transition-all duration-700`}
-                                    strokeWidth="3"
-                                    strokeDasharray={circumference}
-                                    strokeDashoffset={strokeDashoffset}
-                                    strokeLinecap="round"
-                                    stroke="currentColor"
-                                    fill="transparent"
-                                    r={radius}
-                                    cx="32"
-                                    cy="32"
-                                  />
-                                </svg>
-                                <span className="absolute text-2xl">{moodOption?.emoji}</span>
-                              </div>
-                              <span className="text-xs font-semibold text-foreground line-clamp-1">
-                                {getMoodLabel(mood)}
-                              </span>
-                              <span className={`text-[10px] font-bold ${colors.text} mt-0.5`}>
-                                {percentage}% · {count}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8">
-                        <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-3">
-                          <Book className="h-8 w-8 text-muted-foreground/40" />
-                        </div>
-                        <p className="text-sm text-muted-foreground">{t('profile.noMood')}</p>
-                      </div>
-                    )}
-                  </motion.div>
-
-                  {/* Recent Activity */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                    className="surface p-6 md:col-span-2"
-                  >
-                    <div className="flex items-center gap-3 mb-5">
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-md">
-                        <Clock className="h-5 h-5 text-white" />
-                      </div>
-                      <h3 className="text-lg font-serif-dream font-bold">{t('profile.recentActivities')}</h3>
-                    </div>
-                    {stats.recentActivity.length > 0 ? (
-                      <div className="relative pl-8 border-l-2 border-border/60 space-y-4">
-                        {stats.recentActivity.map((activity, index) => {
-                          const isComment = activity.type === 'comment';
-                          return (
-                            <div key={index} className="relative">
-                              <div className={`absolute -left-[37px] top-3 w-4 h-4 rounded-full border-2 border-card flex items-center justify-center ${
-                                isComment
-                                  ? 'bg-gradient-to-br from-emerald-500 to-teal-500'
-                                  : 'bg-gradient-to-br from-violet-500 to-purple-500'
-                              }`}>
-                                {isComment ? (
-                                  <MessageCircle className="h-2 w-2 text-white" />
-                                ) : (
-                                  <Book className="h-2 w-2 text-white" />
-                                )}
-                              </div>
-
-                              <Link
-                                to={activity.link || '#'}
-                                className="flex gap-4 p-4 rounded-xl bg-muted/30 border border-border/60 hover:border-primary/30 hover:bg-muted/50 transition-all block"
-                              >
-                                <div className={`w-10 h-10 rounded-xl shrink-0 flex items-center justify-center ${
-                                  isComment
-                                    ? 'bg-emerald-500/10 text-emerald-600'
-                                    : 'bg-violet-500/10 text-violet-600'
-                                }`}>
-                                  {isComment ? <MessageCircle className="h-5 w-5" /> : <Book className="h-5 w-5" />}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-semibold line-clamp-1">
-                                    {activity.title}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground mt-1">
-                                    {new Date(activity.date).toLocaleDateString(locale, {
-                                      day: 'numeric',
-                                      month: 'long',
-                                      year: 'numeric',
-                                      hour: '2-digit',
-                                      minute: '2-digit',
-                                    })}
-                                  </p>
-                                </div>
-                              </Link>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8">
-                        <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-3">
-                          <Clock className="h-8 w-8 text-muted-foreground/40" />
-                        </div>
-                        <p className="text-sm text-muted-foreground">{t('profile.noActivity')}</p>
-                      </div>
-                    )}
-                  </motion.div>
-
-                  {/* User Comments */}
-                  {userComments.length > 0 && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.3 }}
-                      className="surface p-6 md:col-span-2"
-                    >
-                      <div className="flex items-center justify-between mb-5">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-md">
-                            <MessageCircle className="h-5 h-5 text-white" />
-                          </div>
-                          <h3 className="text-lg font-serif-dream font-bold">{t('profile.myComments')}</h3>
-                        </div>
-                        <Badge variant="secondary" className="rounded-full">
-                          {t('profile.totalBadge', { count: stats.totalComments })}
-                        </Badge>
-                      </div>
-                      <div className="space-y-3">
-                        {userComments.slice(0, 5).map((comment) => (
-                          <div key={comment.id} className="p-4 rounded-xl bg-muted/30 border border-border/60 hover:border-primary/30 transition-colors">
-                            <div className="flex items-start justify-between gap-2 mb-2">
-                              {comment.dreams?.slug ? (
-                                <Link
-                                  to={`/ruya/${comment.dreams.slug}`}
-                                  className="text-sm font-semibold hover:text-primary transition-colors line-clamp-1 flex-1"
-                                >
-                                  {comment.dreams?.title || t('profile.dreamFallback')}
-                                </Link>
-                              ) : (
-                                <span className="text-sm font-semibold">{comment.dreams?.title || t('profile.dreamFallback')}</span>
-                              )}
-                              <span className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
-                                <Heart className="h-3 w-3" />
-                                {comment.like_count || 0}
-                              </span>
-                            </div>
-                            <p className="text-sm text-foreground/80 line-clamp-2">{comment.content}</p>
-                            <p className="text-xs text-muted-foreground mt-2">
-                              {new Date(comment.created_at).toLocaleDateString(locale)}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </div>
-              )}
+              <ProfileStatsTab
+                stats={stats}
+                isLoading={statsLoading}
+                userComments={userComments}
+                locale={locale}
+              />
             </TabsContent>
 
             {/* Achievements Tab */}
@@ -1106,201 +830,13 @@ export default function Profile() {
 
             {/* Dream Journal Tab */}
             <TabsContent value="journal" className="mt-0">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-2xl font-serif-dream font-bold">{t('profile.journalTitle')}</h2>
-                  <p className="text-sm text-muted-foreground">{t('profile.journalDesc')}</p>
-                </div>
-                <Dialog open={isJournalDialogOpen} onOpenChange={(open) => {
-                  setIsJournalDialogOpen(open);
-                  if (!open) {
-                    setSelectedEntry(null);
-                    setJournalForm({ title: '', content: '', dream_date: new Date().toISOString().split('T')[0], mood: '', tags: '' });
-                  }
-                }}>
-                  <DialogTrigger asChild>
-                    <Button className="rounded-xl h-11 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white shadow-lg shadow-violet-500/25">
-                      <Plus className="mr-2 h-4 w-4" />
-                      {t('profile.newJournalBtn')}
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-lg rounded-2xl border-border/45 bg-card text-card-foreground shadow-2xl dark:border-white/10 dark:bg-slate-950">
-                    <DialogHeader>
-                      <DialogTitle className="text-xl font-serif-dream">
-                        {selectedEntry ? t('profile.editJournalTitle') : t('profile.newJournalTitle')}
-                      </DialogTitle>
-                    </DialogHeader>
-                    <form onSubmit={handleJournalSubmit} className="space-y-4 text-foreground">
-                      <div className="space-y-2">
-                        <Label>{t('profile.titleLabel')}</Label>
-                        <Input
-                          value={journalForm.title}
-                          onChange={(e) => setJournalForm({ ...journalForm, title: e.target.value })}
-                          placeholder={t('profile.titlePlaceholder')}
-                          required
-                          className="h-11 rounded-xl"
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label>{t('profile.dateLabel')}</Label>
-                          <Input
-                            type="date"
-                            value={journalForm.dream_date}
-                            onChange={(e) => setJournalForm({ ...journalForm, dream_date: e.target.value })}
-                            required
-                            className="h-11 rounded-xl"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>{t('profile.moodLabel')}</Label>
-                          <Select
-                            value={journalForm.mood}
-                            onValueChange={(value) => setJournalForm({ ...journalForm, mood: value as MoodValue })}
-                          >
-                            <SelectTrigger className="h-11 rounded-xl">
-                              <SelectValue placeholder={t('profile.selectPlaceholder')} />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {moodOptions.map((mood) => (
-                                <SelectItem key={mood.value} value={mood.value}>
-                                  {mood.emoji} {t(`profile.${mood.key}`)}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>{t('profile.contentLabel')}</Label>
-                        <Textarea
-                          value={journalForm.content}
-                          onChange={(e) => setJournalForm({ ...journalForm, content: e.target.value })}
-                          placeholder={t('profile.contentPlaceholder')}
-                          rows={5}
-                          required
-                          className="rounded-xl resize-none"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>{t('profile.tagsLabel')}</Label>
-                        <Input
-                          value={journalForm.tags}
-                          onChange={(e) => setJournalForm({ ...journalForm, tags: e.target.value })}
-                          placeholder={t('profile.tagsPlaceholder')}
-                          className="h-11 rounded-xl"
-                        />
-                      </div>
-                      <div className="flex justify-end gap-2 pt-2">
-                        <Button type="button" variant="outline" onClick={() => setIsJournalDialogOpen(false)} className="rounded-xl">
-                          İptal
-                        </Button>
-                        <Button type="submit" className="rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white">
-                          {selectedEntry ? t('profile.update') : t('profile.save')}
-                        </Button>
-                      </div>
-                    </form>
-                  </DialogContent>
-                </Dialog>
-              </div>
-
-              {entriesLoading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {[1, 2, 3, 4].map((i) => <div key={i} className="h-48 surface rounded-2xl animate-pulse" />)}
-                </div>
-              ) : entries.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  {entries.map((entry) => {
-                    const mood = moodOptions.find(m => m.value === entry.mood);
-                    const moodColor = entry.mood ? moodColors[entry.mood] : null;
-                    return (
-                      <motion.div
-                        key={entry.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="group relative surface p-5 hover:shadow-xl hover:-translate-y-0.5 transition-all overflow-hidden"
-                      >
-                        <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${moodColor ? moodColor.bg.replace('bg-', 'from-').replace('/10', '-500') : 'from-violet-500 to-fuchsia-500'} ${moodColor ? 'to-' + moodColor.bg.split('-')[1] + '-500' : ''}`} />
-
-                        <div className="flex items-start justify-between gap-2 mb-3">
-                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/50 px-2.5 py-1 rounded-full">
-                            <Calendar className="h-3 w-3" />
-                            {new Date(entry.dream_date).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' })}
-                          </div>
-                          {mood && moodColor && (
-                            <div className={`flex items-center gap-1 ${moodColor.bg} px-2.5 py-1 rounded-full text-xs font-semibold ${moodColor.text}`}>
-                              <span>{mood.emoji}</span>
-                              <span>{t(`profile.${mood.key}`)}</span>
-                            </div>
-                          )}
-                        </div>
-
-                        <h3 className="text-lg font-serif-dream font-bold mb-2 group-hover:text-primary transition-colors line-clamp-2">
-                          {entry.title}
-                        </h3>
-                        <p className="text-sm text-muted-foreground line-clamp-4 mb-4 leading-relaxed whitespace-pre-line">
-                          {entry.content}
-                        </p>
-
-                        {entry.tags && entry.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5 mb-4">
-                            {entry.tags.slice(0, 4).map((tag) => (
-                              <span key={tag} className="text-xs px-2 py-0.5 rounded-full bg-muted/50 border border-border/60">
-                                <Hash className="w-2.5 h-2.5 inline mr-0.5 opacity-60" />
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-
-                        <div className="flex items-center gap-2 pt-3 border-t border-border/60">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => openEditJournal(entry)}
-                            className="rounded-lg flex-1 hover:bg-violet-500/10 hover:text-violet-600"
-                          >
-                            <Edit className="h-3.5 w-3.5 mr-1.5" />{t('profile.editBtn')}
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => deleteJournalEntry(entry.id)}
-                            className="rounded-lg flex-1 hover:bg-rose-500/10 hover:text-rose-600"
-                          >
-                            <Trash2 className="h-3.5 w-3.5 mr-1.5" />{t('profile.deleteBtn')}
-                          </Button>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="text-center py-20 surface rounded-3xl"
-                >
-                  <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 flex items-center justify-center mx-auto mb-5">
-                    <Book className="h-10 w-10 text-primary" />
-                  </div>
-                  <h3 className="text-xl font-serif-dream font-bold mb-2">{t('profile.noJournals')}</h3>
-                  <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                    {t('profile.noJournalsDesc')}
-                  </p>
-                  <Button
-                    onClick={() => setIsJournalDialogOpen(true)}
-                    className="rounded-xl h-11 bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white"
-                  >
-                    <Plus className="mr-2 h-4 w-4" />{t('profile.addFirstJournal')}
-                  </Button>
-                </motion.div>
-              )}
-            </TabsContent>
-
-            {/* Favorites Tab */}
-            <TabsContent value="favorites" className="mt-0">
-              <ProfileFavoritesTab userId={user.id} locale={locale} />
+              <ProfileJournalTab
+                entries={entries}
+                isLoading={entriesLoading}
+                onSubmit={handleJournalSubmit}
+                onDelete={deleteJournalEntry}
+                locale={locale}
+              />
             </TabsContent>
 
             {/* History Tab */}

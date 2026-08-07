@@ -302,6 +302,7 @@ export function DreamForm({
                       <FormControl>
                         <Input
                           {...field}
+                          aria-label="Başlık"
                           placeholder="Örn: Yılan Görmek"
                           className="h-11 rounded-xl"
                         />

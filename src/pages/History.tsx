@@ -386,6 +386,7 @@ export default function History() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Geçmişte ara..."
+                aria-label="Geçmişte ara"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
@@ -422,7 +423,7 @@ export default function History() {
 
             {/* Clear Filters */}
             {hasActiveFilters && (
-              <Button variant="ghost" size="icon" onClick={clearFilters}>
+              <Button variant="ghost" size="icon" aria-label="Filtreleri temizle" onClick={clearFilters}>
                 <X className="h-4 w-4" />
               </Button>
             )}
@@ -507,6 +508,7 @@ export default function History() {
                           <Button
                             variant="ghost"
                             size="icon"
+                            aria-label="Geçmiş kaydını kaldır"
                             onClick={() => removeItem(item.id)}
                             className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
                           >

@@ -45,7 +45,8 @@ export function SWUpdatePrompt() {
               </div>
               <button
                 onClick={close}
-                className="shrink-0 w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center transition-colors"
+                aria-label="Güncelleme bildirimini kapat"
+                className="-m-1.5 shrink-0 flex h-11 w-11 items-center justify-center rounded-lg hover:bg-muted transition-colors"
               >
                 <X className="h-4 w-4 text-muted-foreground" />
               </button>
@@ -53,7 +54,7 @@ export function SWUpdatePrompt() {
             <Button
               size="sm"
               onClick={() => updateServiceWorker(true)}
-              className="w-full mt-3 rounded-xl h-10"
+              className="w-full mt-3 rounded-xl"
             >
               <RefreshCw className="h-4 w-4 mr-2" />
               Güncelle ve Yenile

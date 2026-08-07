@@ -30,5 +30,34 @@
       "purpose": "maskable"
     }
   ],
-  "screenshots": []
+  "screenshots": [
+    {
+      "src": "/screenshots/home.png",
+      "sizes": "412x915",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Ana Sayfa"
+    },
+    {
+      "src": "/screenshots/populer.png",
+      "sizes": "412x915",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Popüler Rüyalar"
+    },
+    {
+      "src": "/screenshots/kategoriler.png",
+      "sizes": "412x915",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Kategoriler"
+    },
+    {
+      "src": "/screenshots/genis.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Ana Sayfa (Geniş)"
+    }
+  ]
 }

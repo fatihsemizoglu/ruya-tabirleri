@@ -498,6 +498,36 @@ export type Database = {
           },
         ]
       }
+      blog_comment_likes: {
+        Row: {
+          comment_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          comment_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          comment_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blog_comment_likes_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "blog_comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+
       blog_posts: {
         Row: {
           author_id: string
@@ -1916,7 +1946,16 @@ export type Database = {
       bytea_to_text: { Args: { data: string }; Returns: string }
       cleanup_expired_email_change_requests: { Args: never; Returns: number }
       compute_level: { Args: { p_xp: number }; Returns: number }
-      count_search_dreams: { Args: { search_query: string }; Returns: number }
+      count_search_dreams: {
+        Args: {
+          category_ids?: string[]
+          featured_only?: boolean
+          min_likes?: number
+          min_views?: number
+          search_query: string
+        }
+        Returns: number
+      }
       increment_blog_view_count: { Args: { post_id: string }; Returns: undefined }
       get_dream_category_counts: {
         Args: never
@@ -2091,41 +2130,32 @@ export type Database = {
         Returns: string
       }
       normalize_search_text: { Args: { value: string }; Returns: string }
-      search_dreams:
-        | {
-            Args: {
-              limit_count?: number
-              offset_count?: number
-              search_query: string
-            }
-            Returns: {
-              category_id: string
-              content: string
-              id: string
-              keywords: string[] | null
-              like_count: number
-              rank: number
-              slug: string
-              title: string
-              total_count: number
-              view_count: number
-            }[]
-          }
-        | {
-            Args: { limit_count?: number; search_query: string }
-            Returns: {
-              category_id: string
-              content: string
-              id: string
-              keywords: string[] | null
-              like_count: number
-              rank: number
-              slug: string
-              title: string
-              total_count: number
-              view_count: number
-            }[]
-          }
+      search_dreams: {
+        Args: {
+          category_ids?: string[]
+          featured_only?: boolean
+          limit_count?: number
+          min_likes?: number
+          min_views?: number
+          offset_count?: number
+          search_query: string
+          sort_by?: string
+        }
+        Returns: {
+          category_id: string
+          content: string
+          created_at: string
+          id: string
+          is_featured: boolean
+          keywords: Json | null
+          like_count: number
+          rank: number
+          slug: string
+          title: string
+          total_count: number
+          view_count: number
+        }[]
+      }
       set_featured_category: {
         Args: { p_category_id: string }
         Returns: string

@@ -209,6 +209,7 @@ export function CommentManagement() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Yorum içeriği veya kullanıcı ara..."
+              aria-label="Yorum içeriği veya kullanıcı ara"
               className="admin-filter-surface"
             />
           </div>

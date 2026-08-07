@@ -617,6 +617,7 @@ const importDream = async (record: ImportDreamRecord) => {
                placeholder={importFormat === 'json' 
                  ? '[\n  {\n    "title": "Örnek Başlık",\n    "content": "İçerik...",\n    "slug": "ornek-baslik"\n  }\n]'
                  : 'title,slug,content,category_name\nÖrnek Başlık,ornek-baslik,İçerik...,Kategori Adı'}
+               aria-label="İçe aktarılacak veri"
                value={importData}
                onChange={(e) => setImportData(e.target.value)}
                rows={12}

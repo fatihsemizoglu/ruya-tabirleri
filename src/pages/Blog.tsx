@@ -270,15 +270,16 @@ export default function Blog() {
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Yazılarda ara..."
+                aria-label="Yazılarda ara"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 h-10 rounded-xl bg-muted/30 border-border/50 focus-visible:bg-background"
+                className="pl-10 h-11 rounded-xl bg-muted/30 border-border/50 focus-visible:bg-background"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
               <Select value={timeFilter} onValueChange={(v) => setTimeFilter(v as TimeFilter)}>
-                <SelectTrigger className="h-10 w-full rounded-xl border-border/50 bg-muted/30 sm:w-[150px]">
+                <SelectTrigger className="h-11 w-full rounded-xl border-border/50 bg-muted/30 sm:w-[150px]">
                   <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
                   <SelectValue />
                 </SelectTrigger>
@@ -292,7 +293,7 @@ export default function Blog() {
               </Select>
 
               <Select value={selectedCategory || 'all'} onValueChange={(v) => handleCategoryClick(v === 'all' ? null : v)}>
-                <SelectTrigger className="h-10 w-full rounded-xl border-border/50 bg-muted/30 sm:w-[170px]">
+                <SelectTrigger className="h-11 w-full rounded-xl border-border/50 bg-muted/30 sm:w-[170px]">
                   <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
                   <SelectValue placeholder="Kategori" />
                 </SelectTrigger>
@@ -310,8 +311,9 @@ export default function Blog() {
                 <Button
                   variant={viewMode === 'grid' ? 'default' : 'ghost'}
                   size="icon"
+                  aria-label="Izgara görünümü"
                   onClick={() => setViewMode('grid')}
-                  className={`h-10 w-10 rounded-none ${
+                  className={`rounded-none ${
                     viewMode === 'grid' ? 'bg-primary text-primary-foreground' : ''
                   }`}
                 >
@@ -320,8 +322,9 @@ export default function Blog() {
                 <Button
                   variant={viewMode === 'list' ? 'default' : 'ghost'}
                   size="icon"
+                  aria-label="Liste görünümü"
                   onClick={() => setViewMode('list')}
-                  className={`h-10 w-10 rounded-none ${
+                  className={`rounded-none ${
                     viewMode === 'list' ? 'bg-primary text-primary-foreground' : ''
                   }`}
                 >
@@ -359,7 +362,7 @@ export default function Blog() {
               variant="ghost"
               size="sm"
               onClick={clearAllFilters}
-              className="h-7 text-xs"
+              className="text-xs"
             >
               <X className="h-3 w-3 mr-1" />
               Temizle

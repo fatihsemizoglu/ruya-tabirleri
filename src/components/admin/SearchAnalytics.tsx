@@ -253,6 +253,7 @@ export function SearchAnalytics() {
           <Button 
             variant="outline" 
             size="icon"
+            aria-label="Arama analizlerini yenile"
             onClick={() => {
               queryClient.invalidateQueries({ queryKey: ['admin-search-analytics'] });
               queryClient.invalidateQueries({ queryKey: ['admin-search-stats'] });
@@ -494,7 +495,7 @@ function QualityCard({
                 </div>
                 {showCreateLink && (
                   <Button asChild variant="ghost" size="sm" className="h-8 shrink-0 px-2">
-                    <a href={`/admin?tab=dreams&draftTitle=${encodeURIComponent(item.query)}`}>
+                    <a href={`/admin?tab=dreams&draftTitle=${encodeURIComponent(item.query)}`} aria-label={`"${item.query}" için rüya tabiri oluştur`}>
                       <FilePlus2 className="h-4 w-4" />
                     </a>
                   </Button>

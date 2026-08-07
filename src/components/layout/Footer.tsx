@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
 import { Moon, Mail, Heart, MapPin, Phone, Instagram, Twitter, Youtube, Linkedin, Facebook, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useSiteSettings } from '@/hooks/useSiteSettings';
+import { useContactSettings } from '@/hooks/useContactSettings';
+import { normalizeSocialUrl } from '@/lib/social';
 import { FontSizeControl } from '@/components/ui/FontSizeControl';
 
 const exploreLinks = [
@@ -23,6 +24,7 @@ const categoryLinks = [
 
 const legalLinks = [
   { to: '/hakkimizda', label: 'Hakkımızda' },
+  { to: '/sss', label: 'Sıkça Sorulan Sorular' },
   { to: '/iletisim', label: 'İletişim' },
   { to: '/gizlilik', label: 'Gizlilik Politikası' },
   { to: '/kullanim-kosullari', label: 'Kullanım Koşulları' },
@@ -40,11 +42,11 @@ const socialIconMap = [
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
-  const { settings } = useSiteSettings();
+  const { settings, emailHref, phoneHref } = useContactSettings();
 
   // Dinamik sosyal medya listesi (sadece URL girilmiş olanlar)
   const dynamicSocials = socialIconMap
-    .map((s) => ({ ...s, href: (settings as unknown as Record<string, string>)[s.key] || '' }))
+    .map((s) => ({ ...s, href: normalizeSocialUrl((settings as unknown as Record<string, string>)[s.key]) }))
     .filter((s) => s.href.trim() !== '');
 
   return (
@@ -97,8 +99,8 @@ export function Footer() {
               <div className="flex flex-col gap-2.5 xs:flex-row xs:flex-wrap">
                 {settings.contactEmail && (
                   <a
-                    href={`mailto:${settings.contactEmail}`}
-                    className="inline-flex max-w-full items-center gap-2 rounded-full bg-white/5 border border-white/10 px-3.5 py-2 text-sm hover:border-violet-400/40 hover:bg-white/10 transition-colors"
+                    href={emailHref}
+                    className="inline-flex max-w-full min-h-11 items-center gap-2 rounded-full bg-white/5 border border-white/10 px-3.5 py-2 text-sm hover:border-violet-400/40 hover:bg-white/10 transition-colors"
                   >
                     <Mail className="h-3.5 w-3.5 text-violet-300" />
                     <span className="truncate">{settings.contactEmail}</span>
@@ -106,8 +108,8 @@ export function Footer() {
                 )}
                 {settings.contactPhone && (
                   <a
-                    href={`tel:${settings.contactPhone.replace(/[^\d+]/g, '')}`}
-                    className="inline-flex max-w-full items-center gap-2 rounded-full bg-white/5 border border-white/10 px-3.5 py-2 text-sm hover:border-emerald-400/40 hover:bg-white/10 transition-colors"
+                    href={phoneHref}
+                    className="inline-flex max-w-full min-h-11 items-center gap-2 rounded-full bg-white/5 border border-white/10 px-3.5 py-2 text-sm hover:border-emerald-400/40 hover:bg-white/10 transition-colors"
                   >
                     <Phone className="h-3.5 w-3.5 text-emerald-300" />
                     <span className="truncate">{settings.contactPhone}</span>
@@ -199,7 +201,7 @@ export function Footer() {
                       target="_blank"
                       rel="noopener noreferrer"
                       aria-label={s.label}
-                      className="group w-9 h-9 rounded-full bg-white/5 border border-white/10 hover:border-violet-400/50 hover:bg-gradient-to-br hover:from-violet-500/20 hover:to-fuchsia-500/20 flex items-center justify-center transition-all"
+                      className="group -m-1 flex h-11 w-11 items-center justify-center rounded-full bg-white/5 border border-white/10 hover:border-violet-400/50 hover:bg-gradient-to-br hover:from-violet-500/20 hover:to-fuchsia-500/20 transition-all"
                     >
                       <s.icon className="h-4 w-4 text-slate-400 group-hover:text-white transition-colors" />
                     </a>

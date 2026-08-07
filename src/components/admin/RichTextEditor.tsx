@@ -134,7 +134,7 @@ export function RichTextEditor({ content, onChange, placeholder = 'İçerik yaz�
       title={title}
       aria-label={ariaLabel || title}
       className={cn(
-        "p-2 rounded-md transition-colors",
+        "h-11 w-11 rounded-md transition-colors flex items-center justify-center",
         isActive
           ? "bg-primary/10 text-primary"
           : "text-muted-foreground hover:bg-muted/70 hover:text-foreground",
@@ -345,6 +345,7 @@ export function RichTextEditor({ content, onChange, placeholder = 'İçerik yaz�
           <Input
             // eslint-disable-next-line jsx-a11y/no-autofocus -- editor intentionally focuses on mount for immediate typing
             autoFocus
+            aria-label={dialog.type === 'link' ? 'Link URL' : 'Görsel URL'}
             value={dialog.value}
             onChange={(e) => setDialog((prev) => ({ ...prev, value: e.target.value }))}
             placeholder={dialog.type === 'link' ? 'https://...' : 'Görsel URL\'si girin'}

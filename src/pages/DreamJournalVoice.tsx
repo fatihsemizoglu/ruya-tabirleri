@@ -340,6 +340,7 @@ export default function DreamJournalVoice() {
                 variant="ghost"
                 size="icon"
                 className="absolute top-2 right-2 z-10"
+                aria-label="Kayıt panelini kapat"
                 onClick={() => setShowRecorder(false)}
               >
                 <X className="w-4 h-4" />
@@ -367,6 +368,7 @@ export default function DreamJournalVoice() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               placeholder="Rüya ara..."
+              aria-label="Rüya ara"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-10"
@@ -454,10 +456,10 @@ export default function DreamJournalVoice() {
                       </p>
                     </div>
                     <div className="flex flex-col gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => handleShare(entry)}>
+                      <Button variant="ghost" size="icon" aria-label="Sesli rüyayı paylaş" onClick={() => handleShare(entry)}>
                         <Share2 className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete(entry.id)}>
+                      <Button variant="ghost" size="icon" aria-label="Sesli rüyayı sil" onClick={() => handleDelete(entry.id)}>
                         <Trash2 className="w-4 h-4 text-rose-500" />
                       </Button>
                     </div>

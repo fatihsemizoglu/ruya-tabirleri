@@ -49,7 +49,8 @@ const SUPABASE_ANON_KEY =
   process.env.SUPABASE_PUBLISHABLE_KEY ||
   process.env.SUPABASE_ANON_KEY ||
   '';
-const SITE_URL = (process.env.VITE_SITE_URL || 'https://ruya-tabirleri.vercel.app').replace(/\/$/, '');
+// Not: robots.txt sitemap URL'i de aynı SITE_URL'den türetilir (aşağıda)
+const SITE_URL = (process.env.VITE_SITE_URL || 'https://ruya-tabirleri.com').replace(/\/$/, '');
 
 const SITE_NAME = 'Rüya Tabirleri';
 const DEFAULT_DESCRIPTION =
@@ -479,6 +480,105 @@ async function main() {
       path: '/iletisim',
       title: 'İletişim',
       description: 'Rüya Tabirleri ekibiyle iletişime geçin. Soru, öneri ve işbirlikleri için.',
+    },
+    {
+      path: '/sss',
+      title: 'Sıkça Sorulan Sorular',
+      description: 'Rüya tabiri hakkında en çok merak edilen soruların cevapları: Rüyalar neden görülür, yılan görmek ne anlama gelir, rüya günlüğü nasıl tutulur ve daha fazlası.',
+      jsonLd: {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: [
+          {
+            '@type': 'Question',
+            name: 'Rüya tabiri nedir ve rüyaların anlamı var mıdır?',
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: 'Rüya tabiri, rüyada görülen sembollerin ve olayların geleneksel, İslami ve psikolojik açıdan yorumlanmasıdır. Rüyaların tek bir kesin anlamı olmamakla birlikte, semboller binlerce yıllık kültürel birikim içinde belirli anlamlar kazanmıştır.',
+            },
+          },
+          {
+            '@type': 'Question',
+            name: 'Rüyada yılan görmek ne anlama gelir?',
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: 'Geleneksel yorumlara göre yılan; gizli düşmanlık, tehlike veya korkuya işaret edebilir. Psikolojik yorumlarda ise yılan genellikle bilinçaltındaki korkuları, bastırılmış duyguları veya dönüşümü temsil eder.',
+            },
+          },
+          {
+            '@type': 'Question',
+            name: 'Rüyalar neden görülür? Bilimsel açıklaması nedir?',
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: 'Rüyalar, uykunun REM evresinde beynin bilgi işleme ve duygusal düzenleme süreçlerinin bir sonucudur. Rüyalar; günlük deneyimlerin işlenmesi, anıların pekiştirilmesi ve duygusal sorunların çözümlenmesine yardımcı olur.',
+            },
+          },
+          {
+            '@type': 'Question',
+            name: 'Rüya tabirleri gerçekten doğru mu?',
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: 'Rüya tabirleri kesin birer kehanet değil, sembolik anlam kılavuzlarıdır. Aynı sembol farklı kişiler için farklı anlamlar taşıyabilir. Tabirleri bir yol gösterici olarak değerlendirmek en sağlıklı yaklaşımdır.',
+            },
+          },
+          {
+            '@type': 'Question',
+            name: 'Rüyamı nasıl daha iyi hatırlayabilirim?',
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: 'Uyanır uyanmaz rüyayı not etmek, yatak başında bir rüya günlüğü bulundurmak ve uyku düzenini korumak rüya hatırlama oranını ciddi şekilde artırır.',
+            },
+          },
+          {
+            '@type': 'Question',
+            name: 'Rüyalar geleceği haber verir mi?',
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: 'Bazı geleneksel yorumlar rüyaların ilahi bir işaret olabileceğini kabul ederken, bilimsel yaklaşım rüyaların geleceği önceden bildirdiğine dair kanıt bulamamıştır. Rüyaların çoğu zaman günlük yaşamın yansıması olduğu kabul edilir.',
+            },
+          },
+          {
+            '@type': 'Question',
+            name: 'Rüya tabirleri gerçekten doğru mu?',
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: 'Rüya tabirleri kesin birer kehanet değil, sembolik anlam kılavuzlarıdır. Aynı sembol farklı kişiler için farklı anlamlar taşıyabilir; çünkü rüya yorumunda kişisel yaşam deneyimleri ve kültürel bağlam büyük rol oynar. Tabirleri bir yol gösterici olarak değerlendirmek en sağlıklı yaklaşımdır.',
+            },
+          },
+          {
+            '@type': 'Question',
+            name: 'İslami rüya tabirlerinde nelere dikkat edilir?',
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: 'İslami rüya tabiri geleneğinde rüyalar; sadık, karışık ve şeytani rüya olarak üçe ayrılır. Güzel rüyaların Allah\u2019tan, kötü rüyaların şeytandan olduğu kabul edilir; kötü rüyaların kimseye anlatılmaması tavsiye edilir.',
+            },
+          },
+          {
+            '@type': 'Question',
+            name: 'Aynı rüyayı defalarca görmek ne anlama gelir?',
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: 'Tekrarlayan rüyalar, çözülmemiş bir soruna veya bastırılmış bir duyguya işaret edebilir. Zihin, çözümlenmemiş bir konuyu rüya yoluyla tekrar tekrar gündeme getirir.',
+            },
+          },
+          {
+            '@type': 'Question',
+            name: 'Rüyada ölüm görmek kötü müdür?',
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: 'Rüyada ölüm görmek çoğu kültürde doğrudan ölümle ilişkili değildir; genellikle bir değişimin, yeniden doğuşun sembolüdür. Psikolojik olarak hayatınızda tamamlanmış bir dönüşümü yansıtabilir.',
+            },
+          },
+          {
+            '@type': 'Question',
+            name: 'Rüya yorumlarına inanmalı mıyım?',
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: 'Rüya yorumlarına yaklaşım kişisel bir tercihtir. Tabirlerimizi bir keşif aracı olarak kullanabilir, kendi sezgilerinizle birleştirebilirsiniz. Ancak rüya yorumlarının tıbbi, hukuki veya finansal kararlara temel oluşturmaması gerektiğini unutmayın.',
+            },
+          },
+        ],
+      },
     },
   ];
 

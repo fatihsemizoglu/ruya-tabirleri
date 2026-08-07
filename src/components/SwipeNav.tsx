@@ -19,6 +19,17 @@ export function SwipeNav({ children }: { children: ReactNode }) {
   const onTouchStart = (e: React.TouchEvent) => {
     const touch = e.touches[0];
     if (!touch) return;
+    // Yatay kaydırılabilir alanların (carousel, yatay sekme listesi vb.) içinden
+    // başlayan hareketlerde swipe-nav tetiklenmesin — kullanıcı muhtemelen o
+    // alanı kaydırmaya çalışıyordur. Kullanıcı gerçekten sayfayı değiştirmek
+    // istiyorsa, bu alanların dışından kaydırır.
+    if (e.target instanceof Element) {
+      let node: Element | null = e.target;
+      while (node && node !== e.currentTarget) {
+        if (node.scrollWidth > node.clientWidth + 8) return;
+        node = node.parentElement;
+      }
+    }
     startX.current = touch.clientX;
     startY.current = touch.clientY;
   };

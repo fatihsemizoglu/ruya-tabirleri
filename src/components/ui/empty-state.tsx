@@ -137,7 +137,7 @@ export function EmptyState({
           {action && (
             <Button
               onClick={action.onClick}
-              className="relative rounded-xl h-10 px-5 text-sm font-semibold text-white border-0 shadow-lg shadow-fuchsia-500/25 group overflow-hidden"
+              className="relative rounded-xl h-11 px-5 text-sm font-semibold text-white border-0 shadow-lg shadow-fuchsia-500/25 group overflow-hidden"
             >
               <span className="absolute inset-0 bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500" />
               <span className="absolute inset-0 bg-gradient-to-r from-violet-600 via-fuchsia-600 to-pink-600 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -145,7 +145,7 @@ export function EmptyState({
             </Button>
           )}
           {secondaryAction && (
-            <Button variant="outline" onClick={secondaryAction.onClick} className="rounded-xl h-10 px-5">
+            <Button variant="outline" onClick={secondaryAction.onClick} className="rounded-xl h-11 px-5">
               {secondaryAction.label}
             </Button>
           )}

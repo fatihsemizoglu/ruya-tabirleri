@@ -182,6 +182,7 @@ export function SubscriberManagement() {
           <div className="flex-1 relative">
             <Input
               placeholder="E-posta veya isim ara..."
+              aria-label="E-posta veya isim ara"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="admin-filter-surface pl-10"

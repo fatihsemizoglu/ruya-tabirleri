@@ -239,6 +239,7 @@ export default function Categories() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Kategori ara..."
+              aria-label="Kategori ara"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -441,6 +442,7 @@ export default function Categories() {
           <Button
             variant="outline"
             size="icon"
+            aria-label="Yukarı çık"
             className="fixed right-4 mobile-floating-action lg:bottom-6 lg:right-6 rounded-full shadow-lg z-50 animate-fade-in"
             onClick={scrollToTop}
           >

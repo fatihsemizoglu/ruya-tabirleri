@@ -57,7 +57,6 @@ function TextSizeControls({ value, onChange }: { value: TextSize; onChange: (val
           variant={value === size ? 'secondary' : 'ghost'}
           size="sm"
           onClick={() => onChange(size)}
-          className="h-8 rounded-lg px-2.5"
           aria-pressed={value === size}
         >
           {size === 'sm' ? 'A-' : size === 'lg' ? 'A+' : 'A'}
@@ -524,6 +523,7 @@ export default function BlogPost() {
                     <Link
                       key={tag}
                       to={`/blog/etiket/${encodeURIComponent(tag)}`}
+                      aria-label={`${tag} etiketiyle yazıları gör`}
                     >
                       <Badge
                         variant="secondary"

@@ -465,6 +465,7 @@ export function GamificationPanel() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Rozet ara..."
+                aria-label="Rozet ara"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -511,12 +512,13 @@ export function GamificationPanel() {
                         <Icon className="w-7 h-7 text-white" />
                       </div>
                       <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => handleEditBadge(badge)}>
+                        <Button variant="ghost" size="icon" aria-label={`${badge.name} rozetini düzenle`} onClick={() => handleEditBadge(badge)}>
                           <Pencil className="w-4 h-4" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
+                          aria-label={`${badge.name} rozetini sil`}
                           onClick={() => {
                             if (confirm('Bu rozeti silmek istediğinize emin misiniz?')) {
                               deleteBadgeMutation.mutate(badge.id);
@@ -711,6 +713,7 @@ export function GamificationPanel() {
                 <div className="space-y-2">
                   <Label>İsim</Label>
                   <Input
+                    aria-label="İsim"
                     value={editingBadge.name}
                     onChange={(e) => setEditingBadge({ ...editingBadge, name: e.target.value })}
                     placeholder="İlk Rüya"
@@ -739,6 +742,7 @@ export function GamificationPanel() {
               <div className="space-y-2">
                 <Label>Açıklama</Label>
                 <Textarea
+                  aria-label="Açıklama"
                   value={editingBadge.description}
                   onChange={(e) => setEditingBadge({ ...editingBadge, description: e.target.value })}
                   placeholder="Kullanıcıya gösterilecek açıklama"
@@ -780,6 +784,7 @@ export function GamificationPanel() {
               <div className="space-y-2">
                 <Label>Koşul (JS Expression)</Label>
                 <Input
+                  aria-label="Koşul (JS Expression)"
                   value={editingBadge.condition}
                   onChange={(e) => setEditingBadge({ ...editingBadge, condition: e.target.value })}
                   placeholder="comment_count >= 10"

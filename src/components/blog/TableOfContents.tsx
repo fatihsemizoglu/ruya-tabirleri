@@ -147,7 +147,7 @@ export function TableOfContents({ content, className }: TableOfContentsProps) {
                   <button
                     onClick={() => scrollToHeading(item.id)}
                     className={cn(
-                      'w-full text-left py-1.5 px-3 rounded-lg text-sm transition-all duration-200',
+                      'w-full min-h-11 text-left py-1.5 px-3 rounded-lg text-sm transition-all duration-200',
                       item.level === 3 && 'ml-4',
                       activeId === item.id
                         ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-medium'

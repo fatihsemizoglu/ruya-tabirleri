@@ -320,6 +320,7 @@ export function MediaLibrary() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Dosya ara..."
+                  aria-label="Dosya ara"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-9"
@@ -381,8 +382,17 @@ export function MediaLibrary() {
               {filteredFiles?.map(file => (
                 <div
                   key={file.id}
+                  role="button"
+                  tabIndex={0}
+                  aria-pressed={selectedFiles.has(file.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      toggleFileSelection(file.id);
+                    }
+                  }}
                   className={cn(
-                    "group relative aspect-square rounded-lg overflow-hidden border-2 transition-all cursor-pointer",
+                    "group relative aspect-square rounded-lg overflow-hidden border-2 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                     selectedFiles.has(file.id) ? "border-primary ring-2 ring-primary/20" : "border-transparent hover:border-muted-foreground/20"
                   )}
                   onClick={() => toggleFileSelection(file.id)}
@@ -412,7 +422,8 @@ export function MediaLibrary() {
                     <Button
                       size="icon"
                       variant="ghost"
-                      className="h-8 w-8 text-white hover:bg-white/20"
+                      className="text-white hover:bg-white/20"
+                      aria-label={`${file.name} dosyasını önizle`}
                       onClick={(e) => {
                         e.stopPropagation();
                         setPreviewFile(file);
@@ -423,7 +434,8 @@ export function MediaLibrary() {
                     <Button
                       size="icon"
                       variant="ghost"
-                      className="h-8 w-8 text-white hover:bg-white/20"
+                      className="text-white hover:bg-white/20"
+                      aria-label={`${file.name} URL'sini kopyala`}
                       onClick={(e) => {
                         e.stopPropagation();
                         copyToClipboard(file.url);
@@ -434,7 +446,8 @@ export function MediaLibrary() {
                     <Button
                       size="icon"
                       variant="ghost"
-                      className="h-8 w-8 text-white hover:bg-red-500/50"
+                      className="text-white hover:bg-red-500/50"
+                      aria-label={`${file.name} dosyasını sil`}
                       onClick={(e) => {
                         e.stopPropagation();
                         setFileToDelete(file);
@@ -458,8 +471,17 @@ export function MediaLibrary() {
                 {filteredFiles?.map(file => (
                   <div
                     key={file.id}
+                    role="button"
+                    tabIndex={0}
+                    aria-pressed={selectedFiles.has(file.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        toggleFileSelection(file.id);
+                      }
+                    }}
                     className={cn(
-                      "flex items-center gap-4 p-3 hover:bg-muted/50 transition-colors cursor-pointer",
+                      "flex min-h-11 items-center gap-4 p-3 hover:bg-muted/50 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                       selectedFiles.has(file.id) && "bg-primary/5"
                     )}
                     onClick={() => toggleFileSelection(file.id)}
@@ -485,7 +507,7 @@ export function MediaLibrary() {
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="h-8 w-8"
+                        aria-label={`${file.name} URL'sini kopyala`}
                         onClick={(e) => {
                           e.stopPropagation();
                           copyToClipboard(file.url);
@@ -495,7 +517,7 @@ export function MediaLibrary() {
                       </Button>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                          <Button size="icon" variant="ghost" className="h-8 w-8">
+                          <Button size="icon" variant="ghost" aria-label={`${file.name} için işlemler`}>
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>

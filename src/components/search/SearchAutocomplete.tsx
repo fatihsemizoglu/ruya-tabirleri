@@ -321,6 +321,7 @@ export const SearchAutocomplete = forwardRef<HTMLInputElement, SearchAutocomplet
             onFocus={() => setShowDropdown(true)}
             onKeyDown={handleKeyDown}
             className="w-full h-14 pl-5 pr-28 text-lg rounded-2xl border-2 focus:border-primary"
+            aria-label="Rüya ara"
           />
           {voiceSupported && (
             <Button
@@ -328,7 +329,7 @@ export const SearchAutocomplete = forwardRef<HTMLInputElement, SearchAutocomplet
               size="icon"
               variant="ghost"
               onClick={handleVoiceSearch}
-              className={`absolute right-14 top-2 h-10 w-10 rounded-xl transition-all ${
+              className={`absolute right-14 top-2 rounded-xl transition-all ${
                 isListening
                   ? 'bg-red-500/10 text-red-500 hover:bg-red-500/20 animate-pulse ring-2 ring-red-500/40'
                   : 'hover:bg-muted text-muted-foreground hover:text-foreground'
@@ -342,7 +343,7 @@ export const SearchAutocomplete = forwardRef<HTMLInputElement, SearchAutocomplet
           <Button
             type="submit"
             size="icon"
-            className="absolute right-2 top-2 h-10 w-10 rounded-xl dream-gradient"
+            className="absolute right-2 top-2 rounded-xl dream-gradient"
             aria-label="Ara"
           >
             <Search className="h-5 w-5" />
@@ -464,14 +465,15 @@ export const SearchAutocomplete = forwardRef<HTMLInputElement, SearchAutocomplet
                     >
                       <button
                         onClick={() => handleSelectRecentSearch(term)}
-                        className="flex-1 text-left px-3 py-2 hover:bg-muted rounded-lg transition-colors flex items-center gap-3"
+                        className="min-h-11 flex-1 text-left px-3 py-2 hover:bg-muted rounded-lg transition-colors flex items-center gap-3"
                       >
                         <Clock className="h-4 w-4 text-muted-foreground" />
                         <span>{term}</span>
                       </button>
                       <button
                         onClick={() => onRemoveRecentSearch(term)}
-                        className="p-2 opacity-0 group-hover:opacity-100 hover:text-destructive transition-opacity"
+                        aria-label={`${term} son aramasını kaldır`}
+                        className="-m-1.5 flex h-11 w-11 items-center justify-center opacity-0 group-hover:opacity-100 hover:text-destructive transition-opacity"
                       >
                         <X className="h-4 w-4" />
                       </button>

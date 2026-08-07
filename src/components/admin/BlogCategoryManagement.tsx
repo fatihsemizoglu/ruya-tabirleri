@@ -192,6 +192,7 @@ export function BlogCategoryManagement() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Kategori adı veya açıklama ile ara..."
+              aria-label="Kategori adı veya açıklama ile ara"
               className="admin-filter-surface"
             />
           </div>

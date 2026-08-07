@@ -125,7 +125,6 @@ export function SocialShareBar({
           variant="ghost"
           size="icon"
           onClick={handleCopyLink}
-          className="h-9 w-9"
           aria-label="Linki kopyala"
           title="Linki Kopyala"
         >
@@ -138,7 +137,7 @@ export function SocialShareBar({
             variant="ghost"
             size="icon"
             onClick={() => handleShare(link.url)}
-            className={cn('h-9 w-9', link.color)}
+            className={link.color}
             aria-label={`${link.name} ile paylaş`}
             title={link.name}
           >
@@ -151,7 +150,6 @@ export function SocialShareBar({
             variant="ghost"
             size="icon"
             onClick={handleNativeShare}
-            className="h-9 w-9"
             aria-label="Cihazla paylaş"
             title="Paylaş"
           >
@@ -169,7 +167,6 @@ export function SocialShareBar({
           variant="ghost"
           size="icon"
           onClick={handleCopyLink}
-          className="h-8 w-8"
           aria-label="Linki kopyala"
           title="Linki Kopyala"
         >
@@ -182,7 +179,7 @@ export function SocialShareBar({
             variant="ghost"
             size="icon"
             onClick={() => handleShare(link.url)}
-            className={cn('h-8 w-8', link.color)}
+            className={link.color}
             aria-label={`${link.name} ile paylaş`}
             title={link.name}
           >

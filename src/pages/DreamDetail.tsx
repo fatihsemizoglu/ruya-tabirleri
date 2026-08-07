@@ -1,12 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { motion, useScroll, useSpring } from 'framer-motion';
+import { motion } from 'framer-motion';
 import DOMPurify from 'dompurify';
-import { Eye, Heart, Bookmark, ArrowLeft, Calendar, BookOpen, Clock, ChevronRight, Share2, Tag, Folder, Check, Moon, Type, PenLine, Sparkles, ArrowLeftRight, Glasses, Rows3, Sun, Volume2, Pause, Square, HelpCircle } from 'lucide-react';
+import { Moon, ArrowLeft, BookOpen, PenLine } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { captureError } from '@/lib/logger';
@@ -15,16 +13,23 @@ import { toast } from 'sonner';
 import { SimilarDreams } from '@/components/dream/SimilarDreams';
 import { CommentSection } from '@/components/dream/CommentSection';
 import { ShareCard } from '@/components/share/ShareCard';
+import { ReadingProgress } from '@/components/dream/ReadingProgress';
+import { ReadingControls } from '@/components/dream/ReadingControls';
+import { ContentCard } from '@/components/dream/ContentCard';
+import { DreamHero } from '@/components/dream/DreamHero';
+import { DreamActionBar } from '@/components/dream/DreamActionBar';
+import { DreamFaq } from '@/components/dream/DreamFaq';
+import { DreamKeywordTags } from '@/components/dream/DreamKeywordTags';
 import type { Dream, Comment, Profile, Category } from '@/types/database';
 import { Seo } from '@/components/Seo';
-import { nativeShare } from '@/lib/share';
-import { haptic } from '@/lib/haptics';
 import { absoluteUrl, SITE_NAME } from '@/lib/site';
 import { formatPlainDreamContent } from '@/lib/dreamContent';
 import { useDreamCompare } from '@/hooks/useDreamCompare';
 import { useReadingMode } from '@/hooks/useReadingMode';
 import { useWakeLock } from '@/hooks/useWakeLock';
 import { useSpeechSynthesis } from '@/hooks/useSpeechSynthesis';
+import { textSizeClasses, lineSpacingClasses } from '@/lib/dream-reading';
+import type { TextSize, LineSpacing } from '@/lib/dream-reading';
 
 const gradientPalette = [
   'from-violet-500 to-fuchsia-500',
@@ -37,25 +42,10 @@ const gradientPalette = [
   'from-rose-500 to-pink-500',
 ];
 
-const pickGradient = (seed: string) => {
+const pickGradient = (seed: string): string => {
   let hash = 0;
   for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) | 0;
-  return gradientPalette[Math.abs(hash) % gradientPalette.length];
-};
-
-type TextSize = 'sm' | 'base' | 'lg';
-type LineSpacing = 'normal' | 'relaxed' | 'loose';
-
-const textSizeClasses: Record<TextSize, string> = {
-  sm: 'prose-base',
-  base: 'prose-lg',
-  lg: 'prose-xl',
-};
-
-const lineSpacingClasses: Record<LineSpacing, string> = {
-  normal: 'prose-p:leading-[1.75] prose-li:leading-[1.75]',
-  relaxed: 'prose-p:leading-[1.95] prose-li:leading-[1.9]',
-  loose: 'prose-p:leading-[2.15] prose-li:leading-[2.05]',
+  return gradientPalette[Math.abs(hash) % gradientPalette.length] ?? 'from-violet-500 to-fuchsia-500';
 };
 
 const escapeHtml = (value: string) =>
@@ -65,147 +55,6 @@ const escapeHtml = (value: string) =>
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
-
-function TextSizeControls({ value, onChange }: { value: TextSize; onChange: (value: TextSize) => void }) {
-  return (
-    <div className="flex items-center gap-1 rounded-xl border border-border/45 bg-muted/30 p-1">
-      <Type className="ml-2 h-4 w-4 text-muted-foreground" />
-      {(['sm', 'base', 'lg'] as TextSize[]).map((size) => (
-        <Button
-          key={size}
-          type="button"
-          variant={value === size ? 'secondary' : 'ghost'}
-          size="sm"
-          onClick={() => onChange(size)}
-          className="h-8 rounded-lg px-2.5"
-          aria-pressed={value === size}
-        >
-          {size === 'sm' ? 'A-' : size === 'lg' ? 'A+' : 'A'}
-        </Button>
-      ))}
-    </div>
-  );
-}
-
-function ReadingProgress() {
-  const { scrollYProgress } = useScroll();
-  const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30, restDelta: 0.001 });
-
-  return (
-    <motion.div
-      style={{ scaleX, transformOrigin: '0%' }}
-      className="fixed top-0 left-0 right-0 h-1 z-50 bg-gradient-to-r from-violet-600 via-fuchsia-600 to-pink-600"
-    />
-  );
-}
-
-function ShareButton({ title, description, url }: { title: string; description: string; url: string }) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = async () => {
-    const result = await nativeShare({ title, text: description, url });
-    if (result === 'copied' || result === 'shared') {
-      setCopied(true);
-      toast.success('Link kopyalandı');
-      haptic('light');
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
-  return (
-    <Button
-      variant="outline"
-      size="sm"
-      onClick={handleCopy}
-      className="rounded-xl h-10"
-      title="Linki kopyala"
-    >
-      {copied ? <Check className="h-4 w-4 text-green-500" /> : <Share2 className="h-4 w-4" />}
-      <span className="hidden sm:inline ml-2">{copied ? 'Kopyalandı' : 'Paylaş'}</span>
-    </Button>
-  );
-}
-
-function ReadingControls({
-  textSize,
-  onTextSizeChange,
-  lineSpacing,
-  onLineSpacingChange,
-  isReadingMode,
-  onToggleReadingMode,
-  wakeLockActive,
-  onToggleWakeLock,
-  speechSupported,
-  isSpeaking,
-  isPaused,
-  onSpeak,
-  onPause,
-  onResume,
-  onStop,
-}: {
-  textSize: TextSize;
-  onTextSizeChange: (value: TextSize) => void;
-  lineSpacing: LineSpacing;
-  onLineSpacingChange: (value: LineSpacing) => void;
-  isReadingMode: boolean;
-  onToggleReadingMode: () => void;
-  wakeLockActive: boolean;
-  onToggleWakeLock: () => void;
-  speechSupported: boolean;
-  isSpeaking: boolean;
-  isPaused: boolean;
-  onSpeak: () => void;
-  onPause: () => void;
-  onResume: () => void;
-  onStop: () => void;
-}) {
-  return (
-    <div className="flex flex-wrap items-center justify-end gap-2">
-      <TextSizeControls value={textSize} onChange={onTextSizeChange} />
-      <div className="flex items-center gap-1 rounded-xl border border-border/45 bg-muted/30 p-1">
-        <Rows3 className="ml-2 h-4 w-4 text-muted-foreground" />
-        {(['normal', 'relaxed', 'loose'] as LineSpacing[]).map((spacing) => (
-          <Button key={spacing} type="button" variant={lineSpacing === spacing ? 'secondary' : 'ghost'} size="sm" onClick={() => onLineSpacingChange(spacing)} className="h-8 rounded-lg px-2.5" aria-pressed={lineSpacing === spacing}>
-            {spacing === 'normal' ? 'Sık' : spacing === 'relaxed' ? 'Rahat' : 'Geniş'}
-          </Button>
-        ))}
-      </div>
-      <Button type="button" variant={isReadingMode ? 'default' : 'outline'} size="sm" onClick={onToggleReadingMode} className="h-10 rounded-xl">
-        <Glasses className="mr-2 h-4 w-4" />
-        Okuma Modu
-      </Button>
-      <Button type="button" variant={wakeLockActive ? 'secondary' : 'outline'} size="sm" onClick={onToggleWakeLock} className="h-10 rounded-xl">
-        <Sun className="mr-2 h-4 w-4" />
-        Ekranı Açık Tut
-      </Button>
-      {speechSupported && (
-        <div className="flex items-center gap-1 rounded-xl border border-border/45 bg-muted/30 p-1">
-          {!isSpeaking && !isPaused ? (
-            <Button type="button" variant="outline" size="sm" onClick={onSpeak} className="h-8 rounded-lg px-2.5">
-              <Volume2 className="mr-2 h-4 w-4" />
-              Dinle
-            </Button>
-          ) : isPaused ? (
-            <Button type="button" variant="secondary" size="sm" onClick={onResume} className="h-8 rounded-lg px-2.5">
-              <Volume2 className="mr-2 h-4 w-4" />
-              Devam
-            </Button>
-          ) : (
-            <Button type="button" variant="secondary" size="sm" onClick={onPause} className="h-8 rounded-lg px-2.5">
-              <Pause className="mr-2 h-4 w-4" />
-              Duraklat
-            </Button>
-          )}
-          {(isSpeaking || isPaused) && (
-            <Button type="button" variant="ghost" size="sm" onClick={onStop} className="h-8 rounded-lg px-2.5" aria-label="Sesli okumayı durdur">
-              <Square className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
 
 async function incrementDreamViewCount(dreamId: string) {
   return (supabase.rpc as unknown as (name: string, args?: Record<string, unknown>) => Promise<{ error: unknown }>)("increment_view_count", { dream_id: dreamId });
@@ -271,7 +120,7 @@ export default function DreamDetail() {
     try {
       const { data: dreamData, error } = await supabase
         .from('dreams')
-        .select('*, categories(*)')
+        .select('*, category:categories(*)')
         .eq('slug', slug ?? '')
         .eq('is_published', true)
         .maybeSingle();
@@ -406,6 +255,15 @@ export default function DreamDetail() {
 
     const onStart = (e: TouchEvent) => {
       if (e.touches.length !== 1) return;
+      // Etkileşimli öğelerden başlayan hareketleri devralma
+      // (link, buton, input, carousel vb. üzerinde swipe tetikleme)
+      const target = e.target;
+      if (
+        target instanceof Element &&
+        target.closest('button, a, input, textarea, select, [role="button"], [role="link"], [contenteditable="true"]')
+      ) {
+        return;
+      }
       startX = e.touches[0]?.clientX ?? 0;
       startY = e.touches[0]?.clientY ?? 0;
       tracking = true;
@@ -419,9 +277,11 @@ export default function DreamDetail() {
       const dx = t.clientX - startX;
       const dy = t.clientY - startY;
       if (Math.abs(dy) > 60) return; // mostly vertical
-      if (dx > 80) {
+      // Net bir yatay hareket değilse tetikleme (kaydırma sırasında yanlışlıkla)
+      if (Math.abs(dx) < 80 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
+      if (dx > 0) {
         toggleFavorite();
-      } else if (dx < -80) {
+      } else {
         navigator.clipboard?.writeText(window.location.href).then(() => {
           toast.success('Link kopyalandı');
         }).catch(() => {});
@@ -667,93 +527,13 @@ export default function DreamDetail() {
       <ReadingProgress />
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden">
-        <div className={`absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full blur-3xl opacity-20 bg-gradient-to-br ${heroGradient}`} />
-        <div className={`absolute -bottom-32 -left-32 w-[400px] h-[400px] rounded-full blur-3xl opacity-15 bg-gradient-to-br ${heroGradient}`} />
-
-        <div className="container relative pt-8 pb-10 md:pt-12 md:pb-16">
-          <motion.div
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.4 }}
-          >
-            <Button variant="ghost" size="sm" asChild className="mb-6 rounded-xl hover:bg-muted/50">
-              <Link to="/">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Ana Sayfa
-              </Link>
-            </Button>
-          </motion.div>
-
-          <div className="grid lg:grid-cols-[auto_1fr] gap-6 items-start max-w-4xl">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5 }}
-              className={`w-20 h-20 md:w-28 md:h-28 rounded-3xl bg-gradient-to-br ${heroGradient} flex items-center justify-center shadow-2xl shadow-primary/20 shrink-0`}
-            >
-              <Sparkles className="w-10 h-10 md:w-14 md:h-14 text-white" />
-            </motion.div>
-
-            <div className="flex-1 min-w-0">
-              {category && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
-                >
-                  <Link
-                    to={`/kategori/${category.slug}`}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full bg-primary/10 text-primary hover:bg-primary/15 transition-colors border border-primary/20 mb-4"
-                  >
-                    <Folder className="w-3.5 h-3.5" />
-                    {category.name}
-                    <ChevronRight className="w-3 h-3 opacity-60" />
-                  </Link>
-                </motion.div>
-              )}
-
-              <motion.h1
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.15, duration: 0.5 }}
-                className="text-3xl md:text-4xl lg:text-5xl font-serif-dream font-bold leading-tight tracking-tight mb-5"
-              >
-                <span className={`bg-gradient-to-br ${heroGradient} bg-clip-text text-transparent`}>
-                  {dream.title}
-                </span>
-              </motion.h1>
-
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2, duration: 0.5 }}
-                className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground"
-              >
-                <span className="flex items-center gap-1.5">
-                  <Eye className="h-4 w-4" />
-                  <span className="font-semibold text-foreground">{(dream.view_count || 0).toLocaleString('tr-TR')}</span> görüntülenme
-                </span>
-                <span className="w-1 h-1 rounded-full bg-border" />
-                <span className="flex items-center gap-1.5">
-                  <Heart className="h-4 w-4" />
-                  <span className="font-semibold text-foreground">{(dream.like_count || 0).toLocaleString('tr-TR')}</span> beğeni
-                </span>
-                <span className="w-1 h-1 rounded-full bg-border" />
-                <span className="flex items-center gap-1.5">
-                  <Calendar className="h-4 w-4" />
-                  {formattedDate}
-                </span>
-                <span className="w-1 h-1 rounded-full bg-border" />
-                <span className="flex items-center gap-1.5">
-                  <Clock className="h-4 w-4" />
-                  {readTime} dakika okuma
-                </span>
-              </motion.div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <DreamHero
+        dream={dream}
+        category={category}
+        heroGradient={heroGradient}
+        formattedDate={formattedDate}
+        readTime={readTime}
+      />
 
       {/* Content */}
       <section className="container py-8">
@@ -793,33 +573,7 @@ export default function DreamDetail() {
 
       {/* Keywords */}
       {dream.keywords && dream.keywords.length > 0 && (
-        <section className="container pb-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="max-w-3xl mx-auto surface p-6 md:p-8"
-          >
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500/10 to-fuchsia-500/10 flex items-center justify-center">
-                <Tag className="w-4 h-4 text-primary" />
-              </div>
-              <h3 className="text-lg font-semibold">İlgili Anahtar Kelimeler</h3>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {dream.keywords.map((keyword) => (
-                <Link
-                  key={keyword}
-                  to={`/ara?q=${encodeURIComponent(keyword)}`}
-                  className="group px-3.5 py-1.5 text-sm rounded-full bg-muted/60 hover:bg-gradient-to-r hover:from-violet-500 hover:to-fuchsia-500 hover:text-white transition-all duration-200 border border-border/60 hover:border-transparent"
-                >
-                  <span className="mr-1.5 opacity-60 group-hover:opacity-100">#</span>
-                  {keyword}
-                </Link>
-              ))}
-            </div>
-          </motion.div>
-        </section>
+        <DreamKeywordTags keywords={dream.keywords} />
       )}
 
       <section className="container pb-8">
@@ -840,60 +594,18 @@ export default function DreamDetail() {
       </section>
 
       {/* Action Bar */}
-      <section className="container">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="max-w-3xl mx-auto surface p-3 flex flex-wrap items-center gap-2"
-        >
-          <Button
-            variant={isLiked ? 'default' : 'outline'}
-            size="sm"
-            onClick={animatedToggleLike}
-            className={`rounded-xl h-10 transition-all duration-200 ${
-              isLiked
-                ? 'bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white border-0'
-                : 'hover:border-rose-500/50 hover:bg-rose-500/5 hover:text-rose-600'
-            } ${likeAnimation ? 'scale-110' : 'scale-100'}`}
-          >
-            <Heart className={`mr-2 h-4 w-4 transition-transform ${isLiked ? 'fill-current' : ''} ${likeAnimation ? 'scale-125' : ''}`} />
-            {isLiked ? 'Beğenildi' : 'Beğen'}
-            {(dream.like_count || 0) > 0 && (
-              <span className={`ml-2 px-2 py-0.5 text-xs rounded-full font-semibold ${isLiked ? 'bg-white/20' : 'bg-muted'}`}>
-                {dream.like_count}
-              </span>
-            )}
-          </Button>
-
-          <Button
-            variant={isFavorite ? 'default' : 'outline'}
-            size="sm"
-            onClick={animatedToggleFavorite}
-            className={`rounded-xl h-10 transition-all duration-200 ${
-              isFavorite
-                ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white border-0'
-                : 'hover:border-amber-500/50 hover:bg-amber-500/5 hover:text-amber-600'
-            } ${favoriteAnimation ? 'scale-110' : 'scale-100'}`}
-          >
-            <Bookmark className={`mr-2 h-4 w-4 transition-transform ${isFavorite ? 'fill-current' : ''} ${favoriteAnimation ? 'scale-125' : ''}`} />
-            {isFavorite ? 'Kaydedildi' : 'Kaydet'}
-          </Button>
-
-          <Button variant={compare.isSelected(dream.id) ? 'secondary' : 'outline'} size="sm" onClick={addToCompare} className="rounded-xl h-10">
-            <ArrowLeftRight className="mr-2 h-4 w-4" />
-            {compare.isSelected(dream.id) ? 'Listede' : 'Karşılaştır'}
-          </Button>
-
-          <div className="ml-auto">
-            <ShareButton
-              title={dream.title}
-              description={(dream.content || '').slice(0, 160)}
-              url={shareUrl}
-            />
-          </div>
-        </motion.div>
-      </section>
+      <DreamActionBar
+        dream={dream}
+        isLiked={isLiked}
+        isFavorite={isFavorite}
+        likeAnimation={likeAnimation}
+        favoriteAnimation={favoriteAnimation}
+        onToggleLike={animatedToggleLike}
+        onToggleFavorite={animatedToggleFavorite}
+        onAddToCompare={addToCompare}
+        isInCompare={compare.isSelected(dream.id)}
+        shareUrl={shareUrl}
+      />
 
       {/* Share and Actions Card */}
       <section className="container pb-12">
@@ -911,33 +623,7 @@ export default function DreamDetail() {
       </section>
 
       {/* FAQ — Sıkça Sorulan Sorular */}
-      <section className="container pb-12" aria-label="Sıkça sorulan sorular">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.56 }}
-          className="max-w-3xl mx-auto surface p-6 md:p-8"
-        >
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 flex items-center justify-center">
-              <HelpCircle className="w-4 h-4 text-primary" />
-            </div>
-            <h2 className="text-lg font-semibold">Sıkça Sorulan Sorular</h2>
-          </div>
-          <Accordion type="single" collapsible className="w-full">
-            {dreamFaqs.map((faq, idx) => (
-              <AccordionItem key={idx} value={`faq-${idx}`}>
-                <AccordionTrigger className="text-left text-sm md:text-base font-medium">
-                  {faq.q}
-                </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground text-sm leading-relaxed">
-                  {faq.a}
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-        </motion.div>
-      </section>
+      <DreamFaq faqs={dreamFaqs} />
 
       {/* Similar Dreams */}
       <section className="container pb-12">
@@ -973,37 +659,5 @@ export default function DreamDetail() {
         </section>
       )}
     </Layout>
-  );
-}
-
-function ContentCard({
-  icon: Icon,
-  gradient,
-  title,
-  children,
-}: {
-  icon: typeof BookOpen;
-  gradient: string;
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-      className="surface p-6 md:p-10 relative overflow-hidden"
-    >
-      <div className={`absolute -top-20 -right-20 w-64 h-64 rounded-full blur-3xl opacity-20 bg-gradient-to-br ${gradient}`} />
-      <div className="relative">
-        <div className="flex items-center gap-3 mb-6 pb-6 border-b border-border/60">
-          <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-md`}>
-            <Icon className="w-5 h-5 text-white" />
-          </div>
-          <h2 className="text-xl font-serif-dream font-bold">{title}</h2>
-        </div>
-        {children}
-      </div>
-    </motion.div>
   );
 }

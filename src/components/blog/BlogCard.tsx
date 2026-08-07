@@ -24,7 +24,7 @@ export const BlogCard = memo(function BlogCard({ post, variant = 'default' }: Bl
         className="group relative flex gap-4 p-4 rounded-2xl bg-white/70 dark:bg-slate-800/50 md:backdrop-blur-sm border border-slate-200/50 dark:border-slate-700/50 hover:border-indigo-300 dark:hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/10 hover:translate-x-1 transition-all duration-300"
       >
         {post.featured_image && (
-          <Link to={`/blog/${post.slug}`} className="shrink-0">
+          <Link to={`/blog/${post.slug}`} className="shrink-0" aria-label={`${post.title} yazısını oku`}>
             <div className="relative w-20 h-20 rounded-xl overflow-hidden">
               <ResponsiveImage
                 src={post.featured_image}
@@ -221,7 +221,7 @@ export const BlogCard = memo(function BlogCard({ post, variant = 'default' }: Bl
                 key={tag}
                 to={`/blog/etiket/${encodeURIComponent(tag)}`}
                 onClick={(e) => e.stopPropagation()}
-                className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-700/50 text-slate-600 dark:text-slate-300 hover:bg-indigo-100 hover:text-indigo-700 dark:hover:bg-indigo-900/30 dark:hover:text-indigo-300 transition-colors"
+                className="inline-flex min-h-11 items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-700/50 text-slate-600 dark:text-slate-300 hover:bg-indigo-100 hover:text-indigo-700 dark:hover:bg-indigo-900/30 dark:hover:text-indigo-300 transition-colors"
               >
                 <Tag className="w-3 h-3" />
                 {tag}

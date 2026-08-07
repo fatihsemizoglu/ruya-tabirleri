@@ -136,6 +136,7 @@ export function ImageUpload({
               type="button"
               variant="destructive"
               size="sm"
+              aria-label="Görseli kaldır"
               onClick={handleRemove}
               disabled={isUploading}
             >
@@ -145,8 +146,16 @@ export function ImageUpload({
         </div>
       ) : (
         <div
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              if (!isUploading) inputRef.current?.click();
+            }
+          }}
           className={`
-            border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
+            border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500
             ${dragActive 
               ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-950/20' 
               : 'border-slate-300 dark:border-slate-700 hover:border-indigo-400 dark:hover:border-indigo-600'

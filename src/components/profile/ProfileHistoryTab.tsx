@@ -112,7 +112,7 @@ export function ProfileHistoryTab({ userId, locale }: ProfileHistoryTabProps) {
                 variant="ghost"
                 size="icon"
                 onClick={() => removeHistoryItem(item.id)}
-                className="h-8 w-8 rounded-lg text-muted-foreground hover:text-rose-600 hover:bg-rose-500/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                className="rounded-lg text-muted-foreground hover:text-rose-600 hover:bg-rose-500/10 opacity-0 group-hover:opacity-100 transition-opacity"
                 aria-label="Geçmişten kaldır"
               >
                 <Trash2 className="h-3.5 w-3.5" />

@@ -40,7 +40,7 @@ export function RecentSearches({ onSelect, className = '' }: RecentSearchesProps
           variant="ghost"
           size="sm"
           onClick={clear}
-          className="h-7 px-2 text-xs text-muted-foreground hover:text-destructive"
+          className="text-xs text-muted-foreground hover:text-destructive"
         >
           <Trash2 className="h-3 w-3 mr-1" />
           Temizle
@@ -60,7 +60,7 @@ export function RecentSearches({ onSelect, className = '' }: RecentSearchesProps
             >
               <button
                 onClick={() => handleClick(q)}
-                className="inline-flex items-center gap-1.5 pl-3 pr-7 py-1.5 rounded-full bg-muted/60 hover:bg-primary/10 hover:text-primary text-sm transition-colors touch-target"
+                className="inline-flex min-h-11 items-center gap-1.5 pl-3 pr-7 py-1.5 rounded-full bg-muted/60 hover:bg-primary/10 hover:text-primary text-sm transition-colors touch-target"
               >
                 <Search className="h-3 w-3 opacity-50" />
                 {q}
@@ -71,7 +71,7 @@ export function RecentSearches({ onSelect, className = '' }: RecentSearchesProps
                   removeSearch(q);
                 }}
                 aria-label={`${q} aramasını sil`}
-                className="absolute right-1 top-1/2 -translate-y-1/2 p-1 rounded-full opacity-50 hover:opacity-100 hover:bg-background/50 transition-opacity"
+                className="absolute right-0 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full opacity-50 hover:opacity-100 hover:bg-background/50 transition-opacity"
               >
                 <X className="h-3 w-3" />
               </button>

@@ -100,12 +100,13 @@ export function NewsletterSubscribeForm({ variant = 'default', className = '' }:
         <Input
           type="email"
           placeholder="E-posta adresiniz"
+          aria-label="E-posta adresiniz"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className="flex-1"
           disabled={isLoading}
         />
-        <Button type="submit" disabled={isLoading} size="sm">
+        <Button type="submit" disabled={isLoading} size="sm" aria-label="Bültene abone ol">
           {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
         </Button>
       </form>
@@ -118,6 +119,7 @@ export function NewsletterSubscribeForm({ variant = 'default', className = '' }:
         <Input
           type="email"
           placeholder="E-posta adresiniz"
+          aria-label="E-posta adresiniz"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className="bg-white/10 border-white/20 text-white placeholder:text-white/60"
@@ -155,6 +157,7 @@ export function NewsletterSubscribeForm({ variant = 'default', className = '' }:
         <Input
           type="text"
           placeholder="Adınız (isteğe bağlı)"
+          aria-label="Adınız"
           value={name}
           onChange={(e) => setName(e.target.value)}
           disabled={isLoading}
@@ -162,6 +165,7 @@ export function NewsletterSubscribeForm({ variant = 'default', className = '' }:
         <Input
           type="email"
           placeholder="E-posta adresiniz"
+          aria-label="E-posta adresiniz"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           disabled={isLoading}
@@ -189,8 +193,9 @@ export function NewsletterSubscribeForm({ variant = 'default', className = '' }:
                     key={category.id}
                     type="button"
                     onClick={() => toggleCategory(category.id)}
-                    className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="min-h-11 p-1 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     aria-pressed={selected}
+                    aria-label={`${category.name} kategorisini ${selected ? 'abonelikten kaldır' : 'seç'}`}
                   >
                     <Badge variant={selected ? 'default' : 'outline'} className="cursor-pointer">
                       {category.name}

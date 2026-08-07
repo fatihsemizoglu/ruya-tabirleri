@@ -517,7 +517,7 @@ export function UnifiedDashboard({ onNavigate }: UnifiedDashboardProps) {
               {stats.totals.pendingComments > 0 && (
                 <button
                   onClick={() => onNavigate?.('comments')}
-                  className="group flex items-center gap-2 px-3.5 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 hover:bg-amber-500/15 transition-colors"
+                  className="group flex min-h-11 items-center gap-2 px-3.5 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 hover:bg-amber-500/15 transition-colors"
                 >
                   <span className="relative flex h-2 w-2">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
@@ -530,7 +530,7 @@ export function UnifiedDashboard({ onNavigate }: UnifiedDashboardProps) {
               {stats.totals.unreadMessages > 0 && (
                 <button
                   onClick={() => onNavigate?.('messages')}
-                  className="group flex items-center gap-2 px-3.5 py-2 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-700 dark:text-blue-300 hover:bg-blue-500/15 transition-colors"
+                  className="group flex min-h-11 items-center gap-2 px-3.5 py-2 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-700 dark:text-blue-300 hover:bg-blue-500/15 transition-colors"
                 >
                   <MessageSquare className="h-3.5 w-3.5" />
                   <span className="text-xs font-bold">{stats.totals.unreadMessages} okunmamış mesaj</span>
@@ -773,7 +773,7 @@ export function UnifiedDashboard({ onNavigate }: UnifiedDashboardProps) {
                   to={`/ruya/${dream.slug}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group flex items-center gap-2.5 p-2 rounded-lg hover:bg-muted/50 transition-colors"
+                  className="group flex min-h-11 items-center gap-2.5 p-2 rounded-lg hover:bg-muted/50 transition-colors"
                 >
                   <span className={cn(
                     'w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-black flex-shrink-0',
@@ -831,7 +831,7 @@ export function UnifiedDashboard({ onNavigate }: UnifiedDashboardProps) {
                   to={`/blog/${post.slug}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group flex items-center gap-2.5 p-2 rounded-lg hover:bg-muted/50 transition-colors"
+                  className="group flex min-h-11 items-center gap-2.5 p-2 rounded-lg hover:bg-muted/50 transition-colors"
                 >
                   <span className={cn(
                     'w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-black flex-shrink-0',

@@ -343,7 +343,7 @@ export function ShareCard({ title, description, onFeedback, className = '', chil
                             <Button
                               size="sm"
                               onClick={onFeedback}
-                              className="bg-gradient-to-br from-red-400 to-red-500 hover:from-red-500 hover:to-red-600 hover:shadow-[0_6px_20px_rgba(239,68,68,0.4)] text-white h-10 flex items-center gap-2 px-3 rounded-lg shadow-lg border border-white/20 transition-all duration-300 relative overflow-hidden group"
+                              className="bg-gradient-to-br from-red-400 to-red-500 hover:from-red-500 hover:to-red-600 hover:shadow-[0_6px_20px_rgba(239,68,68,0.4)] text-white flex items-center gap-2 px-3 rounded-lg shadow-lg border border-white/20 transition-all duration-300 relative overflow-hidden group"
                             >
                               <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-colors duration-300" />
                               <MessageCircle className="h-5 w-5 relative z-10 shrink-0" />

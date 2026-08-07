@@ -14,63 +14,20 @@ import {
 import { toast } from 'sonner';
 import { captureError } from '@/lib/logger';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { invalidateSiteSettingsCache } from '@/hooks/useSiteSettings';
-
-interface SiteSettings {
-  siteName: string;
-  siteDescription: string;
-  contactEmail: string;
-  contactPhone: string;
-  contactAddress: string;
-  contactWorkingHours: string;
-  mapLatitude: string;
-  mapLongitude: string;
-  enableComments: boolean;
-  requireApproval: boolean;
-  enableNewsletter: boolean;
-  maintenanceMode: boolean;
-  analyticsEnabled: boolean;
-  socialFacebook: string;
-  socialTwitter: string;
-  socialInstagram: string;
-  socialYoutube: string;
-  socialLinkedin: string;
-  socialTiktok: string;
-  metaTitle: string;
-  metaDescription: string;
-  metaKeywords: string;
-}
-
-const defaultSettings: SiteSettings = {
-  siteName: 'Rüya Tabirleri',
-  siteDescription: "Türkiye'nin en kapsamlı rüya tabirleri sitesi",
-  contactEmail: 'info@ruyatabirleri.com',
-  contactPhone: '+90 (212) 123 45 67',
-  contactAddress: 'İstanbul, Türkiye',
-  contactWorkingHours: 'Pzt - Cum: 09:00 - 18:00',
-  mapLatitude: '41.0082',
-  mapLongitude: '28.9784',
-  enableComments: true,
-  requireApproval: true,
-  enableNewsletter: false,
-  maintenanceMode: false,
-  analyticsEnabled: true,
-  socialFacebook: '',
-  socialTwitter: '',
-  socialInstagram: '',
-  socialYoutube: '',
-  socialLinkedin: '',
-  socialTiktok: '',
-  metaTitle: 'Rüya Tabirleri - En Kapsamlı Rüya Yorumları',
-  metaDescription: 'Binlerce rüya tabiri arasında arama yapın. İslami ve psikolojik yorumlarla rüyalarınızın anlamını keşfedin.',
-  metaKeywords: 'rüya tabiri, rüya yorumu, islami rüya tabiri, rüya sözlüğü',
-};
+import { useInvalidateSiteSettings, mergeSiteSettings, DEFAULT_SITE_SETTINGS, SOCIAL_SETTINGS_KEYS, type SiteSettings as SiteSettingsShape } from '@/hooks/useSiteSettings';
+import { SITE_EMAIL, SITE_PHONE, SITE_ADDRESS, SITE_WORKING_HOURS, MAP_LATITUDE, MAP_LONGITUDE } from '@/lib/config';
+import { normalizeSocialUrl } from '@/lib/social';
+import { isValidEmail } from '@/lib/validation/email';
 
 export function SiteSettings() {
-  const [settings, setSettings] = useState<SiteSettings>(defaultSettings);
+  const [settings, setSettings] = useState<SiteSettingsShape>(DEFAULT_SITE_SETTINGS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  // DB'de legacy contact_email (snake_case) anahtarı varsa uyarı gösterilir.
+  // Yetkili anahtar contactEmail (camelCase)'tir; legacy satırlar merge'de yok sayılır.
+  const [legacyConflict, setLegacyConflict] = useState<string | null>(null);
+  const invalidateSiteSettings = useInvalidateSiteSettings();
 
   useEffect(() => { fetchSettings(); }, []);
 
@@ -80,13 +37,15 @@ export function SiteSettings() {
       const { data, error } = await supabase.from('site_settings').select('key, value');
       if (error) throw error;
       if (data && data.length > 0) {
-        const loaded = { ...defaultSettings };
-        data.forEach((item) => {
-          if (item.key in loaded && item.value !== null && item.value !== undefined) {
-            (loaded as Record<string, unknown>)[item.key] = item.value;
-          }
-        });
-        setSettings(loaded);
+        setSettings(mergeSiteSettings(data as { key: string; value: unknown }[]));
+        // Legacy contact_email satırı varsa ve yetkili contactEmail'den farklıysa uyar
+        const legacyEmail = data.find((row) => row.key === 'contact_email')?.value;
+        const activeEmail = data.find((row) => row.key === 'contactEmail')?.value;
+        if (legacyEmail && activeEmail && String(legacyEmail) !== String(activeEmail)) {
+          setLegacyConflict(String(legacyEmail));
+        } else {
+          setLegacyConflict(null);
+        }
       }
     } catch (error) {
       captureError(error, { tags: { feature: 'site-settings' }, extra: { context: 'fetch-settings' } });
@@ -98,15 +57,27 @@ export function SiteSettings() {
   const saveSettings = async () => {
     setSaving(true);
     try {
+      // Sosyal URL'ler kaydedilirken normalize edilir; state de aynı değere çekilir
+      // ki panel, DB'deki gerçek (normalize edilmiş) değerle eşleşsin.
+      const normalizedEntries: Partial<SiteSettingsShape> = {};
       for (const [key, value] of Object.entries(settings)) {
+        const normalized = (SOCIAL_SETTINGS_KEYS as readonly string[]).includes(key)
+          ? normalizeSocialUrl(value as string)
+          : value;
         const { data: existing } = await supabase.from('site_settings').select('id').eq('key', key).single();
         if (existing) {
-          await supabase.from('site_settings').update({ value, updated_at: new Date().toISOString() }).eq('key', key);
+          await supabase.from('site_settings').update({ value: normalized, updated_at: new Date().toISOString() }).eq('key', key);
         } else {
-          await supabase.from('site_settings').insert({ key, value });
+          await supabase.from('site_settings').insert({ key, value: normalized });
+        }
+        if (normalized !== value) {
+          (normalizedEntries as Record<string, unknown>)[key] = normalized;
         }
       }
-      invalidateSiteSettingsCache();
+      if (Object.keys(normalizedEntries).length > 0) {
+        setSettings(prev => ({ ...prev, ...normalizedEntries }));
+      }
+      invalidateSiteSettings();
       setHasChanges(false);
       toast.success('Ayarlar kaydedildi');
     } catch (error) {
@@ -117,10 +88,13 @@ export function SiteSettings() {
     }
   };
 
-  const updateSetting = <K extends keyof SiteSettings>(key: K, value: SiteSettings[K]) => {
+  const updateSetting = <K extends keyof SiteSettingsShape>(key: K, value: SiteSettingsShape[K]) => {
     setSettings(prev => ({ ...prev, [key]: value }));
     setHasChanges(true);
   };
+
+  // İletişim e-postası geçerliliği — geçersizken kayıt engellenir.
+  const emailValid = isValidEmail(settings.contactEmail);
 
   if (loading) {
     return (
@@ -143,7 +117,7 @@ export function SiteSettings() {
           <h2 className="text-lg font-bold text-slate-900 dark:text-white">Site Ayarları</h2>
           <p className="text-sm text-slate-500">Sitenin genel ayarlarını yönetin</p>
         </div>
-        <Button onClick={saveSettings} disabled={!hasChanges || saving} className="gap-2">
+        <Button onClick={saveSettings} disabled={!hasChanges || saving || !emailValid} className="gap-2">
           {saving ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           {saving ? 'Kaydediliyor...' : 'Kaydet'}
         </Button>
@@ -170,7 +144,10 @@ export function SiteSettings() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="contactEmailGen">İletişim E-postası</Label>
-                  <Input id="contactEmailGen" type="email" value={settings.contactEmail} onChange={(e) => updateSetting('contactEmail', e.target.value)} placeholder="iletisim@site.com" />
+                  <Input id="contactEmailGen" type="email" value={settings.contactEmail} onChange={(e) => updateSetting('contactEmail', e.target.value)} placeholder={SITE_EMAIL} aria-invalid={!emailValid} className={!emailValid ? 'border-red-400 focus-visible:ring-red-500/20' : ''} />
+                  {!emailValid && (
+                    <p className="text-xs text-red-600 dark:text-red-400" role="alert">Geçerli bir e-posta adresi girin.</p>
+                  )}
                 </div>
               </div>
               <div className="space-y-2">
@@ -203,35 +180,54 @@ export function SiteSettings() {
           <Card className="p-6">
             <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">İletişim Bilgileri</h3>
             <p className="text-sm text-slate-500 mb-6">Bu bilgiler footer'da, iletişim sayfasında ve site genelinde otomatik görüntülenir.</p>
+
+            {legacyConflict && (
+              <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="font-medium text-amber-700 dark:text-amber-400">Eski bir e-posta kaydı bulundu</p>
+                    <p className="text-sm text-amber-600 dark:text-amber-500 mt-1">
+                      DB'de kullanılmayan <code className="font-mono">contact_email</code> ({legacyConflict}) satırı var.
+                      Site <strong>yalnızca yukarıdaki <code className="font-mono">contactEmail</code></strong> alanını kullanır;
+                      eski satır güvenle silinebilir. Kaydettiğinizde yeni değer geçerli olur.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="space-y-6">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="contactPhone" className="flex items-center gap-2"><Phone className="h-3.5 w-3.5" /> Telefon</Label>
-                  <Input id="contactPhone" type="tel" value={settings.contactPhone} onChange={(e) => updateSetting('contactPhone', e.target.value)} placeholder="+90 (212) 123 45 67" />
+                  <Input id="contactPhone" type="tel" value={settings.contactPhone} onChange={(e) => updateSetting('contactPhone', e.target.value)} placeholder={SITE_PHONE} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="contactEmail" className="flex items-center gap-2"><Mail className="h-3.5 w-3.5" /> E-posta</Label>
-                  <Input id="contactEmail" type="email" value={settings.contactEmail} onChange={(e) => updateSetting('contactEmail', e.target.value)} placeholder="iletisim@site.com" />
+                  <Input id="contactEmail" type="email" value={settings.contactEmail} onChange={(e) => updateSetting('contactEmail', e.target.value)} placeholder={SITE_EMAIL} aria-invalid={!emailValid} className={!emailValid ? 'border-red-400 focus-visible:ring-red-500/20' : ''} />
+                  {!emailValid && (
+                    <p className="text-xs text-red-600 dark:text-red-400" role="alert">Geçerli bir e-posta adresi girin.</p>
+                  )}
                 </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="contactAddress" className="flex items-center gap-2"><MapPin className="h-3.5 w-3.5" /> Adres</Label>
-                <Textarea id="contactAddress" value={settings.contactAddress} onChange={(e) => updateSetting('contactAddress', e.target.value)} placeholder="İstanbul, Türkiye" rows={2} />
+                <Textarea id="contactAddress" value={settings.contactAddress} onChange={(e) => updateSetting('contactAddress', e.target.value)} placeholder={SITE_ADDRESS} rows={2} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="contactWorkingHours" className="flex items-center gap-2"><Clock className="h-3.5 w-3.5" /> Çalışma Saatleri</Label>
-                <Input id="contactWorkingHours" value={settings.contactWorkingHours} onChange={(e) => updateSetting('contactWorkingHours', e.target.value)} placeholder="Pzt - Cum: 09:00 - 18:00" />
+                <Input id="contactWorkingHours" value={settings.contactWorkingHours} onChange={(e) => updateSetting('contactWorkingHours', e.target.value)} placeholder={SITE_WORKING_HOURS} />
               </div>
               <div className="border-t pt-6 space-y-4">
                 <h4 className="font-medium text-slate-900 dark:text-white">Harita Koordinatları</h4>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="mapLatitude">Enlem (Latitude)</Label>
-                    <Input id="mapLatitude" value={settings.mapLatitude} onChange={(e) => updateSetting('mapLatitude', e.target.value)} placeholder="41.0082" />
+                    <Input id="mapLatitude" value={settings.mapLatitude} onChange={(e) => updateSetting('mapLatitude', e.target.value)} placeholder={MAP_LATITUDE} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="mapLongitude">Boylam (Longitude)</Label>
-                    <Input id="mapLongitude" value={settings.mapLongitude} onChange={(e) => updateSetting('mapLongitude', e.target.value)} placeholder="28.9784" />
+                    <Input id="mapLongitude" value={settings.mapLongitude} onChange={(e) => updateSetting('mapLongitude', e.target.value)} placeholder={MAP_LONGITUDE} />
                   </div>
                 </div>
                 <p className="text-xs text-slate-500">OpenStreetMap iframe otomatik olarak bu koordinatları kullanır.</p>
@@ -345,7 +341,7 @@ export function SiteSettings() {
           <Card className="p-4 flex items-center gap-4 shadow-lg border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/50">
             <AlertCircle className="h-5 w-5 text-amber-600" />
             <span className="text-sm font-medium text-amber-700 dark:text-amber-400">Kaydedilmemiş değişiklikler var</span>
-            <Button size="sm" onClick={saveSettings} disabled={saving}>
+            <Button size="sm" onClick={saveSettings} disabled={saving || !emailValid}>
               {saving ? <RefreshCw className="h-4 w-4 animate-spin" /> : 'Kaydet'}
             </Button>
           </Card>

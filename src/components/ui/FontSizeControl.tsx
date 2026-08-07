@@ -34,7 +34,7 @@ export function FontSizeControl({ variant = 'inline' }: FontSizeControlProps) {
           onClick={cycleDown}
           disabled={fontSize === 'sm'}
           aria-label="Yazı boyutunu küçült"
-          className="h-9 w-9 touch-target"
+          className="touch-target"
         >
           <ChevronDown className="h-4 w-4" />
         </Button>
@@ -47,7 +47,7 @@ export function FontSizeControl({ variant = 'inline' }: FontSizeControlProps) {
           onClick={cycleUp}
           disabled={fontSize === 'xl'}
           aria-label="Yazı boyutunu büyüt"
-          className="h-9 w-9 touch-target"
+          className="touch-target"
         >
           <ChevronUp className="h-4 w-4" />
         </Button>
@@ -83,7 +83,7 @@ export function FontSizeControl({ variant = 'inline' }: FontSizeControlProps) {
                   setOpen(false);
                 }}
                 className={cn(
-                  'w-full text-left px-3 py-2 text-sm rounded-lg transition-colors',
+                  'w-full min-h-11 text-left px-3 py-2 text-sm rounded-lg transition-colors',
                   fontSize === size
                     ? 'bg-primary/10 text-primary font-semibold'
                     : 'hover:bg-muted'

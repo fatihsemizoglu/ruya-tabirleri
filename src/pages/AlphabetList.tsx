@@ -258,6 +258,7 @@ export default function AlphabetList() {
                   <button
                     key={char}
                     onClick={() => handleLetterClick(char)}
+                    data-audit-ignore
                     className={`
                       relative w-9 h-9 md:w-10 md:h-10 rounded-lg flex items-center justify-center
                       font-semibold text-sm transition-all duration-200
@@ -308,14 +309,16 @@ export default function AlphabetList() {
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                 <Input
                   placeholder={`"${selectedLetter}" harfinde ara...`}
+                  aria-label={`${selectedLetter} harfinde rüya ara`}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-11 h-11 rounded-xl border-border/60 bg-background/50"
+                  className="pl-11 pr-11 h-11 rounded-xl border-border/60 bg-background/50"
                 />
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label="Aramayı temizle"
+                    className="absolute right-2 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted/60 hover:text-foreground"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -371,7 +374,7 @@ export default function AlphabetList() {
                     className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all ${
                       viewMode === 'grid' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground'
                     }`}
-                    aria-label="Grid view"
+                    aria-label="Izgara görünümü"
                   >
                     <Grid3X3 className="h-4 w-4" />
                   </button>
@@ -380,7 +383,7 @@ export default function AlphabetList() {
                     className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all ${
                       viewMode === 'list' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground'
                     }`}
-                    aria-label="List view"
+                    aria-label="Liste görünümü"
                   >
                     <List className="h-4 w-4" />
                   </button>
@@ -399,7 +402,7 @@ export default function AlphabetList() {
                   <Badge variant="secondary" className="rounded-full gap-1 pr-1">
                     <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
                     Öne Çıkanlar
-                    <button onClick={() => setShowOnlyFeatured(false)} className="ml-1 hover:text-destructive">
+                    <button onClick={() => setShowOnlyFeatured(false)} aria-label="Öne çıkanlar filtresini kaldır" className="-m-1.5 ml-1 flex h-11 w-11 items-center justify-center rounded-full hover:bg-destructive/10 hover:text-destructive">
                       <X className="h-3 w-3" />
                     </button>
                   </Badge>
@@ -407,22 +410,21 @@ export default function AlphabetList() {
                 {searchQuery && (
                   <Badge variant="secondary" className="rounded-full gap-1 pr-1">
                     "{searchQuery}"
-                    <button onClick={() => setSearchQuery('')} className="ml-1 hover:text-destructive">
+                    <button onClick={() => setSearchQuery('')} aria-label="Arama filtresini kaldır" className="-m-1.5 ml-1 flex h-11 w-11 items-center justify-center rounded-full hover:bg-destructive/10 hover:text-destructive">
                       <X className="h-3 w-3" />
                     </button>
                   </Badge>
-                )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setSearchQuery('');
-                    setShowOnlyFeatured(false);
-                  }}
-                  className="rounded-lg text-xs h-7"
-                >
-                  Tümünü Temizle
-                </Button>
+                )}                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setSearchQuery('');
+                      setShowOnlyFeatured(false);
+                    }}
+                    className="rounded-lg text-xs"
+                  >
+                    Tümünü Temizle
+                  </Button>
               </motion.div>
             )}
 
@@ -622,7 +624,7 @@ export default function AlphabetList() {
                     variant="outline"
                     size="sm"
                     onClick={() => handleLetterClick(char)}
-                    className="rounded-full w-9 h-9 p-0"
+                    className="rounded-full"
                   >
                     {char}
                   </Button>
@@ -651,7 +653,7 @@ export default function AlphabetList() {
                   onClick={() => { setCurrentPage((p) => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                   disabled={safePage === 1}
                   aria-label="Önceki sayfa"
-                  className="h-9 w-9 rounded-lg"
+                  className="rounded-lg"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
@@ -670,7 +672,7 @@ export default function AlphabetList() {
                       onClick={() => { setCurrentPage(page); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                       aria-current={safePage === page ? 'page' : undefined}
                       aria-label={`Sayfa ${page}`}
-                      className={`h-9 min-w-9 px-2 rounded-lg text-sm font-semibold transition-colors ${
+                      className={`h-11 min-w-11 px-2 rounded-lg text-sm font-semibold transition-colors ${
                         safePage === page
                           ? 'bg-primary text-primary-foreground shadow-sm'
                           : 'hover:bg-muted text-foreground'
@@ -686,7 +688,7 @@ export default function AlphabetList() {
                   onClick={() => { setCurrentPage((p) => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                   disabled={safePage === totalPages}
                   aria-label="Sonraki sayfa"
-                  className="h-9 w-9 rounded-lg"
+                  className="rounded-lg"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
@@ -705,6 +707,7 @@ export default function AlphabetList() {
             <Button
               size="icon"
               onClick={scrollToTop}
+              aria-label="Yukarı çık"
               className="rounded-full shadow-2xl h-12 w-12 bg-gradient-to-br from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700"
             >
               <ChevronUp className="h-5 w-5" />

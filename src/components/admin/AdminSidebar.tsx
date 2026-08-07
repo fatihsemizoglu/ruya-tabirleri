@@ -332,7 +332,7 @@ export function AdminSidebar({ activeTab, onTabChange, collapsed, onCollapsedCha
         <Link
           to="/"
           className={cn(
-            "flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 group text-slate-300 hover:bg-white/5 hover:text-white",
+            "flex min-h-11 items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 group text-slate-300 hover:bg-white/5 hover:text-white",
             collapsed && "justify-center px-2"
           )}
         >
@@ -364,7 +364,7 @@ export function AdminSidebar({ activeTab, onTabChange, collapsed, onCollapsedCha
         <button
           onClick={signOut}
           className={cn(
-            "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 group text-red-400 hover:bg-red-500/10 hover:text-red-300",
+            "w-full flex min-h-11 items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 group text-red-400 hover:bg-red-500/10 hover:text-red-300",
             collapsed && "justify-center px-2"
           )}
         >
@@ -383,7 +383,7 @@ export function AdminSidebar({ activeTab, onTabChange, collapsed, onCollapsedCha
         <button
           onClick={() => onCollapsedChange(!collapsed)}
           className={cn(
-            "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-400 hover:bg-white/5 hover:text-white transition-colors",
+            "w-full flex min-h-11 items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-400 hover:bg-white/5 hover:text-white transition-colors",
             collapsed && "justify-center px-2"
           )}
         >

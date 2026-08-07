@@ -239,11 +239,11 @@ export default function Auth({ mode }: AuthProps) {
             {mode === 'register' && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="fullName" className="text-foreground">Ad Soyad</Label>
+                  <Label htmlFor="auth-fullName" className="text-foreground">Ad Soyad</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                      id="fullName"
+                      id="auth-fullName"
                       type="text"
                       placeholder="Adınız Soyadınız"
                       value={fullName}
@@ -255,11 +255,11 @@ export default function Auth({ mode }: AuthProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="username" className="text-foreground">Kullanıcı Adı</Label>
+                  <Label htmlFor="auth-username" className="text-foreground">Kullanıcı Adı</Label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">@</span>
                     <Input
-                      id="username"
+                      id="auth-username"
                       type="text"
                       placeholder="kullanici_adi"
                       value={username}
@@ -273,11 +273,11 @@ export default function Auth({ mode }: AuthProps) {
             )}
 
             {mode !== 'reset' && <div className="space-y-2">
-              <Label htmlFor="email" className="text-foreground">E-posta</Label>
+              <Label htmlFor="auth-email" className="text-foreground">E-posta</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  id="email"
+                  id="auth-email"
                   type="email"
                   placeholder="ornek@email.com"
                   value={email}

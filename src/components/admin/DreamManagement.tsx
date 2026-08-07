@@ -339,6 +339,7 @@ export function DreamManagement() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Başlık veya içerik ile ara..."
+              aria-label="Başlık veya içerik ile ara"
               className="admin-filter-surface"
             />
           </div>
@@ -377,7 +378,7 @@ export function DreamManagement() {
                 setCategoryFilter('all');
                 setCurrentPage(1);
               }}
-              className="h-10 px-3 text-xs font-semibold text-slate-500 hover:text-slate-700"
+              className="px-3 text-xs font-semibold text-slate-500 hover:text-slate-700"
             >
               <X className="h-3.5 w-3.5 mr-1" />
               Temizle
@@ -487,9 +488,10 @@ export function DreamManagement() {
                   <Button
                     variant="outline"
                     size="sm"
+                    aria-label="Önceki sayfa"
                     onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                     disabled={currentPage === 1 || isLoading}
-                    className="h-9 w-9 p-0 rounded-lg"
+                    className="p-0 rounded-lg"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </Button>
@@ -503,9 +505,10 @@ export function DreamManagement() {
                   <Button
                     variant="outline"
                     size="sm"
+                    aria-label="Sonraki sayfa"
                     onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                     disabled={currentPage === totalPages || isLoading}
-                    className="h-9 w-9 p-0 rounded-lg"
+                    className="p-0 rounded-lg"
                   >
                     <ChevronRight className="w-4 h-4" />
                   </Button>

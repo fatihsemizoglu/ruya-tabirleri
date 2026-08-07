@@ -14,6 +14,7 @@
   }
 
   :root {
+    color-scheme: light;
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
@@ -66,6 +67,7 @@
   }
 
   .dark {
+    color-scheme: dark;
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
     --card: 222.2 84% 6.9%;
@@ -413,6 +415,12 @@
     transform: none !important;
     opacity: 1 !important;
   }
+
+  /* Dokunmatik cihazlarda asgari dokunma hedefi (48px) */
+  button, a, [role="button"], [tabindex]:not([tabindex="-1"]) {
+    min-height: 48px;
+    min-width: 48px;
+  }
 }
 
 @media (max-width: 640px) {
@@ -435,10 +443,5 @@
 @supports (touch-action: manipulation) {
   button, a, input, select, textarea, [role="button"], [tabindex]:not([tabindex="-1"]) {
     touch-action: manipulation;
-  }
-
-  button, a, [role="button"], [tabindex]:not([tabindex="-1"]) {
-    min-height: 48px;
-    min-width: 48px;
   }
 }

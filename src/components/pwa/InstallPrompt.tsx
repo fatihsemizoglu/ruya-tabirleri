@@ -95,7 +95,7 @@ export function InstallPrompt() {
             <button
               onClick={handleDismiss}
               aria-label="Kapat"
-              className="absolute top-2 right-2 p-1 rounded-full hover:bg-muted transition-colors"
+              className="absolute top-2 right-2 flex h-11 w-11 items-center justify-center rounded-full hover:bg-muted transition-colors"
             >
               <X className="w-4 h-4 text-muted-foreground" />
             </button>

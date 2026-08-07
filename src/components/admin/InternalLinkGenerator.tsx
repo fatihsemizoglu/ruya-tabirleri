@@ -177,7 +177,7 @@ export function InternalLinkGenerator({
                   variant="ghost" 
                   size="sm" 
                   onClick={selectAll}
-                  className="h-7 text-xs"
+                  className="text-xs"
                 >
                   <Check className="mr-1 h-3 w-3" />
                   Tümünü Seç
@@ -186,7 +186,7 @@ export function InternalLinkGenerator({
                   variant="ghost" 
                   size="sm" 
                   onClick={deselectAll}
-                  className="h-7 text-xs"
+                  className="text-xs"
                 >
                   <X className="mr-1 h-3 w-3" />
                   Temizle

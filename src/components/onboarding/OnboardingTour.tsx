@@ -88,7 +88,7 @@ export function OnboardingTour() {
         <button
           onClick={handleClose}
           aria-label="Kapat"
-          className="absolute right-3 top-3 sm:right-4 sm:top-4 rounded-full p-1.5 hover:bg-white/20 transition-colors"
+          className="absolute right-3 top-3 sm:right-4 sm:top-4 flex h-11 w-11 items-center justify-center rounded-full hover:bg-white/20 transition-colors"
         >
           <X className="h-5 w-5" />
         </button>
@@ -121,12 +121,18 @@ export function OnboardingTour() {
                 key={idx}
                 onClick={() => setCurrentStep(idx)}
                 aria-label={`${idx + 1}. adıma git`}
-                className={`h-2 rounded-full transition-all duration-300 ${
-                  idx === currentStep
-                    ? 'w-6 bg-white'
-                    : 'w-2 bg-white/40 hover:bg-white/60'
-                }`}
-              />
+                aria-current={idx === currentStep ? 'step' : undefined}
+                className="group -m-2 flex h-11 w-11 items-center justify-center rounded-full transition-colors hover:bg-white/10"
+              >
+                <span
+                  aria-hidden="true"
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    idx === currentStep
+                      ? 'w-6 bg-white'
+                      : 'w-2 bg-white/40 group-hover:bg-white/60'
+                  }`}
+                />
+              </button>
             ))}
           </div>
 

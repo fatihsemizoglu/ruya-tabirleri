@@ -89,7 +89,7 @@ export function AdminFormShell({
             onClick={onCancel}
             disabled={isSubmitting}
             aria-label="Kapat"
-            className="flex-shrink-0 w-9 h-9 rounded-lg border border-border/60 bg-card hover:bg-muted text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center disabled:opacity-50"
+            className="-m-1 flex-shrink-0 flex h-11 w-11 items-center justify-center rounded-lg border border-border/60 bg-card hover:bg-muted text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
           >
             <X className="h-4 w-4" />
           </button>
@@ -121,7 +121,7 @@ export function AdminFormShell({
               variant="outline"
               onClick={onCancel}
               disabled={isSubmitting}
-              className="h-10 rounded-xl border-border/60 hover:bg-muted font-semibold"
+              className="rounded-xl border-border/60 hover:bg-muted font-semibold"
             >
               <X className="h-4 w-4 mr-1.5" />
               {cancelLabel}
@@ -131,7 +131,7 @@ export function AdminFormShell({
                 type="submit"
                 onClick={onSubmit}
                 disabled={isSubmitting}
-                className="relative h-10 px-6 rounded-xl text-sm font-semibold text-white border-0 shadow-lg shadow-fuchsia-500/25 group overflow-hidden"
+                className="relative px-6 rounded-xl text-sm font-semibold text-white border-0 shadow-lg shadow-fuchsia-500/25 group overflow-hidden"
               >
                 <span className="absolute inset-0 bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500" />
                 <span className="absolute inset-0 bg-gradient-to-r from-violet-600 via-fuchsia-600 to-pink-600 opacity-0 group-hover:opacity-100 transition-opacity" />

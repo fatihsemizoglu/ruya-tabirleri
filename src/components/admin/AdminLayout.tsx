@@ -91,6 +91,7 @@ export function AdminLayout({ children, activeTab, onTabChange, title, descripti
         <div
           className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 lg:hidden"
           onClick={() => setMobileOpen(false)}
+          tabIndex={-1}
         />
       )}
 
@@ -125,6 +126,7 @@ export function AdminLayout({ children, activeTab, onTabChange, title, descripti
               variant="ghost" 
               size="icon" 
               className="lg:hidden text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50"
+              aria-label="Menüyü aç"
               onClick={() => setMobileOpen(true)}
             >
               <Menu className="h-5 w-5" />
@@ -205,7 +207,7 @@ export function AdminLayout({ children, activeTab, onTabChange, title, descripti
                   {/* Settings Button */}
                   <button
                     onClick={() => onTabChange('settings')}
-                    className="bg-card border border-border hover:border-primary/30 hover:bg-primary/5 text-foreground rounded-xl px-4 py-1.5 text-xs md:text-sm font-semibold flex items-center gap-2 transition-all shadow-sm active:scale-95 outline-none"
+                    className="bg-card border border-border hover:border-primary/30 hover:bg-primary/5 text-foreground rounded-xl min-h-11 px-4 py-1.5 text-xs md:text-sm font-semibold flex items-center gap-2 transition-all shadow-sm active:scale-95 outline-none"
                   >
                     <Settings className="h-4 w-4 text-muted-foreground" />
                     <span>Ayarlar</span>
@@ -214,7 +216,7 @@ export function AdminLayout({ children, activeTab, onTabChange, title, descripti
                   {/* Refresh Button */}
                   <button
                     onClick={() => window.location.reload()}
-                    className="bg-card border border-border hover:border-primary/30 hover:bg-primary/5 text-foreground rounded-xl p-2 transition-all shadow-sm active:scale-95 outline-none"
+                    className="bg-card border border-border hover:border-primary/30 hover:bg-primary/5 text-foreground rounded-xl -m-1.5 flex h-11 w-11 items-center justify-center transition-all shadow-sm active:scale-95 outline-none"
                     title="Yenile"
                   >
                     <RotateCw className="h-4 w-4 text-muted-foreground" />

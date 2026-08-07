@@ -166,11 +166,13 @@ export function CommandPalette() {
                   onChange={e => setSearch(e.target.value)}
                   onKeyDown={handleKeyNavigation}
                   placeholder="Komut veya sayfa ara..."
+                  aria-label="Komut veya sayfa ara"
                   className="border-0 bg-transparent p-0 text-base focus-visible:ring-0 focus-visible:ring-offset-0"
                 />
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="rounded-lg p-1 hover:bg-muted"
+                  aria-label="Komut paletini kapat"
+                  className="-m-2.5 flex h-11 w-11 items-center justify-center rounded-lg hover:bg-muted"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -193,7 +195,7 @@ export function CommandPalette() {
                             setIsOpen(false);
                           }}
                           className={cn(
-                            "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors",
+                            "flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors",
                             globalIndex === selectedIndex
                               ? "bg-primary text-primary-foreground"
                               : "hover:bg-muted"

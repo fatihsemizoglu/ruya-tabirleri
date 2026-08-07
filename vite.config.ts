@@ -10,6 +10,10 @@ const SENTRY_AUTH_TOKEN = process.env.SENTRY_AUTH_TOKEN;
 const SENTRY_ORG = process.env.SENTRY_ORG;
 const SENTRY_PROJECT = process.env.SENTRY_PROJECT;
 
+// Merkezi ortam değeri — src/lib/config.ts ile aynı kaynak mantığı
+// (PWA runtimeCaching'deki Supabase storage regex'i için)
+const SUPABASE_URL = (process.env.VITE_SUPABASE_URL || "https://dagjpitlouekbnwdcpbz.supabase.co").replace(/\/$/, "");
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
@@ -43,6 +47,7 @@ export default defineConfig(({ mode }) => ({
         navigateFallbackDenylist: [/^\/admin/, /^\/api/, /\.(js|css|json|png|jpg|jpeg|gif|svg|ico|woff2?|ttf|eot)$/],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB limit
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        globIgnores: ["**/screenshots/**", "**/node_modules/**/*", "sw.js", "workbox-*.js"],
         runtimeCaching: [
           {
             // Navigation requests: network-first avoids serving stale HTML that references old chunks.
@@ -76,7 +81,8 @@ export default defineConfig(({ mode }) => ({
           {
             // Supabase storage images: CacheFirst with 7-day expiration
             // Saves bandwidth on repeat visits; srcset URL params are honored
-            urlPattern: /^https:\/\/dagjpitlouekbnwdcpbz\.supabase\.co\/storage\/v1\/object\//i,
+            urlPattern: ({ url }: { url: URL }) =>
+              url.hostname === new URL(SUPABASE_URL).hostname && url.pathname.startsWith('/storage/v1/object/'),
             handler: "CacheFirst",
             options: {
               cacheName: "supabase-images",
@@ -150,6 +156,36 @@ export default defineConfig(({ mode }) => ({
             purpose: "maskable"
           }
         ],
+        screenshots: [
+          {
+            src: "/screenshots/home.png",
+            sizes: "412x915",
+            type: "image/png",
+            form_factor: "narrow",
+            label: "Ana Sayfa"
+          },
+          {
+            src: "/screenshots/populer.png",
+            sizes: "412x915",
+            type: "image/png",
+            form_factor: "narrow",
+            label: "Popüler Rüyalar"
+          },
+          {
+            src: "/screenshots/kategoriler.png",
+            sizes: "412x915",
+            type: "image/png",
+            form_factor: "narrow",
+            label: "Kategoriler"
+          },
+          {
+            src: "/screenshots/genis.png",
+            sizes: "1280x720",
+            type: "image/png",
+            form_factor: "wide",
+            label: "Ana Sayfa (Geniş)"
+          }
+        ],
         shortcuts: [
           {
             name: "Rüya Ara",
@@ -212,7 +248,7 @@ export default defineConfig(({ mode }) => ({
             if (id.includes('@tanstack/react-query')) {
               return 'query-vendor';
             }
-            if (id.includes('next-themes') || id.includes('sonner') || id.includes('class-variance-authority') || id.includes('clsx') || id.includes('tailwind-merge')) {
+            if (id.includes('sonner') || id.includes('class-variance-authority') || id.includes('clsx') || id.includes('tailwind-merge')) {
               return 'app-ui-vendor';
             }
             if (id.includes('@supabase')) {

@@ -303,7 +303,7 @@ export function VoiceSearchModal({ open, onOpenChange, onResult }: VoiceSearchMo
               {/* Close button */}
               <button
                 onClick={() => onOpenChange(false)}
-                className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-background/60 backdrop-blur flex items-center justify-center hover:bg-background/80 transition-colors"
+                className="absolute top-4 right-4 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-background/60 backdrop-blur hover:bg-background/80 transition-colors"
                 aria-label="Kapat"
               >
                 <X className="h-4 w-4" />
@@ -474,7 +474,7 @@ export function VoiceSearchModal({ open, onOpenChange, onResult }: VoiceSearchMo
                         <button
                           key={phrase}
                           onClick={() => handleExampleClick(phrase)}
-                          className="text-xs px-2.5 py-1.5 rounded-full bg-muted/60 hover:bg-primary/10 hover:text-primary transition-colors border border-border/40 hover:border-primary/30"
+                          className="inline-flex items-center min-h-11 text-xs px-2.5 py-1.5 rounded-full bg-muted/60 hover:bg-primary/10 hover:text-primary transition-colors border border-border/40 hover:border-primary/30"
                         >
                           {phrase}
                         </button>

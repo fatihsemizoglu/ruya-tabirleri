@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { SUPABASE_FUNCTIONS_URL } from '@/lib/config';
 
 export interface ABVariant {
   id: string;
@@ -177,7 +178,7 @@ export function useTrackTimeOnPage(testId: string, variantId: string, userId: st
             time_on_page: elapsed,
           });
           try {
-            const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ab-test-manager`;
+            const url = `${SUPABASE_FUNCTIONS_URL}/ab-test-manager`;
             navigator.sendBeacon(url, new Blob([body], { type: 'application/json' }));
             return;
           } catch (_error) {

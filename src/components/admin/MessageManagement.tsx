@@ -219,6 +219,7 @@ export function MessageManagement() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="İsim, email veya konu ara..."
+              aria-label="İsim, email veya konu ara"
               className="admin-filter-surface"
             />
           </div>
@@ -271,7 +272,15 @@ export function MessageManagement() {
             {filteredMessages.map((message) => (
               <div
                 key={message.id}
-                className={`admin-list-surface p-5 flex flex-col sm:flex-row justify-between gap-4 cursor-pointer ${
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    openMessage(message);
+                  }
+                }}
+                className={`admin-list-surface p-5 flex flex-col sm:flex-row justify-between gap-4 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                   !message.is_read ? 'bg-blue-500/10 border-blue-500/35' : ''
                 }`}
                 onClick={() => openMessage(message)}
@@ -313,7 +322,8 @@ export function MessageManagement() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+                      className="rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+                      aria-label={message.is_read ? 'Okunmadı olarak işaretle' : 'Okundu olarak işaretle'}
                       onClick={(e) => {
                         e.stopPropagation();
                         toggleReadStatus(message);
@@ -324,7 +334,8 @@ export function MessageManagement() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 rounded-lg text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30"
+                      className="rounded-lg text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30"
+                      aria-label="Mesajı sil"
                       onClick={(e) => {
                         e.stopPropagation();
                         setMessageToDelete(message);

@@ -48,3 +48,6 @@ vercel-*.png
 
 # Playwright MCP browser cache
 .playwright-mcp/
+
+# Local desktop database
+.freebuff/

@@ -99,7 +99,7 @@ export function TagCloud({ className, maxTags = 20 }: TagCloudProps) {
             <Link
               to={`/blog/etiket/${encodeURIComponent(tag.name)}`}
               className={cn(
-                'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-200',
+                'inline-flex min-h-11 items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-200',
                 'bg-muted/60 text-muted-foreground hover:bg-primary/10 hover:text-primary',
                 'border border-transparent hover:border-primary/20',
                 getTagSize(tag.count)

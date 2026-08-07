@@ -23,13 +23,9 @@ import {
 } from '@/components/ui/sheet';
 import type { Category } from '@/types/database';
 
-export interface AdvancedFilterState {
-  showFeaturedOnly: boolean;
-  selectedCategories: string[];
-  minViews: number;
-  minLikes: number;
-  sortBy: 'relevance' | 'views' | 'likes' | 'newest';
-}
+// Tek kaynak: src/lib/search-filters.ts (unit test kapsamı için orada tanımlı)
+import type { AdvancedFilterState } from '@/lib/search-filters';
+export type { AdvancedFilterState };
 
 interface AdvancedFiltersProps {
   filters: AdvancedFilterState;
@@ -134,7 +130,7 @@ export function AdvancedFilters({
               <button
                 key={category.id}
                 onClick={() => toggleCategory(category.id)}
-                className={`flex items-center gap-2 p-2 rounded-lg text-left text-sm transition-colors ${
+                className={`flex min-h-11 items-center gap-2 p-2 rounded-lg text-left text-sm transition-colors ${
                   filters.selectedCategories.includes(category.id)
                     ? 'bg-primary text-primary-foreground'
                     : 'hover:bg-muted'
@@ -317,7 +313,7 @@ export function AdvancedFilters({
             <Badge variant="secondary" className="gap-1">
               <Sparkles className="h-3 w-3" />
               Öne Çıkan
-              <button onClick={() => onChange({ ...filters, showFeaturedOnly: false })}>
+              <button onClick={() => onChange({ ...filters, showFeaturedOnly: false })} aria-label="Öne çıkanlar filtresini kaldır">
                 <X className="h-3 w-3" />
               </button>
             </Badge>
@@ -326,7 +322,7 @@ export function AdvancedFilters({
             <Badge key={categoryId} variant="secondary" className="gap-1">
               <Tag className="h-3 w-3" />
               {getCategoryName(categoryId)}
-              <button onClick={() => toggleCategory(categoryId)}>
+              <button onClick={() => toggleCategory(categoryId)} aria-label={`${getCategoryName(categoryId)} kategorisini kaldır`}>
                 <X className="h-3 w-3" />
               </button>
             </Badge>
@@ -335,7 +331,7 @@ export function AdvancedFilters({
             <Badge variant="secondary" className="gap-1">
               <Eye className="h-3 w-3" />
               {filters.minViews}+ görüntüleme
-              <button onClick={() => onChange({ ...filters, minViews: 0 })}>
+              <button onClick={() => onChange({ ...filters, minViews: 0 })} aria-label="Minimum görüntüleme filtresini kaldır">
                 <X className="h-3 w-3" />
               </button>
             </Badge>
@@ -344,7 +340,7 @@ export function AdvancedFilters({
             <Badge variant="secondary" className="gap-1">
               <Heart className="h-3 w-3" />
               {filters.minLikes}+ beğeni
-              <button onClick={() => onChange({ ...filters, minLikes: 0 })}>
+              <button onClick={() => onChange({ ...filters, minLikes: 0 })} aria-label="Minimum beğeni filtresini kaldır">
                 <X className="h-3 w-3" />
               </button>
             </Badge>

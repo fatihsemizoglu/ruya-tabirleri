@@ -77,7 +77,7 @@ export default function Symbols() {
                     <Link
                       key={slug}
                       to={`/sembol/${slug}`}
-                      className="flex items-center justify-between rounded-lg border border-border/60 bg-surface px-3 py-2 text-sm hover:bg-gradient-to-r hover:from-violet-500/10 hover:to-fuchsia-500/10 hover:border-primary/40 transition"
+                      className="flex min-h-11 items-center justify-between rounded-lg border border-border/60 bg-surface px-3 py-2 text-sm hover:bg-gradient-to-r hover:from-violet-500/10 hover:to-fuchsia-500/10 hover:border-primary/40 transition"
                     >
                       <span className="truncate font-medium">{term}</span>
                       <span className="flex items-center gap-1 text-xs text-muted-foreground">

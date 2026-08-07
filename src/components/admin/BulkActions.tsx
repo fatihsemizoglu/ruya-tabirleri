@@ -232,6 +232,7 @@ export function BulkActions({ selectedIds, onClearSelection, type }: BulkActions
         <Button 
           variant="ghost" 
           size="sm" 
+          aria-label="Seçimi temizle"
           onClick={onClearSelection}
           disabled={isLoading}
         >

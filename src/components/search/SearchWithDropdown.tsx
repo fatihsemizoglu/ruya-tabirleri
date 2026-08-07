@@ -305,6 +305,7 @@ export function SearchWithDropdown({
             onChange={(e) => handleQueryChange(e.target.value)}
             onFocus={() => setShowDropdown(true)}
             onKeyDown={handleKeyDown}
+            aria-label="Rüya ara"
             className={cn(
               isHero
                 ? voiceSupported
@@ -329,8 +330,8 @@ export function SearchWithDropdown({
               className={cn(
                 'absolute top-1/2 -translate-y-1/2 right-14 z-10 transition-all duration-300',
                 isHero
-                  ? 'h-10 w-10 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground hover:scale-105'
-                  : 'h-9 w-9 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground hover:scale-105'
+                  ? 'h-11 w-11 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground hover:scale-105'
+                  : 'h-11 w-11 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground hover:scale-105'
               )}
               aria-label="Sesli arama başlat"
               title="Sesli arama"
@@ -344,7 +345,7 @@ export function SearchWithDropdown({
             size="icon"
             className={cn(
               'absolute top-1/2 -translate-y-1/2',
-              isHero ? 'right-2 h-10 w-10 rounded-xl dream-gradient' : 'right-0 h-full'
+              isHero ? 'right-2 h-11 w-11 rounded-xl dream-gradient' : 'right-0 h-full'
             )}
             aria-label="Ara"
           >
@@ -458,14 +459,17 @@ export function SearchWithDropdown({
                     >
                       <button
                         onClick={() => handleSelectRecentSearch(term)}
-                        className="flex-1 text-left px-3 py-2 hover:bg-muted rounded-lg transition-colors flex items-center gap-3"
+                        className="min-h-11 flex-1 text-left px-3 py-2 hover:bg-muted rounded-lg transition-colors flex items-center gap-3"
                       >
                         <Clock className="h-4 w-4 text-muted-foreground" />
                         <span>{term}</span>
                       </button>
                       <button
                         onClick={() => removeRecentSearch(term)}
-                        className="p-2 opacity-0 group-hover:opacity-100 hover:text-destructive transition-opacity"
+                        /* Dokunmatik cihazlarda hover olmadığı için X butonu her zaman görünür;
+                           hover destekleyen cihazlarda öğenin üzerine gelince belirir. */
+                        className="-m-1.5 flex h-11 w-11 items-center justify-center text-muted-foreground hover:text-destructive transition-colors [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100"
+                        aria-label={`${term} aramasını kaldır`}
                       >
                         <X className="h-4 w-4" />
                       </button>

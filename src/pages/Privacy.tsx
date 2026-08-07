@@ -3,6 +3,7 @@ import { PremiumBadge, GradientText } from '@/components/layout/PremiumBackgroun
 import { Shield, LockKeyhole, Database, Cookie, UserCheck, Mail, CheckCircle2, EyeOff } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Seo } from '@/components/Seo';
+import { SITE_EMAIL } from '@/lib/config';
 
 const highlights = [
   { icon: LockKeyhole, title: 'Gizlilik önceliği', text: 'Kişisel verilerinizi yalnızca hizmeti sunmak ve geliştirmek için işleriz.' },
@@ -90,7 +91,7 @@ export default function Privacy() {
                   </div>
                 ))}
               </div>
-              <a href="mailto:info@ruyatabirleri.com" className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">
+              <a href={`mailto:${SITE_EMAIL}`} className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">
                 <Mail className="h-4 w-4" />
                 Gizlilik sorusu gönder
               </a>
