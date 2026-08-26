@@ -356,7 +356,17 @@ export default function BlogPost() {
     );
   }
 
-  if (!post) return null;
+  if (!post) {
+    return (
+      <Layout>
+        <Seo title="Yazı Bulunamadı" description="Aradığınız blog yazısı bulunamadı." path="/404" noindex />
+        <div className="container py-20 text-center">
+          <h1 className="text-3xl font-bold mb-4">Yazı Bulunamadı</h1>
+          <p className="text-muted-foreground">Aradığınız blog yazısı mevcut değil veya kaldırılmış olabilir.</p>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>

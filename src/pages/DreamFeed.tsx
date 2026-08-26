@@ -4,12 +4,13 @@ import { motion } from "framer-motion";
 import { Compass, Eye, Heart, TrendingUp, Loader2 } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
 import { Seo } from "@/components/Seo";
-import { fetchDreamFeed, dreamQueryKeys } from "@/lib/api/dreams";
+import { fetchDreamFeed } from "@/lib/api/dreams";
+import { queryKeys } from "@/lib/query/client";
 import type { Dream, Category } from "@/types/database";
 
 const DreamFeed = () => {
   const { data: dreams, isLoading } = useQuery({
-    queryKey: dreamQueryKeys.feed(30),
+    queryKey: queryKeys.dreams.feed(30),
     queryFn: () => fetchDreamFeed(30),
     staleTime: 1000 * 60 * 2,
   });

@@ -1,12 +1,28 @@
+import { lazy, Suspense } from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { HeroSection } from '@/components/home/HeroSection';
-import { FeaturedDreams } from '@/components/home/FeaturedDreams';
 import { DailyDreamCard } from '@/components/home/DailyDreamCard';
-import { CategoriesSection } from '@/components/home/CategoriesSection';
-import { BlogSection } from '@/components/home/BlogSection';
-import { ContactCTASection } from '@/components/home/ContactCTASection';
+import { SectionSkeleton } from '@/components/home/SectionSkeleton';
 import { Seo } from '@/components/Seo';
 import { absoluteUrl, SITE_NAME, SITE_URL } from '@/lib/site';
+
+// Aşağı katlanmış (below-the-fold) bölümler: ilk boyama sonrası yüklenir,
+// framer-motion/recharts gibi ağır bağımlılıkları eager bundle'dan çıkarır.
+const FeaturedDreams = lazy(() =>
+  import('@/components/home/FeaturedDreams').then((m) => ({ default: m.FeaturedDreams }))
+);
+const CategoriesSection = lazy(() =>
+  import('@/components/home/CategoriesSection').then((m) => ({ default: m.CategoriesSection }))
+);
+const BlogSection = lazy(() =>
+  import('@/components/home/BlogSection').then((m) => ({ default: m.BlogSection }))
+);
+const ContactCTASection = lazy(() =>
+  import('@/components/home/ContactCTASection').then((m) => ({ default: m.ContactCTASection }))
+);
+const InterpretCTA = lazy(() =>
+  import('@/components/home/InterpretCTA').then((m) => ({ default: m.InterpretCTA }))
+);
 
 const Index = () => {
   return (
@@ -38,10 +54,13 @@ const Index = () => {
       />
       <HeroSection />
       <DailyDreamCard />
-      <FeaturedDreams />
-      <CategoriesSection />
-      <BlogSection />
-      <ContactCTASection />
+      <Suspense fallback={<SectionSkeleton />}>
+        <FeaturedDreams />
+        <CategoriesSection />
+        <BlogSection />
+        <InterpretCTA />
+        <ContactCTASection />
+      </Suspense>
     </Layout>
   );
 };

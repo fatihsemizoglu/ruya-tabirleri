@@ -22,6 +22,7 @@ import { DreamFaq } from '@/components/dream/DreamFaq';
 import { DreamKeywordTags } from '@/components/dream/DreamKeywordTags';
 import type { Dream, Comment, Profile, Category } from '@/types/database';
 import { Seo } from '@/components/Seo';
+import { SourceTrustBadge } from '@/components/dream/SourceTrustBadge';
 import { absoluteUrl, SITE_NAME } from '@/lib/site';
 import { formatPlainDreamContent } from '@/lib/dreamContent';
 import { useDreamCompare } from '@/hooks/useDreamCompare';
@@ -398,6 +399,7 @@ export default function DreamDetail() {
   if (!dream) {
     return (
       <Layout>
+        <Seo title="Rüya Bulunamadı" description="Aradığınız rüya tabiri bulunamadı." path="/404" noindex />
         <div className="min-h-screen bg-mesh">
           <div className="container py-20">
             <motion.div
@@ -502,6 +504,7 @@ export default function DreamDetail() {
       mainEntityOfPage: absoluteUrl(dreamPath),
       articleSection: category?.name,
       keywords: dream.keywords?.join(', '),
+      reviewedBy: { '@type': 'Organization', name: SITE_NAME, url: absoluteUrl('/hakkimizda') },
     },
     {
       '@context': 'https://schema.org',
@@ -537,7 +540,7 @@ export default function DreamDetail() {
 
       {/* Content */}
       <section className="container py-8">
-        <motion.div
+        <motion.article
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.35 }}
@@ -568,7 +571,9 @@ export default function DreamDetail() {
               dangerouslySetInnerHTML={{ __html: formattedContent }}
             />
           </ContentCard>
-        </motion.div>
+
+          <SourceTrustBadge updatedAt={dream.updated_at || dream.created_at} className="mt-5" />
+        </motion.article>
       </section>
 
       {/* Keywords */}

@@ -4,8 +4,13 @@
  * varsayılanlar yalnızca production dışı/dev ortamları için fallback'tir.
  */
 
-/** Sitenin production adresi (VITE_SITE_URL ile ezilebilir). */
-export const SITE_URL = (import.meta.env.VITE_SITE_URL || 'https://ruya-tabirleri.com').replace(/\/$/, '');
+/**
+ * Sitenin production adresi (VITE_SITE_URL ile ezilebilir).
+ * Fallback: özel alan adı alınana dek Vercel deployment adresi.
+ * Alan adı bağlandığında Vercel > Settings > Environment Variables altında
+ * VITE_SITE_URL değerini güncellemek yeterlidir.
+ */
+export const SITE_URL = (import.meta.env.VITE_SITE_URL || 'https://ruya-tabirleri.vercel.app').replace(/\/$/, '');
 
 /** Sitenin görünen adı. */
 export const SITE_NAME = 'Rüya Tabirleri';
@@ -29,8 +34,12 @@ export const SUPABASE_PUBLISHABLE_KEY = (import.meta.env.VITE_SUPABASE_PUBLISHAB
 /** Supabase Edge Functions kök ucu. */
 export const SUPABASE_FUNCTIONS_URL = `${SUPABASE_URL}/functions/v1`;
 
-/** Google Maps embed anahtarı (VITE_GOOGLE_MAPS_EMBED_KEY ile ezilebilir). */
-export const GOOGLE_MAPS_EMBED_KEY = import.meta.env.VITE_GOOGLE_MAPS_EMBED_KEY || 'AIzaSyAOVYRIgupAurZup5y1PRh8Ismb1A3lLao';
+/**
+ * Google Maps embed anahtarı (VITE_GOOGLE_MAPS_EMBED_KEY).
+ * Kaynak koda gömülü fallback YOKTUR — anahtar yalnızca ortam değişkeninden gelir.
+ * Boşsa harita bileşenleri anahtarsız klasik embed'e düşer.
+ */
+export const GOOGLE_MAPS_EMBED_KEY = (import.meta.env.VITE_GOOGLE_MAPS_EMBED_KEY || '').trim();
 
 // Not: Aşağıdaki iletişim değerleri canlı site_settings tablosundan alınmıştır
 // (contactPhone=+90 532 291 52 55, contactAddress=Atakum, Samsun,

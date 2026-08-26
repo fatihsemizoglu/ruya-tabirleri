@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
 import { Moon, Mail, Heart, MapPin, Phone, Instagram, Twitter, Youtube, Linkedin, Facebook, Sparkles } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { useContactSettings } from '@/hooks/useContactSettings';
 import { normalizeSocialUrl } from '@/lib/social';
 import { FontSizeControl } from '@/components/ui/FontSizeControl';
@@ -225,18 +224,12 @@ export function Footer() {
           </div>
 
           {/* Premium badge bar */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="mt-10 flex items-center justify-center"
-          >
+          <div className="mt-10 flex animate-in fade-in slide-in-from-bottom-2 items-center justify-center duration-500">
             <div className="inline-flex max-w-full items-center gap-2 rounded-full bg-gradient-to-r from-violet-500/10 via-fuchsia-500/10 to-pink-500/10 border border-white/10 px-4 py-2 text-center text-xs text-slate-300">
               <Sparkles className="h-3.5 w-3.5 text-violet-300" />
               5.000+ rüya tabiri · 1M+ aylık okuyucu · 4.9★ kullanıcı puanı
             </div>
-          </motion.div>
+          </div>
         </div>
       </div>
     </footer>

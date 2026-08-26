@@ -22,6 +22,12 @@ export const queryKeys = {
     details: () => ['dreams', 'detail'],
     detail: (id: string) => ['dreams', 'detail', id],
     bySlug: (slug: string) => ['dreams', 'slug', slug],
+    popular: (timeFilter?: string) => ['dreams', 'popular', timeFilter],
+    featured: () => ['dreams', 'featured'],
+    byAlphabet: (letter: string, page: number) => ['dreams', 'alphabet', letter, page],
+    stats: () => ['dreams', 'stats'],
+    similar: (id: string) => ['dreams', 'similar', id],
+    feed: (limit?: number) => ['dreams', 'feed', limit],
   },
   categories: {
     all: ['categories'],

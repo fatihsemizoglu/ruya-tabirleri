@@ -3,6 +3,13 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "regions": ["fra1"],
+  "redirects": [
+    {
+      "source": "/ruya-tabirleri",
+      "destination": "/populer",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/health",

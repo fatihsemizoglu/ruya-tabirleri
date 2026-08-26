@@ -125,6 +125,7 @@ export default defineConfig(({ mode }) => ({
       },
       includeAssets: ["favicon.ico", "robots.txt", "placeholder.svg", "offline.html"],
       manifest: {
+        id: "/",
         name: "Rüya Tabirleri - Mistik Günlük",
         short_name: "Rüya Tabirleri",
         description: "Binlerce rüya tabiri arasında arama yapın. İslami ve psikolojik yorumlarla rüyalarınızın anlamını keşfedin.",

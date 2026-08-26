@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { supabase } from '@/integrations/supabase/client';
 import { captureError } from '@/lib/logger';
+import { Seo } from '@/components/Seo';
 import type { Dream, Category } from '@/types/database';
 
 const alphabet = 'ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ'.split('');
@@ -200,6 +201,15 @@ export default function AlphabetList() {
 
   return (
     <Layout>
+      <Seo
+        title={
+          selectedLetter === 'A' && !letter
+            ? "A'dan Z'ye Rüya Tabirleri"
+            : `${selectedLetter} ile Başlayan Rüya Tabirleri`
+        }
+        description="A'dan Z'ye tüm rüya tabirleri alfabetik sırada. Aradığınız rüyayı harfine göre kolayca bulun ve İslami ve psikolojik yorumlarını okuyun."
+        path={letter ? `/az/${letter.toUpperCase()}` : '/az'}
+      />
       <div className="min-h-screen bg-mesh">
         {/* Hero Header */}
         <section className="relative overflow-hidden">

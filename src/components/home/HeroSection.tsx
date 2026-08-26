@@ -1,5 +1,4 @@
 import { useRef, useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { Sparkles, TrendingUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { SearchWithDropdown } from '@/components/search/SearchWithDropdown';
@@ -54,17 +53,12 @@ export function HeroSection() {
       {/* Top: Badge */}
       <div className="absolute top-8 left-0 right-0 z-10 sm:top-16 md:top-24">
         <div className="container px-4">
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="text-center"
-          >
+          <div className="animate-in fade-in slide-in-from-top-2 text-center duration-500">
             <div className="inline-flex max-w-[calc(100vw-2rem)] items-center justify-center gap-2 rounded-full bg-primary/5 border border-primary/10 px-3 py-2 text-center text-[11px] font-semibold text-primary backdrop-blur-sm sm:px-4 sm:text-sm">
               <Sparkles className="h-3.5 w-3.5" />
               <span className="truncate sm:whitespace-normal">Türkiye'nin en kapsamlı rüya tabirleri sitesi</span>
             </div>
-          </motion.div>
+          </div>
         </div>
       </div>
 
@@ -74,12 +68,7 @@ export function HeroSection() {
       >
         <div className="max-w-3xl mx-auto">
           {/* Title above search */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-center mb-4 sm:mb-6"
-          >
+          <div className="animate-in fade-in slide-in-from-bottom-4 text-center duration-500 mb-4 sm:mb-6" style={{ animationDelay: '100ms', animationFillMode: 'backwards' }}>
             <h1 className="text-[2rem] sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-foreground leading-[1.05] mb-3 sm:mb-4">
               <span className="block">Rüyalarınızın</span>
               <span className="text-gradient">Anlamını Keşfedin</span>
@@ -87,25 +76,15 @@ export function HeroSection() {
             <p className="text-sm sm:text-base text-muted-foreground max-w-md mx-auto leading-relaxed px-1">
               Binlerce rüya tabiri arasında arama yapın, İslami ve psikolojik yorumlarla rüyalarınızın anlamını öğrenin.
             </p>
-          </motion.div>
+          </div>
 
           {/* The search bar - the main focal point */}
-          <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="max-w-2xl mx-auto"
-          >
+          <div className="animate-in fade-in slide-in-from-bottom-4 zoom-in-95 max-w-2xl mx-auto duration-500" style={{ animationDelay: '300ms', animationFillMode: 'backwards' }}>
             <SearchWithDropdown variant="hero" />
-          </motion.div>
+          </div>
 
           {/* Popular searches */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.5 }}
-            className="mt-4 flex flex-wrap items-center justify-center gap-1.5 sm:mt-5 sm:gap-2"
-          >
+          <div className="animate-in fade-in mt-4 flex flex-wrap items-center justify-center gap-1.5 sm:mt-5 sm:gap-2 duration-500" style={{ animationDelay: '500ms', animationFillMode: 'backwards' }}>
             <span className="text-xs text-muted-foreground hidden sm:inline-flex items-center gap-1.5">
               <TrendingUp className="h-3 w-3" />
               Popüler:
@@ -119,7 +98,7 @@ export function HeroSection() {
                 <span className="font-medium">{item.label}</span>
               </Link>
             ))}
-          </motion.div>
+          </div>
         </div>
       </div>
 
@@ -127,19 +106,13 @@ export function HeroSection() {
       <div className="absolute bottom-3 left-0 right-0 z-10 sm:bottom-8">
         <div className="container px-4">
           {/* Alphabet navigation */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.6 }}
-            className="mb-3 sm:mb-5"
-          >
+          <div className="animate-in fade-in slide-in-from-bottom-2 mb-3 sm:mb-5 duration-500" style={{ animationDelay: '600ms', animationFillMode: 'backwards' }}>
             <div className="mx-auto grid max-w-[21rem] grid-cols-9 justify-center gap-1 sm:flex sm:max-w-3xl sm:flex-wrap sm:gap-1.5">
               {alphabet.map((letter, idx) => (
-                <motion.div
+                <div
                   key={letter}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.2, delay: 0.6 + idx * 0.012 }}
+                  className="animate-in fade-in zoom-in-90 duration-200"
+                  style={{ animationDelay: `${600 + idx * 12}ms`, animationFillMode: 'backwards' }}
                 >
                   {/* Dokunmatik cihazlarda global min-width:48px kuralı bu 9 sütunlu
                       klavye-benzeri ızgarayı taşırabiliyor; min boyutları sıfırlayıp
@@ -152,18 +125,13 @@ export function HeroSection() {
                   >
                     {letter}
                   </Link>
-                </motion.div>
+                </div>
               ))}
             </div>
-          </motion.div>
+          </div>
 
           {/* Stats */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.8 }}
-            className="grid grid-cols-3 items-center justify-center gap-2 sm:flex sm:flex-wrap sm:gap-12"
-          >
+          <div className="animate-in fade-in slide-in-from-bottom-2 grid grid-cols-3 items-center justify-center gap-2 sm:flex sm:flex-wrap sm:gap-12 duration-500" style={{ animationDelay: '800ms', animationFillMode: 'backwards' }}>
             {stats.map((stat) => (
               <div key={stat.label} className="text-center flex flex-col items-center gap-0.5 sm:flex-row sm:items-baseline sm:gap-1.5">
                 <span className="text-base sm:text-lg font-bold text-gradient">
@@ -174,25 +142,19 @@ export function HeroSection() {
                 </span>
               </div>
             ))}
-          </motion.div>
+          </div>
         </div>
       </div>
 
       {/* Scroll indicator */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.5, duration: 0.5 }}
-        className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 hidden lg:block"
+      <div
+        className="animate-in fade-in absolute bottom-2 left-1/2 -translate-x-1/2 z-10 hidden lg:block duration-500"
+        style={{ animationDelay: '1500ms', animationFillMode: 'backwards' }}
       >
-        <motion.div
-          animate={{ y: [0, 6, 0] }}
-          transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-          className="w-5 h-8 rounded-full border-2 border-muted-foreground/30 flex items-start justify-center p-1"
-        >
+        <div className="w-5 h-8 rounded-full border-2 border-muted-foreground/30 flex items-start justify-center p-1 animate-bounce">
           <div className="w-1 h-1.5 rounded-full bg-muted-foreground/50" />
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
     </section>
   );
 }

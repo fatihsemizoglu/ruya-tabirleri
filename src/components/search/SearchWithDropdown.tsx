@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search, Loader2, Sparkles, ChevronRight, Clock, X, Mic } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -6,7 +6,11 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { captureError } from '@/lib/logger';
 import { cn } from '@/lib/utils';
-import { VoiceSearchModal } from './VoiceSearchModal';
+
+// framer-motion içerdiği için eager yerine tıklama anında yüklenir.
+const LazyVoiceSearchModal = lazy(() =>
+  import('./VoiceSearchModal').then((m) => ({ default: m.VoiceSearchModal }))
+);
 
 interface Suggestion {
   id: string;
@@ -482,13 +486,15 @@ export function SearchWithDropdown({
         )}
       </div>
 
-      {/* Voice Search Modal */}
+      {/* Voice Search Modal — lazy: framer-motion'ı eager bundle'dan tutar */}
       {voiceSupported && (
-        <VoiceSearchModal
-          open={voiceModalOpen}
-          onOpenChange={setVoiceModalOpen}
-          onResult={handleVoiceResult}
-        />
+        <Suspense fallback={null}>
+          <LazyVoiceSearchModal
+            open={voiceModalOpen}
+            onOpenChange={setVoiceModalOpen}
+            onResult={handleVoiceResult}
+          />
+        </Suspense>
       )}
     </>
   );

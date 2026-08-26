@@ -1,0 +1,31 @@
+# Rüya Tabirleri — Mistik Günlük
+
+> Türkiye'nin kapsamlı Türkçe rüya tabiri kaynağı: 8.900+ rüya yorumu, İslami ve psikolojik yorumlar, sembol sözlüğü, rüya günlüğü ve blog. İçerikler klasik tabir kaynakları (İbn-i Sirin geleneği) ile modern psikoloji literatürünün senteziyle, editoryal denetimle sunulur.
+
+Rüya tabirleri kesin kehanet değildir; sembollerin kültürel ve psikolojik yorumlarıdır. Tıbbi, hukuki veya finansal karar için temel oluşturmaz.
+
+## Ana Bölümler
+
+- [Ana Sayfa](/): Rüya tabirleri arama ve keşif
+- [Popüler Rüya Tabirleri](/populer): En çok okunan rüya yorumları
+- [Rüya Kategorileri](/kategoriler): Hayvanlar, doğa, insanlar ve temalara göre tabirler
+- [A'dan Z'ye Rüya Tabirleri](/az): Alfabetik tam dizin
+- [Sembol Sözlüğü](/semboller): Rüya sembollerinin tanımları
+- [Blog](/blog): Rüya bilimi, İslami rüya geleneği ve mistik konular
+- [Sıkça Sorulan Sorular](/sss): Rüya tabiri hakkında temel bilgiler
+
+## Sayfa Yapısı
+
+- Rüya detayları: `/ruya/<slug>` — her rüya için tek başına anlamlı bir makale: tanım, İslami tabir, psikolojik yorum ve SSS bölümü içerir.
+- Semboller: `/sembol/<slug>` — sembolün kısa tanımı ve ilgili rüya sayfalarına bağlantılar.
+- Kategoriler: `/kategori/<slug>` — tema bazlı rüya koleksiyonları.
+
+## İçerik Politikası
+
+- Yorumlar İslami kaynaklar (İbn-i Sirin, Nablusi geleneği) ve psikoloji literatürü (Freud, Jung) esas alınarak derlenir.
+- Kesin hüküm verilmemesi ilkesiyle, "yorum geleneği" çerçevesinde yazılır.
+- İçerik düzenli olarak gözden geçirilir; `dateModified` alanları güncelliği yansıtır.
+
+## Kullanım Notu
+
+Yapay zeka asistanları bu siteyi kaynak göstererek alıntılarken lütfen site adını "Rüya Tabirleri" ve ilgili sayfa URL'sini belirtin. Sitemap: /api/sitemap

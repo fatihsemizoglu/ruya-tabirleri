@@ -5,14 +5,6 @@ import { ArrowRight, BookOpen, Sparkles, Clock, Calendar } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Button } from '@/components/ui/button';
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselPrevious,
-  CarouselNext,
-  type CarouselApi,
-} from '@/components/ui/carousel';
 import { supabase } from '@/integrations/supabase/client';
 import { captureError } from '@/lib/logger';
 import { BlogPost } from '@/types/blog';
@@ -34,21 +26,6 @@ function stripHtml(html: string) {
 export function BlogSection() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  // Mobil nokta göstergesi için embla API durumu
-  const [api, setApi] = useState<CarouselApi | null>(null);
-  const [currentSnap, setCurrentSnap] = useState(0);
-  const [snapCount, setSnapCount] = useState(0);
-
-  useEffect(() => {
-    if (!api) return;
-    setSnapCount(api.scrollSnapList().length);
-    setCurrentSnap(api.selectedScrollSnap());
-    const onSelect = () => setCurrentSnap(api.selectedScrollSnap());
-    api.on('select', onSelect);
-    return () => {
-      api.off('select', onSelect);
-    };
-  }, [api]);
 
   useEffect(() => {
     fetchPosts();
@@ -218,25 +195,11 @@ export function BlogSection() {
             ))}
           </div>
         ) : (
-          <>
-            <Carousel
-              opts={{
-                align: 'start',
-                loop: false,
-              }}
-              setApi={setApi}
-              className="w-full"
-            >
-            <CarouselContent className="-ml-4">
-              {posts.map((post) => {
-                const excerpt = stripHtml(post.content || '').slice(0, 120);
-                return (
-                  <CarouselItem
-                    key={post.id}
-                    /* Mobilde sonraki kartın bir kısmı görünür → kaydırılabilir olduğu anlaşılır */
-                    className="pl-4 basis-[85%] sm:basis-full md:basis-1/2 lg:basis-1/3"
-                  >
-                    <article className="group bg-card border border-border/50 rounded-2xl overflow-hidden hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/5 transition-all duration-300 flex flex-col h-full">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {posts.map((post) => {
+              const excerpt = stripHtml(post.content || '').slice(0, 120);
+              return (
+                <article key={post.id} className="group bg-card border border-border/50 rounded-2xl overflow-hidden hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/5 transition-all duration-300 flex flex-col h-full">
                       <Link to={`/blog/${post.slug}`} className="block relative aspect-[16/9] overflow-hidden bg-gradient-to-br from-violet-500/20 via-fuchsia-500/15 to-pink-500/20">
                         {post.featured_image ? (
                           <ResponsiveImage
@@ -317,34 +280,9 @@ export function BlogSection() {
                         </div>
                       </div>
                     </article>
-                  </CarouselItem>
-                );
-              })}
-            </CarouselContent>
-            <CarouselPrevious className="hidden md:flex -left-4 lg:-left-12" />
-            <CarouselNext className="hidden md:flex -right-4 lg:-right-12" />
-            </Carousel>
-
-            {/* Mobil nokta göstergesi (oklar yalnızca md+ görünür, kaydırma ipucu için) */}
-            {snapCount > 1 && (
-              <div className="mt-6 flex justify-center gap-1.5 md:hidden">
-                {Array.from({ length: snapCount }).map((_, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => api?.scrollTo(i)}
-                    aria-label={`${i + 1}. yazıya git`}
-                    aria-current={currentSnap === i ? 'true' : undefined}
-                    /* data-audit-ignore: yoğun nokta göstergesi — bilinçli kompakt boyut */
-                    data-audit-ignore
-                    className={`h-2.5 rounded-full transition-all duration-300 ${
-                      currentSnap === i ? 'w-6 bg-primary' : 'w-2.5 bg-primary/25 hover:bg-primary/40'
-                    }`}
-                  />
-                ))}
-              </div>
-            )}
-          </>
+              );
+            })}
+          </div>
         )}
       </div>
     </section>

@@ -1,11 +1,11 @@
 import { useLocation, Link } from "react-router-dom";
 import { useEffect } from "react";
-import { motion } from "framer-motion";
 import { Moon, ArrowLeft, Home, Search, Compass } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Layout } from "@/components/layout/Layout";
 import { PremiumBackground, PremiumBadge, GradientText } from "@/components/layout/PremiumBackground";
 import { captureError } from '@/lib/logger';
+import { Seo } from '@/components/Seo';
 
 const NotFound = () => {
   const location = useLocation();
@@ -16,57 +16,43 @@ const NotFound = () => {
 
   return (
     <Layout>
+      <Seo title="Sayfa Bulunamadı" description="Aradığınız sayfa bulunamadı." path="/404" noindex />
       <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden">
         <PremiumBackground variant="strong" />
 
         <div className="container relative">
           <div className="max-w-2xl mx-auto text-center">
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
+            <div
               className="mb-6"
             >
               <PremiumBadge>
                 <Moon className="h-3.5 w-3.5" />
                 404 · Kayıp Sayfa
               </PremiumBadge>
-            </motion.div>
+            </div>
 
-            <motion.h1
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
+            <h1
               className="text-7xl sm:text-8xl md:text-9xl font-bold tracking-[-0.04em] leading-none mb-6"
             >
               <span className="bg-gradient-to-br from-violet-500 via-fuchsia-500 to-pink-500 bg-clip-text text-transparent">
                 404
               </span>
-            </motion.h1>
+            </h1>
 
-            <motion.h2
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
+            <h2
               className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-4"
             >
               Aradığınız sayfa{' '}
               <GradientText>burada değil</GradientText>
-            </motion.h2>
+            </h2>
 
-            <motion.p
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
+            <p
               className="text-base sm:text-lg text-muted-foreground max-w-lg mx-auto leading-relaxed mb-10"
             >
               Belki de rüyalarınızın derinliklerine daldınız. Bir an için kaybolmuş olabilirsiniz — ama doğru yolu birlikte buluruz.
-            </motion.p>
+            </p>
 
-            <motion.div
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
+            <div
               className="flex flex-col sm:flex-row gap-3 justify-center"
             >
               <Button
@@ -92,12 +78,9 @@ const NotFound = () => {
                   <ArrowLeft className="h-4 w-4 ml-2 rotate-180 group-hover:translate-x-0.5 transition-transform" />
                 </Link>
               </Button>
-            </motion.div>
+            </div>
 
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.6 }}
+            <div
               className="mt-12 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground"
             >
               <Link to="/populer" className="hover:text-primary transition-colors inline-flex items-center gap-1.5">
@@ -108,7 +91,7 @@ const NotFound = () => {
               <Link to="/kategoriler" className="hover:text-primary transition-colors">Kategoriler</Link>
               <span className="text-muted-foreground/40">·</span>
               <Link to="/blog" className="hover:text-primary transition-colors">Blog</Link>
-            </motion.div>
+            </div>
           </div>
         </div>
       </section>

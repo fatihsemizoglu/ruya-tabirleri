@@ -1,4 +1,3 @@
-import { motion, AnimatePresence } from 'framer-motion';
 import { WifiOff, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePWA } from '@/hooks/usePWA';
@@ -11,15 +10,15 @@ export function OfflineIndicator() {
   };
 
   return (
-    <AnimatePresence>
+    <div
+      aria-hidden={isOnline}
+      className={`fixed top-0 left-0 right-0 z-[100] bg-amber-500 text-amber-950 py-2 px-4 text-center text-sm font-medium flex items-center justify-center gap-2 transition-all duration-300 ${
+        isOnline ? 'pointer-events-none -translate-y-full opacity-0' : 'translate-y-0 opacity-100'
+      }`}
+      style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+    >
       {!isOnline && (
-        <motion.div
-          initial={{ opacity: 0, y: -50 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -50 }}
-          className="fixed top-0 left-0 right-0 z-[100] bg-amber-500 text-amber-950 py-2 px-4 text-center text-sm font-medium flex items-center justify-center gap-2"
-          style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
-        >
+        <>
           <WifiOff className="w-4 h-4" />
           <span>Çevrimdışısınız - Bazı özellikler sınırlı olabilir</span>
           <Button
@@ -31,8 +30,8 @@ export function OfflineIndicator() {
             <RefreshCw className="w-3 h-3" />
             Tekrar Dene
           </Button>
-        </motion.div>
+        </>
       )}
-    </AnimatePresence>
+    </div>
   );
 }

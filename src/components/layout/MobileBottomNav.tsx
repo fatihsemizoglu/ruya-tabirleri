@@ -1,6 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { Fragment } from 'react';
-import { motion } from 'framer-motion';
 import { Home, Compass, Heart, User, BookOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -89,11 +88,9 @@ export function MobileBottomNav() {
                       )}
                     >
                       {active && (
-                        <motion.span
-                          layoutId="mobile-bottom-nav-active"
+                        <span
                           aria-hidden
-                          transition={{ type: 'spring', stiffness: 420, damping: 34 }}
-                          className="absolute inset-0 rounded-2xl border border-primary/15 bg-primary/10 dark:bg-primary/15"
+                          className="absolute inset-0 animate-in fade-in zoom-in-95 rounded-2xl border border-primary/15 bg-primary/10 duration-200 dark:bg-primary/15"
                         />
                       )}
                       <span className={cn(

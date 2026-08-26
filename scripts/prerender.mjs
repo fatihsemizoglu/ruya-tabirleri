@@ -50,7 +50,8 @@ const SUPABASE_ANON_KEY =
   process.env.SUPABASE_ANON_KEY ||
   '';
 // Not: robots.txt sitemap URL'i de aynı SITE_URL'den türetilir (aşağıda)
-const SITE_URL = (process.env.VITE_SITE_URL || 'https://ruya-tabirleri.com').replace(/\/$/, '');
+// Fallback: özel alan adı alınana dek Vercel deployment adresi.
+const SITE_URL = (process.env.VITE_SITE_URL || 'https://ruya-tabirleri.vercel.app').replace(/\/$/, '');
 
 const SITE_NAME = 'Rüya Tabirleri';
 const DEFAULT_DESCRIPTION =
@@ -60,9 +61,11 @@ const PAGE_SIZE = 1000;
 // Minimal Turkish slugify (mirrors src/lib/slug.ts — kept local to avoid build deps)
 function generateSlug(name) {
   return String(name)
+    .replace(/İ/g, 'i') // İ, toLowerCase ile "i̇" (i + U+0307) üretir — önce dönüştür
     .toLowerCase()
     .replace(/ğ/g, 'g').replace(/ü/g, 'u').replace(/ş/g, 's')
     .replace(/ı/g, 'i').replace(/ö/g, 'o').replace(/ç/g, 'c')
+    .replace(/\u0307/g, '')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
 }
@@ -88,6 +91,94 @@ function stripHtml(html) {
     .replace(/<[^>]*>/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+/**
+ * DB'den gelen zengin metni güvenli statik HTML'e çevirir:
+ * script/style/iframe gibi etiketleri ve event handler niteliklerini söker.
+ * (Admin kaynaklı içerik olsa da savunma derinliği için.)
+ */
+function sanitizeHtmlContent(html) {
+  return String(html || '')
+    .replace(/<script\b[\s\S]*?<\/script>/gi, '')
+    .replace(/<style\b[\s\S]*?<\/style>/gi, '')
+    .replace(/<iframe\b[\s\S]*?(<\/iframe>|\/?>)/gi, '')
+    .replace(/<(object|embed|form|input|button)\b[\s\S]*?(<\/\1>|\/?>)/gi, '')
+    .replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+    .replace(/(href|src)\s*=\s*("|')\s*javascript:[^"']*\2/gi, '$1="#"');
+}
+
+const BODY_WRAPPER_STYLE =
+  'margin:0 auto;padding:24px;max-width:760px;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.7;color:#1f2937;';
+
+/** Statik içeriği <div id="root"> içine basar (JS çalıştırmayan botlar için). */
+function injectBody(template, contentHtml) {
+  if (!contentHtml) return template;
+  const rootPattern = /(<div\s+id="root"\s*>)([\s]*)(<\/div>)/;
+  if (!rootPattern.test(template)) return template;
+  const bodyBlock = `<div style="${BODY_WRAPPER_STYLE}">\n${contentHtml}\n</div>`;
+  return template.replace(rootPattern, `$1${bodyBlock}$3`);
+}
+
+/** H1 altına yerleşen 40-60 kelimelik tanım bloğu (GEO entity pattern). */
+function buildDefinitionBlock(text, maxSentences = 2) {
+  const sentences = String(text || '').split(/(?<=[.!?])\s+/).filter(Boolean);
+  const def = sentences.slice(0, maxSentences).join(' ');
+  return def
+    ? `<p style="font-size:1.05em;"><strong>${escapeHtml(def)}</strong></p>`
+    : '';
+}
+
+function buildBreadcrumb(items) {
+  const parts = items.map((item, i) => {
+    const last = i === items.length - 1;
+    const label = escapeHtml(item.name);
+    return last
+      ? `<span aria-current="page">${label}</span>`
+      : `<a href="${absoluteUrl(item.path)}">${label}</a>`;
+  });
+  return `<nav aria-label="breadcrumb" style="font-size:.875em;margin-bottom:12px;">${parts.join(' › ')}</nav>`;
+}
+
+function buildDreamBody(dream) {
+  const plain = stripHtml(dream.content);
+  const safeContent = sanitizeHtmlContent(dream.content);
+  const keywords = Array.isArray(dream.keywords) ? dream.keywords.slice(0, 12) : [];
+  const faqIntro = buildDefinitionBlock(plain);
+
+  const keywordChips = keywords.length
+    ? `<ul style="padding-left:20px;">${keywords.map((k) => `<li>${escapeHtml(String(k))}</li>`).join('')}</ul>`
+    : '';
+
+  return [
+    buildBreadcrumb([
+      { name: 'Ana Sayfa', path: '/' },
+      { name: 'Rüya Tabirleri', path: '/populer' },
+      { name: dream.title, path: `/ruya/${dream.slug}` },
+    ]),
+    `<h1>${escapeHtml(dream.title)}</h1>`,
+    faqIntro,
+    safeContent,
+    keywordChips,
+  ].filter(Boolean).join('\n');
+}
+
+function buildBlogBody(post) {
+  const plain = stripHtml(post.content);
+  return [
+    buildBreadcrumb([
+      { name: 'Ana Sayfa', path: '/' },
+      { name: 'Blog', path: '/blog' },
+      { name: post.title, path: `/blog/${post.slug}` },
+    ]),
+    `<h1>${escapeHtml(post.title)}</h1>`,
+    buildDefinitionBlock(plain),
+    sanitizeHtmlContent(post.content),
+  ].filter(Boolean).join('\n');
+}
+
+function buildStaticBody(title, description) {
+  return `<h1>${escapeHtml(title)}</h1>\n<p>${escapeHtml(description)}</p>`;
 }
 
 function truncate(str, max = 160) {
@@ -206,6 +297,11 @@ function injectSeo(template, opts) {
     html = setMeta(html, /<meta\s+name="robots"\s+content="[^"]*"\s*\/?>/, `<meta name="robots" content="noindex,nofollow" />`);
   }
 
+  // Static body content for JS-less crawlers (GEO) — replaced by React on mount.
+  if (opts.bodyHtml) {
+    html = injectBody(html, opts.bodyHtml);
+  }
+
   return html;
 }
 
@@ -257,6 +353,7 @@ function dreamPageHtml(template, dream) {
       headline: title,
       description,
       url: absoluteUrl(path),
+      image: absoluteUrl('/og-image.png'),
       datePublished: dream.created_at,
       dateModified: dream.updated_at || dream.created_at,
       author: { '@type': 'Organization', name: SITE_NAME },
@@ -267,6 +364,7 @@ function dreamPageHtml(template, dream) {
       },
       mainEntityOfPage: absoluteUrl(path),
       keywords: dream.keywords?.join(', '),
+      reviewedBy: { '@type': 'Organization', name: SITE_NAME, url: absoluteUrl('/hakkimizda') },
     },
     {
       '@context': 'https://schema.org',
@@ -284,6 +382,7 @@ function dreamPageHtml(template, dream) {
     path,
     type: 'article',
     jsonLd,
+    bodyHtml: buildDreamBody(dream),
   });
 }
 
@@ -300,6 +399,7 @@ function blogPageHtml(template, post) {
       headline: title,
       description,
       url: absoluteUrl(path),
+      image: absoluteUrl('/og-image.png'),
       datePublished: post.created_at,
       dateModified: post.updated_at || post.created_at,
       author: { '@type': 'Organization', name: SITE_NAME },
@@ -318,6 +418,7 @@ function blogPageHtml(template, post) {
     path,
     type: 'article',
     jsonLd,
+    bodyHtml: buildBlogBody(post),
   });
 }
 
@@ -340,11 +441,15 @@ function categoryPageHtml(template, category) {
     description,
     path,
     jsonLd,
+    bodyHtml: buildStaticBody(title, description || `${category.name} kategorisindeki rüya tabirleri`),
   });
 }
 
 function staticPageHtml(template, opts) {
-  return injectSeo(template, opts);
+  return injectSeo(template, {
+    ...opts,
+    bodyHtml: opts.bodyHtml || buildStaticBody(opts.title, opts.description),
+  });
 }
 
 // ── Symbol glossary ──────────────────────────────────────────────────
@@ -388,6 +493,11 @@ function symbolIndexHtml(template, symbols) {
     description: `Rüyalardaki ${symbols.length} sembolün tabirlerine alfabetik sözlükten ulaşın.`,
     path: '/semboller',
     jsonLd,
+    bodyHtml: [
+      '<h1>Rüya Sembolleri Sözlüğü</h1>',
+      `<p>Rüya tabirlerinde geçen ${symbols.length} sembolün alfabetik listesi. Bir sembolün anlamını görmek için listeden seçin.</p>`,
+      `<ul style="columns:2;gap:24px;">${symbols.slice(0, 500).map((s) => `<li><a href="${absoluteUrl(`/sembol/${s.slug}`)}">${escapeHtml(s.term)}</a></li>`).join('')}</ul>`,
+    ].join('\n'),
   });
 }
 
@@ -415,7 +525,23 @@ function symbolPageHtml(template, symbol) {
       ],
     },
   ];
-  return injectSeo(template, { title, description, path, jsonLd });
+  return injectSeo(template, {
+    title,
+    description,
+    path,
+    jsonLd,
+    bodyHtml: [
+      buildBreadcrumb([
+        { name: 'Ana Sayfa', path: '/' },
+        { name: 'Sembol Sözlüğü', path: '/semboller' },
+        { name: symbol.term, path: `/sembol/${symbol.slug}` },
+      ]),
+      `<h1>${escapeHtml(title)}</h1>`,
+      `<p><strong>${escapeHtml(description)}</strong></p>`,
+      `<p>Rüyada ${escapeHtml(symbol.term)} görmekle ilgili ${symbol.count} farklı rüya yorumu sitemizde bulunuyor; detaylı tabirler için ilgili rüya sayfalarımızı ziyaret edebilirsiniz.</p>`,
+      `<p><a href="${absoluteUrl('/populer')}">Popüler rüya tabirlerine göz atın</a>.</p>`,
+    ].join('\n'),
+  });
 }
 
 // ── Main ─────────────────────────────────────────────────────────────
@@ -423,15 +549,21 @@ function symbolPageHtml(template, symbol) {
 async function main() {
   console.log('🌙 Prerender başlıyor...');
 
-  // robots.txt: resolve %VITE_SITE_URL% placeholder so sitemap URL matches the
-  // actual deployment domain (vite build only copies public/ verbatim).
-  const robotsPath = join(DIST_DIR, 'robots.txt');
-  if (existsSync(robotsPath)) {
-    const robots = await readFile(robotsPath, 'utf-8');
-    const resolvedSiteUrl = process.env.VITE_SITE_URL || 'https://ruya-tabirleri.com';
-    if (robots.includes('%VITE_SITE_URL%')) {
-      await writeFile(robotsPath, robots.replaceAll('%VITE_SITE_URL%', resolvedSiteUrl), 'utf-8');
-      console.log(`  🤖 robots.txt sitemap URL: ${resolvedSiteUrl}`);
+  // %VITE_SITE_URL% placeholder'ını çöz: robots.txt + kök index.html + 404.html.
+  // (Vite, env tanımsızsa placeholder'ı dokunmadan bırakabilir; boş ezebilir —
+  //  burada tek otorite olarak VITE_SITE_URL || fallback kullanılır.)
+  const resolvedSiteUrl = SITE_URL;
+  const placeholderTargets = [
+    join(DIST_DIR, 'robots.txt'),
+    join(DIST_DIR, 'index.html'),
+    join(DIST_DIR, '404.html'),
+  ];
+  for (const target of placeholderTargets) {
+    if (!existsSync(target)) continue;
+    const content = await readFile(target, 'utf-8');
+    if (content.includes('%VITE_SITE_URL%')) {
+      await writeFile(target, content.replaceAll('%VITE_SITE_URL%', resolvedSiteUrl), 'utf-8');
+      console.log(`  🔗 %VITE_SITE_URL% → ${resolvedSiteUrl} (${target.split(/[\\/]/).pop()})`);
     }
   }
 
@@ -480,6 +612,63 @@ async function main() {
       path: '/iletisim',
       title: 'İletişim',
       description: 'Rüya Tabirleri ekibiyle iletişime geçin. Soru, öneri ve işbirlikleri için.',
+    },
+    {
+      path: '/az',
+      title: "A'dan Z'ye Rüya Tabirleri",
+      description: "A'dan Z'ye tüm rüya tabirleri alfabetik sırada. Aradığınız rüyayı harfine göre kolayca bulun.",
+    },
+    {
+      path: '/gizlilik',
+      title: 'Gizlilik Politikası',
+      description: 'Rüya Tabirleri gizlilik politikası: kişisel verilerinizin korunması ve çerez kullanımı.',
+    },
+    {
+      path: '/kullanim-kosullari',
+      title: 'Kullanım Koşulları',
+      description: 'Rüya Tabirleri sitesi kullanım koşulları ve hizmet sınırlandırmaları.',
+    },
+    {
+      path: '/kvkk',
+      title: 'KVKK Aydınlatma Metni',
+      description: '6698 sayılı Kişisel Verilerin Korunması Kanunu kapsamında aydınlatma metni.',
+    },
+    {
+      path: '/cerez-politikasi',
+      title: 'Çerez Politikası',
+      description: 'Sitede kullanılan çerezlerin türleri, amaçları ve yönetimi hakkında bilgi.',
+    },
+    {
+      path: '/ruyami-yorumlat',
+      title: 'Ücretsiz Rüya Yorumlatma — AI Destekli',
+      description: 'Rüyanızı yazın, anında İslami ve psikolojik yorumunuzu alın. İbn-i Sirin geleneği ve psikoloji literatürüyle desteklenen ücretsiz AI rüya yorumlatma servisi.',
+      jsonLd: {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: [
+          {
+            '@type': 'Question',
+            name: 'Rüyamı yorumlatmak ücretsiz mi?',
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: 'Evet. Günde 3 kez ücretsiz rüya yorumu alabilirsiniz. Rüyanızı yazın, sistem İslami ve psikolojik kaynakları temel alarak size özel bir yorum oluşturur.',
+            },
+          },
+          {
+            '@type': 'Question',
+            name: 'AI rüya yorumu nasıl hazırlanıyor?',
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: 'Rüyanızdaki semboller, klasik İslami rüya tabiri kaynakları (İbn-i Sirin, Nablusi geleneği) ve modern psikoloji literatürüyle eşleştirilir. Sonuç, yorum geleneği çerçevesinde bir rehberdir; kesin hüküm içermez.',
+            },
+          },
+        ],
+      },
+    },
+    {
+      path: '/istatistikler',
+      title: 'Rüya İstatistikleri — En Çok Görülen Rüyalar',
+      description: "Arşivimizdeki binlerce rüya tabirinin görüntülenme, kategori ve alfabetik istatistikleri. En çok okunan rüyalar ve topluluk eğilimleri.",
     },
     {
       path: '/sss',
@@ -535,14 +724,6 @@ async function main() {
             acceptedAnswer: {
               '@type': 'Answer',
               text: 'Bazı geleneksel yorumlar rüyaların ilahi bir işaret olabileceğini kabul ederken, bilimsel yaklaşım rüyaların geleceği önceden bildirdiğine dair kanıt bulamamıştır. Rüyaların çoğu zaman günlük yaşamın yansıması olduğu kabul edilir.',
-            },
-          },
-          {
-            '@type': 'Question',
-            name: 'Rüya tabirleri gerçekten doğru mu?',
-            acceptedAnswer: {
-              '@type': 'Answer',
-              text: 'Rüya tabirleri kesin birer kehanet değil, sembolik anlam kılavuzlarıdır. Aynı sembol farklı kişiler için farklı anlamlar taşıyabilir; çünkü rüya yorumunda kişisel yaşam deneyimleri ve kültürel bağlam büyük rol oynar. Tabirleri bir yol gösterici olarak değerlendirmek en sağlıklı yaklaşımdır.',
             },
           },
           {
@@ -653,6 +834,23 @@ async function main() {
     }
   } catch (err) {
     console.warn(`  ⚠ Kategori prerender hatası: ${err.message}`);
+  }
+
+  // ── 404 (soft-404 önleme: JS'siz botlar ve doğruluk için) ──
+  try {
+    const notFoundHtml = injectSeo(template, {
+      title: 'Sayfa Bulunamadı',
+      description: 'Aradığınız sayfa bulunamadı. Ana sayfadan rüya tabirleri arasında arama yapabilirsiniz.',
+      path: '/404',
+      noindex: true,
+      bodyHtml:
+        '<h1>Sayfa Bulunamadı</h1>\n<p>Aradığınız sayfa taşınmış veya hiç var olmamış olabilir.</p>\n<p><a href="/">Ana sayfaya dönün</a> veya <a href="/ara">rüya tabirlerinde arama yapın</a>.</p>',
+    });
+    await writeFile(join(DIST_DIR, '404.html'), notFoundHtml, 'utf-8');
+    count++;
+    console.log('  🚫 404.html üretildi');
+  } catch (err) {
+    console.warn(`  ⚠ 404 prerender hatası: ${err.message}`);
   }
 
   console.log(`\n✅ Prerender tamamlandı: ${count} sayfa oluşturuldu`);

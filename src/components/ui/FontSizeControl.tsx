@@ -1,7 +1,6 @@
 import { Type, ChevronUp, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useFontSize, type FontSize } from '@/hooks/useFontSize';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -67,34 +66,27 @@ export function FontSizeControl({ variant = 'inline' }: FontSizeControlProps) {
         <Type className="h-4 w-4 mr-1.5" />
         <span className="text-xs">{labels[fontSize]}</span>
       </Button>
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            className="absolute right-0 top-full mt-2 z-50 min-w-[140px] rounded-xl border border-border bg-card shadow-xl p-1"
-          >
-            {(Object.keys(labels) as FontSize[]).map((size) => (
-              <button
-                key={size}
-                onClick={() => {
-                  setFontSize(size);
-                  setOpen(false);
-                }}
-                className={cn(
-                  'w-full min-h-11 text-left px-3 py-2 text-sm rounded-lg transition-colors',
-                  fontSize === size
-                    ? 'bg-primary/10 text-primary font-semibold'
-                    : 'hover:bg-muted'
-                )}
-              >
-                {labels[size]}
-              </button>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {open && (
+        <div className="animate-in fade-in slide-in-from-top-1 absolute right-0 top-full mt-2 z-50 min-w-[140px] rounded-xl border border-border bg-card shadow-xl p-1 duration-150">
+          {(Object.keys(labels) as FontSize[]).map((size) => (
+            <button
+              key={size}
+              onClick={() => {
+                setFontSize(size);
+                setOpen(false);
+              }}
+              className={cn(
+                'w-full min-h-11 text-left px-3 py-2 text-sm rounded-lg transition-colors',
+                fontSize === size
+                  ? 'bg-primary/10 text-primary font-semibold'
+                  : 'hover:bg-muted'
+              )}
+            >
+              {labels[size]}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
