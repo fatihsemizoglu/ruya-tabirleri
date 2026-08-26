@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -14,7 +15,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/comp
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Pencil, Trash2, Eye, Star, FileText, CalendarIcon, Clock, Check, Filter, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, Star, FileText, CalendarIcon, Clock, Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
@@ -23,6 +24,7 @@ import { BlogForm, type BlogFormValues } from './BlogForm';
 import { SkeletonAdminRow } from '@/components/ui/skeleton-card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { cn } from '@/lib/utils';
+import { useDebounce } from '@/hooks/useDebounce';
 import { AdminPageHeader } from './common/AdminPageHeader';
 import { AdminStatsCards } from './common/AdminStatsCards';
 
@@ -43,6 +45,23 @@ const blogPostSchema = z.object({
 
 type BlogPostFormValues = z.infer<typeof blogPostSchema>;
 
+// Liste sorgusu content kolonunu çekmez (büyük HTML gövdeleri taşınmaz);
+// düzenlemede tek kayıt fetch edilir.
+interface BlogListItem {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string | null;
+  category_id: string | null;
+  is_published: boolean;
+  is_featured: boolean;
+  scheduled_at: string | null;
+  created_at: string;
+  blog_categories: { name: string } | null;
+}
+
+const PAGE_SIZE = 50;
+
 export function BlogManagement() {
   const [isOpen, setIsOpen] = useState(false);
   const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
@@ -50,7 +69,12 @@ export function BlogManagement() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isFetchingPost, setIsFetchingPost] = useState(false);
   const queryClient = useQueryClient();
+
+  // Arama girişini debounce'la
+  const debouncedSearch = useDebounce(searchQuery, 300);
   const { user } = useAuth();
 
   const form = useForm<BlogPostFormValues>({
@@ -71,23 +95,62 @@ export function BlogManagement() {
     },
   });
 
-  const { data: posts, isLoading } = useQuery({
-    queryKey: ['admin-blog-posts', categoryFilter],
+  // Sayaçlar: toplam / yayında / zamanlanmış (server-side head istekleri)
+  const { data: counts } = useQuery({
+    queryKey: ['admin-blog-counts', statusFilter, categoryFilter],
     queryFn: async () => {
+      const buildBase = () => {
+        let q = supabase
+          .from('blog_posts')
+          .select('*', { count: 'exact', head: true });
+        if (categoryFilter !== 'all') q = q.eq('category_id', categoryFilter);
+        return q;
+      };
+
+      const [totalRes, publishedRes, scheduledRes] = await Promise.all([
+        buildBase(),
+        buildBase().eq('is_published', true),
+        buildBase().eq('is_published', false).not('scheduled_at', 'is', null),
+      ]);
+
+      if (totalRes.error) throw totalRes.error;
+      if (publishedRes.error) throw publishedRes.error;
+      if (scheduledRes.error) throw scheduledRes.error;
+
+      return {
+        total: totalRes.count ?? 0,
+        published: publishedRes.count ?? 0,
+        scheduled: scheduledRes.count ?? 0,
+      };
+    },
+    staleTime: 120000,
+  });
+
+  // Sayfalı liste sorgusu — content hariç (en büyük kazanç)
+  const { data: posts, isLoading } = useQuery({
+    queryKey: ['admin-blog-posts', currentPage, statusFilter, categoryFilter],
+    queryFn: async (): Promise<BlogListItem[]> => {
+      const from = (currentPage - 1) * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+
       let query = supabase
         .from('blog_posts')
-        .select('*, blog_categories(name)')
-        .order('created_at', { ascending: false });
+        .select('id, title, slug, excerpt, category_id, is_published, is_featured, scheduled_at, created_at, blog_categories(name)')
+        .order('created_at', { ascending: false })
+        .range(from, to);
 
-      // Server-side kategori filtresi (hızlı)
-      if (categoryFilter !== 'all') {
-        query = query.eq('category_id', categoryFilter);
-      }
+      // Server-side filtreler (hızlı)
+      if (categoryFilter !== 'all') query = query.eq('category_id', categoryFilter);
+      if (statusFilter === 'published') query = query.eq('is_published', true);
+      else if (statusFilter === 'draft') query = query.eq('is_published', false).is('scheduled_at', null);
+      else if (statusFilter === 'scheduled') query = query.eq('is_published', false).not('scheduled_at', 'is', null);
 
       const { data, error } = await query;
       if (error) throw error;
-      return data;
+      return (data ?? []) as unknown as BlogListItem[];
     },
+    staleTime: 120000,
+    gcTime: 5 * 60 * 1000,
   });
 
   const { data: categories } = useQuery({
@@ -233,26 +296,45 @@ export function BlogManagement() {
     });
   };
 
-  const handleEdit = (post: BlogPost & { blog_categories?: { name: string } | null }) => {
-    setEditingPost(post);
-    form.reset({
-      title: post.title,
-      slug: post.slug,
-      content: post.content,
-      excerpt: post.excerpt || '',
-      featured_image: post.featured_image || '',
-      category_id: post.category_id || '',
-      tags: post.tags?.join(', ') || '',
-      meta_title: post.meta_title || '',
-      meta_description: post.meta_description || '',
-      is_published: post.is_published,
-      is_featured: post.is_featured,
-      scheduled_at: post.scheduled_at ? new Date(post.scheduled_at) : null,
-    });
-    setIsOpen(true);
+  // Liste satırında content yok; düzenleme için tam kaydı çek
+  const handleEdit = async (postId: string) => {
+    setIsFetchingPost(true);
+    try {
+      const { data, error } = await supabase
+        .from('blog_posts')
+        .select('*')
+        .eq('id', postId)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) {
+        toast.error('Blog yazısı bulunamadı');
+        return;
+      }
+      const post = data as unknown as BlogPost;
+      setEditingPost(post);
+      form.reset({
+        title: post.title,
+        slug: post.slug,
+        content: post.content,
+        excerpt: post.excerpt || '',
+        featured_image: post.featured_image || '',
+        category_id: post.category_id || '',
+        tags: post.tags?.join(', ') || '',
+        meta_title: post.meta_title || '',
+        meta_description: post.meta_description || '',
+        is_published: post.is_published,
+        is_featured: post.is_featured,
+        scheduled_at: post.scheduled_at ? new Date(post.scheduled_at) : null,
+      });
+      setIsOpen(true);
+    } catch (error) {
+      toast.error(`Hata: ${(error as Error).message}`);
+    } finally {
+      setIsFetchingPost(false);
+    }
   };
 
-  const handleDelete = (post: BlogPost) => {
+  const handleDelete = (post: Pick<BlogPost, 'id' | 'title'>) => {
     if (confirm(`"${post.title}" yazısını silmek istediğinize emin misiniz?`)) {
       deleteMutation.mutate(post.id);
     }
@@ -285,20 +367,21 @@ export function BlogManagement() {
     );
   };
 
-  const filteredPosts = posts?.filter((post) => {
-    const matchesSearch =
-      post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (post.excerpt && post.excerpt.toLowerCase().includes(searchQuery.toLowerCase()));
+  // Durum filtresi artık server-side; burada yalnızca debounce'lu arama uygulanır
+  const filteredPosts = (posts ?? []).filter((post) =>
+    post.title.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+    (post.excerpt && post.excerpt.toLowerCase().includes(debouncedSearch.toLowerCase()))
+  );
 
-    const matchesStatus =
-      statusFilter === 'all' ? true :
-      statusFilter === 'published' ? post.is_published :
-      statusFilter === 'draft' ? (!post.is_published && !post.scheduled_at) :
-      statusFilter === 'scheduled' ? (!post.is_published && !!post.scheduled_at) :
-      true;
-
-    return matchesSearch && matchesStatus;
-  }) || [];
+  // Sanallaştırma: yalnızca görünür satırlar DOM'a basılır
+  const listRef = useRef<HTMLDivElement | null>(null);
+  const rowVirtualizer = useVirtualizer({
+    count: filteredPosts.length,
+    getScrollElement: () => listRef.current,
+    estimateSize: () => 88,
+    overscan: 6,
+    getItemKey: (index) => filteredPosts[index]?.id ?? index,
+  });
 
   const toggleSelectAll = () => {
     if (filteredPosts.length > 0 && selectedIds.length === filteredPosts.length) {
@@ -308,9 +391,10 @@ export function BlogManagement() {
     }
   };
 
-  const totalPosts = posts?.length || 0;
-  const publishedPosts = posts?.filter(p => p.is_published).length || 0;
-  const draftPosts = totalPosts - publishedPosts;
+  const totalPosts = counts?.total ?? 0;
+  const publishedPosts = counts?.published ?? 0;
+  const draftPosts = Math.max(0, totalPosts - publishedPosts);
+  const totalPages = Math.ceil(totalPosts / PAGE_SIZE) || 1;
 
   const statsData: [{ label: string; value: number; subtext: string; icon: typeof FileText }, { label: string; value: number; subtext: string; icon: typeof Check }, { label: string; value: number; subtext: string; icon: typeof Clock }] = [
     { label: 'Toplam Blog', value: totalPosts, subtext: 'Yayınlanan ve taslak', icon: FileText },
@@ -470,7 +554,7 @@ export function BlogManagement() {
           <div>
             <h3 className="text-lg font-bold text-slate-850 dark:text-white">Blog Yazıları</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
-              {filteredPosts.length} yazı ({filteredPosts.length > 0 ? `1-${filteredPosts.length}` : '0-0'} gösteriliyor)
+              {totalPosts.toLocaleString('tr-TR')} toplam yazı • Sayfa {currentPage} / {totalPages} ({filteredPosts.length} gösteriliyor)
             </p>
           </div>
         </div>
@@ -485,7 +569,7 @@ export function BlogManagement() {
               className="admin-filter-surface"
             />
           </div>
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+          <Select value={categoryFilter} onValueChange={(v) => { setCategoryFilter(v); setCurrentPage(1); }}>
             <SelectTrigger className="admin-filter-surface w-[180px] font-semibold text-xs md:text-sm">
               <SelectValue placeholder="Kategori Filtrele" />
             </SelectTrigger>
@@ -496,7 +580,7 @@ export function BlogManagement() {
               ))}
             </SelectContent>
           </Select>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setCurrentPage(1); }}>
             <SelectTrigger className="admin-filter-surface w-[180px] font-semibold text-xs md:text-sm">
               <SelectValue placeholder="Durum Filtrele" />
             </SelectTrigger>
@@ -551,11 +635,21 @@ export function BlogManagement() {
               <span>Tümünü Seç ({filteredPosts.length} Öğe)</span>
             </div>
 
-            <div className="space-y-3">
-              {filteredPosts.map((post) => (
+            <div
+              ref={listRef}
+              className="max-h-[720px] overflow-y-auto rounded-xl"
+            >
+              <div style={{ height: rowVirtualizer.getTotalSize(), position: 'relative', width: '100%' }}>
+              {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                const post = filteredPosts[virtualRow.index];
+                if (!post) return null;
+                return (
                 <div
                   key={post.id}
-                  className="admin-list-surface p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                  data-index={virtualRow.index}
+                  ref={rowVirtualizer.measureElement}
+                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', transform: `translateY(${virtualRow.start}px)` }}
+                  className="admin-list-surface mb-3 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                 >
                   <div className="flex items-center gap-4">
                     <Checkbox
@@ -619,14 +713,15 @@ export function BlogManagement() {
                       Görüntüle
                     </button>
                     <button
-                      onClick={() => handleEdit(post as Parameters<typeof handleEdit>[0])}
-                      className="flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
+                      onClick={() => void handleEdit(post.id)}
+                      disabled={isFetchingPost}
+                      className="flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
                     >
                       <Pencil className="w-4 h-4" />
                       Düzenle
                     </button>
                     <button
-                      onClick={() => handleDelete(post as Parameters<typeof handleDelete>[0])}
+                      onClick={() => handleDelete(post)}
                       className="flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
                       disabled={deleteMutation.isPending}
                     >
@@ -635,8 +730,48 @@ export function BlogManagement() {
                     </button>
                   </div>
                 </div>
-              ))}
+                );
+              })}
+              </div>
             </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-border/60">
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                  {((currentPage - 1) * PAGE_SIZE) + 1}–{Math.min(currentPage * PAGE_SIZE, totalPosts)} / {totalPosts.toLocaleString('tr-TR')} arası gösteriliyor
+                </p>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    aria-label="Önceki sayfa"
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1 || isLoading}
+                    className="p-0 rounded-lg"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  <div className="flex items-center gap-1 px-2">
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Sayfa</span>
+                    <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded-md min-w-[24px] text-center">
+                      {currentPage}
+                    </span>
+                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400">/ {totalPages}</span>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    aria-label="Sonraki sayfa"
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages || isLoading}
+                    className="p-0 rounded-lg"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="bg-card border border-border/40 rounded-2xl">

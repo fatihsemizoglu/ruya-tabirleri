@@ -50,6 +50,7 @@ npm run preview
 | `VITE_SITE_URL` | Production domain (canonical/OG için) |
 | `VITE_SENTRY_DSN` | Sentry DSN (opsiyonel) |
 | `VITE_APP_VERSION` | Sürüm etiketi (Sentry release) |
+| `VITE_GOOGLE_MAPS_EMBED_KEY` | Google Maps Embed API anahtarı (opsiyonel — boşsa iletişim haritası anahtarsız embed'e düşer). Referrer kısıtlaması önerilir. |
 
 Supabase Edge Functions secret'ları için `SUPABASE_SETUP.md`'ye bakın.
 

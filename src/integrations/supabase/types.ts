@@ -1890,6 +1890,25 @@ export type Database = {
       }
     }
     Views: {
+      daily_dream_trends: {
+        Row: {
+          avg_symbol_count: number | null
+          created_date: string | null
+          dream_count: number | null
+          emotion_variety: number | null
+        }
+        Relationships: []
+      }
+      global_dream_stats: {
+        Row: {
+          active_users: number | null
+          emotion_distribution: Json | null
+          top_symbols: string[] | null
+          total_dreams: number | null
+          unique_symbols: number | null
+        }
+        Relationships: []
+      }
       v_cron_jobs_status: {
         Row: {
           active: boolean | null
@@ -2163,6 +2182,8 @@ export type Database = {
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
       text_to_bytea: { Args: { data: string }; Returns: string }
+      unsubscribe_by_email: { Args: { p_email: string }; Returns: boolean }
+      verify_subscription: { Args: { p_email: string; p_token: string }; Returns: boolean }
       urlencode:
         | { Args: { data: Json }; Returns: string }
         | {

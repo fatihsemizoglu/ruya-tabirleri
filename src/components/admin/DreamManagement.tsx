@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +19,7 @@ import { toast } from 'sonner';
 import type { Tables } from '@/integrations/supabase/types';
 import { BulkActions } from './BulkActions';
 import { useSelection } from '@/hooks/useSelection';
+import { useDebounce } from '@/hooks/useDebounce';
 import { AdminPageHeader } from './common/AdminPageHeader';
 import { AdminStatsCards } from './common/AdminStatsCards';
 
@@ -48,6 +50,9 @@ export function DreamManagement() {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const queryClient = useQueryClient();
+
+  // Arama girişini debounce'la: her keystroke'ta tüm sayfa yeniden filtrelenmesin
+  const debouncedSearch = useDebounce(searchQuery, 300);
 
   // Toplam rüya sayısını çek (filtreye göre server-side)
   const { data: totalCount } = useQuery({
@@ -98,8 +103,8 @@ export function DreamManagement() {
   type DreamWithCategory = Dream & { categories: { name: string; slug: string } | null };
   const filteredDreams = (dreams as DreamWithCategory[] | undefined)?.filter((dream) => {
     const matchesSearch = 
-      dream.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      dream.content.toLowerCase().includes(searchQuery.toLowerCase());
+      dream.title.toLowerCase().includes(debouncedSearch.toLowerCase()) || 
+      dream.content.toLowerCase().includes(debouncedSearch.toLowerCase());
     
     if (statusFilter === 'all') return matchesSearch;
     if (statusFilter === 'published') return matchesSearch && dream.is_published;
@@ -109,6 +114,16 @@ export function DreamManagement() {
   }) || [];
 
   const selection = useSelection(filteredDreams);
+
+  // Sanallaştırma: yalnızca görünür satırlar DOM'a basılır
+  const listRef = useRef<HTMLDivElement | null>(null);
+  const rowVirtualizer = useVirtualizer({
+    count: filteredDreams.length,
+    getScrollElement: () => listRef.current,
+    estimateSize: () => 88,
+    overscan: 6,
+    getItemKey: (index) => filteredDreams[index]?.id ?? index,
+  });
 
   const form = useForm<DreamFormValues>({
     resolver: zodResolver(dreamSchema),
@@ -343,7 +358,7 @@ export function DreamManagement() {
               className="admin-filter-surface"
             />
           </div>
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+          <Select value={categoryFilter} onValueChange={(v) => { setCategoryFilter(v); setCurrentPage(1); }}>
             <SelectTrigger className="admin-filter-surface w-[200px] font-semibold text-xs md:text-sm">
               <Filter className="h-3.5 w-3.5 mr-1.5" />
               <SelectValue placeholder="Kategori" />
@@ -357,7 +372,7 @@ export function DreamManagement() {
               ))}
             </SelectContent>
           </Select>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setCurrentPage(1); }}>
             <SelectTrigger className="admin-filter-surface w-[180px] font-semibold text-xs md:text-sm">
               <SelectValue placeholder="Durum Filtrele" />
             </SelectTrigger>
@@ -407,11 +422,21 @@ export function DreamManagement() {
               <span>Tümünü Seç ({filteredDreams.length} Öğe)</span>
             </div>
 
-            <div className="space-y-3">
-              {filteredDreams.map((dream) => (
+            <div
+              ref={listRef}
+              className="max-h-[720px] overflow-y-auto rounded-xl"
+            >
+              <div style={{ height: rowVirtualizer.getTotalSize(), position: 'relative', width: '100%' }}>
+              {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                const dream = filteredDreams[virtualRow.index];
+                if (!dream) return null;
+                return (
                 <div
                   key={dream.id}
-                  className={`admin-list-surface p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${selection.isSelected(dream.id) ? 'bg-primary/10 border-primary/40' : ''}`}
+                  data-index={virtualRow.index}
+                  ref={rowVirtualizer.measureElement}
+                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', transform: `translateY(${virtualRow.start}px)` }}
+                  className={`admin-list-surface mb-3 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${selection.isSelected(dream.id) ? 'bg-primary/10 border-primary/40' : ''}`}
                 >
                   <div className="flex items-center gap-4">
                     <Checkbox
@@ -475,7 +500,9 @@ export function DreamManagement() {
                     </button>
                   </div>
                 </div>
-              ))}
+                );
+              })}
+              </div>
             </div>
 
             {/* Pagination */}

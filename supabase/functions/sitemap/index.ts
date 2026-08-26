@@ -4,6 +4,36 @@ import { requireCronSecret } from "../_shared/auth.ts";
 
 const PAGE_SIZE = 1000;
 
+// scripts/prerender.mjs buildSymbolGlossaryFromDreams ile aynı mantık (sembol URL'leri tutarlı kalsın)
+const SYMBOL_STOP_WORDS = new Set(["rüya","ruya","görmek","gormek","ne","demek","anlamı","anlami","nedir","hakkında","tabiri"]);
+
+function generateSymbolSlug(name: string): string {
+  return String(name)
+    .replace(/İ/g, "i") // İ, toLowerCase ile "i̇" (i + U+0307) üretir — önce dönüştür
+    .toLowerCase()
+    .replace(/ğ/g, "g").replace(/ü/g, "u").replace(/ş/g, "s")
+    .replace(/ı/g, "i").replace(/ö/g, "o").replace(/ç/g, "c")
+    .replace(/\u0307/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+function buildSymbolSlugs(dreams: { keywords?: string[] | null }[]): string[] {
+  const map = new Map<string, string>();
+  for (const dream of dreams) {
+    const keywords = Array.isArray(dream.keywords) ? dream.keywords : [];
+    for (const kw of keywords) {
+      const term = String(kw).trim();
+      if (term.length < 2 || term.length > 40) continue;
+      if (SYMBOL_STOP_WORDS.has(term.toLocaleLowerCase("tr-TR"))) continue;
+      if (/^\d+$/.test(term)) continue;
+      const slug = generateSymbolSlug(term);
+      if (slug) map.set(slug, slug);
+    }
+  }
+  return [...map.keys()];
+}
+
 type QueryBuilder = {
   eq: (column: string, value: unknown) => QueryBuilder;
   order: (column: string, options: { ascending: boolean }) => QueryBuilder;
@@ -59,18 +89,26 @@ Deno.serve(async (req) => {
       { url: "/blog", priority: "0.9", changefreq: "daily" },
       { url: "/kategoriler", priority: "0.9", changefreq: "weekly" },
       { url: "/populer", priority: "0.8", changefreq: "daily" },
-      { url: "/ara", priority: "0.7", changefreq: "weekly" },
+      // Not: /ara arama sonuç sayfası olduğu için sitemap'e dahil edilmez (noindex pratiği).
       { url: "/az", priority: "0.8", changefreq: "weekly" },
+      { url: "/semboller", priority: "0.8", changefreq: "weekly" },
+      { url: "/ruyami-yorumlat", priority: "0.9", changefreq: "weekly" },
+      { url: "/istatistikler", priority: "0.7", changefreq: "daily" },
       { url: "/gizlilik", priority: "0.3", changefreq: "yearly" },
       { url: "/kullanim-kosullari", priority: "0.3", changefreq: "yearly" },
+      { url: "/kvkk", priority: "0.3", changefreq: "yearly" },
+      { url: "/cerez-politikasi", priority: "0.3", changefreq: "yearly" },
     ];
 
     const [dreams, blogPosts, categories, blogCategories] = await Promise.all([
-      fetchAllRows<{ slug: string; updated_at: string }>(supabase, "dreams", "slug, updated_at", (query) => query.eq("is_published", true)),
+      fetchAllRows<{ slug: string; updated_at: string; keywords?: string[] | null }>(supabase, "dreams", "slug, updated_at, keywords", (query) => query.eq("is_published", true)),
       fetchAllRows<{ slug: string; updated_at: string }>(supabase, "blog_posts", "slug, updated_at", (query) => query.eq("is_published", true)),
       fetchAllRows<{ slug: string; updated_at: string }>(supabase, "categories", "slug, updated_at", (query) => query),
       fetchAllRows<{ slug: string; updated_at: string }>(supabase, "blog_categories", "slug, updated_at", (query) => query),
     ]);
+
+    // Sembol sözlüğü: prerender ile aynı türetme mantığı
+    const symbolSlugs = buildSymbolSlugs(dreams || []);
 
     // Build XML
     let xml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -120,6 +158,17 @@ Deno.serve(async (req) => {
     <lastmod>${lastmod}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
+  </url>
+`;
+      }
+    }
+
+    if (symbolSlugs.length > 0) {
+      for (const slug of symbolSlugs) {
+        xml += `  <url>
+    <loc>${baseUrl}/sembol/${slug}</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
   </url>
 `;
       }

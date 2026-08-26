@@ -23,8 +23,12 @@ export function useContactSettings() {
     const lat = parseFloat(settings.mapLatitude) || parseFloat(MAP_LATITUDE);
     const lng = parseFloat(settings.mapLongitude) || parseFloat(MAP_LONGITUDE);
     const encodedAddress = encodeURIComponent(settings.contactAddress || `${lat},${lng}`);
+    // Embed API anahtarı yoksa anahtarsız klasik embed'e düş (harita yine görünür).
+    const embedUrl = GOOGLE_MAPS_EMBED_KEY
+      ? `https://www.google.com/maps/embed/v1/place?key=${GOOGLE_MAPS_EMBED_KEY}&q=${encodedAddress}&zoom=12`
+      : `https://maps.google.com/maps?q=${encodedAddress}&z=12&output=embed`;
     const mapUrls = {
-      embed: `https://www.google.com/maps/embed/v1/place?key=${GOOGLE_MAPS_EMBED_KEY}&q=${encodedAddress}&zoom=12`,
+      embed: embedUrl,
       view: `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`,
       directions: `https://www.google.com/maps/dir/?api=1&destination=${encodedAddress}`,
     };

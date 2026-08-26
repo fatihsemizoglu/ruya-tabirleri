@@ -50,6 +50,8 @@ const EmailConfirm = lazy(() => import("./pages/EmailConfirm"));
 const Install = lazy(() => import("./pages/Install"));
 const SubscriptionVerify = lazy(() => import("./pages/SubscriptionVerify"));
 const SubscriptionCancel = lazy(() => import("./pages/SubscriptionCancel"));
+const InterpretDreamPage = lazy(() => import("./pages/InterpretDreamPage"));
+const DreamStatsPage = lazy(() => import("./pages/DreamStats"));
 const CommandPalette = lazy(() => import("@/components/ui/command-palette").then((mod) => ({ default: mod.CommandPalette })));
 const OnboardingTour = lazy(() => import("@/components/onboarding/OnboardingTour").then((mod) => ({ default: mod.OnboardingTour })));
 const InstallPrompt = lazy(() => import("@/components/pwa/InstallPrompt").then((mod) => ({ default: mod.InstallPrompt })));
@@ -118,6 +120,8 @@ function AnimatedRoutes() {
           <Route path="/blog/etiket/:tag" element={<RouteErrorBoundary label="Blog"><BlogTag /></RouteErrorBoundary>} />
           <Route path="/blog/:slug" element={<RouteErrorBoundary label="Blog"><BlogPost /></RouteErrorBoundary>} />
           <Route path="/yukle" element={<Install />} />
+          <Route path="/ruyami-yorumlat" element={<InterpretDreamPage />} />
+          <Route path="/istatistikler" element={<DreamStatsPage />} />
           <Route path="/abonelik-dogrula" element={<SubscriptionVerify />} />
           <Route path="/abonelik-iptal" element={<SubscriptionCancel />} />
           <Route path="*" element={<NotFound />} />

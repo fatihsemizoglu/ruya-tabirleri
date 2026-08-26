@@ -89,7 +89,7 @@ supabase functions deploy ab-test-manager
 |----------|-------|
 | `VITE_SUPABASE_URL` | `https://dagjpitlouekbnwdcpbz.supabase.co` |
 | `VITE_SUPABASE_ANON_KEY` | Supabase Dashboard > Settings > API > `anon` `public` |
-| `VITE_SITE_URL` | `https://ruya-tabirleri.com` |
+| `VITE_SITE_URL` | Özel alan adı alınana dek boş bırak (fallback: `https://<proje>.vercel.app`); alan adı gelince `https://alanadi.com` yaz |
 | `SENTRY_DSN` | (opsiyonel) Sentry projesinden |
 
 > **Not:** Vite sadece `VITE_` prefix'li değişkenleri client bundle'a ekler.
