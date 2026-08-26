@@ -21,13 +21,10 @@ export default function SubscriptionVerify() {
       }
 
       try {
-        const { data, error } = await supabase
-          .from('blog_subscribers')
-          .update({ is_verified: true })
-          .eq('email', email)
-          .eq('verification_token', token)
-          .select()
-          .single();
+        const { data, error } = await supabase.rpc('verify_subscription', {
+          p_email: email,
+          p_token: token,
+        });
 
         if (error || !data) {
           setStatus('error');

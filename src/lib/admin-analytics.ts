@@ -104,15 +104,23 @@ export function exportToPDF(rows: Record<string, unknown>[], title: string, file
   const firstRow = rows[0];
   if (!firstRow) return;
   const headers = Object.keys(firstRow);
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${title}</title>
+  const escapeHtml = (value: unknown): string =>
+    String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  const safeTitle = escapeHtml(title);
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${safeTitle}</title>
     <style>body{font-family:Arial,sans-serif;padding:24px}h1{color:#4f46e5}
     table{width:100%;border-collapse:collapse;margin-top:16px}
     th{background:#4f46e5;color:white;padding:8px;text-align:left}
     td{border:1px solid #e5e7eb;padding:6px;font-size:13px}
     tr:nth-child(even){background:#f9fafb}</style></head>
-    <body><h1>${title}</h1><p>${formatDate(new Date(), 'dd MMMM yyyy HH:mm', { locale: tr })}</p>
-    <table><thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
-    <tbody>${rows.map(r => `<tr>${headers.map(h => `<td>${r[h] ?? ''}</td>`).join('')}</tr>`).join('')}</tbody>
+    <body><h1>${safeTitle}</h1><p>${escapeHtml(formatDate(new Date(), 'dd MMMM yyyy HH:mm', { locale: tr }))}</p>
+    <table><thead><tr>${headers.map(h => `<th>${escapeHtml(h)}</th>`).join('')}</tr></thead>
+    <tbody>${rows.map(r => `<tr>${headers.map(h => `<td>${escapeHtml(r[h])}</td>`).join('')}</tr>`).join('')}</tbody>
     </table></body></html>`;
   const w = window.open('', '_blank');
   if (w) {

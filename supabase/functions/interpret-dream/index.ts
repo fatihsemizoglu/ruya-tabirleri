@@ -98,14 +98,16 @@ serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    // Yalnızca anon key: RLS "published only" kuralına saygı duyar.
+    // Service role fallback'i bilinçli olarak kaldırıldı (güvenlik denetimi O-4).
+    const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY");
 
     if (!supabaseUrl || !supabaseKey) {
       return jsonResponse({ error: "Sunucu yapılandırması eksik" }, 500, req.headers.get("origin"));
     }
 
     const { dreamText } = await req.json();
-    const normalizedDreamText = typeof dreamText === "string" ? dreamText.trim() : "";
+    const normalizedDreamText = typeof dreamText === "string" ? dreamText.trim().slice(0, 4000) : "";
 
     if (normalizedDreamText.length < 10) {
       return jsonResponse({ error: "Rüya metni çok kısa (en az 10 karakter)" }, 400, req.headers.get("origin"));
@@ -122,7 +124,9 @@ serve(async (req) => {
     const { data: allDreams, error } = await supabase
       .from("dreams")
       .select("id, title, slug, islamic_interpretation, psychological_interpretation, keywords, view_count")
-      .eq("is_published", true);
+      .eq("is_published", true)
+      .order("view_count", { ascending: false })
+      .limit(2000);
 
     if (error) {
       console.error("interpret-dream database error:", error);

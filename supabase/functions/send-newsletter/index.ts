@@ -22,9 +22,14 @@ function escapeHtml(input: string): string {
 }
 
 function resolveBaseUrl(req: Request): string {
-  return req.headers.get("origin")
-    || Deno.env.get("SITE_URL")
-    || "https://ruya-tabirleri.vercel.app";
+  // Origin header'ına körlemesine güvenme; whitelist'e bak (subscribe-newsletter ile aynı mantık).
+  const siteUrl = Deno.env.get("SITE_URL") || "https://ruya-tabirleri.vercel.app";
+  const origin = req.headers.get("origin");
+  const allowed = Deno.env.get("ALLOWED_ORIGINS")
+    ?.split(/[\s,]+/)
+    .map((o) => o.trim())
+    .filter(Boolean) ?? [];
+  return origin && allowed.includes(origin) ? origin : siteUrl;
 }
 
 async function sendEmail(apiKey: string, params: { from: string; to: string[]; subject: string; html: string }) {
@@ -128,7 +133,7 @@ const handler = async (req: Request): Promise<Response> => {
           <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
           <p style="font-size: 12px; color: #9ca3af; margin-bottom: 0;">
             Bu e-postay\u0131 almak istemiyorsan\u0131z,
-            <a href="${baseUrl}/abonelik-iptal?email=%EMAIL%" style="color: #667eea;">aboneli\u011Finizi iptal edebilirsiniz</a>.
+            <a href="${baseUrl}/abonelik-iptal" style="color: #667eea;">aboneli\u011Finizi iptal edebilirsiniz</a>.
           </p>
         </div>
       </body>
@@ -156,7 +161,7 @@ const handler = async (req: Request): Promise<Response> => {
               from: "Rüya Tabirleri <bildirim@ruya-tabirleri.com>",
               to: [sub.email],
               subject: `Yeni İçerik: ${postTitle}`,
-              html: emailHtml.replace('%EMAIL%', encodeURIComponent(sub.email)),
+              html: emailHtml,
             });
             successCount++;
           } catch (e) {

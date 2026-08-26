@@ -21,6 +21,8 @@ export interface PendingJournalEntry {
   dreamDate: string;
   mood: string | null;
   tags: string[];
+  /** Tanımsızsa senkronizasyonda varsayılan (gizli) kullanılır. */
+  isPrivate?: boolean;
   createdAt: number;
 }
 

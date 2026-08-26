@@ -7,6 +7,8 @@ export interface JournalFormData {
   mood: DreamMood | '';
   tags: string;
   series_id: string;
+  /** Opt-in: true ise rüya, anonim eşleştirme havuzuna (public_dream_pool) girebilir. */
+  is_private: boolean;
 }
 
 export function createEmptyJournalForm(): JournalFormData {
@@ -17,6 +19,7 @@ export function createEmptyJournalForm(): JournalFormData {
     mood: '',
     tags: '',
     series_id: '',
+    is_private: true,
   };
 }
 

@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { useVoiceDictation } from '@/lib/dream-journal-voice';
 import { moodOptions } from '@/lib/dream-journal-constants';
 import type { JournalFormData } from '@/lib/dream-journal-constants';
@@ -228,6 +229,20 @@ export default function JournalFormDialog({
               value={formData.tags}
               onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
               placeholder="yılan, su, uçmak (virgülle ayırın)"
+            />
+          </div>
+
+          <div className="flex items-start justify-between gap-3 rounded-2xl border border-border/50 bg-card/70 p-3 dark:border-white/10 dark:bg-slate-900/60">
+            <div>
+              <Label htmlFor="is-private" className="cursor-pointer">Rüyayı gizli tut</Label>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Kapalıysa rüya metninizin adınızla ilişkili olmayan kısa bir bölümü, benzer rüyalarla eşleştirme özelliği için paylaşılan havuza eklenir.
+              </p>
+            </div>
+            <Switch
+              id="is-private"
+              checked={formData.is_private}
+              onCheckedChange={(checked) => setFormData({ ...formData, is_private: checked })}
             />
           </div>
 

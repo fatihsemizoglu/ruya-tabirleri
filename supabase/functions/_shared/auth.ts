@@ -39,14 +39,26 @@ export async function requireAdmin(req: Request): Promise<{ userId: string } | R
   return { userId: user.id };
 }
 
+function timingSafeEqual(a: string, b: string): boolean {
+  const encoder = new TextEncoder();
+  const ab = encoder.encode(a);
+  const bb = encoder.encode(b);
+  if (ab.length !== bb.length) return false;
+  let diff = 0;
+  for (let i = 0; i < ab.length; i++) {
+    diff |= (ab[i] ?? 0) ^ (bb[i] ?? 0);
+  }
+  return diff === 0;
+}
+
 export function requireCronSecret(req: Request): Response | null {
   const cronSecret = Deno.env.get("CRON_SECRET");
   if (!cronSecret) {
     return jsonResponse({ error: "CRON_SECRET yapılandırılmamış" }, 500);
   }
 
-  const headerSecret = req.headers.get("x-cron-secret");
-  if (headerSecret !== cronSecret) {
+  const headerSecret = req.headers.get("x-cron-secret") ?? "";
+  if (!headerSecret || !timingSafeEqual(headerSecret, cronSecret)) {
     return jsonResponse({ error: "Yetkisiz istek" }, 401);
   }
 

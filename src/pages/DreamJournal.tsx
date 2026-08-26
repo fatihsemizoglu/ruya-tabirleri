@@ -93,6 +93,7 @@ export default function DreamJournal() {
         dream_date: entry.dreamDate,
         mood: entry.mood,
         tags: entry.tags,
+        is_private: entry.isPrivate ?? true,
       } as never);
       if (error) throw error;
     });
@@ -132,6 +133,7 @@ export default function DreamJournal() {
         tags: formData.tags ? formData.tags.split(',').map(t => t.trim()) : [],
         audio_url: audioRecorder.audioUrl || selectedEntry?.audio_url || null,
         series_id: formData.series_id || null,
+        is_private: formData.is_private,
       };
 
       if (selectedEntry) {
@@ -157,6 +159,7 @@ export default function DreamJournal() {
           dreamDate: formData.dream_date || new Date().toISOString().slice(0, 10),
           mood: formData.mood || null,
           tags: formData.tags ? formData.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
+          isPrivate: formData.is_private,
           createdAt: Date.now(),
         });
         notify.success('Rüya offline kaydedildi', {
@@ -210,6 +213,7 @@ export default function DreamJournal() {
       mood: entry.mood || '',
       tags: entry.tags?.join(', ') || '',
       series_id: entry.series_id || '',
+      is_private: entry.is_private ?? true,
     });
     setIsDialogOpen(true);
   };
