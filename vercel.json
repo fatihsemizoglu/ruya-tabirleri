@@ -45,7 +45,6 @@
     { "source": "/populer", "destination": "/index.html" },
     { "source": "/akis", "destination": "/index.html" },
     { "source": "/az", "destination": "/index.html" },
-    { "source": "/semboller", "destination": "/index.html" },
     { "source": "/profil", "destination": "/index.html" },
     { "source": "/ruya-gunlugum", "destination": "/index.html" },
     { "source": "/ruya-gunlugum/sesli", "destination": "/index.html" },
