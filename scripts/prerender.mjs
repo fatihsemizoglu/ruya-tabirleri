@@ -516,98 +516,6 @@ function staticPageHtml(template, opts) {
   });
 }
 
-// ── Symbol glossary ──────────────────────────────────────────────────
-
-function buildSymbolGlossaryFromDreams(dreams) {
-  const stopWords = new Set(['rüya','ruya','görmek','gormek','ne','demek','anlamı','anlami','nedir','hakkında','tabiri']);
-  const map = new Map();
-  for (const dream of dreams) {
-    const keywords = Array.isArray(dream.keywords) ? dream.keywords : [];
-    for (const kw of keywords) {
-      const term = String(kw).trim();
-      if (term.length < 2 || term.length > 40) continue;
-      if (stopWords.has(term.toLocaleLowerCase('tr-TR'))) continue;
-      if (/^\d+$/.test(term)) continue;
-      const key = term.toLocaleLowerCase('tr-TR');
-      const existing = map.get(key);
-      if (existing) existing.count++;
-      else map.set(key, { term, slug: generateSlug(term), count: 1 });
-    }
-  }
-  return [...map.values()].sort((a, b) => a.term.localeCompare(b.term, 'tr-TR'));
-}
-
-function symbolIndexHtml(template, symbols) {
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'DefinedTermSet',
-    name: 'Rüya Sembolleri Sözlüğü',
-    url: absoluteUrl('/semboller'),
-    inLanguage: 'tr-TR',
-    description: 'Rüya tabirlerinde geçen sembollerin alfabetik sözlüğü.',
-    hasDefinedTerm: symbols.slice(0, 300).map((s) => ({
-      '@type': 'DefinedTerm',
-      name: s.term,
-      url: absoluteUrl(`/sembol/${s.slug}`),
-      inDefinedTermSet: absoluteUrl('/semboller'),
-    })),
-  };
-  return injectSeo(template, {
-    title: 'Rüya Sembolleri Sözlüğü',
-    description: `Rüyalardaki ${symbols.length} sembolün tabirlerine alfabetik sözlükten ulaşın.`,
-    path: '/semboller',
-    jsonLd,
-    bodyHtml: [
-      '<h1>Rüya Sembolleri Sözlüğü</h1>',
-      `<p>Rüya tabirlerinde geçen ${symbols.length} sembolün alfabetik listesi. Bir sembolün anlamını görmek için listeden seçin.</p>`,
-      `<ul style="columns:2;gap:24px;">${symbols.slice(0, 500).map((s) => `<li><a href="${absoluteUrl(`/sembol/${s.slug}`)}">${escapeHtml(s.term)}</a></li>`).join('')}</ul>`,
-    ].join('\n'),
-  });
-}
-
-function symbolPageHtml(template, symbol) {
-  const title = `Rüyada ${symbol.term} Görmek Ne Anlama Gelir?`;
-  const description = `Rüyada ${symbol.term} görmek: İslami ve psikolojik tabirlerle ${symbol.term} rüyasının anlamı ve ${symbol.count} farklı yorum.`;
-  const path = `/sembol/${symbol.slug}`;
-  const jsonLd = [
-    {
-      '@context': 'https://schema.org',
-      '@type': 'DefinedTerm',
-      name: symbol.term,
-      url: absoluteUrl(path),
-      inDefinedTermSet: absoluteUrl('/semboller'),
-      inLanguage: 'tr-TR',
-      description,
-    },
-    {
-      '@context': 'https://schema.org',
-      '@type': 'BreadcrumbList',
-      itemListElement: [
-        { '@type': 'ListItem', position: 1, name: 'Ana Sayfa', item: absoluteUrl('/') },
-        { '@type': 'ListItem', position: 2, name: 'Sembol Sözlüğü', item: absoluteUrl('/semboller') },
-        { '@type': 'ListItem', position: 3, name: symbol.term, item: absoluteUrl(path) },
-      ],
-    },
-  ];
-  return injectSeo(template, {
-    title,
-    description,
-    path,
-    jsonLd,
-    bodyHtml: [
-      buildBreadcrumb([
-        { name: 'Ana Sayfa', path: '/' },
-        { name: 'Sembol Sözlüğü', path: '/semboller' },
-        { name: symbol.term, path: `/sembol/${symbol.slug}` },
-      ]),
-      `<h1>${escapeHtml(title)}</h1>`,
-      `<p><strong>${escapeHtml(description)}</strong></p>`,
-      `<p>Rüyada ${escapeHtml(symbol.term)} görmekle ilgili ${symbol.count} farklı rüya yorumu sitemizde bulunuyor; detaylı tabirler için ilgili rüya sayfalarımızı ziyaret edebilirsiniz.</p>`,
-      `<p><a href="${absoluteUrl('/populer')}">Popüler rüya tabirlerine göz atın</a>.</p>`,
-    ].join('\n'),
-  });
-}
-
 // ── Main ─────────────────────────────────────────────────────────────
 
 async function main() {
@@ -844,14 +752,6 @@ async function main() {
       .filter((dream) => dream.slug)
       .map((dream) => [`/ruya/${dream.slug}`, dreamPageHtml(template, dream)]);
     count += await writeAll(dreamPages);
-
-    // ── Symbol glossary (derived from dreams) ──
-    const symbols = buildSymbolGlossaryFromDreams(dreams);
-    console.log(`  🔮 ${symbols.length} sembol çıkarıldı`);
-    count += await writeAll([
-      ['/semboller', symbolIndexHtml(template, symbols)],
-      ...symbols.map((s) => [`/sembol/${s.slug}`, symbolPageHtml(template, s)]),
-    ]);
   } catch (err) {
     console.warn(`  ⚠ Rüya prerender hatası: ${err.message}`);
   }

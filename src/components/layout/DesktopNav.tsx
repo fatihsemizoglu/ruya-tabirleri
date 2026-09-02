@@ -134,21 +134,6 @@ export function DesktopNav({
         )}
       </div>
 
-      {/* Sembol Sözlüğü */}
-      <Link
-        to="/semboller"
-        onMouseEnter={cancelClose}
-        aria-current={isActiveLink('/semboller') ? 'page' : undefined}
-        className={cn(
-          'inline-flex h-11 items-center px-3 text-sm font-medium rounded-lg transition-all duration-200 shrink-0',
-          isActiveLink('/semboller')
-            ? 'text-primary bg-primary/5'
-            : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-        )}
-      >
-        Semboller
-      </Link>
-
       {/* Popüler Rüyalar */}
       <Link
         to="/populer"

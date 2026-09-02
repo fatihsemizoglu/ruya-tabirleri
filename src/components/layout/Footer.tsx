@@ -7,7 +7,6 @@ import { FontSizeControl } from '@/components/ui/FontSizeControl';
 const exploreLinks = [
   { to: '/ruya-tabirleri', label: 'Rüya Tabirleri' },
   { to: '/kategoriler', label: 'Kategoriler' },
-  { to: '/semboller', label: 'Sembol Sözlüğü' },
   { to: '/populer', label: 'Popüler Rüyalar' },
   { to: '/az', label: 'A-Z Rüya Listesi' },
   { to: '/blog', label: 'Rüya Günlüğü' },

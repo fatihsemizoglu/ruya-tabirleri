@@ -24,10 +24,6 @@
       "destination": "/index.html"
     },
     {
-      "source": "/sembol/(.*)",
-      "destination": "/index.html"
-    },
-    {
       "source": "/kategori/(.*)",
       "destination": "/index.html"
     },

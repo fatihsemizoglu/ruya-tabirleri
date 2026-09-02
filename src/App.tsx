@@ -26,8 +26,6 @@ const CategoryDetail = lazy(() => import("./pages/CategoryDetail"));
 const Popular = lazy(() => import("./pages/Popular"));
 const DreamFeed = lazy(() => import("./pages/DreamFeed"));
 const AlphabetList = lazy(() => import("./pages/AlphabetList"));
-const Symbols = lazy(() => import("./pages/Symbols"));
-const SymbolDetail = lazy(() => import("./pages/SymbolDetail"));
 const Profile = lazy(() => import("./pages/Profile"));
 const DreamJournal = lazy(() => import("./pages/DreamJournal"));
 const DreamJournalVoice = lazy(() => import("./pages/DreamJournalVoice"));
@@ -98,8 +96,6 @@ function AnimatedRoutes() {
           <Route path="/akis" element={<DreamFeed />} />
           <Route path="/az" element={<AlphabetList />} />
           <Route path="/az/:letter" element={<AlphabetList />} />
-          <Route path="/semboller" element={<Symbols />} />
-          <Route path="/sembol/:slug" element={<SymbolDetail />} />
           {/* User routes - isolated boundary */}
           <Route path="/profil" element={<ProtectedRoute><RouteErrorBoundary label="Profile"><Profile /></RouteErrorBoundary></ProtectedRoute>} />
           <Route path="/ruya-gunlugum" element={<ProtectedRoute><RouteErrorBoundary label="Journal"><DreamJournal /></RouteErrorBoundary></ProtectedRoute>} />

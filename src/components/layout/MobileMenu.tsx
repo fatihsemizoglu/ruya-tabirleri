@@ -117,9 +117,6 @@ export function MobileMenu({
           {/* Akış */}
           <MobileNavLink to="/akis" label="Akış" onClose={onClose} />
 
-          {/* Semboller */}
-          <MobileNavLink to="/semboller" label="Semboller" onClose={onClose} />
-
           {/* Blog (Accordion) */}
           <div>
             <button
