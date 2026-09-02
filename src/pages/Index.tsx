@@ -1,7 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { HeroSection } from '@/components/home/HeroSection';
-import { DailyDreamCard } from '@/components/home/DailyDreamCard';
+import { DreamReadingBanner } from '@/components/home/DreamReadingBanner';
 import { SectionSkeleton } from '@/components/home/SectionSkeleton';
 import { Seo } from '@/components/Seo';
 import { absoluteUrl, SITE_NAME, SITE_URL } from '@/lib/site';
@@ -53,7 +53,7 @@ const Index = () => {
         ]}
       />
       <HeroSection />
-      <DailyDreamCard />
+      <DreamReadingBanner />
       <Suspense fallback={<SectionSkeleton />}>
         <FeaturedDreams />
         <CategoriesSection />
