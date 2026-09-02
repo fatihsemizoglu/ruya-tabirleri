@@ -406,9 +406,9 @@ export default function DreamJournal() {
 
         {/* Entries */}
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-48 bg-muted rounded-xl animate-pulse" />
+          <div className="flex gap-4 overflow-x-auto pb-3" aria-hidden>
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-20 w-72 shrink-0 bg-muted rounded-xl animate-pulse" />
             ))}
           </div>
         ) : entries.length > 0 ? (
@@ -427,7 +427,7 @@ export default function DreamJournal() {
                       </p>
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="flex gap-4 overflow-x-auto pb-3 snap-x snap-mandatory">
                     {seriesEntries.map((entry) => (
                       <SeriesCard key={entry.id} entry={entry} analyzingId={analyzingId} handleAnalyze={handleAnalyze} onViewAnalysis={handleViewAnalysis} openEditDialog={openEditDialog} handleDelete={handleDelete} />
                     ))}
@@ -443,7 +443,7 @@ export default function DreamJournal() {
                       <div className="h-px flex-1 bg-border" />
                     </div>
                   )}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="flex gap-4 overflow-x-auto pb-3 snap-x snap-mandatory">
                     {entries.filter(e => !e.series_id).map((entry) => (
                       <SeriesCard key={entry.id} entry={entry} analyzingId={analyzingId} handleAnalyze={handleAnalyze} onViewAnalysis={handleViewAnalysis} openEditDialog={openEditDialog} handleDelete={handleDelete} />
                     ))}

@@ -21,60 +21,87 @@ export default function SeriesCard({
   handleDelete,
 }: SeriesCardProps) {
   return (
-    <div className="dream-card group">
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Calendar className="h-4 w-4" />
-          <span>{new Date(entry.dream_date).toLocaleDateString('tr-TR')}</span>
+    <article
+      className="dream-card group w-72 shrink-0 snap-start"
+      aria-label={entry.title}
+    >
+      {/* Tek satır: tarih · başlık · içerik önizlemesi */}
+      <div className="flex items-center gap-3">
+        <span className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
+          <Calendar className="h-3.5 w-3.5" />
+          {new Date(entry.dream_date).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })}
+        </span>
+
+        <div className="min-w-0 flex-1">
+          <h3 className="text-sm font-serif font-semibold truncate">{entry.title}</h3>
+          <p className="text-xs text-muted-foreground truncate">{entry.content}</p>
         </div>
-        <div className="flex items-center gap-2">
+
+        <div className="flex items-center gap-1 shrink-0">
           {entry.audio_url && (
             <span title="Ses kaydı var">
-              <Volume2 className="h-4 w-4 text-emerald-500" />
+              <Volume2 className="h-3.5 w-3.5 text-emerald-500" />
             </span>
           )}
           {entry.mood && (
-            <span className="text-2xl">
+            <span className="text-base">
               {moodOptions.find(m => m.value === entry.mood)?.emoji}
             </span>
           )}
         </div>
       </div>
 
-      <h3 className="text-lg font-serif font-semibold mb-2">{entry.title}</h3>
-      <p className="text-sm text-muted-foreground line-clamp-3 mb-4">{entry.content}</p>
-
+      {/* Etiketler (en fazla 2) */}
       {entry.tags && entry.tags.length > 0 && (
-        <div className="flex flex-wrap gap-1 mb-4">
-          {entry.tags.map((tag) => (
-            <span key={tag} className="px-2 py-0.5 text-xs rounded-full bg-muted">
+        <div className="flex flex-wrap gap-1 mt-2">
+          {entry.tags.slice(0, 2).map((tag) => (
+            <span key={tag} className="px-2 py-0.5 text-[10px] rounded-full bg-muted">
               {tag}
             </span>
           ))}
         </div>
       )}
 
-      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+      {/* Aksiyonlar — kompakt ikon butonlar */}
+      <div className="flex items-center gap-1.5 mt-3 opacity-60 group-hover:opacity-100 transition-opacity">
         {entry.ai_analysis ? (
-          <Button variant="outline" size="sm" onClick={() => onViewAnalysis(entry)}>
-            <Brain className="h-4 w-4 mr-1" />
-            Analizi Gör
+          <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => onViewAnalysis(entry)}>
+            <Brain className="h-3.5 w-3.5 mr-1" />
+            Analiz
           </Button>
         ) : (
-          <Button variant="outline" size="sm" onClick={() => handleAnalyze(entry)} disabled={analyzingId === entry.id}>
-            {analyzingId === entry.id ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Brain className="h-4 w-4 mr-1" />}
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 px-2 text-xs"
+            onClick={() => handleAnalyze(entry)}
+            disabled={analyzingId === entry.id}
+          >
+            {analyzingId === entry.id ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Brain className="h-3.5 w-3.5 mr-1" />}
             {analyzingId === entry.id ? 'Analiz...' : 'AI Analiz'}
           </Button>
         )}
-        <Button variant="outline" size="sm" onClick={() => openEditDialog(entry)}>
-          <Edit className="h-4 w-4 mr-1" />
-          Düzenle
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7"
+          title="Düzenle"
+          aria-label={`${entry.title} kaydını düzenle`}
+          onClick={() => openEditDialog(entry)}
+        >
+          <Edit className="h-3.5 w-3.5" />
         </Button>
-        <Button variant="outline" size="sm" onClick={() => handleDelete(entry.id)}>
-          <Trash2 className="h-4 w-4 mr-1" />
-          Sil
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 text-destructive hover:text-destructive"
+          title="Sil"
+          aria-label={`${entry.title} kaydını sil`}
+          onClick={() => handleDelete(entry.id)}
+        >
+          <Trash2 className="h-3.5 w-3.5" />
         </Button>
       </div>
-    </div>
+    </article>
   );
 }
