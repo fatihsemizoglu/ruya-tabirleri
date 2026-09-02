@@ -445,7 +445,6 @@ function dreamPageHtml(template, dream) {
     description,
     path,
     type: 'article',
-    image: `/api/og?title=${encodeURIComponent(title)}${dream.categories?.name ? `&category=${encodeURIComponent(dream.categories.name)}` : ''}`,
     jsonLd,
     bodyHtml: buildDreamBody(dream),
   });

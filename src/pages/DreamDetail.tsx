@@ -524,7 +524,6 @@ export default function DreamDetail() {
         title={dream.meta_title || dream.title}
         description={dreamDescription}
         path={dreamPath}
-        image={`/api/og?title=${encodeURIComponent(dream.meta_title || dream.title)}${category ? `&category=${encodeURIComponent(category.name)}` : ''}`}
         type="article"
         jsonLd={dreamJsonLd}
       />
