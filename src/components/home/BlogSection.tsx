@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, BookOpen, Sparkles, Clock, Calendar } from 'lucide-react';
+import { ArrowRight, BookOpen, Sparkles, Clock, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import useEmblaCarousel from 'embla-carousel-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Button } from '@/components/ui/button';
@@ -26,6 +27,33 @@ function stripHtml(html: string) {
 export function BlogSection() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Blog carousel (Embla)
+  const [emblaRef, emblaApi] = useEmblaCarousel({
+    align: 'start',
+    containScroll: 'trimSnaps',
+    slidesToScroll: 1,
+  });
+  const [canPrev, setCanPrev] = useState(false);
+  const [canNext, setCanNext] = useState(false);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    const onUpdate = () => {
+      setCanPrev(emblaApi.canScrollPrev());
+      setCanNext(emblaApi.canScrollNext());
+    };
+    onUpdate();
+    emblaApi.on('select', onUpdate);
+    emblaApi.on('reInit', onUpdate);
+    return () => {
+      emblaApi.off('select', onUpdate);
+      emblaApi.off('reInit', onUpdate);
+    };
+  }, [emblaApi, posts]);
+
+  const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
+  const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
 
   useEffect(() => {
     fetchPosts();
@@ -149,18 +177,44 @@ export function BlogSection() {
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <Button
-              asChild
-              variant="outline"
-              size="lg"
-              className="rounded-xl border-border hover:border-primary/30 hover:bg-primary/5 group"
-            >
-              <Link to="/blog">
-                <BookOpen className="w-4 h-4 mr-2" />
-                Tüm Yazıları Gör
-                <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-              </Link>
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                asChild
+                variant="outline"
+                size="lg"
+                className="rounded-xl border-border hover:border-primary/30 hover:bg-primary/5 group"
+              >
+                <Link to="/blog">
+                  <BookOpen className="w-4 h-4 mr-2" />
+                  Tüm Yazıları Gör
+                  <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </Button>
+              {!isLoading && posts.length > 2 && (
+                <div className="hidden sm:flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-11 w-11 rounded-xl border-border hover:border-primary/30 hover:bg-primary/5 disabled:opacity-40"
+                    onClick={scrollPrev}
+                    disabled={!canPrev}
+                    aria-label="Önceki yazılar"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-11 w-11 rounded-xl border-border hover:border-primary/30 hover:bg-primary/5 disabled:opacity-40"
+                    onClick={scrollNext}
+                    disabled={!canNext}
+                    aria-label="Sonraki yazılar"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </Button>
+                </div>
+              )}
+            </div>
           </motion.div>
         </motion.div>
 
@@ -195,11 +249,16 @@ export function BlogSection() {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {posts.map((post) => {
-              const excerpt = stripHtml(post.content || '').slice(0, 120);
-              return (
-                <article key={post.id} className="group bg-card border border-border/50 rounded-2xl overflow-hidden hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/5 transition-all duration-300 flex flex-col h-full">
+          <div className="overflow-hidden -mx-1" ref={emblaRef}>
+            <div className="flex -ml-1">
+              {posts.map((post) => {
+                const excerpt = stripHtml(post.content || '').slice(0, 120);
+                return (
+                  <div
+                    key={post.id}
+                    className="min-w-0 shrink-0 grow-0 basis-full sm:basis-1/2 lg:basis-1/3 pl-1"
+                  >
+                    <article className="group bg-card border border-border/50 rounded-2xl overflow-hidden hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/5 transition-all duration-300 flex flex-col h-full mr-1 mb-2">
                       <Link to={`/blog/${post.slug}`} className="block relative aspect-[16/9] overflow-hidden bg-gradient-to-br from-violet-500/20 via-fuchsia-500/15 to-pink-500/20">
                         {post.featured_image ? (
                           <ResponsiveImage
@@ -280,8 +339,10 @@ export function BlogSection() {
                         </div>
                       </div>
                     </article>
-              );
-            })}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
       </div>
