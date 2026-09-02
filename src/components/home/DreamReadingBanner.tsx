@@ -1,11 +1,17 @@
 import { motion } from 'framer-motion';
-import { MoonStar, MessageCircle, ArrowRight } from 'lucide-react';
+import { MessageCircle, ArrowRight, Check, MoonStar } from 'lucide-react';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 
 /** WhatsApp numarasını wa.me formatına hazırlar (rakam dışını temizler). */
 function toWaNumber(raw: string): string {
   return (raw || '').replace(/\D/g, '');
 }
+
+const TRUST_ITEMS = [
+  'İbn-i Sirin geleneği',
+  'Psikoloji literatürü',
+  'Size özel yazılı yorum',
+];
 
 /** Ana sayfa özel rüya yorum servisi banner'ı (ücretli — WhatsApp başvuru).
  *  İçerik admin panel > Site Ayarları > Banner sekmesinden yönetilir. */
@@ -21,39 +27,63 @@ export function DreamReadingBanner() {
   return (
     <section className="container py-4 md:py-6" aria-label="Özel rüya yorum servisi">
       <motion.div
-        initial={{ opacity: 0, y: 15 }}
+        initial={{ opacity: 0, y: 12 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        transition={{ duration: 0.5 }}
-        className="relative overflow-hidden rounded-3xl border border-violet-500/25 bg-gradient-to-br from-violet-600/15 via-fuchsia-500/10 to-pink-500/10 p-8 md:p-12 text-center"
+        transition={{ duration: 0.4 }}
+        className="relative overflow-hidden rounded-2xl border border-border bg-card shadow-sm"
       >
-        <div className="absolute -top-24 -right-24 w-64 h-64 bg-violet-500/20 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-pink-500/20 rounded-full blur-3xl pointer-events-none" />
+        {/* Üst vurgu çizgisi */}
+        <div aria-hidden className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-primary/0 via-primary/60 to-primary/0" />
 
-        <div className="relative max-w-xl mx-auto">
-          <MoonStar className="h-10 w-10 mx-auto text-primary mb-4" />
-          <h2 className="text-2xl md:text-3xl font-serif-dream font-bold tracking-tight mb-3">
-            {settings.dreamBannerTitle}
-          </h2>
-          <p className="text-muted-foreground mb-6 leading-relaxed">
-            {settings.dreamBannerDescription}
-          </p>
-          {priceInfo && (
-            <p className="mb-4 text-sm font-semibold text-primary">{priceInfo}</p>
-          )}
-          <a
-            href={waLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center h-12 px-8 rounded-xl dream-gradient text-white font-semibold transition hover:opacity-90 active:scale-[0.98]"
-          >
-            <MessageCircle className="mr-2 h-4 w-4" />
-            {settings.dreamBannerCtaText}
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </a>
-          <p className="mt-3 text-xs text-muted-foreground/70">
-            Başvuru doğrudan WhatsApp üzerinden yapılır.
-          </p>
+        <div className="flex flex-col gap-6 p-6 md:flex-row md:items-center md:gap-10 md:p-8">
+          {/* Sol: metin bloğu */}
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 border border-primary/15">
+                <MoonStar className="h-5 w-5 text-primary" aria-hidden />
+              </div>
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Özel Yorum Hizmeti
+              </span>
+            </div>
+
+            <h2 className="text-xl md:text-2xl font-bold tracking-tight text-foreground leading-snug">
+              {settings.dreamBannerTitle}
+            </h2>
+            <p className="mt-2 text-sm md:text-[15px] text-muted-foreground leading-relaxed max-w-2xl">
+              {settings.dreamBannerDescription}
+            </p>
+
+            <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-1.5">
+              {TRUST_ITEMS.map((item) => (
+                <li key={item} className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground/80">
+                  <Check className="h-3.5 w-3.5 text-primary" aria-hidden />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Sağ: başvuru bloğu */}
+          <div className="shrink-0 md:w-64 md:border-l md:border-border md:pl-10">
+            {priceInfo && (
+              <p className="mb-3 text-sm font-semibold text-foreground">{priceInfo}</p>
+            )}
+            <a
+              href={waLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 active:scale-[0.99]"
+            >
+              <MessageCircle className="h-4 w-4" aria-hidden />
+              {settings.dreamBannerCtaText}
+              <ArrowRight className="h-4 w-4" aria-hidden />
+            </a>
+            <p className="mt-2.5 text-center text-[11px] text-muted-foreground/80">
+              Başvuru doğrudan WhatsApp üzerinden yapılır.
+            </p>
+          </div>
         </div>
       </motion.div>
     </section>
