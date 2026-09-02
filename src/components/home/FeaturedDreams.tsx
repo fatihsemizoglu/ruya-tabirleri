@@ -79,7 +79,7 @@ export function FeaturedDreams() {
   }, []);
 
   return (
-    <section className="py-20 md:py-28 bg-muted/30 relative overflow-hidden">
+    <section className="pt-10 pb-14 md:pt-12 md:pb-20 bg-muted/30 relative overflow-hidden">
       <div className="absolute inset-0 opacity-30 dark:opacity-20 pointer-events-none">
         <div className="absolute top-0 right-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />

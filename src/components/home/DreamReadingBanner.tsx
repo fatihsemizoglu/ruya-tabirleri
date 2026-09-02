@@ -19,7 +19,7 @@ export function DreamReadingBanner() {
   const priceInfo = settings.dreamBannerPriceInfo.trim();
 
   return (
-    <section className="container py-14" aria-label="Özel rüya yorum servisi">
+    <section className="container py-4 md:py-6" aria-label="Özel rüya yorum servisi">
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         whileInView={{ opacity: 1, y: 0 }}
