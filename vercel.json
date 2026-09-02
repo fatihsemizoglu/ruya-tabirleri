@@ -20,21 +20,60 @@
       "destination": "https://dagjpitlouekbnwdcpbz.supabase.co/functions/v1/$1"
     },
     {
-      "source": "/assets/(.*)",
-      "destination": "/assets/$1"
-    },
-    {
-      "source": "/sw.js",
-      "destination": "/sw.js"
-    },
-    {
-      "source": "/workbox-(.*).js",
-      "destination": "/workbox-$1.js"
-    },
-    {
-      "source": "/(.*)",
+      "source": "/ruya/(.*)",
       "destination": "/index.html"
-    }
+    },
+    {
+      "source": "/sembol/(.*)",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/kategori/(.*)",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/blog/(.*)",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/az/(.*)",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/admin/(.*)",
+      "destination": "/index.html"
+    },
+    { "source": "/ara", "destination": "/index.html" },
+    { "source": "/karsilastir", "destination": "/index.html" },
+    { "source": "/kategoriler", "destination": "/index.html" },
+    { "source": "/populer", "destination": "/index.html" },
+    { "source": "/akis", "destination": "/index.html" },
+    { "source": "/az", "destination": "/index.html" },
+    { "source": "/semboller", "destination": "/index.html" },
+    { "source": "/profil", "destination": "/index.html" },
+    { "source": "/ruya-gunlugum", "destination": "/index.html" },
+    { "source": "/ruya-gunlugum/sesli", "destination": "/index.html" },
+    { "source": "/favorilerim", "destination": "/index.html" },
+    { "source": "/gecmis", "destination": "/index.html" },
+    { "source": "/hakkimizda", "destination": "/index.html" },
+    { "source": "/iletisim", "destination": "/index.html" },
+    { "source": "/gizlilik", "destination": "/index.html" },
+    { "source": "/kullanim-kosullari", "destination": "/index.html" },
+    { "source": "/kvkk", "destination": "/index.html" },
+    { "source": "/cerez-politikasi", "destination": "/index.html" },
+    { "source": "/sss", "destination": "/index.html" },
+    { "source": "/blog", "destination": "/index.html" },
+    { "source": "/yukle", "destination": "/index.html" },
+    { "source": "/ruyami-yorumlat", "destination": "/index.html" },
+    { "source": "/istatistikler", "destination": "/index.html" },
+    { "source": "/abonelik-dogrula", "destination": "/index.html" },
+    { "source": "/abonelik-iptal", "destination": "/index.html" },
+    { "source": "/giris", "destination": "/index.html" },
+    { "source": "/kayit", "destination": "/index.html" },
+    { "source": "/sifremi-unuttum", "destination": "/index.html" },
+    { "source": "/sifre-sifirla", "destination": "/index.html" },
+    { "source": "/auth/callback", "destination": "/index.html" },
+    { "source": "/email-dogrula", "destination": "/index.html" }
   ],
   "headers": [
     {
@@ -82,7 +121,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.supabase.co https://www.googletagmanager.com; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https:; media-src 'self' blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.resend.com https://o0.ingest.sentry.io https://*.sentry.io https://*.ingest.sentry.io; frame-src 'self' https://www.openstreetmap.org https://www.google.com https://maps.google.com https://yandex.com.tr https://*.yandex.com.tr https://yandex.com https://*.yandex.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self';"
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://*.supabase.co https://www.googletagmanager.com; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https:; media-src 'self' blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.resend.com https://o0.ingest.sentry.io https://*.sentry.io https://*.ingest.sentry.io; frame-src 'self' https://www.openstreetmap.org https://www.google.com https://maps.google.com https://yandex.com.tr https://*.yandex.com.tr https://yandex.com https://*.yandex.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self';"
         }
       ]
     }

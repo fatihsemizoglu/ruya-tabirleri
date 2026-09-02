@@ -323,3 +323,41 @@ Sentry entegrasyonu mevcut ve şu eşiklerde alarm üretiyor:
 **Rapor Tarihi:** 2026-07-30
 **Kontrol Komutu:** `npm run check` ✅ (lint + typecheck + test tümü temiz)
 **Build Durumu:** `npm run build` ✅ (19.29s, 0 hata; yerelde anon key boş olduğu için prerender SPA fallback'e düştü)
+---
+
+## 9. Güncelleme (2026-02-09 Oturumu)
+
+| Madde | Durum | Not |
+|---|---|---|
+| H4 (hardcoded URL/key) | ✅ Çözüldü | `scripts/data-migration/*.py` ve `run_migration_node.js` env-only hale getirildi |
+| H6 (RLS doğrulama) | ✅ Çözüldü | `npm run verify:rls` remote DB'de geçti: public read OK, anon write 401 |
+| K2 (devasa types.ts) | ℹ️ Bilgi | `src/integrations/supabase/types.ts` generated; type-only, bundle'a girmez — bölünmedi |
+| P2 (vendor chunk) | ✅ Zaten çözülmüş | `vite.config.ts` granular manualChunks içeriyor; zod/rhf paket-bazlı chunk'a düşüyor |
+| Öneri 1-2 (Sözlük + FAQ) | ✅ Zaten mevcut | `Symbols.tsx`, `SymbolDetail.tsx`, `Faq.tsx` implemente |
+| K1 (test kapsamı) | 🟡 İyileşti | Yeni: `dreamContent.test.ts` (17), `symbols.test.ts` (12), `supabaseImage.test.ts` (10) → toplam 106 test |
+| 🐞 Bug fix | ✅ Düzeltildi | `dreamContent.ts`: `/g` flag'li regex `String.match` capture group döndürmüyordu → `<h3>undefined</h3>` render ediliyordu. Flag kaldırıldı |
+---
+
+## 10. Güncelleme — Performans & SEO Oturumu (2026-02-09)
+
+| # | Madde | Durum |
+|---|---|---|
+| 1 | Sitemap sembol URL'leri | ✅ Zaten kapsıyordu (edge function, prerender ile aynı türetme) |
+| 2 | Prerender'da `meta name="title"` senkronizasyonu | ✅ `injectSeo`'ya eklendi |
+| 3 | Soft-404 | ✅ Catch-all rewrite kaldırıldı → bilinen app route'ları + içerik prefix'leri (`/ruya`, `/sembol`, `/kategori`, `/blog`, `/az`, `/admin`) açıkça rewrite ediliyor; bilinmeyen path'ler `404.html` ile **404 status** dönüyor |
+| 4 | `npm run analyze` prerender'ı siliyordu | ✅ Artık `dist-analysis` dizinine build ediyor |
+| 5 | Prerender paralel yazma | ✅ `writeAll` (64'lük batch) — ~60s → ~16s |
+| 6 | CSP `unsafe-eval` | ✅ script-src'den kaldırıldı |
+| 7 | TanStack Query cache | ✅ Zaten iyiydi (staleTime 5dk / gcTime 30dk); Search manuel fetch kullandığı için placeholderData refactor'u yapılmadı |
+| 8 | Font preload | ⏭️ Atlandı — @fontsource hash'li dosya adlarıyla statik preload yapılamıyor; fontsource zaten `font-display: swap` kullanıyor |
+| 9 | Rüya sayfasına FAQPage JSON-LD + 3 seviyeli breadcrumb | ✅ Prerender'a eklendi (runtime'da zaten vardı; şimdi ikisi tutarlı) |
+| 10 | Dinamik OG görseli | ✅ `api/og.tsx` (@vercel/og, edge) + runtime Seo ve prerender `/api/og?title=...&category=...` kullanıyor |
+| 11 | İlgili rüyalar | ✅ Zaten mevcuttu (`SimilarDreams`, skorlama ile) |
+| 12 | Arama canonical | ✅ Zaten `/ara`'ya sabitti |
+
+**Not:** `/ruya|/sembol|/kategori|/blog` prefix'lerinde build sonrası DB'ye eklenen yeni içerik yine SPA fallback ile açılır (catch-all bu prefix'lerde korundu). Deploy sıklığı arttıkça soft-404 penceresi daralır.
+
+**Doğrulama:** `npm run check` ✅ (106 test) · `npm run build` ✅ · prerender sayfa başına 3 JSON-LD (Article + BreadcrumbList + FAQPage) doğrulandı
+
+
+**Doğrulama:** `npm run check` ✅ (11 dosya / 106 test) · `npm run build` ✅ (prerender 17.099 sayfa)

@@ -13,8 +13,17 @@ import sys
 # === CONFIG ===
 # Try to get service role key from environment
 SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
-SUPABASE_URL = "https://dagjpitlouekbnwdcpbz.supabase.co"
-ANON_KEY = "sb_publishable_mv5vMs5QEH0i7wUfqTz_WQ_3FN6toYg"
+SUPABASE_URL = os.environ.get("VITE_SUPABASE_URL") or os.environ.get("SUPABASE_URL", "")
+ANON_KEY = (
+    os.environ.get("VITE_SUPABASE_PUBLISHABLE_KEY")
+    or os.environ.get("SUPABASE_ANON_KEY", "")
+)
+
+if not SUPABASE_URL or not ANON_KEY:
+    raise SystemExit(
+        "Hata: VITE_SUPABASE_URL ve VITE_SUPABASE_PUBLISHABLE_KEY "
+        "ortam değişkenleri ayarlanmalı (.env.local dosyasını kaynak gösterin)."
+    )
 
 # === LOAD COMPARISON RESULTS ===
 with open("compare_results.json", "r", encoding="utf-8") as f:

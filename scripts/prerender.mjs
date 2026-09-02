@@ -150,17 +150,60 @@ function buildDreamBody(dream) {
     ? `<ul style="padding-left:20px;">${keywords.map((k) => `<li>${escapeHtml(String(k))}</li>`).join('')}</ul>`
     : '';
 
+  const breadcrumbItems = [
+    { name: 'Ana Sayfa', path: '/' },
+  ];
+  // Kategori embed'i geldiyse 3 seviyeli breadcrumb (Ana Sayfa › Kategori › Rüya)
+  if (dream.categories?.slug) {
+    breadcrumbItems.push({ name: dream.categories.name, path: `/kategori/${dream.categories.slug}` });
+  } else {
+    breadcrumbItems.push({ name: 'Rüya Tabirleri', path: '/populer' });
+  }
+  breadcrumbItems.push({ name: dream.title, path: `/ruya/${dream.slug}` });
+
   return [
-    buildBreadcrumb([
-      { name: 'Ana Sayfa', path: '/' },
-      { name: 'Rüya Tabirleri', path: '/populer' },
-      { name: dream.title, path: `/ruya/${dream.slug}` },
-    ]),
+    buildBreadcrumb(breadcrumbItems),
     `<h1>${escapeHtml(dream.title)}</h1>`,
     faqIntro,
     safeContent,
     keywordChips,
   ].filter(Boolean).join('\n');
+}
+
+/** Rüya içeriğinden türetilen FAQPage JSON-LD (rich result için). */
+function buildDreamFaq(dream) {
+  const plain = stripHtml(dream.content);
+  if (!plain || plain.length < 40) return null;
+  const sentences = plain.split(/(?<=[.!?])\s+/).filter(Boolean);
+  const main = sentences.slice(0, 2).join(' ');
+  const detail = sentences.slice(2, 5).join(' ') || main;
+
+  const questions = [
+    {
+      name: `Rüyada ${dream.title} görmek ne demek?`,
+      text: truncate(main, 300),
+    },
+    {
+      name: `Rüyada ${dream.title} görmek hangi anlamlara gelir?`,
+      text: truncate(detail, 300),
+    },
+  ];
+  if (dream.categories?.name) {
+    questions.push({
+      name: `${dream.title} rüya tabiri hangi kategoride yer alır?`,
+      text: `"${dream.title}" başlıklı rüya tabiri sitemizde "${dream.categories.name}" kategorisinde yayınlanmaktadır.`,
+    });
+  }
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: questions.map((q) => ({
+      '@type': 'Question',
+      name: q.name,
+      acceptedAnswer: { '@type': 'Answer', text: q.text },
+    })),
+  };
 }
 
 function buildBlogBody(post) {
@@ -215,6 +258,13 @@ function injectSeo(template, opts) {
 
   // Title
   html = html.replace(/<title>[^<]*<\/title>/, `<title>${escapeHtml(fullTitle)}</title>`);
+
+  // Meta title (template'ten kalma değeri senkronize et — <title> ile çelişmesin)
+  html = setMeta(
+    html,
+    /<meta\s+name="title"\s+content="[^"]*"\s*\/?>/,
+    `<meta name="title" content="${escapeHtml(fullTitle)}" />`,
+  );
 
   // Description
   html = setMeta(
@@ -338,6 +388,16 @@ async function writePage(relativePath, html) {
   await writeFile(join(outDir, 'index.html'), html, 'utf-8');
 }
 
+/** 17k dosyayı sırayla değil, batch halinde paralel yazar (build süresini düşürür). */
+async function writeAll(pages) {
+  const BATCH = 64;
+  for (let i = 0; i < pages.length; i += BATCH) {
+    const batch = pages.slice(i, i + BATCH);
+    await Promise.all(batch.map(([path, html]) => writePage(path, html)));
+  }
+  return pages.length;
+}
+
 // ── Page generators ──────────────────────────────────────────────────
 
 function dreamPageHtml(template, dream) {
@@ -371,16 +431,21 @@ function dreamPageHtml(template, dream) {
       '@type': 'BreadcrumbList',
       itemListElement: [
         { '@type': 'ListItem', position: 1, name: 'Ana Sayfa', item: absoluteUrl('/') },
-        { '@type': 'ListItem', position: 2, name: dream.title, item: absoluteUrl(path) },
+        ...(dream.categories?.slug
+          ? [{ '@type': 'ListItem', position: 2, name: dream.categories.name, item: absoluteUrl(`/kategori/${dream.categories.slug}`) }]
+          : []),
+        { '@type': 'ListItem', position: dream.categories?.slug ? 3 : 2, name: dream.title, item: absoluteUrl(path) },
       ],
     },
-  ];
+    buildDreamFaq(dream),
+  ].filter(Boolean);
 
   return injectSeo(template, {
     title,
     description,
     path,
     type: 'article',
+    image: `/api/og?title=${encodeURIComponent(title)}${dream.categories?.name ? `&category=${encodeURIComponent(dream.categories.name)}` : ''}`,
     jsonLd,
     bodyHtml: buildDreamBody(dream),
   });
@@ -763,38 +828,31 @@ async function main() {
     },
   ];
 
-  for (const page of staticPages) {
-    const html = staticPageHtml(template, page);
-    await writePage(page.path, html);
-    count++;
-  }
-  console.log(`  📄 ${count} statik sayfa prerender edildi`);
+  const staticWrites = staticPages.map((page) => [page.path, staticPageHtml(template, page)]);
+  count += await writeAll(staticWrites);
+  console.log(`  📄 ${staticWrites.length} statik sayfa prerender edildi`);
 
   // ── Dreams ──
   try {
     const dreams = await fetchAllRows(
       'dreams',
-      'slug,title,meta_title,meta_description,content,keywords,created_at,updated_at',
+      'slug,title,meta_title,meta_description,content,keywords,created_at,updated_at,categories(name,slug)',
       'is_published=eq.true',
     );
     console.log(`  🌙 ${dreams.length} rüya tabiri çekildi`);
 
-    for (const dream of dreams) {
-      if (!dream.slug) continue;
-      const html = dreamPageHtml(template, dream);
-      await writePage(`/ruya/${dream.slug}`, html);
-      count++;
-    }
+    const dreamPages = dreams
+      .filter((dream) => dream.slug)
+      .map((dream) => [`/ruya/${dream.slug}`, dreamPageHtml(template, dream)]);
+    count += await writeAll(dreamPages);
 
     // ── Symbol glossary (derived from dreams) ──
     const symbols = buildSymbolGlossaryFromDreams(dreams);
     console.log(`  🔮 ${symbols.length} sembol çıkarıldı`);
-    await writePage('/semboller', symbolIndexHtml(template, symbols));
-    count++;
-    for (const s of symbols) {
-      await writePage(`/sembol/${s.slug}`, symbolPageHtml(template, s));
-      count++;
-    }
+    count += await writeAll([
+      ['/semboller', symbolIndexHtml(template, symbols)],
+      ...symbols.map((s) => [`/sembol/${s.slug}`, symbolPageHtml(template, s)]),
+    ]);
   } catch (err) {
     console.warn(`  ⚠ Rüya prerender hatası: ${err.message}`);
   }
@@ -808,12 +866,10 @@ async function main() {
     );
     console.log(`  📝 ${posts.length} blog yazısı çekildi`);
 
-    for (const post of posts) {
-      if (!post.slug) continue;
-      const html = blogPageHtml(template, post);
-      await writePage(`/blog/${post.slug}`, html);
-      count++;
-    }
+    const blogPages = posts
+      .filter((post) => post.slug)
+      .map((post) => [`/blog/${post.slug}`, blogPageHtml(template, post)]);
+    count += await writeAll(blogPages);
   } catch (err) {
     console.warn(`  ⚠ Blog prerender hatası: ${err.message}`);
   }
@@ -826,12 +882,10 @@ async function main() {
     );
     console.log(`  📁 ${categories.length} kategori çekildi`);
 
-    for (const cat of categories) {
-      if (!cat.slug) continue;
-      const html = categoryPageHtml(template, cat);
-      await writePage(`/kategori/${cat.slug}`, html);
-      count++;
-    }
+    const categoryPages = categories
+      .filter((cat) => cat.slug)
+      .map((cat) => [`/kategori/${cat.slug}`, categoryPageHtml(template, cat)]);
+    count += await writeAll(categoryPages);
   } catch (err) {
     console.warn(`  ⚠ Kategori prerender hatası: ${err.message}`);
   }

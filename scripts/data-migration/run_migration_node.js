@@ -12,7 +12,12 @@
  * operations to the Supabase database using the service role key.
  */
 
-const SUPABASE_URL = 'https://dagjpitlouekbnwdcpbz.supabase.co';
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+
+if (!SUPABASE_URL) {
+  console.error('ERROR: VITE_SUPABASE_URL (or SUPABASE_URL) environment variable not set.');
+  process.exit(1);
+}
 
 async function main() {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;

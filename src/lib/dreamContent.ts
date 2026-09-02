@@ -29,7 +29,9 @@ export function looksLikeHeading(line: string): boolean {
   return false;
 }
 
-const headingPattern = /(Rüyada\s+[^.!?\n]{3,80}?(?:görmek|yemek|içmek|kesmek|almak|vermek|gitmek|gelmek|olmak|binmek|yakalamak|taşımak|bulmak|kaybetmek|düşmek|çıkmak|girmek|kaçmak|koşmak|uçmak|yüzmek|dikmek|sökmek|yıkamak|temizlemek|kurmak|yapmak|konuşmak|bakmak|duymak|izlemek|seyretmek))(?:\s*[:,]?\s*)/gi;
+// NOT: /g flag'i BILINÇLI olarak yok — String.match global regex'te capture
+// group döndürmez ve başlıklar "undefined" olarak render edilirdi.
+const headingPattern = /(Rüyada\s+[^.!?\n]{3,80}?(?:görmek|yemek|içmek|kesmek|almak|vermek|gitmek|gelmek|olmak|binmek|yakalamak|taşımak|bulmak|kaybetmek|düşmek|çıkmak|girmek|kaçmak|koşmak|uçmak|yüzmek|dikmek|sökmek|yıkamak|temizlemek|kurmak|yapmak|konuşmak|bakmak|duymak|izlemek|seyretmek))(?:\s*[:,]?\s*)/i;
 
 export function splitIntoSentences(text: string): string[] {
   const sentences: string[] = [];
