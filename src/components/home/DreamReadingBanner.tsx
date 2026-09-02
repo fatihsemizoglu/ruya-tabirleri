@@ -11,9 +11,9 @@ import { MessageCircle, Zap, CalendarClock, Check, Moon } from 'lucide-react';
  *  PRICE_SCHEDULED : Randevulu yorum fiyatı
  * ─────────────────────────────────────────────────────────────────────
  */
-const WHATSAPP_NUMBER = '905000000000'; // TODO: KENDİ WHATSAPP NUMARANIZ
-const PRICE_URGENT = '₺—'; // TODO: Acil yorum fiyatı
-const PRICE_SCHEDULED = '₺—'; // TODO: Randevulu yorum fiyatı
+const WHATSAPP_NUMBER = '905322915255'; // TODO: KENDİ WHATSAPP NUMARANIZ
+const PRICE_URGENT = '700 ₺'; // Acil yorum fiyatı
+const PRICE_SCHEDULED = '400 ₺'; // Randevulu yorum fiyatı
 
 const waLink = (message: string) =>
   `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
