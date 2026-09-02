@@ -1,23 +1,23 @@
 import { motion } from 'framer-motion';
 import { MoonStar, MessageCircle, ArrowRight } from 'lucide-react';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 
-/**
- * ─────────────────────────────────────────────────────────────────────
- *  ÖZEL RÜYA YORUM SERVİSİ — YAPILANDIRMA
- * ─────────────────────────────────────────────────────────────────────
- *  WHATSAPP_NUMBER : WhatsApp numaranız (ülke koduyla, boşluksuz).
- *                    Ör: 905321234567
- * ─────────────────────────────────────────────────────────────────────
- */
-const WHATSAPP_NUMBER = '905322915255';
+/** WhatsApp numarasını wa.me formatına hazırlar (rakam dışını temizler). */
+function toWaNumber(raw: string): string {
+  return (raw || '').replace(/\D/g, '');
+}
 
-const WA_MESSAGE =
-  'Merhaba! Rüyamın özel olarak detaylı yorumlanmasını istiyorum. (Rüya Tabirleri sitesinden)';
-
-const waLink = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(WA_MESSAGE)}`;
-
-/** Ana sayfa özel rüya yorum servisi banner'ı (ücretli — WhatsApp başvuru). */
+/** Ana sayfa özel rüya yorum servisi banner'ı (ücretli — WhatsApp başvuru).
+ *  İçerik admin panel > Site Ayarları > Banner sekmesinden yönetilir. */
 export function DreamReadingBanner() {
+  const { settings } = useSiteSettings();
+
+  const waNumber = toWaNumber(settings.dreamBannerWhatsapp) || '905322915255';
+  const waMessage =
+    'Merhaba! Rüyamın özel olarak detaylı yorumlanmasını istiyorum. (Rüya Tabirleri sitesinden)';
+  const waLink = `https://wa.me/${waNumber}?text=${encodeURIComponent(waMessage)}`;
+  const priceInfo = settings.dreamBannerPriceInfo.trim();
+
   return (
     <section className="container py-14" aria-label="Özel rüya yorum servisi">
       <motion.div
@@ -33,16 +33,14 @@ export function DreamReadingBanner() {
         <div className="relative max-w-xl mx-auto">
           <MoonStar className="h-10 w-10 mx-auto text-primary mb-4" />
           <h2 className="text-2xl md:text-3xl font-serif-dream font-bold tracking-tight mb-3">
-            Rüyanı yaz, anlamını{' '}
-            <span className="bg-gradient-to-r from-violet-600 via-fuchsia-600 to-pink-600 bg-clip-text text-transparent">
-              saniyeler içinde
-            </span>{' '}
-            öğren
+            {settings.dreamBannerTitle}
           </h2>
           <p className="text-muted-foreground mb-6 leading-relaxed">
-            Sembollerin İbn-i Sirin geleneği ve psikoloji literatürüyle eşleştirilir.
-            Rüyalarınız size özel, detaylı ve profesyonel bir bakışla yorumlanır.
+            {settings.dreamBannerDescription}
           </p>
+          {priceInfo && (
+            <p className="mb-4 text-sm font-semibold text-primary">{priceInfo}</p>
+          )}
           <a
             href={waLink}
             target="_blank"
@@ -50,7 +48,7 @@ export function DreamReadingBanner() {
             className="inline-flex items-center justify-center h-12 px-8 rounded-xl dream-gradient text-white font-semibold transition hover:opacity-90 active:scale-[0.98]"
           >
             <MessageCircle className="mr-2 h-4 w-4" />
-            Rüya Yorumlat
+            {settings.dreamBannerCtaText}
             <ArrowRight className="ml-2 h-4 w-4" />
           </a>
           <p className="mt-3 text-xs text-muted-foreground/70">

@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import {
   Settings, Globe, Bell, Shield, Palette, Save, RefreshCw,
-  Check, AlertCircle, Phone, MapPin, Clock, Mail,
+  Check, AlertCircle, Phone, MapPin, Clock, Mail, MoonStar,
   Facebook, Instagram, Twitter, Youtube, Linkedin,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -124,9 +124,10 @@ export function SiteSettings() {
       </div>
 
       <Tabs defaultValue="general" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
+        <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-grid">
           <TabsTrigger value="general" className="gap-2"><Globe className="h-4 w-4" /><span className="hidden sm:inline">Genel</span></TabsTrigger>
           <TabsTrigger value="contact" className="gap-2"><Phone className="h-4 w-4" /><span className="hidden sm:inline">İletişim</span></TabsTrigger>
+          <TabsTrigger value="banner" className="gap-2"><MoonStar className="h-4 w-4" /><span className="hidden sm:inline">Banner</span></TabsTrigger>
           <TabsTrigger value="comments" className="gap-2"><Bell className="h-4 w-4" /><span className="hidden sm:inline">Yorumlar</span></TabsTrigger>
           <TabsTrigger value="seo" className="gap-2"><Settings className="h-4 w-4" /><span className="hidden sm:inline">SEO</span></TabsTrigger>
           <TabsTrigger value="social" className="gap-2"><Palette className="h-4 w-4" /><span className="hidden sm:inline">Sosyal</span></TabsTrigger>
@@ -252,6 +253,54 @@ export function SiteSettings() {
               <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
                 <div><p className="font-medium text-slate-900 dark:text-white">Bülten Aboneliği</p><p className="text-sm text-slate-500">E-posta bülteni sistemini etkinleştir</p></div>
                 <Switch checked={settings.enableNewsletter} onCheckedChange={(checked) => updateSetting('enableNewsletter', checked)} />
+              </div>
+            </div>
+          </Card>
+        </TabsContent>
+
+        {/* ANA SAYFA BANNER */}
+        <TabsContent value="banner">
+          <Card className="p-6">
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">Ana Sayfa Yorum Banner'ı</h3>
+            <p className="text-sm text-slate-500 mb-6">
+              Ana sayfadaki "Özel Rüya Yorum" kartının içeriğini buradan düzenleyin.
+              Başvuru butonu WhatsApp'a yönlendirir.
+            </p>
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="dreamBannerTitle">Başlık</Label>
+                <Input id="dreamBannerTitle" value={settings.dreamBannerTitle} onChange={(e) => updateSetting('dreamBannerTitle', e.target.value)} placeholder="Rüyanı yaz, anlamını saniyeler içinde öğren" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="dreamBannerDescription">Açıklama</Label>
+                <Textarea id="dreamBannerDescription" value={settings.dreamBannerDescription} onChange={(e) => updateSetting('dreamBannerDescription', e.target.value)} rows={3} placeholder="Sembollerin İbn-i Sirin geleneği ve psikoloji literatürüyle eşleştirilir..." />
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="dreamBannerCtaText">Buton Metni</Label>
+                  <Input id="dreamBannerCtaText" value={settings.dreamBannerCtaText} onChange={(e) => updateSetting('dreamBannerCtaText', e.target.value)} placeholder="Rüya Yorumlat" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="dreamBannerWhatsapp" className="flex items-center gap-2"><Phone className="h-3.5 w-3.5" /> WhatsApp Numarası</Label>
+                  <Input id="dreamBannerWhatsapp" type="tel" value={settings.dreamBannerWhatsapp} onChange={(e) => updateSetting('dreamBannerWhatsapp', e.target.value)} placeholder="905321234567" />
+                  <p className="text-xs text-slate-500">Ülke koduyla, boşluksuz (ör. 905321234567)</p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="dreamBannerPriceInfo">Fiyat Bilgisi (opsiyonel)</Label>
+                <Input id="dreamBannerPriceInfo" value={settings.dreamBannerPriceInfo} onChange={(e) => updateSetting('dreamBannerPriceInfo', e.target.value)} placeholder="Örn: Acil yorum 700 ₺ · Randevulu 400 ₺" />
+                <p className="text-xs text-slate-500">Boş bırakılırsa banner'da fiyat satırı gösterilmez.</p>
+              </div>
+              <div className="p-4 bg-sky-50 dark:bg-sky-900/20 border border-sky-200 dark:border-sky-800 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <Check className="h-5 w-5 text-sky-600 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-sky-700 dark:text-sky-400">Önizleme</p>
+                    <p className="text-sm text-sky-600 dark:text-sky-500 mt-1">
+                      <strong>{settings.dreamBannerTitle}</strong> — {settings.dreamBannerCtaText} → wa.me/{settings.dreamBannerWhatsapp.replace(/\D/g, '') || '…'}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </Card>

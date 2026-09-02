@@ -26,6 +26,12 @@ export interface SiteSettings {
   metaTitle: string;
   metaDescription: string;
   metaKeywords: string;
+  /** Ana sayfa özel rüya yorum banner'ı */
+  dreamBannerTitle: string;
+  dreamBannerDescription: string;
+  dreamBannerCtaText: string;
+  dreamBannerWhatsapp: string;
+  dreamBannerPriceInfo: string;
 }
 
 /** Sosyal medya ayar anahtarları — arayüzle birlikte yaşar; yeni alan eklenirse buraya da eklenmeli. */
@@ -61,6 +67,12 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   metaTitle: 'Rüya Tabirleri - En Kapsamlı Rüya Yorumları',
   metaDescription: 'Binlerce rüya tabiri arasında arama yapın. İslami ve psikolojik yorumlarla rüyalarınızın anlamını keşfedin.',
   metaKeywords: 'rüya tabiri, rüya yorumu, islami rüya tabiri, rüya sözlüğü',
+  dreamBannerTitle: 'Rüyanı yaz, anlamını saniyeler içinde öğren',
+  dreamBannerDescription:
+    'Sembollerin İbn-i Sirin geleneği ve psikoloji literatürüyle eşleştirilir. Rüyalarınız size özel, detaylı ve profesyonel bir bakışla yorumlanır.',
+  dreamBannerCtaText: 'Rüya Yorumlat',
+  dreamBannerWhatsapp: '905322915255',
+  dreamBannerPriceInfo: '',
 };
 
 const SITE_SETTINGS_QUERY_KEY = ['site-settings'] as const;

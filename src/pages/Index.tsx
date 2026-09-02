@@ -20,9 +20,6 @@ const BlogSection = lazy(() =>
 const ContactCTASection = lazy(() =>
   import('@/components/home/ContactCTASection').then((m) => ({ default: m.ContactCTASection }))
 );
-const InterpretCTA = lazy(() =>
-  import('@/components/home/InterpretCTA').then((m) => ({ default: m.InterpretCTA }))
-);
 
 const Index = () => {
   return (
@@ -58,7 +55,6 @@ const Index = () => {
         <FeaturedDreams />
         <CategoriesSection />
         <BlogSection />
-        <InterpretCTA />
         <ContactCTASection />
       </Suspense>
     </Layout>
